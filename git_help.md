@@ -74,6 +74,11 @@ git checkout --track origin/[branch_name]
 git checkout [name_of_branch_B]
 ```
 
+#To see local branches, run this command: 
+```bash
+git branch
+```
+
 #To see remote branches, run this command:
 ```bash
 git branch -r.
@@ -93,9 +98,4 @@ git branch -d [name_of_your_new_branch]
 ```bash
 git checkout B
 git cherry-pick <commit_NumberID>
-```
-
-#To see local branches, run this command: 
-```bash
-git branch
 ```
