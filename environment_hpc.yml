@@ -1,0 +1,24 @@
+name: meld_graph
+channels:
+  - defaults
+  - pyg
+  - pytorch
+  - conda-forge
+dependencies:
+  - pytorch=1.10.0
+  - pytorch-scatter=2.0.9=py39_torch_1.10.0_cu102
+  - pytorch-sparse=0.6.12=py39_torch_1.10.0_cu102
+  - h5py=3.2.1
+  - hdf5=1.10.6
+  - cudatoolkit=10.2.89
+  - networkx=2.6.3
+  - nibabel=3.2.1
+  - numpy=1.21.2
+  - numpy-base=1.21.2
+  - pip=21.2.4
+  - pyg=2.0.2=py39_torch_1.10.0_cu102
+  - python=3.9.7
+  - pyyaml=6.0
+  - wheel=0.37.0
+  - yaml=0.2.5
+
