@@ -14,7 +14,7 @@ then install the hpc environment
 
 
 ### On a mac (CPU only)
-This assumes you have torch 10.1.2 installed. Test this running: `python -c "import torch; print(torch.__version__)"`
+This assumes you have torch 1.10.2 installed. Test this running: `python -c "import torch; print(torch.__version__)"`
 ```
 pip install torch-scatter -f https://data.pyg.org/whl/torch-10.1.2+cpu.html
 pip install torch-sparse -f https://data.pyg.org/whl/torch-10.1.2+cpu.html
