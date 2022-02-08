@@ -1,10 +1,9 @@
 name: meld_graph
 channels:
   - defaults
-  - pyg
   - conda-forge
 dependencies:
   - python=3.9
-  - pyg
+  - pytorch=1.10.2
   - pytest
   - jupyterlab
