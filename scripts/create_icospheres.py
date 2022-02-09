@@ -76,7 +76,6 @@ if __name__ == '__main__':
     save_gifti(os.path.join(data_dir,'ico7.surf.gii'),sphere_surf)
     downsampled_surf=downsample_mesh(sphere_surf)
     save_gifti(os.path.join(data_dir,'ico6.surf.gii'),downsampled_surf)
-    
     downsampled_surf=downsample_mesh(downsampled_surf)
     save_gifti(os.path.join(data_dir,'ico5.surf.gii'),downsampled_surf)
     downsampled_surf=downsample_mesh(downsampled_surf)
