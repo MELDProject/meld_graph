@@ -84,7 +84,7 @@ class IcoSpheres():
         polar = torch.cat([rho, theta], dim=-1)
         
         self.icospheres[level]['edge_attr'] = polar
-        self.icospheres[level]['edges'] = torch.from_numpy(self.icospheres[level]['edges'])
+        self.icospheres[level]['edges'] = torch.from_numpy(self.icospheres[level]['edges']).t().contiguous()
         return
     #helper functions
     def get_edges(self,level=7):
