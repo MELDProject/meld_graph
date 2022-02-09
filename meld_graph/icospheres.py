@@ -6,6 +6,9 @@ import copy
 import time
 from scipy import sparse 
 import meld_classifier.mesh_tools as mt
+import torch
+from math import pi 
+
 
 
 #loads in all icosphere
@@ -24,12 +27,14 @@ class IcoSpheres():
         self.icospheres={}
         self.load_all_levels()
         
+        
     def load_all_levels(self):
         for level in np.arange(7)+1:
-            self.load_icosphere(level=level)
-            self.calculate_edges(level=level)
-            self.calculate_neighbours(level=level)
-            self.polar_coords(level=level)
+            self.load_icosphere(level = level)
+            self.calculate_edges(level = level)
+            self.calculate_neighbours(level = level)
+            self.polar_coords(level = level)
+            self.polar_edge_attrs(level = level)
         return
         
     def load_icosphere(self,level=7):
@@ -59,3 +64,33 @@ class IcoSpheres():
     def polar_coords(self,level=7):
         self.icospheres[level]['polar_coords'] = mt.spherical_np(self.icospheres[level]['coords'])[:,1:]
         return
+    
+    def polar_edge_attrs(self,level=7):
+        
+        col = self.icospheres[level]['edges'][:,0]
+        row = self.icospheres[level]['edges'][:,1]
+        pos = self.icospheres[level]['polar_coords']
+        cart = torch.Tensor(pos[col] - pos[row])
+        
+        rho = torch.norm(cart, p=2, dim=-1).view(-1, 1)
+
+        theta = torch.atan2(cart[..., 1], cart[..., 0]).view(-1, 1)
+        theta = theta + (theta < 0).type_as(theta) * (2 * pi)
+
+        
+        rho = rho / rho.max() 
+        theta = theta / (2 * pi)
+
+        polar = torch.cat([rho, theta], dim=-1)
+        
+        self.icospheres[level]['edge_attr'] = polar
+        self.icospheres[level]['edges'] = torch.from_numpy(self.icospheres[level]['edges'])
+        return
+    #helper functions
+    def get_edges(self,level=7):
+        
+        return self.icospheres[level]['edges']
+    
+    def get_edge_vectors(self,level=7):
+        return self.icospheres[level]['edge_attr']
+
