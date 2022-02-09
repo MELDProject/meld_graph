@@ -50,8 +50,8 @@ class Preprocess:
         ''' This function preprocessed features data for a single subject$
         preprocess: 
         1) get data and lesion
-        2) transform data if not gaussian
-        3) scale data between 0 and 1
+        2) scale data between 0 and 1
+        3) transform data if not gaussian
         '''
         
         subj = MeldSubject(subject, cohort=cohort)  
@@ -61,17 +61,18 @@ class Preprocess:
         vals_array = np.array(np.hstack([vals_array_lh[cohort.cortex_mask].T, vals_array_rh[cohort.cortex_mask].T]))
         lesion_array = np.array(np.hstack([lesion_lh[cohort.cortex_mask].T, lesion_rh[cohort.cortex_mask].T]))
         
-        #check data normal & transform if not gaussian
-        #TODO
-        
         #scale data between 0 and 1
         scaled_data = scale.scale_data(vals_array, features, scaling_params_file)
-              
+        
+        #transform data if feature not gaussian
+        #TODO
+        
         #include medial wall back with 0
         hemi_data = np.zeros(NVERT*2)
-#         n_vert_cortex = sum(self.cohort.cortex_mask)
-        for h, hemi in enumerate
-        hemi_data[c_combat.cortex_mask] = mean[0 * n_vert_cortex : (0 + 1) * n_vert_cortex]
+        
+        #preprocessed_data2 = np.zeros((len(features),NVERT*2))
+        cohort_mask_hemis = np.hstack([cohort.cortex_mask,cohort.cortex_mask])
+        preprocessed_data2[:, cohort_mask_hemis] = vals_array
         #return the data with medial wall at 0
         return features_preprocess, lesion
     
