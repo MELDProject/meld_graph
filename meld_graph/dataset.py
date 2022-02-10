@@ -1,6 +1,8 @@
 import torch_geometric.data
 from meld_classifier.meld_cohort import MeldSubject
 from meld_classifier.dataset import load_combined_hemisphere_data
+from meld_classifier.data_preprocessing import Preprocess
+import numpy as np
 import torch
 
 class GraphDataset(torch_geometric.data.Dataset):
@@ -9,7 +11,25 @@ class GraphDataset(torch_geometric.data.Dataset):
         self.params = params
         self.subject_ids = subject_ids
         self.cohort = cohort
-        # TODO could preload data here
+
+        # preload data in memory, with all preprocessing done
+        self.data_list = []
+        prep = Preprocess(cohort=self.cohort)
+        for subj_id in self.subject_ids:
+            features_left, lesion_left, features_right, lesion_right = prep.get_data_preprocessed(subject=subj_id, features=self.params['features'], 
+                params=self.params['preprocessing_params'])
+            if self.params['combine_hemis'] == 'stack':
+                features = np.hstack([features_left, features_right])
+                lesion = np.hstack([lesion_left, lesion_right])
+                self.data_list.append((features, lesion))
+
+                features = np.hstack([features_right, features_left])
+                lesion = np.hstack([lesion_right, lesion_left])
+                self.data_list.append((features, lesion))
+            else:
+                raise NotImplementedError
+
+
 
     @classmethod
     def from_experiment(cls, experiment, mode):
@@ -32,21 +52,12 @@ class GraphDataset(torch_geometric.data.Dataset):
         )
 
     def len(self):
-        return len(self.subject_ids)
+        # every subject will be shown twice per epoch
+        return 2*len(self.subject_ids)
     
     def get(self, idx):
-        subj_id = self.subject_ids[idx]
-        subj = MeldSubject(subj_id, self.cohort)
-        # TODO use preprocessing code from Mathilde and Sophie here
-        features, labels = load_combined_hemisphere_data(
-                subj,
-                self.params['features'],
-                features_to_ignore=self.params['features_to_replace_with_0'],
-                universal_features=[],
-                demographic_features=[],
-                num_neighbours=0,
-                normalise=False,
-            )
+        print('dataset get idx ', idx)
+        features, labels = self.data_list[idx]
         return torch_geometric.data.Data(
             x=torch.tensor(features, dtype=torch.float), 
             y=torch.tensor(labels, dtype=torch.long), 

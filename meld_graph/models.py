@@ -2,6 +2,7 @@ from torch_geometric.nn import GMMConv
 import torch.nn as nn
 
 from meld_graph.icospheres import IcoSpheres
+import torch
 
 # define model
 class MoNet(nn.Module):
@@ -12,6 +13,8 @@ class MoNet(nn.Module):
         layer_sizes: (list) output size of each conv layer. a final linear layer for going to 2 (binary classification) is added
         num_features: number of input features (input size)
         edge_index_fn: function that takes level as argument and returns (edge_index, edge_attrs)
+        
+        Model outputs log softmax scores. Need to call torch.exp to get probabilities
         """
         super(MoNet, self).__init__()
         self.num_features = num_features
@@ -47,3 +50,27 @@ class MoNet(nn.Module):
         # add final linear layer
         x = self.activation_function(self.fc(x))
         return nn.LogSoftmax(dim=1)(x)
+
+def dice_coeff(pred, target):
+    """This definition generalize to real valued pred and target vector.
+    This should be differentiable.
+    pred: tensor with first dimension as batch
+    target: tensor with first dimension as batch
+    """
+
+    smooth = 1.
+    epsilon = 10e-8
+
+    # have to use contiguous since they may from a torch.view op
+    iflat = pred.view(-1).contiguous()
+    tflat = target.view(-1).contiguous()
+    intersection = (iflat * tflat).sum()
+
+    A_sum = torch.sum(iflat * iflat)
+    B_sum = torch.sum(tflat * tflat)
+
+    dice = (2. * intersection + smooth) / (A_sum + B_sum + smooth)
+    dice = dice.mean(dim=0)
+    dice = torch.clamp(dice, 0, 1.0)
+
+    return  dice
