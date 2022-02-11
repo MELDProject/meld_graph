@@ -25,7 +25,7 @@ On Ampere GPUs cuda 11.4 is enabled by default, for which no pytorch version is 
     ```
 - install meld classifier and meld graph with `pip install -e .` in the respective directories.
 - test if pytorch works with `python -c "import torch; torch.cuda.get_device_name(0)` -> should return a GPU name, and no other warnings/errors
-- test if everything works by running `python scripts/test_model.py`
+- test if everything works in scripts by running `python test_model.py`
 
 
 Original steps for installing pytorch and pytorch geometric from Hannah were: (with cuda 11.1 loaded)
