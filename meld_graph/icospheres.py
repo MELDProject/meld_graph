@@ -119,11 +119,11 @@ class IcoSpheres():
         """returns edges tensor"""
         return self.icospheres[level]['t_edges']
     
-    def get_edge_vectors(self,level=7,dist_dtype =self.distance_type):
-        if dist_dtype == 'pseudo':
+    def get_edge_vectors(self,level=7):
+        if self.distance_type == 'pseudo':
             self.calculate_pseudo_edge_attrs(level = level)
             return self.icospheres[level]['t_pseudo_edge_attr']
-        elif dist_dtype == 'exact':
+        elif self.distance_type == 'exact':
             return self.icospheres[level]['t_exact_edge_attr']
 
 
@@ -162,15 +162,15 @@ class IcoSpheres():
         angles=np.zeros(len(neighbours))
         v1=coords[neighbours] - coords[vertex]
         v2=coords[np.roll(neighbours,1)]-coords[vertex]
-        angles=findAnglesBetweenTwoVectors1(v1,v2)
+        angles=self.findAnglesBetweenTwoVectors1(v1,v2)
         total_angle=angles.sum()
         angles_flattened = 2*pi*angles.cumsum()/total_angle
         return angles_flattened, np.linalg.norm(v1,axis=1)
 
     def vertex_attributes(self,surf,vertex):
         neighbours=surf['neighbours'][vertex]
-        edges = neighbours_to_edges(vertex,neighbours)
-        angles,dists = calculate_angles_and_dists(vertex,neighbours,surf['coords'])
+        edges = self.neighbours_to_edges(vertex,neighbours)
+        angles,dists = self.calculate_angles_and_dists(vertex,neighbours,surf['coords'])
         #add self edge with almost zero vals
         edge_attrs=np.vstack([[1e-15,1e-15],np.vstack([angles,dists]).T])
         combined=np.hstack([edges,edge_attrs])

@@ -57,7 +57,7 @@ class GraphDataset(torch_geometric.data.Dataset):
         return 2*len(self.subject_ids)
     
     def get(self, idx):
-        #print('dataset get idx ', idx)
+        print('dataset get idx ', idx)
         features, labels = self.data_list[idx]
         return torch_geometric.data.Data(
             x=torch.tensor(features, dtype=torch.float), 

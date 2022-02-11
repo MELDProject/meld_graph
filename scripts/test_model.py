@@ -17,15 +17,15 @@ if __name__ == '__main__':
     network_parameters = {
     'network_type': 'MoNet',
     'model_parameters': {
-        'layer_sizes': [16,10],
+        'layer_sizes': [30,30,30],
         'dim': 2, # pseudo-coord dim
     },
     'training_parameters': {
         "max_patience": 10,
-        "num_epochs": 100,
-        'lr': 1e-4,
+        "num_epochs": 200,
+        'lr': 1e-3,
         'loss': 'cross_entropy',
-        "batch_size": 1,
+        "batch_size": 4,
         "shuffle_each_epoch": True,
     }
     }
@@ -61,8 +61,8 @@ if __name__ == '__main__':
 
     exp = meld_graph.experiment.Experiment(network_parameters, data_parameters, save=False)
     _ = exp.get_train_val_test_ids()
-    exp.data_parameters['train_ids'] = exp.data_parameters['train_ids'][:2]
-    exp.data_parameters['val_ids'] = exp.data_parameters['val_ids'][:2]
+    exp.data_parameters['train_ids'] = exp.data_parameters['train_ids'][:10]
+    exp.data_parameters['val_ids'] = exp.data_parameters['train_ids'][:10]
     ds = meld_graph.dataset.GraphDataset.from_experiment(exp, mode='train')
 
     exp.train()
