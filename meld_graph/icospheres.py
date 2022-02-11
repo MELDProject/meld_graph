@@ -15,23 +15,29 @@ from math import pi
 #loads in all icosphere
 class IcoSpheres():
     """Class to define cohort-level parameters such as subject ids, mesh"""
-    def __init__(self, icosphere_path='../data/icospheres/'):
+    def __init__(self, icosphere_path='../data/icospheres/', distance_type='exact'):
         """icosphere class
         icospheres at each level are stored in self.icospheres[1:7]
+        distance_type = 'exact' or 'pseudo' 
+        exact - edge length and flattened relative angle
+        pseudo - relative polar coordinates
+        
         autoloads & calculates:
         'coords': spherical coordinates
         'faces': triangle faces
         'polar_coords': theta & phi spherical coords
         'edges': all edges
-        'adj_mat': sparse adjacency matrix"""
+        'adj_mat': sparse adjacency matrix
+        """
         self.icosphere_path = icosphere_path
         self.icospheres={}
+        self.distance_type = 'exact'
         self.load_all_levels()
+        
         
         
     def load_all_levels(self):
         for level in np.arange(7)+1:
-            print(level)
             self.load_one_level(level=level)
             
         return
@@ -40,10 +46,7 @@ class IcoSpheres():
         self.load_icosphere(level = level)
         self.calculate_neighbours(level = level)
         self.spherical_coords(level = level)
-        t1=time.time()
         self.get_exact_edge_attrs(level=level)
-        t2=time.time()
-        print(t2-t1)
         self.calculate_adj_mat(level=level)
         
         return
@@ -97,21 +100,31 @@ class IcoSpheres():
         pseudo[:,1]=alpha
         
         self.icospheres[level]['pseudo_edge_attr'] = pseudo
+        self.icospheres[level]['t_pseudo_edge_attr'] = torch.tensor(self.icospheres[level]['pseudo_edge_attr'], dtype=torch.float)
+
         return
-    
-   
+
+    def to(self, device):
+        """loads edges, edge vectors and neighbors to device (eg GPU)"""
+        for level in self.icospheres.keys():
+            self.icospheres[level]['t_edges']=self.icospheres[level]['t_edges'].to(device)
+            if self.distance_type=='exact':
+                self.icospheres[level]['t_exact_edge_attr']=self.icospheres[level]['t_exact_edge_attr'].to(device)
+            elif self.distance_type=='pseudo':
+                self.icospheres[level]['t_pseudo_edge_attr']=self.icospheres[level]['t_pseudo_edge_attr'].to(device)
+        return
         
     #helper functions
     def get_edges(self,level=7):
-        
-        return self.icospheres[level]['edges']
+        """returns edges tensor"""
+        return self.icospheres[level]['t_edges']
     
-    def get_edge_vectors(self,level=7,dist_dtype ='exact_edge_attr'):
+    def get_edge_vectors(self,level=7,dist_dtype =self.distance_type):
         if dist_dtype == 'pseudo':
             self.calculate_pseudo_edge_attrs(level = level)
-            return self.icospheres[level]['pseudo_edge_attr']
+            return self.icospheres[level]['t_pseudo_edge_attr']
         elif dist_dtype == 'exact':
-            return self.icospheres[level]['exact_edge_attr']
+            return self.icospheres[level]['t_exact_edge_attr']
 
 
     
@@ -177,6 +190,9 @@ class IcoSpheres():
             np.save(file_path,edges_attrs)
         self.icospheres[level]['edges'] = edges_attrs[:,:2]
         self.icospheres[level]['exact_edge_attr'] = edges_attrs[:,2:]
+        # add tensors needed for model
+        self.icospheres[level]['t_edges'] = torch.tensor(self.icospheres[level]['edges'], dtype=torch.long).t().contiguous()
+        self.icospheres[level]['t_exact_edge_attr'] = torch.tensor(self.icospheres[level]['exact_edge_attr'], dtype=torch.float)
         return
     
     def calculate_exact_edge_attrs(self,level=7):
