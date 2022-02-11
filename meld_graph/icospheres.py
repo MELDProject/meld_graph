@@ -35,6 +35,11 @@ class IcoSpheres():
             self.calculate_neighbours(level = level)
             self.spherical_coords(level = level)
             self.pseudo_edge_attrs(level = level)
+
+            # add tensors needed for model
+            self.icospheres[level]['t_edges'] = torch.tensor(self.icospheres[level]['edges'], dtype=torch.long).t().contiguous()
+            self.icospheres[level]['t_pseudo_edge_attr'] = torch.tensor(self.icospheres[level]['pseudo_edge_attr'], dtype=torch.float)
+            # TODO add exact_edge_attr
         return
         
     def load_icosphere(self,level=7):
@@ -84,22 +89,27 @@ class IcoSpheres():
         alpha = np.remainder(alpha, 2*np.pi)
         pseudo[:,1]=alpha
         
-        self.icospheres[level]['pseudo_edge_attr'] = torch.from_numpy(pseudo)
-        self.icospheres[level]['edges'] = torch.from_numpy(self.icospheres[level]['edges'])
+        self.icospheres[level]['pseudo_edge_attr'] = pseudo
         return
-    
-   
+
+    def to(self, device):
+        """loads edges, edge vectors and neighbors to device (eg GPU)"""
+        for level in self.icospheres.keys():
+            self.icospheres[level]['t_edges']=self.icospheres[level]['t_edges'].to(device)
+            self.icospheres[level]['t_pseudo_edge_attr']=self.icospheres[level]['t_pseudo_edge_attr'].to(device)
+            # TODO add exact_edge_attr
         
     #helper functions
     def get_edges(self,level=7):
-        
-        return self.icospheres[level]['edges']
+        """returns edges tensor"""
+        return self.icospheres[level]['t_edges']
     
     def get_edge_vectors(self,level=7,dist_dtype ='pseudo'):
+        """returns coordinates tensor"""
         if dist_dtype == 'pseudo':
-            return self.icospheres[level]['pseudo_edge_attr']
+            return self.icospheres[level]['t_pseudo_edge_attr']
         elif dist_dtype == 'exact':
-            return self.icospheres[level]['exact_edge_attr']
+            return self.icospheres[level]['t_exact_edge_attr']
 
     def get_neighbours_from_tris(self,tris):
         """Get surface neighbours from tris
