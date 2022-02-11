@@ -7,3 +7,5 @@ dependencies:
   - pytorch=1.10.2
   - pytest
   - jupyterlab
+  - pip:
+    - potpourri3d
