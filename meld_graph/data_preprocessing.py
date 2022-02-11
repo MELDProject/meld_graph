@@ -20,13 +20,24 @@ class Preprocess:
         self.cohort = cohort
         self.write_output_file = write_output_file
         self.data_dir = data_dir
-        self.site_codes = site_codes
-        # filter subject ids based on site codes
-        if self.site_codes is None:
-            self.site_codes = self.cohort.get_sites()
-        self.subject_ids = self.cohort.get_subject_ids(site_codes=self.site_codes, lesional_only=False)
+        # private attributes for site_codes and subject_ids properties
+        self._site_codes = site_codes
+        self._subject_ids = None
         self.log = logging.getLogger(__name__)
         
+    @property
+    def site_codes(self):
+        if self._site_codes is None:
+            self._site_codes = self.cohort.get_sites()
+        return self._site_codes
+    
+    @property
+    def subject_ids(self):
+        if self._subject_ids is None:
+            # filter subject ids based on site codes
+            self._subject_ids = self.cohort.get_subject_ids(site_codes=self.site_codes, lesional_only=False)
+        return self._subject_ids
+
         
     def flatten(self, t):
         return [item for sublist in t for item in sublist]
