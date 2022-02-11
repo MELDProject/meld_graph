@@ -27,20 +27,24 @@ class MoNet(nn.Module):
         self.conv_layers = nn.Sequential(*conv_layers)
         self.fc = nn.Linear(self.layer_sizes[-1], 2)
         self.activation_function = nn.ReLU()
-        # TODO use icospheres
+        # TODO when changing aggregation of hemis, need to use different graph here 
+        # TODO for different coord systems, pass arguments to IcoSpheres here
+        # TODO ideally passed as params to IcoSpheres that then returns the correct graphs at the right levels
         self.icospheres = IcoSpheres()
-        #self.edge_indices = [edge_index_fn(level=1)[0]]
-        #self.edge_attrs = [edge_index_fn(level=1)[1]]
+        # push edges and edge vectors on gpu
+        #device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        #IcoShperes.to(device)
 
         # initialise
         self.reset_parameters()
 
+    def to(self, device, **kwargs):
+        super(MoNet, self).to(device, **kwargs)
+        self.icospheres.to(device)
+
     def reset_parameters(self):
         for layer in self.conv_layers:
             layer.reset_parameters()
-        
-        #nn.init.xavier_uniform_(self.fc, gain=nn.init.calculate_gain('relu'))
-        #nn.init.constant_(self.fc.bias, 0)
     
     def forward(self, data):
         x = data
@@ -50,27 +54,3 @@ class MoNet(nn.Module):
         # add final linear layer
         x = self.activation_function(self.fc(x))
         return nn.LogSoftmax(dim=1)(x)
-
-def dice_coeff(pred, target):
-    """This definition generalize to real valued pred and target vector.
-    This should be differentiable.
-    pred: tensor with first dimension as batch
-    target: tensor with first dimension as batch
-    """
-
-    smooth = 1.
-    epsilon = 10e-8
-
-    # have to use contiguous since they may from a torch.view op
-    iflat = pred.view(-1).contiguous()
-    tflat = target.view(-1).contiguous()
-    intersection = (iflat * tflat).sum()
-
-    A_sum = torch.sum(iflat * iflat)
-    B_sum = torch.sum(tflat * tflat)
-
-    dice = (2. * intersection + smooth) / (A_sum + B_sum + smooth)
-    dice = dice.mean(dim=0)
-    dice = torch.clamp(dice, 0, 1.0)
-
-    return  dice

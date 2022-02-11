@@ -30,18 +30,80 @@ def dice_coeff(pred, target):
 
     return  dice
 
+def precision_recall(pred, target):
+    tp = torch.sum(torch.logical_and((target==1), (pred==1)))
+    fp = torch.sum(torch.logical_and((target==0), (pred==1)))
+    fn = torch.sum(torch.logical_and((target==1), (pred==0)))
+    precision = tp/(tp+fp)
+    recall = tp/(tp+fn)
+    return precision, recall
+    
+
 class Trainer:
     def __init__(self, experiment):
         self.log = logging.getLogger(__name__)
         self.experiment = experiment
         self.params = self.experiment.network_parameters['training_parameters']
 
+    def train_epoch(self, data_loader, optimiser):
+        """
+        train for one epoch. Return loss and metrics
+        """
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        model = self.experiment.model
+        model.train()
+
+        # TODO also measure acc + dice
+        running_scores = {'loss':[], 'dice':[], 'precision':[], 'recall':[]}
+        for i, data in enumerate(data_loader):  
+            data = data.to(device)
+            model.train()
+            optimiser.zero_grad()
+            estimates = model(data.x)
+            labels = data.y.squeeze()
+            loss = torch.nn.NLLLoss()(estimates, labels)
+            loss.backward()
+            optimiser.step()
+            running_scores['loss'].append(loss.item())
+            # metrics
+            pred = torch.argmax(torch.exp(estimates), axis=1)
+            running_scores['dice'].append(dice_coeff(pred, labels).item())
+            precision, recall = precision_recall(pred, labels)
+            running_scores['precision'] = precision.item()
+            running_scores['recall'] = recall.item()
+        return {key: np.mean(val) for key, val in running_scores.items()}
+
+    def val_epoch(self, data_loader):
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        model = self.experiment.model
+        model.eval()
+        with torch.no_grad():
+            running_scores = {'loss':[], 'dice':[], 'precision':[], 'recall':[]}
+            for i, data in enumerate(data_loader):
+                data = data.to(device)
+                estimates = model(data.x)
+                labels = data.y.squeeze()
+                loss = torch.nn.NLLLoss()(estimates, labels)
+                running_scores['loss'].append(loss.item())
+                # metrics
+                pred = torch.argmax(torch.exp(estimates), axis=1)
+                running_scores['dice'].append(dice_coeff(pred, labels).item())
+                precision, recall = precision_recall(pred, labels)
+                running_scores['precision'] = precision.item()
+                running_scores['recall'] = recall.item()
+
+        model.train()
+        return {key: np.mean(val) for key, val in running_scores.items()}
+        
+
     def train(self):
-        # set up model
+        """
+        Train val loop with patience and best model saving
+        """
+        # set up model & put on correct device
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.experiment.load_model()
-        model = self.experiment.model
-        model.to(device)
+        self.experiment.model.to(device)
 
         # get data
         train_data_loader = torch_geometric.loader.DataLoader(
@@ -53,61 +115,35 @@ class Trainer:
             shuffle=False, batch_size=self.params['batch_size'])
 
         # set up training loop
-        optimiser = torch.optim.Adam(model.parameters(),lr=self.params['lr'])
+        optimiser = torch.optim.Adam(self.experiment.model.parameters(), lr=self.params['lr'])
     
-        validation_losses = []
-        train_losses = []
-    
+        scores = {'train':[], 'val':[]}
         best_loss = 100000
         patience = 0
         for epoch in range(self.params['num_epochs']):
-            running_losses = []
-            
-            for i, data in enumerate(train_data_loader):  
-                data = data.to(device)
-                model.train()
-                optimiser.zero_grad()
-                estimates = model(data.x)
-                labels = data.y.squeeze()
-                loss = torch.nn.NLLLoss()(estimates, labels)
-                loss.backward()
-                optimiser.step()
-                running_losses.append(loss.item())
-          
-            self.log.info('Epoch {} :: Train loss {:.3f}'.format(epoch,np.mean(running_losses)))
-            train_losses.append(np.mean(running_losses))
+            cur_scores = self.train_epoch(train_data_loader, optimiser)
+            log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items())
+            self.log.info(f'Epoch {epoch} :: Train {log_str}')
+            scores['train'].append(cur_scores)
         
             if epoch%1 ==0:
-                with torch.no_grad():
-                    running_losses  = []
-                    running_metrics = []
-                    for i, data in enumerate(val_data_loader):
-                        data = data.to(device)
-                        estimates = model(data.x)
-                        labels = data.y.squeeze()
-                        loss = torch.nn.NLLLoss()(estimates, labels)
-                        running_losses.append(loss.item())
-                        running_metrics.append(dice_coeff(torch.exp(estimates), labels))
-                            
-                    val_loss = np.mean(running_losses)
-                    val_dice = np.mean(running_metrics)
-                    validation_losses.append(val_loss)
-                    self.log.info('Val loss {:.3f}, val dice {:.3f}'.format(val_loss, val_dice))
-                    # TODO implement dice score
-                    # TODO fix logging 
-                        
-                    if val_loss < best_loss:
-                        best_loss = val_loss
-                        if self.experiment.experiment_path is not None:
-                            # TODO save in correct place?
-                            fname = os.path.join(EXPERIMENT_PATH, self.experiment.experiment_path, 'best_model.pt')
-                            torch.save(model.state_dict(), fname)
-                            self.log.info('saved_new_best')
-                        patience = 0
-                    else:
-                        patience+=1
-                    if patience >= self.params['max_patience']:
-                        break
-                    
-                    self.log.info('----------')
-
+                cur_scores = self.val_epoch(val_data_loader)
+                log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items())
+                self.log.info(f'Epoch {epoch} :: Val   {log_str}')
+                scores['val'].append(cur_scores)
+                
+                if cur_scores['loss'] < best_loss:
+                    best_loss = cur_scores['loss']
+                    if self.experiment.experiment_path is not None:
+                        # TODO save in correct place?
+                        fname = os.path.join(EXPERIMENT_PATH, self.experiment.experiment_path, 'best_model.pt')
+                        torch.save(self.experiment.model.state_dict(), fname)
+                        self.log.info('saved_new_best')
+                    patience = 0
+                else:
+                    patience+=1
+                if patience >= self.params['max_patience']:
+                    self.log.info(f'stopping early at epoch {epoch}, with patience {patience}')
+                    break
+        #print(scores)
+        # TODO store train/val loss and metrics in csv file
