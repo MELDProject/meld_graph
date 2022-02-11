@@ -14,6 +14,7 @@ On Ampere GPUs cuda 11.4 is enabled by default, for which no pytorch version is 
 - create an interactive GPU session
 `sintr -A CORE-WCHN-MELD-SL2-GPU -N1 -n1 -t 0:59:0 -p ampere --qos=INTR --gres=gpu:1`
 - make sure that cuda 11.1 is loaded: `module load cuda/11.1`
+- activate conda is activated `module load miniconda/3`
 - install the hpc environment
 `conda env create -f environment_hpc.yml`
 - install pytorch-geometric using pip:
