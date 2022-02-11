@@ -1,13 +1,15 @@
 import torch_geometric.data
 from meld_classifier.meld_cohort import MeldSubject
 from meld_classifier.dataset import load_combined_hemisphere_data
-from meld_classifier.data_preprocessing import Preprocess
+from meld_graph.data_preprocessing import Preprocess
 import numpy as np
 import torch
+import logging
 
 class GraphDataset(torch_geometric.data.Dataset):
     def __init__(self, subject_ids, cohort, params, transform=None, pre_transform=None, pre_filter=None):
         super().__init__(None, transform, pre_transform, pre_filter)
+        self.log = logging.getLogger(__name__)
         self.params = params
         self.subject_ids = subject_ids
         self.cohort = cohort
@@ -15,17 +17,16 @@ class GraphDataset(torch_geometric.data.Dataset):
         # preload data in memory, with all preprocessing done
         self.data_list = []
         prep = Preprocess(cohort=self.cohort)
+        self.log.info("Loading and preprocessing data")
         for subj_id in self.subject_ids:
-            features_left, lesion_left, features_right, lesion_right = prep.get_data_preprocessed(subject=subj_id, features=self.params['features'], 
-                params=self.params['preprocessing_params'])
+            features_left, features_right, lesion_left, lesion_right = prep.get_data_preprocessed(subject=subj_id, features=self.params['features'], 
+                params=self.params['preprocessing_parameters'])
             if self.params['combine_hemis'] == 'stack':
-                features = np.hstack([features_left, features_right])
-                lesion = np.hstack([lesion_left, lesion_right])
-                self.data_list.append((features, lesion))
+                features = np.vstack([features_left, features_right]).T
+                self.data_list.append((features, lesion_left))
 
-                features = np.hstack([features_right, features_left])
-                lesion = np.hstack([lesion_right, lesion_left])
-                self.data_list.append((features, lesion))
+                features = np.vstack([features_right, features_left]).T
+                self.data_list.append((features, lesion_right))
             else:
                 raise NotImplementedError
 
@@ -56,7 +57,7 @@ class GraphDataset(torch_geometric.data.Dataset):
         return 2*len(self.subject_ids)
     
     def get(self, idx):
-        print('dataset get idx ', idx)
+        #print('dataset get idx ', idx)
         features, labels = self.data_list[idx]
         return torch_geometric.data.Data(
             x=torch.tensor(features, dtype=torch.float), 
