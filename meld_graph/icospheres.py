@@ -1,4 +1,3 @@
-#ico class
 import os
 import numpy as np
 import nibabel as nb
@@ -8,6 +7,7 @@ from scipy import sparse
 import meld_classifier.mesh_tools as mt
 import torch
 from math import pi 
+
 
 
 
@@ -33,8 +33,8 @@ class IcoSpheres():
             self.load_icosphere(level = level)
             self.calculate_edges(level = level)
             self.calculate_neighbours(level = level)
-            self.polar_coords(level = level)
-            self.polar_edge_attrs(level = level)
+            self.spherical_coords(level = level)
+            self.pseudo_edge_attrs(level = level)
         return
         
     def load_icosphere(self,level=7):
@@ -57,40 +57,70 @@ class IcoSpheres():
         return
     
     def calculate_neighbours(self,level=7):
-        self.icospheres[level]['neighbours'] = np.array(mt.get_neighbours_from_tris(self.icospheres[level]['faces']),
+        self.icospheres[level]['neighbours'] = np.array(self.get_neighbours_from_tris(self.icospheres[level]['faces']),
                                                         dtype=object)
+        
         return
 
-    def polar_coords(self,level=7):
-        self.icospheres[level]['polar_coords'] = mt.spherical_np(self.icospheres[level]['coords'])[:,1:]
+    def spherical_coords(self,level=7):
+        self.icospheres[level]['spherical_coords'] = mt.spherical_np(self.icospheres[level]['coords'])[:,1:]
+        self.icospheres[level]['spherical_coords'][:,0] = self.icospheres[level]['spherical_coords'][:,0] - pi/2
         return
     
-    def polar_edge_attrs(self,level=7):
-        
+    def pseudo_edge_attrs(self,level=7):
+        """pseudo edge attributes, difference between latitude and longitude"""
         col = self.icospheres[level]['edges'][:,0]
         row = self.icospheres[level]['edges'][:,1]
-        pos = self.icospheres[level]['polar_coords']
-        cart = torch.Tensor(pos[col] - pos[row])
+        pos = self.icospheres[level]['spherical_coords']
+        pseudo = pos[col] - pos[row]
+        alpha = pseudo[:,1]
         
-        rho = torch.norm(cart, p=2, dim=-1).view(-1, 1)
+        tmp = (alpha == 0).nonzero()[0]
+        alpha[tmp] = 1e-15
+        tmp = (alpha < 0).nonzero()[0]
+        alpha[tmp] = np.pi + alpha[tmp]
 
-        theta = torch.atan2(cart[..., 1], cart[..., 0]).view(-1, 1)
-        theta = theta + (theta < 0).type_as(theta) * (2 * pi)
-
+        alpha = 2*np.pi + alpha
+        alpha = np.remainder(alpha, 2*np.pi)
+        pseudo[:,1]=alpha
         
-        rho = rho / rho.max() 
-        theta = theta / (2 * pi)
-
-        polar = torch.cat([rho, theta], dim=-1)
-        
-        self.icospheres[level]['edge_attr'] = polar
+        self.icospheres[level]['pseudo_edge_attr'] = torch.from_numpy(pseudo)
         self.icospheres[level]['edges'] = torch.from_numpy(self.icospheres[level]['edges'])
         return
+    
+   
+        
     #helper functions
     def get_edges(self,level=7):
         
         return self.icospheres[level]['edges']
     
-    def get_edge_vectors(self,level=7):
-        return self.icospheres[level]['edge_attr']
+    def get_edge_vectors(self,level=7,dist_dtype ='pseudo'):
+        if dist_dtype == 'pseudo':
+            return self.icospheres[level]['pseudo_edge_attr']
+        elif dist_dtype == 'exact':
+            return self.icospheres[level]['exact_edge_attr']
 
+    def get_neighbours_from_tris(self,tris):
+        """Get surface neighbours from tris
+        Input: tris
+        Returns Nested list. Each list corresponds
+        to the ordered neighbours for the given vertex"""
+        n_vert = np.max(tris) + 1
+        neighbours = [[] for i in range(n_vert)]
+        for tri in tris:
+            neighbours[tri[0]].extend([tri[1], tri[2]])
+            neighbours[tri[2]].extend([tri[0], tri[1]])
+            neighbours[tri[1]].extend([tri[2], tri[0]])
+        # Get unique neighbours
+        for k in range(len(neighbours)):
+            neighbours[k] = [k]+self.f7(neighbours[k])
+        return neighbours
+
+
+    def f7(self,seq):
+        """returns uniques but in order of original appearance.
+        Used to retain neighbour triangle relationship"""
+        seen = set()
+        seen_add = seen.add
+        return [x for x in seq if not (x in seen or seen_add(x))]
