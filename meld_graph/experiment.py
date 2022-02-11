@@ -82,14 +82,18 @@ class Experiment:
             self.log.info("model already exists. Specify force=True to force reloading and initialisation")
 
         # get number of features - depends on how hemis are combined
-        if self.data_parameters['combine_hemis'] == 'stack':
+        if self.data_parameters['combine_hemis'] is None:
+            num_features = len(self.get_features()[0])
+        elif self.data_parameters['combine_hemis'] == 'stack':
             num_features = len(self.get_features()[0])*2
         else:
             raise NotImplementedError(self.data_parameters['combine_hemis'])
         # build model using network_parameters
         network_type = self.network_parameters['network_type']
+        icosphere_params = self.data_parameters['icosphere_parameters']
+        icosphere_params['combine_hemis'] = self.data_parameters['combine_hemis']
         if network_type == 'MoNet':
-            self.model = meld_graph.models.MoNet(**self.network_parameters['model_parameters'], num_features=num_features)
+            self.model = meld_graph.models.MoNet(**self.network_parameters['model_parameters'], num_features=num_features, icosphere_params=icosphere_params)
         else:
             raise(NotImplementedError, network_type)
         

@@ -8,14 +8,13 @@ from scipy import sparse
 import meld_classifier.mesh_tools as mt
 import torch
 from math import pi 
-
-
+import logging
 
 
 #loads in all icosphere
 class IcoSpheres():
     """Class to define cohort-level parameters such as subject ids, mesh"""
-    def __init__(self, icosphere_path='../data/icospheres/', distance_type='exact'):
+    def __init__(self, icosphere_path='../data/icospheres/', distance_type='exact', **kwargs):
         """icosphere class
         icospheres at each level are stored in self.icospheres[1:7]
         distance_type = 'exact' or 'pseudo' 
@@ -29,12 +28,13 @@ class IcoSpheres():
         'edges': all edges
         'adj_mat': sparse adjacency matrix
         """
+        # TODO already gets combine_hemis as input, can use that to choose edges file
+        self.log = logging.getLogger(__name__)
         self.icosphere_path = icosphere_path
         self.icospheres={}
-        self.distance_type = 'exact'
+        self.distance_type = distance_type
+        self.log.info(f'Using coord type {self.distance_type}')
         self.load_all_levels()
-        
-        
         
     def load_all_levels(self):
         for level in np.arange(7)+1:

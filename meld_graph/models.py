@@ -6,7 +6,7 @@ import torch
 
 # define model
 class MoNet(nn.Module):
-    def __init__(self, num_features, layer_sizes, dim=2, kernel_size=3):
+    def __init__(self, num_features, layer_sizes, dim=2, kernel_size=3, icosphere_params={}):
         """
         dim: dim for GMMConv, dimension of coord representation - 2 or 3
         kernel_size: number of kernels (default 3)
@@ -27,16 +27,12 @@ class MoNet(nn.Module):
         self.conv_layers = nn.Sequential(*conv_layers)
         self.fc = nn.Linear(self.layer_sizes[-1], 2)
         self.activation_function = nn.ReLU()
-        # TODO when changing aggregation of hemis, need to use different graph here 
+        # TODO when changing aggregation of hemis, might need to use different graph here 
         # TODO for different coord systems, pass arguments to IcoSpheres here
         # TODO ideally passed as params to IcoSpheres that then returns the correct graphs at the right levels
-        self.icospheres = IcoSpheres()
-        # push edges and edge vectors on gpu
-        #device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        #IcoShperes.to(device)
-
+        self.icospheres = IcoSpheres(**icosphere_params)  # pseudo
         # initialise
-        self.reset_parameters()
+        #self.reset_parameters()
 
     def to(self, device, **kwargs):
         super(MoNet, self).to(device, **kwargs)
@@ -52,5 +48,6 @@ class MoNet(nn.Module):
             x = cl(x, self.icospheres.get_edges(level=7), self.icospheres.get_edge_vectors(level=7))
             x = self.activation_function(x)
         # add final linear layer
-        x = self.activation_function(self.fc(x))
-        return nn.LogSoftmax(dim=1)(x)
+        x = self.fc(x)
+        x = nn.LogSoftmax(dim=1)(x)
+        return x

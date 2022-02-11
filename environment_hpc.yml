@@ -11,6 +11,7 @@ dependencies:
   - cudatoolkit=11.1
   - pytest
   - jupyterlab
+  - pip
   - pip:
     - potpourri3d
 

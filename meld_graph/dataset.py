@@ -18,10 +18,14 @@ class GraphDataset(torch_geometric.data.Dataset):
         self.data_list = []
         prep = Preprocess(cohort=self.cohort)
         self.log.info("Loading and preprocessing data")
+        self.log.info(f"Combine hemis {self.params['combine_hemis']}")
         for subj_id in self.subject_ids:
             features_left, features_right, lesion_left, lesion_right = prep.get_data_preprocessed(subject=subj_id, features=self.params['features'], 
                 params=self.params['preprocessing_parameters'])
-            if self.params['combine_hemis'] == 'stack':
+            if self.params['combine_hemis'] is None:
+                self.data_list.append((features_left.T, lesion_left))
+                self.data_list.append((features_right.T, lesion_right))
+            elif self.params['combine_hemis'] == 'stack':
                 features = np.vstack([features_left, features_right]).T
                 self.data_list.append((features, lesion_left))
 
@@ -57,7 +61,7 @@ class GraphDataset(torch_geometric.data.Dataset):
         return 2*len(self.subject_ids)
     
     def get(self, idx):
-        print('dataset get idx ', idx)
+        #print('dataset get idx ', idx)
         features, labels = self.data_list[idx]
         return torch_geometric.data.Data(
             x=torch.tensor(features, dtype=torch.float), 

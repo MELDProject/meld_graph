@@ -1,36 +1,22 @@
 
-#import importlib
-import meld_graph
-import meld_graph.models
-import meld_graph.experiment
-import meld_graph.dataset
-#importlib.reload(meld_graph)
-#importlib.reload(meld_graph.models)
-#importlib.reload(meld_graph.dataset)
-#importlib.reload(meld_graph.experiment)
-
-import logging
-logging.basicConfig(level=logging.INFO)
-
-if __name__ == '__main__':
-
-    network_parameters = {
+network_parameters = {
     'network_type': 'MoNet',
     'model_parameters': {
         'layer_sizes': [30,30,30],
         'dim': 2, # pseudo-coord dim
+        'kernel_size': 3, # number of gaussian kernels
     },
     'training_parameters': {
-        "max_patience": 10,
-        "num_epochs": 200,
-        'lr': 1e-3,
+        "max_patience": 400,
+        "num_epochs": 800,
+        'lr': 1e-2,
         'loss': 'cross_entropy',
-        "batch_size": 4,
+        "batch_size": 1,
         "shuffle_each_epoch": True,
     }
-    }
+}
 
-    data_parameters = {
+data_parameters = {
     'hdf5_file_root': "{site_code}_{group}_featurematrix.hdf5",
     'site_codes': ['H4'],
     'scanners': ['15T', '3T'],
@@ -55,14 +41,8 @@ if __name__ == '__main__':
     "preprocessing_parameters": {
         "scaling": "scaling_params_GDL.json"
     },
-    "combine_hemis": "stack",  # "currently just stack is implemented"
-    }
-
-
-    exp = meld_graph.experiment.Experiment(network_parameters, data_parameters, save=False)
-    _ = exp.get_train_val_test_ids()
-    exp.data_parameters['train_ids'] = exp.data_parameters['train_ids'][:10]
-    exp.data_parameters['val_ids'] = exp.data_parameters['train_ids'][:10]
-    ds = meld_graph.dataset.GraphDataset.from_experiment(exp, mode='train')
-
-    exp.train()
+    "icosphere_parameters": {
+        "distance_type": "exact", #"exact",  # exact or pseudo
+    },
+    "combine_hemis": None,  # None, stack, TODO: combine with graph
+}

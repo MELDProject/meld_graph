@@ -6,34 +6,35 @@ from meld_graph.dataset import GraphDataset
 import numpy as np
 from meld_graph.paths import EXPERIMENT_PATH
 
-def dice_coeff(pred, target):
+
+def dice_coeff(pred, target, for_class=1):
     """This definition generalize to real valued pred and target vector.
     This should be differentiable.
     pred: tensor with first dimension as batch
     target: tensor with first dimension as batch
     """
-
-    smooth = 1.
-    epsilon = 10e-8
-
+    smooth = 1.  # TODO - need this?
     # have to use contiguous since they may from a torch.view op
     iflat = pred.view(-1).contiguous()
     tflat = target.view(-1).contiguous()
-    intersection = (iflat * tflat).sum()
+    if for_class == 0:  # reverse labels of pred and target 
+        iflat = torch.logical_not(iflat)
+        tflat = torch.logical_not(tflat)
 
-    A_sum = torch.sum(iflat * iflat)
-    B_sum = torch.sum(tflat * tflat)
+    intersection = (iflat * tflat).sum()
+    A_sum = torch.sum(iflat)
+    B_sum = torch.sum(tflat)
 
     dice = (2. * intersection + smooth) / (A_sum + B_sum + smooth)
     dice = dice.mean(dim=0)
     dice = torch.clamp(dice, 0, 1.0)
-
     return  dice
 
-def precision_recall(pred, target):
+def tp_fp_fn(pred, target):
     tp = torch.sum(torch.logical_and((target==1), (pred==1)))
     fp = torch.sum(torch.logical_and((target==0), (pred==1)))
     fn = torch.sum(torch.logical_and((target==1), (pred==0)))
+    return tp, fp, fn
     precision = tp/(tp+fp)
     recall = tp/(tp+fn)
     return precision, recall
@@ -54,12 +55,18 @@ class Trainer:
         model.train()
 
         # TODO also measure acc + dice
-        running_scores = {'loss':[], 'dice':[], 'precision':[], 'recall':[]}
+        running_scores = {'loss':[], 'dice_lesion':[], 'dice_nonlesion':[]}
+        tp, fp, fn = 0,0,0
         for i, data in enumerate(data_loader):  
             data = data.to(device)
             model.train()
             optimiser.zero_grad()
+            #fake_x = torch.vstack([data.y for _ in range(22)]).t().type(torch.float)
+            #print(data.y.shape)
+            #print(fake_x.shape)
+            #print(data.x.shape)
             estimates = model(data.x)
+            #estimates = model(data.x)
             labels = data.y.squeeze()
             loss = torch.nn.NLLLoss()(estimates, labels)
             loss.backward()
@@ -67,33 +74,51 @@ class Trainer:
             running_scores['loss'].append(loss.item())
             # metrics
             pred = torch.argmax(torch.exp(estimates), axis=1)
-            running_scores['dice'].append(dice_coeff(pred, labels).item())
-            precision, recall = precision_recall(pred, labels)
-            running_scores['precision'] = precision.item()
-            running_scores['recall'] = recall.item()
-        return {key: np.mean(val) for key, val in running_scores.items()}
+            # dice
+            running_scores['dice_lesion'].append(dice_coeff(pred, labels).item())
+            running_scores['dice_nonlesion'].append(dice_coeff(pred, labels, for_class=0).item())
+            # tp, fp, fn for precision/recall
+            cur_tp, cur_fp, cur_fn = tp_fp_fn(pred, labels)
+            tp+= cur_tp
+            fp+= cur_fp
+            fn+= cur_fn
+        precision = tp/(tp+fp)
+        recall = tp/(tp+fn)
+        scores = {key: np.mean(val) for key, val in running_scores.items()} 
+        scores.update({'precision': precision.item(), 'recall': recall.item(), 'tp': tp.item(), 'fp': fp.item(), 'fn': fn.item()})
+        return scores
 
     def val_epoch(self, data_loader):
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         model = self.experiment.model
         model.eval()
+        tp, fp, fn = 0,0,0
         with torch.no_grad():
-            running_scores = {'loss':[], 'dice':[], 'precision':[], 'recall':[]}
+            running_scores = {'loss':[], 'dice_lesion':[], 'dice_nonlesion':[]}
             for i, data in enumerate(data_loader):
                 data = data.to(device)
+                #fake_x = torch.vstack([data.y for _ in range(22)]).t().type(torch.float)
                 estimates = model(data.x)
                 labels = data.y.squeeze()
                 loss = torch.nn.NLLLoss()(estimates, labels)
                 running_scores['loss'].append(loss.item())
                 # metrics
                 pred = torch.argmax(torch.exp(estimates), axis=1)
-                running_scores['dice'].append(dice_coeff(pred, labels).item())
-                precision, recall = precision_recall(pred, labels)
-                running_scores['precision'] = precision.item()
-                running_scores['recall'] = recall.item()
-
+                # dice
+                running_scores['dice_lesion'].append(dice_coeff(pred, labels).item())
+                running_scores['dice_nonlesion'].append(dice_coeff(pred, labels, for_class=0).item())
+                # tp, fp, fn for precision/recall
+                cur_tp, cur_fp, cur_fn = tp_fp_fn(pred, labels)
+                tp+= cur_tp
+                fp+= cur_fp
+                fn+= cur_fn
+        precision = tp/(tp+fp)
+        recall = tp/(tp+fn)
+        scores = {key: np.mean(val) for key, val in running_scores.items()}
+        scores.update({'precision': precision.item(), 'recall': recall.item(), 'tp': tp.item(), 'fp': fp.item(), 'fn': fn.item()})
+        # set model back to training mode
         model.train()
-        return {key: np.mean(val) for key, val in running_scores.items()}
+        return scores
         
 
     def train(self):
@@ -145,5 +170,4 @@ class Trainer:
                 if patience >= self.params['max_patience']:
                     self.log.info(f'stopping early at epoch {epoch}, with patience {patience}')
                     break
-        #print(scores)
         # TODO store train/val loss and metrics in csv file
