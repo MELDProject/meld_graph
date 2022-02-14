@@ -188,7 +188,7 @@ class IcoSpheres():
         else:            
             edges_attrs = self.calculate_exact_edge_attrs(level=level)
             np.save(file_path,edges_attrs)
-        self.icospheres[level]['edges'] = edges_attrs[:,:2]
+        self.icospheres[level]['edges'] = edges_attrs[:,:2].astype(int)
         self.icospheres[level]['exact_edge_attr'] = edges_attrs[:,2:]
         # add tensors needed for model
         self.icospheres[level]['t_edges'] = torch.tensor(self.icospheres[level]['edges'], dtype=torch.long).t().contiguous()
@@ -204,3 +204,34 @@ class IcoSpheres():
             all_edge_attrs.append(edge_attrs)
         all_edge_attrs = np.vstack(all_edge_attrs)
         return all_edge_attrs
+
+    
+    def get_neighbours(self,level=7):
+        """return 7*n_vertex array of neighbours, with self neighbours 
+        and repeated self index if only 5 neighbours"""
+        if 't_neighbours'  not in self.icospheres[level].keys():
+            self.icospheres[level]['t_neighbours'] = np.tile(np.arange(len(self.icospheres[level]['coords'])),(7,1)).T
+            for ni,n in enumerate(self.icospheres[level]['neighbours']):
+                self.icospheres[level]['t_neighbours'][ni,-len(n):]=n
+            self.icospheres[level]['t_neighbours'] = torch.tensor(self.icospheres[level]['t_neighbours'],dtype=torch.long)
+        return self.icospheres[level]['t_neighbours']
+    
+    def get_upsample(self,target_level=7):
+        """provide edges new vertices in mesh upsampled to the target level
+        returns array (len(new_level)-len(old_level),2)
+        with 2 indices of vertices old level for the new vertex in the new level.
+        Row zero describes the vertices for the first new_level vertex
+        """
+        if target_level==1:
+            print("Trying to upsample to the lowest resolution mesh.",
+                  "A coarser version of this mesh doesn't exist.",
+                 "Double check you're using target_level correctly")
+            return None
+        if 't_upsample' not in self.icospheres[target_level].keys():
+            n_vert_down = len(self.icospheres[target_level-1]['coords'])
+            n_vert_up = len(self.icospheres[target_level]['coords'])
+            neighbours_to_explore = self.get_neighbours(level=target_level)[n_vert_down:]
+            neighbours_to_explore = neighbours_to_explore[neighbours_to_explore<n_vert_down]
+            self.icospheres[target_level]['t_upsample'] = neighbours_to_explore.reshape(n_vert_up-n_vert_down,2)
+        return self.icospheres[target_level]['t_upsample']
+        
