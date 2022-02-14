@@ -94,6 +94,8 @@ class Experiment:
         icosphere_params['combine_hemis'] = self.data_parameters['combine_hemis']
         if network_type == 'MoNet':
             self.model = meld_graph.models.MoNet(**self.network_parameters['model_parameters'], num_features=num_features, icosphere_params=icosphere_params)
+        elif network_type == 'MoNetUnet':
+            self.model = meld_graph.models.MoNetUnet(**self.network_parameters['model_parameters'], num_features=num_features, icosphere_params=icosphere_params)
         else:
             raise(NotImplementedError, network_type)
         
