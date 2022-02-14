@@ -126,7 +126,7 @@ class MoNetUnet(nn.Module):
         self.fc = nn.Linear(in_size, 2)
 
     def to(self, device, **kwargs):
-        super(MoNet, self).to(device, **kwargs)
+        super(MoNetUnet, self).to(device, **kwargs)
         self.icospheres.to(device)
         self.device = device
     

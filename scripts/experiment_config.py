@@ -1,9 +1,9 @@
 
 network_parameters = {
-    'network_type': 'MoNet',
+    'network_type': 'MoNetUnet',
     'model_parameters': {
-        'layer_sizes': [30,30,30],
-        'dim': 2, # pseudo-coord dim
+        'layer_sizes': [[32],[32],[64],[64],[128],[128],[256]],
+        'dim': 2, # coord dim
         'kernel_size': 3, # number of gaussian kernels
     },
     'training_parameters': {
@@ -22,7 +22,7 @@ network_parameters = {
 data_parameters = {
     'hdf5_file_root': "{site_code}_{group}_featurematrix.hdf5",
     'site_codes': ['H4'],
-    'scanners': [ '3T'],
+    'scanners': ['3T'],
     'dataset': 'MELD_dataset_V6.csv',
     'group': 'both',
     "features_to_exclude": [],
@@ -47,5 +47,5 @@ data_parameters = {
     "icosphere_parameters": {
         "distance_type": "exact", #"exact",  # exact or pseudo
     },
-    "combine_hemis": None,  # None, stack, TODO: combine with graph
+    "combine_hemis": None,  # None, "stack", TODO: combine with graph
 }
