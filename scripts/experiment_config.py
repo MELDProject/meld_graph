@@ -13,7 +13,9 @@ network_parameters = {
         'loss': 'cross_entropy',
         "batch_size": 1,
         "shuffle_each_epoch": True,
-    }
+    },
+    # experiment name. If none, experiment is not saved TODO implement
+    'name': None,   #"date": datetime.datetime.now().strftime("%y-%m-%d"),
 }
 
 data_parameters = {
