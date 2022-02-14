@@ -14,6 +14,7 @@ On Ampere GPUs cuda 11.4 is enabled by default, for which no pytorch version is 
 - create an interactive GPU session
 `sintr -A CORE-WCHN-MELD-SL2-GPU -N1 -n1 -t 0:59:0 -p ampere --qos=INTR --gres=gpu:1`
 - make sure that cuda 11.1 is loaded: `module load cuda/11.1`
+- activate conda is activated `module load miniconda/3`
 - install the hpc environment
 `conda env create -f environment_hpc.yml`
 - install pytorch-geometric using pip:
@@ -23,7 +24,7 @@ On Ampere GPUs cuda 11.4 is enabled by default, for which no pytorch version is 
     pip install torch-geometric
     ```
 - install meld classifier and meld graph with `pip install -e .` in the respective directories.
-- test if pytorch works with `python -c "import torch; torch.cuda.get_device_name(0)"` -> should return a GPU name, and no other warnings/errors
+- test if pytorch works with `python -c "import torch; print(torch.cuda.get_device_name(0))"` -> should return a GPU name, and no other warnings/errors
 - test if everything works by running `python scripts/test_model.py`
 
 
