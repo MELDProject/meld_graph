@@ -30,15 +30,28 @@ def dice_coeff(pred, target, for_class=1):
     dice = torch.clamp(dice, 0, 1.0)
     return  dice
 
+def dice_loss(pred,target):
+    dce=0
+    dce += dice_coeff(torch.argmax(pred,dim=1),target,for_class=1)
+    dce += dice_coeff(torch.argmin(pred,dim=1),target,for_class=0)
+    return - dce
+
 def tp_fp_fn(pred, target):
     tp = torch.sum(torch.logical_and((target==1), (pred==1)))
     fp = torch.sum(torch.logical_and((target==0), (pred==1)))
     fn = torch.sum(torch.logical_and((target==1), (pred==0)))
     return tp, fp, fn
-    precision = tp/(tp+fp)
-    recall = tp/(tp+fn)
-    return precision, recall
     
+def calculate_loss(loss_weight_dictionary,estimates,labels):
+   """ loss_dictionary= {'dice':weight,
+                        'cross_entropy':weight
+                          'other_losses':weights}"""
+   loss_functions = {'dice': dice_loss,
+                      'cross_entropy': torch.nn.NLLLoss()}
+   total_loss = 0
+   for loss_def in loss_weight_dictionary.keys():
+       total_loss += loss_weight_dictionary[loss_def] * loss_functions[loss_def](estimates,labels)
+   return total_loss
 
 class Trainer:
     def __init__(self, experiment):
@@ -68,7 +81,7 @@ class Trainer:
             estimates = model(data.x)
             #estimates = model(data.x)
             labels = data.y.squeeze()
-            loss = torch.nn.NLLLoss()(estimates, labels)
+            loss = calculate_loss(self.params['loss_dictionary'],estimates, labels)
             loss.backward()
             optimiser.step()
             running_scores['loss'].append(loss.item())
@@ -100,7 +113,7 @@ class Trainer:
                 #fake_x = torch.vstack([data.y for _ in range(22)]).t().type(torch.float)
                 estimates = model(data.x)
                 labels = data.y.squeeze()
-                loss = torch.nn.NLLLoss()(estimates, labels)
+                loss = calculate_loss(self.params['loss_dictionary'],estimates, labels)
                 running_scores['loss'].append(loss.item())
                 # metrics
                 pred = torch.argmax(torch.exp(estimates), axis=1)

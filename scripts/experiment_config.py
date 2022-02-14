@@ -10,7 +10,8 @@ network_parameters = {
         "max_patience": 400,
         "num_epochs": 800,
         'lr': 1e-2,
-        'loss': 'cross_entropy',
+        'loss_dictionary': {'cross_entropy':0.5,
+                       'dice':0.5},
         "batch_size": 1,
         "shuffle_each_epoch": True,
     },
@@ -21,7 +22,7 @@ network_parameters = {
 data_parameters = {
     'hdf5_file_root': "{site_code}_{group}_featurematrix.hdf5",
     'site_codes': ['H4'],
-    'scanners': ['15T', '3T'],
+    'scanners': [ '3T'],
     'dataset': 'MELD_dataset_V6.csv',
     'group': 'both',
     "features_to_exclude": [],

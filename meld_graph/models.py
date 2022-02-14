@@ -51,3 +51,4 @@ class MoNet(nn.Module):
         x = self.fc(x)
         x = nn.LogSoftmax(dim=1)(x)
         return x
+
