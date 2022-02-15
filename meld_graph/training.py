@@ -7,6 +7,7 @@ import numpy as np
 from meld_graph.paths import EXPERIMENT_PATH
 
 
+
 def dice_coeff(pred, target, for_class=1):
     """This definition generalize to real valued pred and target vector.
     This should be differentiable.
@@ -17,24 +18,23 @@ def dice_coeff(pred, target, for_class=1):
     # have to use contiguous since they may from a torch.view op
     iflat = pred.view(-1).contiguous()
     tflat = target.view(-1).contiguous()
-    if for_class == 0:  # reverse labels of pred and target 
-        iflat = torch.logical_not(iflat)
-        tflat = torch.logical_not(tflat)
-
+    #if for_class == 0:  # reverse labels of pred and target 
+    #    iflat = torch.logical_not(iflat)
+    #    tflat = torch.logical_not(tflat)
+    
     intersection = (iflat * tflat).sum()
-    A_sum = torch.sum(iflat)
-    B_sum = torch.sum(tflat)
+    A_sum = torch.sum(iflat * iflat )
+    B_sum = torch.sum(tflat * tflat )
 
     dice = (2. * intersection + smooth) / (A_sum + B_sum + smooth)
+#    print(dice.shape, dice)
     dice = dice.mean(dim=0)
     dice = torch.clamp(dice, 0, 1.0)
     return  dice
 
 def dice_loss(pred,target):
-    dce=0
-    dce += dice_coeff(torch.argmax(pred,dim=1),target,for_class=1)
-    dce += dice_coeff(torch.argmin(pred,dim=1),target,for_class=0)
-    return - dce
+    dce = dice_coeff(pred,torch.nn.functional.one_hot(target,num_classes=2))
+    return 1 - dce
 
 def tp_fp_fn(pred, target):
     tp = torch.sum(torch.logical_and((target==1), (pred==1)))
