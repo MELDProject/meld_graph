@@ -46,6 +46,40 @@ class CrossEntropyLoss(torch.nn.Module):
         # inputs are log softmax, pass directly to NLLLoss
         return self.loss(inputs, targets)
 
+class FocalLoss(torch.nn.Module):
+    def __init__(self, params, size_average=True):
+        super(FocalLoss, self).__init__()
+        try:
+            self.gamma = params['focal_loss']['gamma']
+        except:
+            self.gamma = 0
+        try:
+            self.alpha = params['focal_loss']['alpha']
+        except:
+            self.alpha=None
+            if isinstance(self.alpha,(float,int)): self.alpha = torch.Tensor([self.alpha,1-self.alpha])
+        self.size_average = size_average
+
+    def forward(self, inputs, target, gamma=0, alpha=None,):
+        target = target.view(-1,1)
+#         logpt = torch.nn.functional.log_softmax(inputs)
+        logpt = inputs
+        logpt = logpt.gather(1,target)
+        logpt = logpt.view(-1)
+        pt = logpt.data.exp()
+
+        if self.alpha is not None:
+            if self.alpha.type()!=inputs.data.type():
+                self.alpha = self.alpha.type_as(inputs.data)
+            at = self.alpha.gather(0,target.data.view(-1))
+            logpt = logpt * at
+
+        loss = -1 * (1-pt)**self.gamma * logpt
+        if self.size_average: 
+            return loss.mean()
+        else: 
+            return loss.sum()
+
 
 def tp_fp_fn(pred, target):
     tp = torch.sum(torch.logical_and((target==1), (pred==1)))
@@ -57,7 +91,8 @@ def calculate_loss(loss_weight_dictionary,estimates,labels, device=None):
     """ 
     calculate loss. Can combine losses with weights defined in loss_weight_dictionary
     loss_dictionary= {'dice':weight,
-                    'cross_entropy':weight
+                    'cross_entropy':weight,
+                    'focal_loss':weight,
                     'other_losses':weights}
 
     NOTE estimates are the logSoftmax output of the model. For some losses, applying torch.exp is necessary!
@@ -65,11 +100,12 @@ def calculate_loss(loss_weight_dictionary,estimates,labels, device=None):
     # TODO could use class_weights for dice loss (but not using dice loss atm)
     loss_functions = {
         'dice': partial(DiceLoss(), device=device),
-        'cross_entropy': CrossEntropyLoss()
-    }
+        'cross_entropy': CrossEntropyLoss(),
+        'focal_loss': FocalLoss(loss_weight_dictionary),
+                       }
     total_loss = 0
     for loss_def in loss_weight_dictionary.keys():
-        total_loss += loss_weight_dictionary[loss_def] * loss_functions[loss_def](estimates,labels)
+        total_loss += loss_weight_dictionary[loss_def]['weight'] * loss_functions[loss_def](estimates,labels)
     return total_loss
 
 class Trainer:
