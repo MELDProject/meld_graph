@@ -26,6 +26,7 @@ def dice_coeff(pred, target):
     dice = (2. * intersection + smooth) / (A_sum + B_sum + smooth)
     return  dice
 
+
 class DiceLoss(torch.nn.Module):
     def __init__(self, weight=None, size_average=True):
         super(DiceLoss, self).__init__()

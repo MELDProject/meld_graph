@@ -1,9 +1,20 @@
-from torch_geometric.nn import GMMConv
+import torch_geometric
 import torch.nn as nn
 
 from meld_graph.icospheres import IcoSpheres
 import torch
+from meld_graph.spiralconv import SpiralConv
 
+class GMMConv(nn.Module):
+    def __init__(self, in_channels, out_channels, dim, kernel_size, edges, edge_vectors):
+        super(GMMConv, self).__init__()
+        self.layer = torch_geometric.nn.GMMConv(in_channels, out_channels, dim=dim, kernel_size=kernel_size)
+        self.edges = edges
+        self.edge_vectors = edge_vectors
+
+    def forward(self, x, device):
+        return self.layer(x, self.edges, self.edge_vectors)
+        
 # define model
 class MoNet(nn.Module):
     def __init__(self, num_features, layer_sizes, dim=2, kernel_size=3, icosphere_params={}):
@@ -54,27 +65,34 @@ class MoNet(nn.Module):
         x = nn.LogSoftmax(dim=1)(x)
         return x
 
+
 class MoNetUnet(nn.Module):
-    def __init__(self, num_features, layer_sizes, dim=2, kernel_size=3, icosphere_params={}):
+    def __init__(self, num_features, layer_sizes, dim=2, kernel_size=3, icosphere_params={}, conv_type='GMMConv', spiral_len=10):
         """
         Unet model
-        dim: dim for GMMConv, dimension of coord representation - 2 or 3
-        kernel_size: number of kernels (default 3)
+        dim: dim for GMMConv, dimension of coord representation - 2 or 3 (for GMMConv)
+        kernel_size: number of kernels (default 3) (for GMMConv)
         layer_sizes: (list of lists) per block, output size of each conv layer. This structure is mirrored in the decoder. a final linear layer for going to 2 (binary classification) is added
         num_features: number of input features (input size)
         icosphere_params: params passes to IcoShperes for edges, coords, and neighbours
+        conv_type: "GMMConv" or "SpiralConv"
+        spiral_len: number of neighbors included in each convolution (for SpiralConv) TODO implement dilation as well
         
         Model outputs log softmax scores. Need to call torch.exp to get probabilities
         """
         super(MoNetUnet, self).__init__()
-        self.device = None
+        #self.device = None
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.num_features = num_features
-
+        self.conv_type = conv_type
         self.activation_function = nn.ReLU()
         # TODO when changing aggregation of hemis, might need to use different graph here 
         # TODO for different coord systems, pass arguments to IcoSpheres here
         # TODO ideally passed as params to IcoSpheres that then returns the correct graphs at the right levels
         self.icospheres = IcoSpheres(**icosphere_params)  # pseudo
+
+        # TODO to device call necessary here because icoshperes need to be on GPU during conv layer init
+        self.icospheres.to(self.device)
         
         # set up conv + pooling layers - encoder
         encoder_conv_layers = []
@@ -84,13 +102,26 @@ class MoNetUnet(nn.Module):
         num_blocks = len(layer_sizes)
         assert(num_blocks <= 7)  # cannot pool more levels than icospheres
         in_size = self.num_features
+        level = 7
         for i in range(num_blocks):
             block = []
-            print('encoder block', i)
+            print('encoder block', i, 'at level', level)
             for j,out_size in enumerate(layer_sizes[i]):
                 # create conv layers
                 print('conv', in_size, out_size)
-                block.append(GMMConv(in_size, out_size, dim=dim, kernel_size=kernel_size))
+                if self.conv_type == 'GMMConv':
+                    edges = self.icospheres.get_edges(level=level)
+                    edge_vectors = self.icospheres.get_edge_vectors(level=level)
+                    cl = GMMConv(in_size, out_size, dim=dim, kernel_size=kernel_size, edges=edges, edge_vectors=edge_vectors)
+                elif self.conv_type == 'SpiralConv':
+                    indices = self.icospheres.get_spirals(level=level)
+                    # TODO several spiral_len? one per block? 
+                    # TODO implement dilations
+                    indices = indices[:,:spiral_len]
+                    cl = SpiralConv(in_size, out_size, indices=indices)
+                else:
+                    raise NotImplementedError()
+                block.append(cl)
                 in_size = out_size
             print('skip features for block', i, out_size)
             num_features_on_skip.append(out_size)
@@ -98,7 +129,9 @@ class MoNetUnet(nn.Module):
             # only pool if not in last block
             if i < num_blocks-1:
                 print('pool for block', i)
-                pool_layers.append(HexPool())
+                level -= 1
+                neigh_indices = self.icospheres.get_neighbours(level=level)
+                pool_layers.append(HexPool(neigh_indices=neigh_indices))
         self.encoder_conv_layers = nn.ModuleList(encoder_conv_layers)
         self.pool_layers = nn.ModuleList(pool_layers)
 
@@ -107,9 +140,12 @@ class MoNetUnet(nn.Module):
         decoder_conv_layers = []
         unpool_layers = []
         for i in range(num_blocks-1)[::-1]:
-            print('decoder block', i)
-            print('adding unpool')
-            unpool_layers.append(HexUnpool())
+            level += 1
+            print('decoder block', i, 'at level', level)
+            print('adding unpool to level', level)
+            num = len(self.icospheres.get_neighbours(level=level))
+            upsample = self.icospheres.get_upsample(target_level=level)
+            unpool_layers.append(HexUnpool(upsample_indices=upsample, target_size=num))
             block = []
             for j,out_size in enumerate(layer_sizes[i][::-1]):
                 if j == 0:
@@ -117,7 +153,17 @@ class MoNetUnet(nn.Module):
                     print('skip features', num_features_on_skip[i])
                 
                 print('adding conv ', in_size, out_size)
-                block.append(GMMConv(in_size, out_size, dim=dim, kernel_size=kernel_size))
+                if self.conv_type == 'GMMConv':
+                    edges = self.icospheres.get_edges(level=level)
+                    edge_vectors = self.icospheres.get_edge_vectors(level=level)
+                    cl = GMMConv(in_size, out_size, dim=dim, kernel_size=kernel_size, edges=edges, edge_vectors=edge_vectors)
+                elif self.conv_type == 'SpiralConv':
+                    indices = self.icospheres.get_spirals(level=level)
+                    indices = indices[:,:spiral_len]
+                    cl = SpiralConv(in_size, out_size, indices=indices)
+                else:
+                    raise NotImplementedError()
+                block.append(cl)
                 in_size = out_size
             decoder_conv_layers.append(nn.ModuleList(block))
         self.decoder_conv_layers = nn.ModuleList(decoder_conv_layers)
@@ -127,42 +173,27 @@ class MoNetUnet(nn.Module):
 
     def to(self, device, **kwargs):
         super(MoNetUnet, self).to(device, **kwargs)
-        self.icospheres.to(device)
+        #self.icospheres.to(device)
         self.device = device
     
     def forward(self, data):
         x = data
-        level = 7
         skip_connections = []
         for i, block in enumerate(self.encoder_conv_layers):
-            #print('block', i)
             for cl in block:
-                #print('conv at level', level)
-                # apply cl
-                x = cl(x, self.icospheres.get_edges(level=level), self.icospheres.get_edge_vectors(level=level))
+                x = cl(x, device=self.device)
                 x = self.activation_function(x)
             skip_connections.append(x)
             # apply pool except on last block
             if i < len(self.encoder_conv_layers)-1:
-                level -= 1
-                #print('pool to level', level)
-                neigh = self.icospheres.get_neighbours(level=level)
-                x = self.pool_layers[i](x, neigh_indices=neigh)
+                x = self.pool_layers[i](x)
                 
         for i, block in enumerate(self.decoder_conv_layers):
             skip_i = len(self.decoder_conv_layers)-1-i
-            #print('decoder block', i, 'skip_i', skip_i)
-            level += 1
-            #print('unpool to level', level)
-            num = len(self.icospheres.get_neighbours(level=level))
-            upsample = self.icospheres.get_upsample(target_level=level)
-            x = self.unpool_layers[i](x, upsample_indices=upsample, target_size=num, device=self.device)
-
+            x = self.unpool_layers[i](x, device=self.device)
             x = torch.cat([x, skip_connections[skip_i]], dim=1)
             for cl in block:
-                # apply conv layers
-                #print('conv at level', level)
-                x = cl(x, self.icospheres.get_edges(level=level), self.icospheres.get_edge_vectors(level=level))
+                x = cl(x, device=self.device)
                 x = self.activation_function(x)
 
         # add final linear layer
@@ -171,17 +202,24 @@ class MoNetUnet(nn.Module):
         return x
 
 class HexPool(nn.Module):
+    def __init__(self, neigh_indices):
+        super(HexPool, self).__init__()
+        self.neigh_indices = neigh_indices
         
-    def forward(self, x, neigh_indices):
-        x = x[:len(neigh_indices)][neigh_indices]
+    def forward(self, x):
+        x = x[:len(self.neigh_indices)][self.neigh_indices]
         x = torch.max(x, dim=1)[0]
         return x
 
 class HexUnpool(nn.Module):
+    def __init__(self, upsample_indices, target_size):
+        super(HexUnpool, self).__init__()
+        self.upsample_indices = upsample_indices
+        self.target_size = target_size
         
-    def forward(self, x, upsample_indices, target_size, device):
+    def forward(self, x, device):
         limit = int(x.shape[0])
-        new_x = torch.zeros(target_size,x.shape[1]).to(device)
+        new_x = torch.zeros(self.target_size,x.shape[1]).to(device)
         new_x[:limit] = x
-        new_x[limit:] = torch.mean(x[upsample_indices],dim=1)
+        new_x[limit:] = torch.mean(x[self.upsample_indices],dim=1)
         return new_x
