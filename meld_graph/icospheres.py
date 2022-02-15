@@ -14,7 +14,7 @@ import logging
 #loads in all icosphere
 class IcoSpheres():
     """Class to define cohort-level parameters such as subject ids, mesh"""
-    def __init__(self, icosphere_path='../data/icospheres/', distance_type=None,conv_type='SpiralConv', **kwargs):
+    def __init__(self, icosphere_path='../data/icospheres/', distance_type='pseudo',conv_type='GMMConv', **kwargs):
         """icosphere class
         icospheres at each level are stored in self.icospheres[1:7]
         distance_type = 'exact' or 'pseudo' 
