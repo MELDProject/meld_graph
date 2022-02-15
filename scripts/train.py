@@ -33,8 +33,8 @@ if __name__ == '__main__':
     # create experiment
     exp = meld_graph.experiment.Experiment(config.network_parameters, config.data_parameters, save=False)
     # TODO: manual selection of train/val ids for testing
-    #_ = exp.get_train_val_test_ids()
-    #exp.data_parameters['train_ids'] = ['MELD_H4_3T_FCD_0011'] #, 'MELD_H4_3T_FCD_0011'] #exp.data_parameters['train_ids'][:10]
-    #exp.data_parameters['val_ids'] = ['MELD_H4_3T_FCD_0011'] #, 'MELD_H4_3T_FCD_0011'] #exp.data_parameters['train_ids'][:10]
+    _ = exp.get_train_val_test_ids()
+    exp.data_parameters['train_ids'] = ['MELD_H4_3T_FCD_0011', 'MELD_H4_3T_FCD_0011'] #exp.data_parameters['train_ids'][:10]
+    exp.data_parameters['val_ids'] = ['MELD_H4_3T_FCD_0011', 'MELD_H4_3T_FCD_0011'] #exp.data_parameters['train_ids'][:10]
     # train the model
     exp.train()

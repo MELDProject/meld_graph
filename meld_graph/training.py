@@ -5,36 +5,44 @@ import torch_geometric.data
 from meld_graph.dataset import GraphDataset
 import numpy as np
 from meld_graph.paths import EXPERIMENT_PATH
+from functools import partial
 
 
-
-def dice_coeff(pred, target, for_class=1):
+def dice_coeff(pred, target):
     """This definition generalize to real valued pred and target vector.
     This should be differentiable.
     pred: tensor with first dimension as batch
     target: tensor with first dimension as batch
     """
-    smooth = 1.  # TODO - need this?
-    # have to use contiguous since they may from a torch.view op
-    iflat = pred.view(-1).contiguous()
-    tflat = target.view(-1).contiguous()
-    #if for_class == 0:  # reverse labels of pred and target 
-    #    iflat = torch.logical_not(iflat)
-    #    tflat = torch.logical_not(tflat)
-    
-    intersection = (iflat * tflat).sum()
-    A_sum = torch.sum(iflat * iflat )
-    B_sum = torch.sum(tflat * tflat )
+    target_hot = torch.nn.functional.one_hot(target,num_classes=2)
+    smooth = 1. 
+    iflat = torch.exp(pred).contiguous()
+    tflat = target_hot.contiguous()
+    intersection = (iflat * tflat).sum(dim=0)
+    A_sum = torch.sum(iflat * iflat ,dim=0)
+    B_sum = torch.sum(tflat * tflat ,dim=0)
 
     dice = (2. * intersection + smooth) / (A_sum + B_sum + smooth)
-#    print(dice.shape, dice)
-    dice = dice.mean(dim=0)
-    dice = torch.clamp(dice, 0, 1.0)
     return  dice
 
-def dice_loss(pred,target):
-    dce = dice_coeff(pred,torch.nn.functional.one_hot(target,num_classes=2))
-    return 1 - dce
+
+class DiceLoss(torch.nn.Module):
+    def __init__(self, weight=None, size_average=True):
+        super(DiceLoss, self).__init__()
+
+    def forward(self, inputs, targets,class_weights=[0.5,0.5], smooth=1,device=None):
+        
+        #comment out if your model contains a sigmoid or equivalent activation layer
+        dice = dice_coeff(inputs,targets)
+        if device is not None:
+            class_weights = torch.tensor(class_weights,dtype=float).to(device)
+        dice = dice[0]*class_weights[0] + dice[1]*class_weights[1]
+        #flatten label and prediction tensors
+        
+        return 1 - dice
+
+
+
 
 def tp_fp_fn(pred, target):
     tp = torch.sum(torch.logical_and((target==1), (pred==1)))
@@ -42,11 +50,12 @@ def tp_fp_fn(pred, target):
     fn = torch.sum(torch.logical_and((target==1), (pred==0)))
     return tp, fp, fn
     
-def calculate_loss(loss_weight_dictionary,estimates,labels):
+def calculate_loss(loss_weight_dictionary,estimates,labels, device=None):
    """ loss_dictionary= {'dice':weight,
                         'cross_entropy':weight
                           'other_losses':weights}"""
-   loss_functions = {'dice': dice_loss,
+   dice_loss=DiceLoss()
+   loss_functions = {'dice': partial(dice_loss,device=device),
                       'cross_entropy': torch.nn.NLLLoss()}
    total_loss = 0
    for loss_def in loss_weight_dictionary.keys():
@@ -81,15 +90,16 @@ class Trainer:
             estimates = model(data.x)
             #estimates = model(data.x)
             labels = data.y.squeeze()
-            loss = calculate_loss(self.params['loss_dictionary'],estimates, labels)
+            loss = calculate_loss(self.params['loss_dictionary'],estimates, labels, device=device)
             loss.backward()
             optimiser.step()
             running_scores['loss'].append(loss.item())
             # metrics
             pred = torch.argmax(torch.exp(estimates), axis=1)
             # dice
-            running_scores['dice_lesion'].append(dice_coeff(pred, labels).item())
-            running_scores['dice_nonlesion'].append(dice_coeff(pred, labels, for_class=0).item())
+            dice_coeffs = dice_coeff(estimates, labels)
+            running_scores['dice_lesion'].append(dice_coeffs[1].item())
+            running_scores['dice_nonlesion'].append(dice_coeffs[0].item())
             # tp, fp, fn for precision/recall
             cur_tp, cur_fp, cur_fn = tp_fp_fn(pred, labels)
             tp+= cur_tp
@@ -113,13 +123,14 @@ class Trainer:
                 #fake_x = torch.vstack([data.y for _ in range(22)]).t().type(torch.float)
                 estimates = model(data.x)
                 labels = data.y.squeeze()
-                loss = calculate_loss(self.params['loss_dictionary'],estimates, labels)
+                loss = calculate_loss(self.params['loss_dictionary'],estimates, labels, device =device)
                 running_scores['loss'].append(loss.item())
                 # metrics
                 pred = torch.argmax(torch.exp(estimates), axis=1)
                 # dice
-                running_scores['dice_lesion'].append(dice_coeff(pred, labels).item())
-                running_scores['dice_nonlesion'].append(dice_coeff(pred, labels, for_class=0).item())
+                dice_coeffs = dice_coeff(estimates, labels)
+                running_scores['dice_lesion'].append(dice_coeffs[1].item())
+                running_scores['dice_nonlesion'].append(dice_coeffs[0].item())
                 # tp, fp, fn for precision/recall
                 cur_tp, cur_fp, cur_fn = tp_fp_fn(pred, labels)
                 tp+= cur_tp
