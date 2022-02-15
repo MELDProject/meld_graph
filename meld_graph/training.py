@@ -7,16 +7,17 @@ import numpy as np
 from meld_graph.paths import EXPERIMENT_PATH
 from functools import partial
 
-
 def dice_coeff(pred, target):
     """This definition generalize to real valued pred and target vector.
     This should be differentiable.
     pred: tensor with first dimension as batch
-    target: tensor with first dimension as batch
+    target: tensor with first dimension as batch (not one-hot encoded)
+
+    NOTE assumes that pred is softmax output of model, might need torch.exp before
     """
     target_hot = torch.nn.functional.one_hot(target,num_classes=2)
     smooth = 1. 
-    iflat = torch.exp(pred).contiguous()
+    iflat = pred.contiguous()
     tflat = target_hot.contiguous()
     intersection = (iflat * tflat).sum(dim=0)
     A_sum = torch.sum(iflat * iflat ,dim=0)
@@ -25,23 +26,25 @@ def dice_coeff(pred, target):
     dice = (2. * intersection + smooth) / (A_sum + B_sum + smooth)
     return  dice
 
-
 class DiceLoss(torch.nn.Module):
     def __init__(self, weight=None, size_average=True):
         super(DiceLoss, self).__init__()
 
-    def forward(self, inputs, targets,class_weights=[0.5,0.5], smooth=1,device=None):
-        
-        #comment out if your model contains a sigmoid or equivalent activation layer
-        dice = dice_coeff(inputs,targets)
+    def forward(self, inputs, targets, class_weights=[0.5,0.5], device=None):
+        dice = dice_coeff(torch.exp(inputs),targets)
         if device is not None:
             class_weights = torch.tensor(class_weights,dtype=float).to(device)
         dice = dice[0]*class_weights[0] + dice[1]*class_weights[1]
-        #flatten label and prediction tensors
-        
         return 1 - dice
 
+class CrossEntropyLoss(torch.nn.Module):
+    def __init__(self, weight=None, size_average=True):
+        super(CrossEntropyLoss, self).__init__()
+        self.loss = torch.nn.NLLLoss()
 
+    def forward(self, inputs, targets):
+        # inputs are log softmax, pass directly to NLLLoss
+        return self.loss(inputs, targets)
 
 
 def tp_fp_fn(pred, target):
@@ -51,16 +54,23 @@ def tp_fp_fn(pred, target):
     return tp, fp, fn
     
 def calculate_loss(loss_weight_dictionary,estimates,labels, device=None):
-   """ loss_dictionary= {'dice':weight,
-                        'cross_entropy':weight
-                          'other_losses':weights}"""
-   dice_loss=DiceLoss()
-   loss_functions = {'dice': partial(dice_loss,device=device),
-                      'cross_entropy': torch.nn.NLLLoss()}
-   total_loss = 0
-   for loss_def in loss_weight_dictionary.keys():
-       total_loss += loss_weight_dictionary[loss_def] * loss_functions[loss_def](estimates,labels)
-   return total_loss
+    """ 
+    calculate loss. Can combine losses with weights defined in loss_weight_dictionary
+    loss_dictionary= {'dice':weight,
+                    'cross_entropy':weight
+                    'other_losses':weights}
+
+    NOTE estimates are the logSoftmax output of the model. For some losses, applying torch.exp is necessary!
+    """
+    # TODO could use class_weights for dice loss (but not using dice loss atm)
+    loss_functions = {
+        'dice': partial(DiceLoss(), device=device),
+        'cross_entropy': CrossEntropyLoss()
+    }
+    total_loss = 0
+    for loss_def in loss_weight_dictionary.keys():
+        total_loss += loss_weight_dictionary[loss_def] * loss_functions[loss_def](estimates,labels)
+    return total_loss
 
 class Trainer:
     def __init__(self, experiment):
@@ -95,9 +105,10 @@ class Trainer:
             optimiser.step()
             running_scores['loss'].append(loss.item())
             # metrics
-            pred = torch.argmax(torch.exp(estimates), axis=1)
+            pred = torch.argmax(estimates, axis=1)
             # dice
-            dice_coeffs = dice_coeff(estimates, labels)
+            # TODO dice is on non-thresholded values -- change that for final calc of dice score
+            dice_coeffs = dice_coeff(torch.exp(estimates), labels)
             running_scores['dice_lesion'].append(dice_coeffs[1].item())
             running_scores['dice_nonlesion'].append(dice_coeffs[0].item())
             # tp, fp, fn for precision/recall
@@ -126,9 +137,9 @@ class Trainer:
                 loss = calculate_loss(self.params['loss_dictionary'],estimates, labels, device =device)
                 running_scores['loss'].append(loss.item())
                 # metrics
-                pred = torch.argmax(torch.exp(estimates), axis=1)
+                pred = torch.argmax(estimates, axis=1)
                 # dice
-                dice_coeffs = dice_coeff(estimates, labels)
+                dice_coeffs = dice_coeff(torch.exp(estimates), labels)
                 running_scores['dice_lesion'].append(dice_coeffs[1].item())
                 running_scores['dice_nonlesion'].append(dice_coeffs[0].item())
                 # tp, fp, fn for precision/recall
