@@ -31,7 +31,7 @@ class DiceLoss(torch.nn.Module):
     def __init__(self, weight=None, size_average=True):
         super(DiceLoss, self).__init__()
 
-    def forward(self, inputs, targets, class_weights=[0.5,0.5], device=None):
+    def forward(self, inputs, targets, class_weights=[0,0.5], device=None):
         dice = dice_coeff(torch.exp(inputs),targets)
         if device is not None:
             class_weights = torch.tensor(class_weights,dtype=float).to(device)
@@ -109,7 +109,7 @@ class Trainer:
             pred = torch.argmax(estimates, axis=1)
             # dice
             # TODO dice is on non-thresholded values -- change that for final calc of dice score
-            dice_coeffs = dice_coeff(torch.exp(estimates), labels)
+            dice_coeffs = dice_coeff(torch.nn.functional.one_hot(pred), labels)
             running_scores['dice_lesion'].append(dice_coeffs[1].item())
             running_scores['dice_nonlesion'].append(dice_coeffs[0].item())
             # tp, fp, fn for precision/recall
@@ -140,7 +140,7 @@ class Trainer:
                 # metrics
                 pred = torch.argmax(estimates, axis=1)
                 # dice
-                dice_coeffs = dice_coeff(torch.exp(estimates), labels)
+                dice_coeffs = dice_coeff(torch.nn.functional.one_hot(pred), labels)
                 running_scores['dice_lesion'].append(dice_coeffs[1].item())
                 running_scores['dice_nonlesion'].append(dice_coeffs[0].item())
                 # tp, fp, fn for precision/recall
