@@ -14,13 +14,13 @@ import logging
 #loads in all icosphere
 class IcoSpheres():
     """Class to define cohort-level parameters such as subject ids, mesh"""
-    def __init__(self, icosphere_path='../data/icospheres/', distance_type='exact', **kwargs):
+    def __init__(self, icosphere_path='../data/icospheres/', distance_type='pseudo',conv_type='GMMConv', **kwargs):
         """icosphere class
         icospheres at each level are stored in self.icospheres[1:7]
         distance_type = 'exact' or 'pseudo' 
         exact - edge length and flattened relative angle
         pseudo - relative polar coordinates
-        
+        conv_type - GMMConv or SpiralConv
         autoloads & calculates:
         'coords': spherical coordinates
         'faces': triangle faces
@@ -32,6 +32,7 @@ class IcoSpheres():
         self.log = logging.getLogger(__name__)
         self.icosphere_path = icosphere_path
         self.icospheres={}
+        self.conv_type = conv_type
         self.distance_type = distance_type
         self.log.info(f'Using coord type {self.distance_type}')
         self.load_all_levels()
@@ -48,8 +49,11 @@ class IcoSpheres():
         self.spherical_coords(level = level)
         self.get_exact_edge_attrs(level=level)
         self.calculate_adj_mat(level=level)
-        if self.distance_type=='pseudo':
-            self.calculate_pseudo_edge_attrs(level = level)
+        if self.conv_type=='SpiralConv':
+            self.create_spirals(level=level)
+        elif self.conv_type =='GMMConv':
+            if self.distance_type=='pseudo':
+                self.calculate_pseudo_edge_attrs(level = level)
         
         return
         
@@ -111,10 +115,14 @@ class IcoSpheres():
         """loads edges, edge vectors and neighbors to device (eg GPU)"""
         for level in self.icospheres.keys():
             self.icospheres[level]['t_edges']=self.icospheres[level]['t_edges'].to(device)
-            if self.distance_type=='exact':
-                self.icospheres[level]['t_exact_edge_attr']=self.icospheres[level]['t_exact_edge_attr'].to(device)
-            elif self.distance_type=='pseudo':
-                self.icospheres[level]['t_pseudo_edge_attr']=self.icospheres[level]['t_pseudo_edge_attr'].to(device)
+            if self.conv_type=='SpiralConv':
+                self.icospheres[level]['spirals']=self.icospheres[level]['spirals'].to(device)
+            elif self.conv_type=='GMMConv':
+                if self.distance_type=='exact':
+                    self.icospheres[level]['t_exact_edge_attr']=self.icospheres[level]['t_exact_edge_attr'].to(device)
+                elif self.distance_type=='pseudo':
+                    self.icospheres[level]['t_pseudo_edge_attr']=self.icospheres[level]['t_pseudo_edge_attr'].to(device)
+            
         return
         
     #helper functions
@@ -236,4 +244,52 @@ class IcoSpheres():
             neighbours_to_explore = neighbours_to_explore[neighbours_to_explore<n_vert_down]
             self.icospheres[target_level]['t_upsample'] = neighbours_to_explore.reshape(n_vert_up-n_vert_down,2)
         return self.icospheres[target_level]['t_upsample']
+    
+    def create_spirals(self,level=7):
+        file_path = os.path.join(self.icosphere_path,f'ico{level}.spirals.npy')
+        if os.path.isfile(file_path):
+            spirals = np.load(file_path)
+        else : 
+            spirals = self.calculate_spirals(level=level)
+            np.save(file_path,spirals)
+        self.icospheres[level]['spirals'] = torch.tensor(spirals,dtype=torch.long)
+        return
+    
+    def get_spirals(self,level=7):
+        if 'spirals' not in self.icospheres[level].keys():
+            print('ERROR: Class not initialised with spirals',
+                  'Either reset convtype or run icos.create_spirals(level=7)')
+        return self.icospheres[level]['spirals']
         
+    def calculate_spirals(self,level=7,size=20):
+        """precalculate spinal kernels"""
+        neighbours=self.icospheres[level]['neighbours']
+        n_vertices=len(neighbours)
+        spirals=np.zeros((n_vertices,size))
+        for v in np.arange(n_vertices):
+            spirals[v] = self.get_spiral_for_vertex(neighbours,vertex=v,size=size)
+        return spirals
+    
+    def get_spiral_for_vertex(self,neighbours,vertex=0,size=10):
+        """create spiral convolution"""
+        vertex_neighbours=neighbours[vertex]
+        spiral=[vertex]
+        spiral.extend(list(vertex_neighbours))
+        #next level starts with neighbour of first and last not vertex
+        k=-1
+        old_neighbours=vertex_neighbours
+        while len(spiral) < size:
+            v_start = spiral[-1]
+            index_for_rolling = np.where(old_neighbours==v_start)[0][0]
+            old_neighbours = np.roll(old_neighbours,len(old_neighbours)-1-index_for_rolling)
+            new_center_v = old_neighbours[0]
+            new_neighbours = neighbours[new_center_v]
+            index_for_rolling = np.where(new_neighbours==v_start)[0][0]
+            new_neighbours = np.roll(new_neighbours,len(new_neighbours)-1-index_for_rolling)
+            #stop vertex is next in spiral
+            stop_vertex=spiral[np.where(spiral==new_center_v)[0][0]+1]
+            stop_index = np.where(new_neighbours==stop_vertex)[0][0]
+            spiral.extend(list(new_neighbours[:stop_index]))
+            old_neighbours = new_neighbours
+
+        return np.array(spiral[:size])
