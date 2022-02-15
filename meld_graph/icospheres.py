@@ -48,6 +48,8 @@ class IcoSpheres():
         self.spherical_coords(level = level)
         self.get_exact_edge_attrs(level=level)
         self.calculate_adj_mat(level=level)
+        if self.distance_type=='pseudo':
+            self.calculate_pseudo_edge_attrs(level = level)
         
         return
         
@@ -84,21 +86,22 @@ class IcoSpheres():
     
     def calculate_pseudo_edge_attrs(self,level=7):
         """pseudo edge attributes, difference between latitude and longitude"""
-        col = self.icospheres[level]['edges'][:,0]
-        row = self.icospheres[level]['edges'][:,1]
-        pos = self.icospheres[level]['spherical_coords']
-        pseudo = pos[col] - pos[row]
-        alpha = pseudo[:,1]
-        
-        tmp = (alpha == 0).nonzero()[0]
-        alpha[tmp] = 1e-15
-        tmp = (alpha < 0).nonzero()[0]
-        alpha[tmp] = np.pi + alpha[tmp]
-
-        alpha = 2*np.pi + alpha
-        alpha = np.remainder(alpha, 2*np.pi)
-        pseudo[:,1]=alpha
-        
+        file_path = os.path.join(self.icosphere_path,f'ico{level}.pseudo.npy')
+        if os.path.isfile(file_path):
+            pseudo=np.load(file_path)
+        else:
+            col = self.icospheres[level]['edges'][:,0]
+            row = self.icospheres[level]['edges'][:,1]
+            pos = self.icospheres[level]['spherical_coords']
+            pseudo = pos[col] - pos[row]
+            alpha = pseudo[:,1]
+            tmp = (alpha == 0).nonzero()[0]
+            alpha[tmp] = 1e-15
+            tmp = (alpha < 0).nonzero()[0]
+            alpha[tmp] = np.pi + alpha[tmp]
+            alpha = 2*np.pi + alpha
+            alpha = np.remainder(alpha, 2*np.pi)
+            pseudo[:,1]=alpha
         self.icospheres[level]['pseudo_edge_attr'] = pseudo
         self.icospheres[level]['t_pseudo_edge_attr'] = torch.tensor(self.icospheres[level]['pseudo_edge_attr'], dtype=torch.float)
 
@@ -121,7 +124,6 @@ class IcoSpheres():
     
     def get_edge_vectors(self,level=7):
         if self.distance_type == 'pseudo':
-            self.calculate_pseudo_edge_attrs(level = level)
             return self.icospheres[level]['t_pseudo_edge_attr']
         elif self.distance_type == 'exact':
             return self.icospheres[level]['t_exact_edge_attr']
