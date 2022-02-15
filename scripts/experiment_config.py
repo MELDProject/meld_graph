@@ -10,9 +10,10 @@ network_parameters = {
         "max_patience": 400,
         "num_epochs": 800,
         'lr': 1e-2,
-        'loss_dictionary': {  'cross_entropy':0.5,
-                       #'dice':1000.0
-              },
+        'loss_dictionary': {  
+            'cross_entropy':1,
+            #'dice':1000.0
+        },
         "batch_size": 1,
         "shuffle_each_epoch": True,
     },
