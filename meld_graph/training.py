@@ -7,32 +7,42 @@ import numpy as np
 from meld_graph.paths import EXPERIMENT_PATH
 from functools import partial
 
-def dice_coeff(pred, target):
+def dice_coeff(pred, target,mask=False):
     """This definition generalize to real valued pred and target vector.
     This should be differentiable.
     pred: tensor with first dimension as batch
     target: tensor with first dimension as batch (not one-hot encoded)
-
+    mask: if mask is true, we want to ignore hemispheres without lesions for the 1 column
+        otherwise loss averages lots of 0s for these examples
     NOTE assumes that pred is softmax output of model, might need torch.exp before
     """
+    n_vert = 163842
     target_hot = torch.nn.functional.one_hot(target,num_classes=2)
     smooth = 1. 
     iflat = pred.contiguous()
     tflat = target_hot.contiguous()
+    #here split into subjects
+    if mask:
+        full_len = iflat.shape
+        iflat = iflat.view(n_vert,full_len[0]//n_vert,full_len[1])
+        tflat = tflat.view(n_vert,full_len[0]//n_vert,full_len[1])
     intersection = (iflat * tflat).sum(dim=0)
     A_sum = torch.sum(iflat * iflat ,dim=0)
     B_sum = torch.sum(tflat * tflat ,dim=0)
-
+    #at this point mask B_sum all zeros in second column
     dice = (2. * intersection + smooth) / (A_sum + B_sum + smooth)
     return  dice
+
+
+
 
 
 class DiceLoss(torch.nn.Module):
     def __init__(self, weight=None, size_average=True):
         super(DiceLoss, self).__init__()
 
-    def forward(self, inputs, targets, class_weights=[0,0.5], device=None):
-        dice = dice_coeff(torch.exp(inputs),targets)
+    def forward(self, inputs, targets, class_weights=[0.5,0.5], mask=False,device=None):
+        dice = dice_coeff(torch.exp(inputs),targets,mask=mask)
         if device is not None:
             class_weights = torch.tensor(class_weights,dtype=float).to(device)
         dice = dice[0]*class_weights[0] + dice[1]*class_weights[1]
