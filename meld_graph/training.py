@@ -6,6 +6,7 @@ from meld_graph.dataset import GraphDataset
 import numpy as np
 from meld_graph.paths import EXPERIMENT_PATH
 from functools import partial
+import pandas as pd
 
 def dice_coeff(pred, target):
     """This definition generalize to real valued pred and target vector.
@@ -58,7 +59,8 @@ class FocalLoss(torch.nn.Module):
             self.alpha = params['focal_loss']['alpha']
         except:
             self.alpha=None
-        if isinstance(self.alpha,(float,int)): self.alpha = torch.Tensor([self.alpha,1-self.alpha])
+        if isinstance(self.alpha,(float,int)): 
+            self.alpha = torch.Tensor([self.alpha,1-self.alpha])
         self.size_average = size_average
 
     def forward(self, inputs, target, gamma=0, alpha=None,):
@@ -91,9 +93,9 @@ def tp_fp_fn(pred, target):
 def calculate_loss(loss_weight_dictionary,estimates,labels, device=None):
     """ 
     calculate loss. Can combine losses with weights defined in loss_weight_dictionary
-    loss_dictionary= {'dice':weight,
-                    'cross_entropy':weight,
-                    'focal_loss':weight,
+    loss_dictionary= {'dice':{'weight':1},
+                    'cross_entropy':{'weight':1},
+                    'focal_loss':{'weight':1, 'alpha':0.5, 'gamma':0},
                     'other_losses':weights}
 
     NOTE estimates are the logSoftmax output of the model. For some losses, applying torch.exp is necessary!
@@ -109,6 +111,54 @@ def calculate_loss(loss_weight_dictionary,estimates,labels, device=None):
         total_loss += loss_weight_dictionary[loss_def]['weight'] * loss_functions[loss_def](estimates,labels)
     return total_loss
 
+class Metrics:
+    def __init__(self, metrics):
+        self.metrics = metrics
+        self.metrics_to_track = self.metrics
+        if 'precision' in self.metrics or 'recall' in self.metrics:
+            self.metrics_to_track = list(set(self.metrics_to_track + ['tp', 'fp', 'fn']))
+        self.running_scores = self.reset()
+
+    def reset(self):
+        self.running_scores = {metric: [] for metric in self.metrics_to_track}
+        return self.running_scores
+
+    def update(self, pred, target):
+        if len(set(['dice_lesion', 'dice_nonlesion']).intersection(self.metrics_to_track)) > 0:
+            dice_coeffs = dice_coeff(torch.nn.functional.one_hot(pred), target)
+            if 'dice_lesion' in self.metrics_to_track:
+                self.running_scores['dice_lesion'].append(dice_coeffs[1].item())
+            if 'dice_nonlesion' in self.metrics_to_track:
+                self.running_scores['dice_nonlesion'].append(dice_coeffs[0].item())
+        if len(set(['dice_masked_lesion', 'dice_masked_nonlesion']).intersection(self.metrics_to_track)) > 0:
+            dice_coeffs = dice_coeff(torch.nn.functional.one_hot(pred), target, mask=True)
+            if 'dice_masked_lesion' in self.metrics_to_track:
+                self.running_scores['dice_masked_lesion_masked'].append(dice_coeffs[1].item())
+            if 'dice_masked_nonlesion' in self.metrics_to_track:
+                self.running_scores['dice_masked_nonlesion'].append(dice_coeffs[0].item())
+        if 'tp' in self.metrics_to_track:
+            tp, fp, fn = tp_fp_fn(pred, target)
+            self.running_scores['tp'].append(tp.item())
+            self.running_scores['fp'].append(fp.item())
+            self.running_scores['fn'].append(fn.item())
+
+    def get_aggregated_metrics(self):
+        metrics = {}
+        if 'tp' in self.metrics_to_track:
+            tp = np.sum(self.running_scores['tp'])
+            fp = np.sum(self.running_scores['fp'])
+            fn = np.sum(self.running_scores['fn'])
+        for metric in self.metrics:
+            if metric == 'precision':
+                metrics['precision'] = (tp/(tp+fp)).item()
+            elif metric == 'recall':
+                metrics['recall'] = (tp/(tp+fn)).item()
+            elif 'dice' in metric:
+                metrics[metric] = np.mean(self.running_scores[metric])
+            else:
+                metrics[metric] = np.sum(self.running_scores[metric])
+        return metrics
+
 class Trainer:
     def __init__(self, experiment):
         self.log = logging.getLogger(__name__)
@@ -123,71 +173,48 @@ class Trainer:
         model = self.experiment.model
         model.train()
 
-        # TODO also measure acc + dice
-        running_scores = {'loss':[], 'dice_lesion':[], 'dice_nonlesion':[]}
-        tp, fp, fn = 0,0,0
+        metrics = Metrics(self.params['metrics'])  # for keeping track of running metrics
+        running_loss = []
         for i, data in enumerate(data_loader):  
             data = data.to(device)
             model.train()
             optimiser.zero_grad()
-            #fake_x = torch.vstack([data.y for _ in range(22)]).t().type(torch.float)
-            #print(data.y.shape)
-            #print(fake_x.shape)
-            #print(data.x.shape)
             estimates = model(data.x)
-            #estimates = model(data.x)
             labels = data.y.squeeze()
             loss = calculate_loss(self.params['loss_dictionary'],estimates, labels, device=device)
             loss.backward()
             optimiser.step()
-            running_scores['loss'].append(loss.item())
+            running_loss.append(loss.item())
             # metrics
             pred = torch.argmax(estimates, axis=1)
-            # dice
-            # TODO dice is on non-thresholded values -- change that for final calc of dice score
-            dice_coeffs = dice_coeff(torch.nn.functional.one_hot(pred), labels)
-            running_scores['dice_lesion'].append(dice_coeffs[1].item())
-            running_scores['dice_nonlesion'].append(dice_coeffs[0].item())
-            # tp, fp, fn for precision/recall
-            cur_tp, cur_fp, cur_fn = tp_fp_fn(pred, labels)
-            tp+= cur_tp
-            fp+= cur_fp
-            fn+= cur_fn
-        precision = tp/(tp+fp)
-        recall = tp/(tp+fn)
-        scores = {key: np.mean(val) for key, val in running_scores.items()} 
-        scores.update({'precision': precision.item(), 'recall': recall.item(), 'tp': tp.item(), 'fp': fp.item(), 'fn': fn.item()})
+            # update running metrics
+            metrics.update(pred, labels)
+            
+        scores = {'loss': np.mean(running_loss)}
+        scores.update(metrics.get_aggregated_metrics())
         return scores
 
     def val_epoch(self, data_loader):
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         model = self.experiment.model
         model.eval()
-        tp, fp, fn = 0,0,0
         with torch.no_grad():
-            running_scores = {'loss':[], 'dice_lesion':[], 'dice_nonlesion':[]}
+            metrics = Metrics(self.params['metrics'])  # for keeping track of running metrics
+            running_loss = []
             for i, data in enumerate(data_loader):
                 data = data.to(device)
                 #fake_x = torch.vstack([data.y for _ in range(22)]).t().type(torch.float)
                 estimates = model(data.x)
                 labels = data.y.squeeze()
                 loss = calculate_loss(self.params['loss_dictionary'],estimates, labels, device =device)
-                running_scores['loss'].append(loss.item())
+                running_loss.append(loss.item())
                 # metrics
                 pred = torch.argmax(estimates, axis=1)
-                # dice
-                dice_coeffs = dice_coeff(torch.nn.functional.one_hot(pred), labels)
-                running_scores['dice_lesion'].append(dice_coeffs[1].item())
-                running_scores['dice_nonlesion'].append(dice_coeffs[0].item())
-                # tp, fp, fn for precision/recall
-                cur_tp, cur_fp, cur_fn = tp_fp_fn(pred, labels)
-                tp+= cur_tp
-                fp+= cur_fp
-                fn+= cur_fn
-        precision = tp/(tp+fp)
-        recall = tp/(tp+fn)
-        scores = {key: np.mean(val) for key, val in running_scores.items()}
-        scores.update({'precision': precision.item(), 'recall': recall.item(), 'tp': tp.item(), 'fp': fp.item(), 'fn': fn.item()})
+                # update running metrics
+                metrics.update(pred, labels)
+     
+        scores = {'loss': np.mean(running_loss)}
+        scores.update(metrics.get_aggregated_metrics())
         # set model back to training mode
         model.train()
         return scores
@@ -232,8 +259,7 @@ class Trainer:
                 if cur_scores['loss'] < best_loss:
                     best_loss = cur_scores['loss']
                     if self.experiment.experiment_path is not None:
-                        # TODO save in correct place?
-                        fname = os.path.join(EXPERIMENT_PATH, self.experiment.experiment_path, 'best_model.pt')
+                        fname = os.path.join(self.experiment.experiment_path, 'best_model.pt')
                         torch.save(self.experiment.model.state_dict(), fname)
                         self.log.info('saved_new_best')
                     patience = 0
@@ -242,4 +268,6 @@ class Trainer:
                 if patience >= self.params['max_patience']:
                     self.log.info(f'stopping early at epoch {epoch}, with patience {patience}')
                     break
+        #pd.DataFrame(scores['train']).to_csv('train_scores.csv')
+        #pd.DataFrame(scores['val']).to_csv('val_scores.csv')
         # TODO store train/val loss and metrics in csv file
