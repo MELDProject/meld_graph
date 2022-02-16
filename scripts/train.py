@@ -44,7 +44,7 @@ def load_config(config_file):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config_file", help="path to experiment_config.py", default="experiment_config.py")
+    parser.add_argument("--config_file", help="path to experiment_config.py", default="config_files/experiment_config.py")
     args = parser.parse_args()
 
     
