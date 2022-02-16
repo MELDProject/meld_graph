@@ -11,7 +11,7 @@ import numpy as np
 
 
 class Experiment:
-    def __init__(self, network_parameters, data_parameters, save=False):
+    def __init__(self, network_parameters, data_parameters):
         self.log = logging.getLogger(__name__)
         self.network_parameters = network_parameters
         self.data_parameters = data_parameters
@@ -20,16 +20,20 @@ class Experiment:
         self.cohort = MeldCohort(
             hdf5_file_root=self.data_parameters["hdf5_file_root"], dataset=self.data_parameters["dataset"]
         )
-
-        if save:
-            self.experiment_path = save
-            os.makedirs(os.path.join(EXPERIMENT_PATH, self.experiment_path), exist_ok=True)
+        self.experiment_name = self.network_parameters['name']
+        self.fold = self.data_parameters['fold_n']
+        self.experiment_path = None
+        if self.experiment_name is not None:
+            self.experiment_path = os.path.join(EXPERIMENT_PATH, self.experiment_name, f'fold_{self.fold:02d}')
+            os.makedirs(self.experiment_path, exist_ok=True)
             self.save_parameters()
-        # TODO need to load cohort!
 
-    def from_folder(self, experiment_path):
-        # TODO implement -- read files from json
-        pass
+    @classmethod
+    def from_folder(cls, experiment_path):
+        """experiment_path: experiment_name/fold_00 """
+        data_parameters = json.load(open(os.path.join(EXPERIMENT_PATH, experiment_name, "data_parameters.json")))
+        network_parameters = json.load(open(os.path.join(EXPERIMENT_PATH, experiment_name, "network_parameters.json")))
+        cls(network_parameters, data_parameters)
 
     def save_parameters(self):
         """
@@ -38,10 +42,10 @@ class Experiment:
         if self.experiment_path is not None:
             self.log.info(f"saving parameter files to {self.experiment_path}")
             # data_parameters
-            fname = os.path.join(EXPERIMENT_PATH, self.experiment_path, "data_parameters.json")
+            fname = os.path.join(self.experiment_path, "data_parameters.json")
             json.dump(self.data_parameters, open(fname, "w"), indent=4)
             # network_parameters
-            fname = os.path.join(EXPERIMENT_PATH, self.experiment_path, "network_parameters.json")
+            fname = os.path.join(self.experiment_path, "network_parameters.json")
             json.dump(self.network_parameters, open(fname, "w"), indent=4)
         else:
             self.log.info("experiment_path is None, could not save parameters")
@@ -73,7 +77,6 @@ class Experiment:
             self.save_parameters()
         return self.data_parameters["features"], self.data_parameters["features_to_replace_with_0"]
 
-
     def load_model(self, checkpoint_path=None, force=False):
         """
         build model and optionally load weights from checkpoint
@@ -102,7 +105,7 @@ class Experiment:
             raise(NotImplementedError, network_type)
         
         # TODO below code is unchecked
-        if checkpoint_path is not None and os.path.isdir(checkpoint_path):
+        if checkpoint_path is not None and os.path.isfile(checkpoint_path):
             # checkpoint contains both model architecture + weights
             self.log.info("Loading model weights from checkpoint")
             self.model.load_state_dict(torch.load(checkpoint_path))

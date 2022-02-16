@@ -1,8 +1,10 @@
+import datetime
+import os
 
 network_parameters = {
     'network_type': 'MoNetUnet',
     'model_parameters': {
-        'layer_sizes': [[32],[32],[64],[64],[128],[128],[256]],
+        'layer_sizes': [[32,32,32],[32,32,32],[64,64,64],[64,64,64],[128,128,128],[128,128,128],[256,256,256]],
         'dim': 2, # coord dim
         'kernel_size': 3, # number of gaussian kernels
         'conv_type': 'GMMConv', #'SpiralConv', # TODO test that
@@ -10,17 +12,20 @@ network_parameters = {
     },
     'training_parameters': {
         "max_patience": 400,
-        "num_epochs": 800,
+        "num_epochs": 30,
         'lr': 1e-2,
         'loss_dictionary': {  
-            'cross_entropy':1,
-            #'dice':1
+            'cross_entropy':{'weight':1},
+            'focal_loss':{'weight':1, 'alpha':0.01, 'gamma':2},
+            #'dice':{'masked': False, 'weight': 1}
         },
+        # list of metrics that should be printed during training
+        'metrics': ['precision', 'dice_lesion', 'dice_nonlesion', 'recall', 'tp', 'fp', 'fn'], 
         "batch_size": 1,
         "shuffle_each_epoch": True,
     },
     # experiment name. If none, experiment is not saved TODO implement
-    'name': None,   #"date": datetime.datetime.now().strftime("%y-%m-%d"),
+    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_hannah',
 }
 
 data_parameters = {
