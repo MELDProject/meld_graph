@@ -24,7 +24,8 @@ class Preprocess:
         self._site_codes = site_codes
         self._subject_ids = None
         self.log = logging.getLogger(__name__)
-        
+        self._lobes = None
+
     @property
     def site_codes(self):
         if self._site_codes is None:
@@ -38,7 +39,18 @@ class Preprocess:
             self._subject_ids = self.cohort.get_subject_ids(site_codes=self.site_codes, lesional_only=False)
         return self._subject_ids
 
-        
+    @property
+    def lobes(self):
+        if self._lobes is None:
+            self._lobes = self.load_lobar_parcellation()
+        return self._lobes
+
+    def load_lobar_parcellation(self, lobe = 1):
+        parc=nb.freesurfer.io.read_annot(os.path.join(self.data_dir,'fsaverage_sym','label','lh.lobes.annot'))[0]
+        lobes = (parc==lobe).astype(int)
+        return lobes
+
+
     def flatten(self, t):
         return [item for sublist in t for item in sublist]
 
@@ -57,7 +69,7 @@ class Preprocess:
         return vals
 
     
-    def get_data_preprocessed(self, subject, features, params):
+    def get_data_preprocessed(self, subject, features, params, lobes=False):
         ''' This function preprocessed features data for a single subject$
         preprocess: 
         1) get data and lesion
@@ -82,10 +94,11 @@ class Preprocess:
             preprocessed_data = self.scale_data(vals_array, features, scaling_params_file )
         else:
             preprocessed_data = copy.deepcopy(vals_array)
-       
+        if lobes:
+            lesion_lh = self.lobes
+            lesion_rh = self.lobes
         #transform data if feature not gaussian
         #TODO later
-        
         #include medial wall back with 0 values
         features_lh = np.zeros((len(features), NVERT))
         features_lh[:, self.cohort.cortex_mask] = preprocessed_data[:, 0:sum(self.cohort.cortex_mask)]
