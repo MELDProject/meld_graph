@@ -15,13 +15,13 @@ network_parameters = {
         "num_epochs": 30,
         'lr': 1e-2,
         'loss_dictionary': {  
-            'cross_entropy':{'weight':1},
-            'focal_loss':{'weight':1, 'alpha':0.01, 'gamma':2},
-            #'dice':{'masked': False, 'weight': 1}
+            #'cross_entropy':{'weight':1},
+            #'focal_loss':{'weight':1, 'alpha':0.01, 'gamma':2},
+            'dice':{'weight': 1}
         },
         # list of metrics that should be printed during training
         'metrics': ['precision', 'dice_lesion', 'dice_nonlesion', 'recall', 'tp', 'fp', 'fn'], 
-        "batch_size": 1,
+        "batch_size": 4,
         "shuffle_each_epoch": True,
     },
     # experiment name. If none, experiment is not saved TODO implement
@@ -33,7 +33,7 @@ data_parameters = {
     'site_codes': ['H4'],
     'scanners': ['3T'],
     'dataset': 'MELD_dataset_V6.csv',
-    'group': 'both',
+    'group': 'patient',
     "features_to_exclude": [],
     "subject_features_to_exclude": [],
     "features": [#'.on_lh.lesion.mgh',
