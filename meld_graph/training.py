@@ -19,7 +19,7 @@ def dice_coeff(pred, target,mask=False):
     """
     n_vert = 163842
     target_hot = torch.nn.functional.one_hot(target,num_classes=2)
-    smooth = 1. 
+    smooth = 1e-15 
     iflat = pred.contiguous()
     tflat = target_hot.contiguous()
     #here split into subjects

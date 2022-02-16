@@ -17,20 +17,24 @@ import argparse
 import os
 
 def init_logging(level=logging.INFO, fname=None):
-    if not os.path.isdir(os.path.dirname(fname)):
-        os.makedirs(os.path.dirname(fname))
-    fileFormatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-    fileHandler = logging.FileHandler(fname)
-    fileHandler.setFormatter(fileFormatter)
-    
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(message)s",
+    if fname is not None:
+        if not os.path.isdir(os.path.dirname(fname)):
+            os.makedirs(os.path.dirname(fname))
+        fileFormatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+        fileHandler = logging.FileHandler(fname)
+        fileHandler.setFormatter(fileFormatter)
         handlers=[
-            fileHandler,
-            logging.StreamHandler()
-        ]
-    )
+                fileHandler,
+                logging.StreamHandler()
+            ]
+    else:
+        handlers=[logging.StreamHandler()
+            ]
+    logging.basicConfig(
+            level=logging.INFO,
+            format="%(message)s",
+            handlers=handlers
+        )
 
 def load_config(config_file):
     """load config.py file and return config object"""
