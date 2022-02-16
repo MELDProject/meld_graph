@@ -7,25 +7,25 @@ network_parameters = {
         'layer_sizes': [[32,32,32],[32,32,32],[64,64,64],[64,64,64],[128,128,128],[128,128,128],[256,256,256]],
         'dim': 2, # coord dim
         'kernel_size': 3, # number of gaussian kernels
-        'conv_type': 'GMMConv', #'SpiralConv', # TODO test that
+        'conv_type': 'SpiralConv', #'SpiralConv', # TODO test that
         'spiral_len': 10, # TODO implement dilation / different spiral len 
     },
     'training_parameters': {
         "max_patience": 400,
-        "num_epochs": 30,
-        'lr': 1e-2,
+        "num_epochs": 50,
+        'lr': 1e-4,
         'loss_dictionary': {  
             #'cross_entropy':{'weight':1},
             #'focal_loss':{'weight':1, 'alpha':0.01, 'gamma':2},
             'dice':{'weight': 1}
         },
         # list of metrics that should be printed during training
-        'metrics': ['precision', 'dice_lesion', 'dice_nonlesion', 'recall', 'tp', 'fp', 'fn'], 
-        "batch_size": 4,
+        'metrics': ['dice_lesion', 'dice_nonlesion', 'precision', 'recall', 'tp', 'fp', 'fn'], 
+        "batch_size": 1,
         "shuffle_each_epoch": True,
     },
     # experiment name. If none, experiment is not saved TODO implement
-    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_hannah',
+    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_spiralconv',
 }
 
 data_parameters = {
@@ -33,7 +33,7 @@ data_parameters = {
     'site_codes': ['H4'],
     'scanners': ['3T'],
     'dataset': 'MELD_dataset_V6.csv',
-    'group': 'patient',
+    'group': 'both',
     "features_to_exclude": [],
     "subject_features_to_exclude": [],
     "features": [#'.on_lh.lesion.mgh',
@@ -59,4 +59,5 @@ data_parameters = {
         "distance_type": "exact", #"exact",  # exact or pseudo
     },
     "combine_hemis": None,  # None, "stack", TODO: combine with graph
+    "lobes": True
 }
