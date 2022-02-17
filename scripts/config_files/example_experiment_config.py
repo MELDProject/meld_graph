@@ -31,7 +31,7 @@ network_parameters = {
         "shuffle_each_epoch": True,
     },
     # experiment name. If none, experiment is not saved TODO implement
-    'name': None,   #datetime.datetime.now().strftime("%y-%m-%d") + '_spiralconv',
+    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_example',
 }
 
 data_parameters = {
