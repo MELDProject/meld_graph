@@ -19,7 +19,7 @@ def dice_coeff(pred, target,mask=False):
     """
     n_vert = 163842
     target_hot = torch.nn.functional.one_hot(target,num_classes=2)
-    smooth = 1. 
+    smooth = 1e-15 
     iflat = pred.contiguous()
     tflat = target_hot.contiguous()
     #here split into subjects
@@ -278,6 +278,7 @@ class Trainer:
                 if patience >= self.params['max_patience']:
                     self.log.info(f'stopping early at epoch {epoch}, with patience {patience}')
                     break
-        #pd.DataFrame(scores['train']).to_csv('train_scores.csv')
-        #pd.DataFrame(scores['val']).to_csv('val_scores.csv')
-        # TODO store train/val loss and metrics in csv file
+        # save train/val scores
+        if self.experiment.experiment_path is not None:
+            pd.DataFrame(scores['train']).to_csv(os.path.join(self.experiment.experiment_path, 'train_scores.csv'))
+            pd.DataFrame(scores['val']).to_csv(os.path.join(self.experiment.experiment_path, 'val_scores.csv'))

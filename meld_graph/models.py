@@ -67,7 +67,9 @@ class MoNet(nn.Module):
 
 
 class MoNetUnet(nn.Module):
-    def __init__(self, num_features, layer_sizes, dim=2, kernel_size=3, icosphere_params={}, conv_type='GMMConv', spiral_len=10):
+    def __init__(self, num_features, layer_sizes, dim=2, kernel_size=3, 
+                 
+                 icosphere_params={}, conv_type='GMMConv', spiral_len=10):
         """
         Unet model
         dim: dim for GMMConv, dimension of coord representation - 2 or 3 (for GMMConv)
@@ -103,6 +105,8 @@ class MoNetUnet(nn.Module):
         assert(num_blocks <= 7)  # cannot pool more levels than icospheres
         in_size = self.num_features
         level = 7
+        #store n_vertices for batch rearrangement
+        self.n_vertices = len(self.icospheres.icospheres[level]['coords'])
         for i in range(num_blocks):
             block = []
             print('encoder block', i, 'at level', level)
@@ -177,28 +181,37 @@ class MoNetUnet(nn.Module):
         self.device = device
     
     def forward(self, data):
-        x = data
+        batch_x = data
+        #reshape input to batch,n_vertices
+        original_shape = batch_x.shape
+        
+        batch_x = batch_x.view((batch_x.shape[0]//self.n_vertices, self.n_vertices,self.num_features))
         skip_connections = []
-        for i, block in enumerate(self.encoder_conv_layers):
-            for cl in block:
-                x = cl(x, device=self.device)
-                x = self.activation_function(x)
-            skip_connections.append(x)
-            # apply pool except on last block
-            if i < len(self.encoder_conv_layers)-1:
-                x = self.pool_layers[i](x)
-                
-        for i, block in enumerate(self.decoder_conv_layers):
-            skip_i = len(self.decoder_conv_layers)-1-i
-            x = self.unpool_layers[i](x, device=self.device)
-            x = torch.cat([x, skip_connections[skip_i]], dim=1)
-            for cl in block:
-                x = cl(x, device=self.device)
-                x = self.activation_function(x)
+        outputs=[]
+        for x in batch_x:
+            for i, block in enumerate(self.encoder_conv_layers):
+                for cl in block:
+                    x = cl(x, device=self.device)
+                    x = self.activation_function(x)
+                skip_connections.append(x)
+                # apply pool except on last block
+                if i < len(self.encoder_conv_layers)-1:
+                    x = self.pool_layers[i](x)
 
-        # add final linear layer
-        x = self.fc(x)
-        x = nn.LogSoftmax(dim=1)(x)
+            for i, block in enumerate(self.decoder_conv_layers):
+                skip_i = len(self.decoder_conv_layers)-1-i
+                x = self.unpool_layers[i](x, device=self.device)
+                x = torch.cat([x, skip_connections[skip_i]], dim=1)
+                for cl in block:
+                    x = cl(x, device=self.device)
+                    x = self.activation_function(x)
+                        # add final linear layer
+            x = self.fc(x)
+            x = nn.LogSoftmax(dim=1)(x)
+            outputs.append(x)
+        batch_x = torch.stack(outputs)
+        #reshape output to batch, n_vertices
+        x = batch_x.view((original_shape[0],-1))
         return x
 
 class HexPool(nn.Module):
