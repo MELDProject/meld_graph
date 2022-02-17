@@ -7,11 +7,43 @@ import meld_graph.models
 from meld_classifier.meld_cohort import MeldCohort
 from meld_graph.training import Trainer
 import numpy as np
+import pandas as pd
+import glob
 
+def is_experiment(path, trained=False):
+    """
+    convenience function to check that this is a valid experiment folder, containing network and data parameters.
+    If trained is set to True, also needs to contain best_model.pt and train/val scores
+    """
+    if os.path.isfile(os.path.join(path, 'data_parameters.json')) and os.path.isfile(os.path.join(path, 'network_parameters.json')):
+        # is experiment folder
+        if trained is False:
+            return True
+        else:
+            if os.path.isfile(os.path.join(path, 'best_model.pt')) and \
+            os.path.isfile(os.path.join(path, 'train_scores.csv')) and \
+            os.path.isfile(os.path.join(path, 'val_scores.csv')):
+                return True
+    return False
+
+def discover_trained_experiments(path=None):
+    """
+    recursively search for experiment folders starting from path
+    """
+    if path is None:
+        path = EXPERIMENT_PATH
+    if is_experiment(path, trained=True):
+        return [path]
+    else:
+        experiments = []
+        for f in glob.glob(os.path.join(path, '*')):
+            if os.path.isdir(f):
+                experiments.extend(discover_trained_experiments(f))
+        return experiments
 
 
 class Experiment:
-    def __init__(self, network_parameters, data_parameters):
+    def __init__(self, network_parameters, data_parameters, save_params=True):
         self.log = logging.getLogger(__name__)
         self.network_parameters = network_parameters
         self.data_parameters = data_parameters
@@ -26,14 +58,15 @@ class Experiment:
         if self.experiment_name is not None:
             self.experiment_path = os.path.join(EXPERIMENT_PATH, self.experiment_name, f'fold_{self.fold:02d}')
             os.makedirs(self.experiment_path, exist_ok=True)
-            self.save_parameters()
+            if save_params:
+                self.save_parameters()
 
     @classmethod
     def from_folder(cls, experiment_path):
         """experiment_path: experiment_name/fold_00 """
-        data_parameters = json.load(open(os.path.join(EXPERIMENT_PATH, experiment_name, "data_parameters.json")))
-        network_parameters = json.load(open(os.path.join(EXPERIMENT_PATH, experiment_name, "network_parameters.json")))
-        cls(network_parameters, data_parameters)
+        data_parameters = json.load(open(os.path.join(experiment_path, "data_parameters.json")))
+        network_parameters = json.load(open(os.path.join(experiment_path, "network_parameters.json")))
+        return cls(network_parameters, data_parameters, save_params=False)
 
     def save_parameters(self):
         """
@@ -175,3 +208,11 @@ class Experiment:
         train_ids = np.concatenate(folds[0:-1]).ravel()
         val_ids = folds[-1]
         return train_ids, val_ids, test_ids
+
+    def get_scores(self, split='val'):
+        if is_experiment(self.experiment_path, trained=True):
+            df = pd.read_csv(os.path.join(self.experiment_path, f'{split}_scores.csv'), index_col=0)
+            return df
+        else:
+            self.log.info('Experiment is not trained, no scores available')
+            return None
