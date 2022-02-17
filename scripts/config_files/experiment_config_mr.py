@@ -25,7 +25,7 @@ network_parameters = {
 }
 
 data_parameters = {
-    'hdf5_file_root': "{site_code}_{group}_featurematrix_combat.hdf5",
+    'hdf5_file_root': "{site_code}_{group}_featurematrix_combat_6.hdf5",
     'site_codes': ['H4'],
     'scanners': ['15T','3T'],
     'dataset': 'MELD_dataset_V6.csv',

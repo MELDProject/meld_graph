@@ -3,10 +3,12 @@ MELD classifier using Geometric Deep Learning
 
 In progress
 
-## Installation on CPU, see below for Cambridge HPC
+## Installation
 dependencies: pytorch, pytorch_geometric, meld_classifier
 
 Below installation on HPC(linux) and on MacOS environments are described.
+
+After installation, register your EXPERIMENT_PATH in `meld_graph/paths.py`. EXPERIMENT_PATHs on the HPC should be registered already (saved in `meld_experiments_graph/USERNAME` on rds)
 
 ### On the HPC (GPU)
 On Ampere GPUs cuda 11.4 is enabled by default, for which no pytorch version is available. Installation here is done with cuda 11.1. and pytorch 1.10.0 (important!). After installation, running code also seems to work without loading the cuda/11.1 module.
@@ -33,7 +35,6 @@ On Ampere GPUs cuda 11.4 is enabled by default, for which no pytorch version is 
     python train.py
     ```
 
-
 Original steps for installing pytorch and pytorch geometric from Hannah were: (with cuda 11.1 loaded)
 ```
 conda install pytorch torchvision torchaudio cudatoolkit=11.1 -c pytorch -c nvidia
@@ -41,7 +42,6 @@ conda install pytorch=1.10.0 -c pytorch
 pip install torch-scatter -f https://data.pyg.org/whl/torch-1.10.0+cu111.html
 pip install torch-sparse -f https://data.pyg.org/whl/torch-1.10.0+cu111.html
 ```
-
 
 ### CPU environment on HPC:
 ```
@@ -59,3 +59,28 @@ conda install pyg -c pyg -c conda-forge
     pip install torch-geometric
     ```
     Test if the torch-geometric installation worked by importing some packages: `from torch_geometric.data import Data`
+
+# Code Structure
+Example config files can be found in `scripts/config_files/example_experiment_config.py`. They define the data that the model is trained on, the model architecture, and training parameters.
+Main class is the Experiment (`meld_graph/experiment.py`). It is initialised with data_parameters and network_parameters. Experiments are saved in folders in EXPERIMENT_PATH (defined in `meld_graph/paths.py`). Experiments are only saved when `network_parameters['name']` is not None.
+
+Data is loaded by GraphDataset in `meld_graph/dataset.py` using Preprocess in `meld_graph/data_preprocessing.py`. Preprocess returns per subject vertices and labels. In GraphDataset, each hemisphere is treated as a single datapoint, with optional stacking of hemisphere features (to eg allow the model to calculate assymetry) -- use `data_parameters['combine_hemis']` to modify this behaviour.
+
+Models are defined in `meld_graph/models.py`. There is an implementation for a simple MoNet (just convolutions) and a MoNetUnet (convolutions and hex pooling). Model architecture can be modified using `network_parameters['model_parameters']`. As convolutions GMMConv and SpiralConv can be used (`conv_type` parameter).
+
+Models instanciate the `IcoSpheres` class. This computes and returns icospheres (edge matrices, neighbours, edge attributes) at different levels. Level 7 is the highest resolution. GMMConv, SpiralConv, HexPool, and HexUnpool all use the edges/neighbours at different levels. IcoSpheres needs a few parameters for initalisation (`data_parameters['icosphere_parameters']`) - some parameters (`conv_type`) are automatically added to this dict in `Experiment.load_model()`. 
+
+Training is done by Trainer in `meld_graph/training.py`. Relevant params are in `network_parameters['training_parameters']`. Several metrics can be tracked during training (dice_lesion, dice_nonlesion, etc). Training is possible with multiple hemispheres (data points) at once (by specifying a batch_size larger than 1). Internally this is achieved by looping over all elements in this batch and stacking them afterwards (the GMMConv and SpiralConv expect the batch dimension to be the number of vertices in the graph). 
+Patience is implemented, with the best model being saved in the experiment directory. 
+Training logs and train/val scores are also saved in the experiment directory.
+
+Evaluation is minimal at the moment. `notebooks/compare_experiments.ipynb` contains a function for plotting training curves from different experiments.
+
+# Usage
+- `create_scaling_parameters.py`: calculates scaling params file. Only needs to be run once.
+- `create_icospheres.py`: creates downsampled icospheres. Only needs to be run once.
+- `train.py --config-file config_files/example_experiment_config.py` trains a model using the specified data and model architecture
+- on HPC: `sbatch train.sh <full-path-to-config-file>/example_experiment_config.py` to train model using scheduler
+
+NOTE: currently only one model can be trained at a time, although different folds can be specified in the experiment_config. 
+
