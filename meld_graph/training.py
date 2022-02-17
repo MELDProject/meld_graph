@@ -39,13 +39,17 @@ def dice_coeff(pred, target,mask=False):
 
 
 class DiceLoss(torch.nn.Module):
-    def __init__(self, weight=None, size_average=True):
+    def __init__(self, loss_weight_dictionary=None):
         super(DiceLoss, self).__init__()
+        self.class_weights = [0.5,0.5]
+        if 'dice' in loss_weight_dictionary.keys():
+            if 'class_weights' in loss_weight_dictionary['dice']:
+                self.class_weights = loss_weight_dictionary['dice']['class_weights']
 
-    def forward(self, inputs, targets, class_weights=[0.5,0.5], mask=False,device=None):
+    def forward(self, inputs, targets, mask=False,device=None):
         dice = dice_coeff(torch.exp(inputs),targets,mask=mask)
         if device is not None:
-            class_weights = torch.tensor(class_weights,dtype=float).to(device)
+            class_weights = torch.tensor(self.class_weights,dtype=float).to(device)
         dice = dice[0]*class_weights[0] + dice[1]*class_weights[1]
         return 1 - dice
 
@@ -112,7 +116,8 @@ def calculate_loss(loss_weight_dictionary,estimates,labels, device=None):
     """
     # TODO could use class_weights for dice loss (but not using dice loss atm)
     loss_functions = {
-        'dice': partial(DiceLoss(), device=device),
+        'dice': partial(DiceLoss(loss_weight_dictionary=loss_weight_dictionary),
+                         device=device),
         'cross_entropy': CrossEntropyLoss(),
         'focal_loss': FocalLoss(loss_weight_dictionary),
                        }
