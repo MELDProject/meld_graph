@@ -106,7 +106,7 @@ class MoNetUnet(nn.Module):
         in_size = self.num_features
         level = 7
         #store n_vertices for batch rearrangement
-        self.n_vertices = len(self.icospheres.get_spirals(level=level))
+        self.n_vertices = len(self.icospheres.icospheres[level]['coords'])
         for i in range(num_blocks):
             block = []
             print('encoder block', i, 'at level', level)
@@ -184,7 +184,7 @@ class MoNetUnet(nn.Module):
         batch_x = data
         #reshape input to batch,n_vertices
         original_shape = batch_x.shape
-        print(original_shape)
+        
         batch_x = batch_x.view((batch_x.shape[0]//self.n_vertices, self.n_vertices,self.num_features))
         skip_connections = []
         outputs=[]
@@ -205,14 +205,13 @@ class MoNetUnet(nn.Module):
                 for cl in block:
                     x = cl(x, device=self.device)
                     x = self.activation_function(x)
-                            # add final linear layer
+                        # add final linear layer
             x = self.fc(x)
             x = nn.LogSoftmax(dim=1)(x)
             outputs.append(x)
         batch_x = torch.stack(outputs)
         #reshape output to batch, n_vertices
-        x = batch_x.view(original_shape)
-        print(x.shape)
+        x = batch_x.view((original_shape[0],-1))
         return x
 
 class HexPool(nn.Module):
