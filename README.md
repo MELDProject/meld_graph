@@ -80,6 +80,7 @@ Evaluation is minimal at the moment. `notebooks/compare_experiments.ipynb` conta
 - `create_scaling_parameters.py`: calculates scaling params file. Only needs to be run once.
 - `create_icospheres.py`: creates downsampled icospheres. Only needs to be run once.
 - `train.py --config-file config_files/example_experiment_config.py` trains a model using the specified data and model architecture
+- on HPC: `sbatch train.sh <full-path-to-config-file>/example_experiment_config.py` to train model using scheduler
 
 NOTE: currently only one model can be trained at a time, although different folds can be specified in the experiment_config. 
 
