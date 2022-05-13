@@ -2,6 +2,7 @@ import torch_geometric.data
 from meld_classifier.meld_cohort import MeldSubject
 from meld_classifier.dataset import load_combined_hemisphere_data
 from meld_graph.data_preprocessing import Preprocess
+from meld_graph.augment import Augment
 import numpy as np
 import torch
 import logging
@@ -13,6 +14,7 @@ class GraphDataset(torch_geometric.data.Dataset):
         self.params = params
         self.subject_ids = subject_ids
         self.cohort = cohort
+        self._augment =  None
 
         # preload data in memory, with all preprocessing done
         self.data_list = []
@@ -56,6 +58,13 @@ class GraphDataset(torch_geometric.data.Dataset):
             params=experiment.data_parameters,
         )
 
+    
+    @property
+    def augment(self):
+        if self._augment is None:
+            self._augment = Augment(self.params['augment_data']) 
+        return self._augment
+    
     def len(self):
         # every subject will be shown twice per epoch
         return 2*len(self.subject_ids)
@@ -63,8 +72,13 @@ class GraphDataset(torch_geometric.data.Dataset):
     def get(self, idx):
         #print('dataset get idx ', idx)
         features, labels = self.data_list[idx]
-        return torch_geometric.data.Data(
-            x=torch.tensor(features, dtype=torch.float), 
-            y=torch.tensor(labels, dtype=torch.long), 
-            num_nodes=len(features))
+        #apply data augmentation
+        if self.params['augment_data'] != None:
+            features, labels = self.augment.apply(features, labels)
+        
+        return features, labels
+#         return torch_geometric.data.Data(
+#             x=torch.tensor(features, dtype=torch.float), 
+#             y=torch.tensor(labels, dtype=torch.long), 
+#             num_nodes=len(features))
 

@@ -115,4 +115,11 @@ data_parameters = {
     },
     "combine_hemis": None,  # None, "stack", TODO: combine with graph
     "lobes":False, # "False" if true task is frontal lobe parcellation, not lesion segmentation
+    "augment_data": {
+         "spinning": 
+              {'p': 0.99,
+               'file': '/rds/user/co-ripa1/hpc-work/scripts/meld_classifier_GDL/data/spinning/spinning_ico7_10.npy'
+               },
+     }
+    
 }
