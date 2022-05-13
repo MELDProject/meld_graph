@@ -84,3 +84,9 @@ Evaluation is minimal at the moment. `notebooks/compare_experiments.ipynb` conta
 
 NOTE: currently only one model can be trained at a time, although different folds can be specified in the experiment_config. 
 
+## Lobe parcellation task
+To test on an easier task, use the frontal lobe parcellation task. This is another binary classification task,
+that can be used as a drop-in task for the harder lesion segmentation.
+In `data_parameters`, set `lobe = True`, to train on this task.
+
+
