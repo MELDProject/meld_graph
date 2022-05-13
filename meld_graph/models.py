@@ -69,7 +69,8 @@ class MoNet(nn.Module):
 class MoNetUnet(nn.Module):
     def __init__(self, num_features, layer_sizes, dim=2, kernel_size=3, 
                  
-                 icosphere_params={}, conv_type='GMMConv', spiral_len=10):
+                 icosphere_params={}, conv_type='GMMConv', spiral_len=10,
+                 deep_supervision=[]):
         """
         Unet model
         dim: dim for GMMConv, dimension of coord representation - 2 or 3 (for GMMConv)
@@ -79,7 +80,7 @@ class MoNetUnet(nn.Module):
         icosphere_params: params passes to IcoShperes for edges, coords, and neighbours
         conv_type: "GMMConv" or "SpiralConv"
         spiral_len: number of neighbors included in each convolution (for SpiralConv) TODO implement dilation as well
-        
+        deep_supervision: list of levels at which deep supervision should be added, adds linear "squeeze" layer to the end of the block, and outputs these levels.
         Model outputs log softmax scores. Need to call torch.exp to get probabilities
         """
         super(MoNetUnet, self).__init__()
@@ -87,6 +88,7 @@ class MoNetUnet(nn.Module):
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.num_features = num_features
         self.conv_type = conv_type
+        self.deep_supervision = sorted(deep_supervision)
         self.activation_function = nn.ReLU()
         # TODO when changing aggregation of hemis, might need to use different graph here 
         # TODO for different coord systems, pass arguments to IcoSpheres here
@@ -143,7 +145,11 @@ class MoNetUnet(nn.Module):
         # start with uppooling
         decoder_conv_layers = []
         unpool_layers = []
+        deep_supervision_fcs = {}
         for i in range(num_blocks-1)[::-1]:
+            # check if want deep supervision for this level
+            if level in deep_supervision:
+                deep_supervision_fcs[str(level)] = nn.Linear(in_size, 2)
             level += 1
             print('decoder block', i, 'at level', level)
             print('adding unpool to level', level)
@@ -172,7 +178,7 @@ class MoNetUnet(nn.Module):
             decoder_conv_layers.append(nn.ModuleList(block))
         self.decoder_conv_layers = nn.ModuleList(decoder_conv_layers)
         self.unpool_layers = nn.ModuleList(unpool_layers)
-
+        self.deep_supervision_fcs = nn.ModuleDict(deep_supervision_fcs)
         self.fc = nn.Linear(in_size, 2)
 
     def to(self, device, **kwargs):
@@ -188,7 +194,9 @@ class MoNetUnet(nn.Module):
         batch_x = batch_x.view((batch_x.shape[0]//self.n_vertices, self.n_vertices,self.num_features))
         skip_connections = []
         outputs=[]
+        deep_output = {level: [] for level in self.deep_supervision}
         for x in batch_x:
+            level = 7
             for i, block in enumerate(self.encoder_conv_layers):
                 for cl in block:
                     x = cl(x, device=self.device)
@@ -196,23 +204,34 @@ class MoNetUnet(nn.Module):
                 skip_connections.append(x)
                 # apply pool except on last block
                 if i < len(self.encoder_conv_layers)-1:
+                    level -= 1
                     x = self.pool_layers[i](x)
 
             for i, block in enumerate(self.decoder_conv_layers):
+                # check if want deep supervision for this level
+                if level in self.deep_supervision:
+                    x_out = self.deep_supervision_fcs[str(level)](x)
+                    x_out = nn.LogSoftmax(dim=1)(x_out)
+                    deep_output[level].append(x_out)
                 skip_i = len(self.decoder_conv_layers)-1-i
+                level += 1
                 x = self.unpool_layers[i](x, device=self.device)
                 x = torch.cat([x, skip_connections[skip_i]], dim=1)
                 for cl in block:
                     x = cl(x, device=self.device)
                     x = self.activation_function(x)
-                        # add final linear layer
+            # add final linear layer
             x = self.fc(x)
             x = nn.LogSoftmax(dim=1)(x)
             outputs.append(x)
         batch_x = torch.stack(outputs)
         #reshape output to batch, n_vertices
         x = batch_x.view((original_shape[0],-1))
-        return x
+        #print([deep_output[level][0].shape for level in self.deep_supervision])
+        deep_output = [torch.stack(deep_output[level]) for level in self.deep_supervision]
+        #print([o.shape for o in deep_output])
+        deep_output = [out.view(-1, 2) for out in deep_output]
+        return [x] + deep_output
 
 class HexPool(nn.Module):
     def __init__(self, neigh_indices):

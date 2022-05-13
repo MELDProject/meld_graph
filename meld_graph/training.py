@@ -35,9 +35,6 @@ def dice_coeff(pred, target,mask=False):
     return  dice
 
 
-
-
-
 class DiceLoss(torch.nn.Module):
     def __init__(self, loss_weight_dictionary=None):
         super(DiceLoss, self).__init__()
@@ -179,6 +176,8 @@ class Trainer:
         self.log = logging.getLogger(__name__)
         self.experiment = experiment
         self.params = self.experiment.network_parameters['training_parameters']
+        self.deep_supervision = self.params.get('deep_supervision', {'levels':[], 'weight': 1})
+
 
     def train_epoch(self, data_loader, optimiser):
         """
@@ -196,12 +195,18 @@ class Trainer:
             optimiser.zero_grad()
             estimates = model(data.x)
             labels = data.y.squeeze()
-            loss = calculate_loss(self.params['loss_dictionary'],estimates, labels, device=device)
+            loss = calculate_loss(self.params['loss_dictionary'],estimates[0], labels, device=device)
+            # add deep supervision outputs # TODO add loss weight param for deep supervision?
+            for i,level in enumerate(sorted(self.deep_supervision['levels'])):
+                cur_estimates = estimates[i+1]
+                cur_labels = getattr(data, f"output_level{level}")
+                #print(cur_estimates.shape, cur_labels.shape)
+                loss += self.deep_supervision['weight'] * calculate_loss(self.params['loss_dictionary'], cur_estimates, cur_labels, device=device)
             loss.backward()
             optimiser.step()
             running_loss.append(loss.item())
             # metrics
-            pred = torch.argmax(estimates, axis=1)
+            pred = torch.argmax(estimates[0], axis=1)
             # update running metrics
             metrics.update(pred, labels)
             
@@ -221,10 +226,16 @@ class Trainer:
                 #fake_x = torch.vstack([data.y for _ in range(22)]).t().type(torch.float)
                 estimates = model(data.x)
                 labels = data.y.squeeze()
-                loss = calculate_loss(self.params['loss_dictionary'],estimates, labels, device =device)
+                loss = calculate_loss(self.params['loss_dictionary'],estimates[0], labels, device=device)
+                # add deep supervision outputs # TODO add loss weight param for deep supervision?
+                for i,level in enumerate(sorted(self.deep_supervision['levels'])):
+                    cur_estimates = estimates[i+1]
+                    cur_labels = getattr(data, f"output_level{level}")
+                    #print(cur_estimates.shape, cur_labels.shape)
+                    loss += self.deep_supervision['weight'] * calculate_loss(self.params['loss_dictionary'], cur_estimates, cur_labels, device=device)
                 running_loss.append(loss.item())
                 # metrics
-                pred = torch.argmax(estimates, axis=1)
+                pred = torch.argmax(estimates[0], axis=1)
                 # update running metrics
                 metrics.update(pred, labels)
      

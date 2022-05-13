@@ -13,19 +13,25 @@ network_parameters = {
     'training_parameters': {
         "max_patience": 400,
         "num_epochs": 50,
-        'lr': 2e-4,
+        'lr': 1e-4,
         'loss_dictionary': {  
             'cross_entropy':{'weight':1},
-        #    'dice': {'weight': 1,'class_weights':[0.5,0.5]},
-        #    'focal_loss':{'weight':1, 'gamma':4, 'alpha': 0.4},
+            'dice': {'weight': 1,'class_weights':[0.5,0.5]},
+            'focal_loss':{'weight':1, 'gamma':4, 'alpha': 0.4},
         },
         # list of metrics that should be printed during training
         'metrics': ['dice_lesion', 'dice_nonlesion', 'precision', 'recall', 'tp', 'fp', 'fn'], 
-        "batch_size": 8,
+        "batch_size": 2,
         "shuffle_each_epoch": True,
+        # Set to list of levels (eg [6,5,4]), for which to add output layers for additional supervision.
+        # 7 is highest level. (standard output).  # TODO add some error checking here, max val should be < 7.
+        'deep_supervision': {
+            'levels': [6,5,4,3,2,1], 
+            'weight': 0.5
+        }
     },
     # experiment name. If none, experiment is not saved
-    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_lobes',
+    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_deepsup2',
 }
 
 data_parameters = {
@@ -115,5 +121,5 @@ data_parameters = {
         "distance_type": "exact", #"exact",  # exact or pseudo
     },
     "combine_hemis": None,  # None, "stack", TODO: combine with graph
-    "lobes": True, # If true task is frontal lobe parcellation, not lesion segmentation
+    "lobes": False, # If true task is frontal lobe parcellation, not lesion segmentation
 }
