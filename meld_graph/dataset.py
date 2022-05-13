@@ -5,6 +5,7 @@ from meld_graph.data_preprocessing import Preprocess
 import numpy as np
 import torch
 import logging
+import time
 
 class GraphDataset(torch_geometric.data.Dataset):
     def __init__(self, subject_ids, cohort, params, transform=None, pre_transform=None, pre_filter=None):
@@ -33,7 +34,7 @@ class GraphDataset(torch_geometric.data.Dataset):
                 self.data_list.append((features, lesion_right))
             else:
                 raise NotImplementedError
-
+            
 
 
     @classmethod

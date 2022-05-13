@@ -13,7 +13,7 @@ import random
 import json
 import copy 
 from meld_classifier.meld_cohort import MeldCohort, MeldSubject
-
+import time
 
 class Preprocess:
     def __init__(self, cohort, site_codes=None, write_output_file=None, data_dir=BASE_PATH):
@@ -76,36 +76,35 @@ class Preprocess:
         2) scale data between 0 and 1
         3) TODO : transform data if not gaussian 
         '''
-        
         subj = MeldSubject(subject, cohort=self.cohort)  
         #load data & lesion
         vals_array_lh, lesion_lh = subj.load_feature_lesion_data(features, hemi='lh')
         vals_array_rh, lesion_rh = subj.load_feature_lesion_data(features, hemi='rh')
-        vals_array = np.array(np.hstack([vals_array_lh[self.cohort.cortex_mask].T, vals_array_rh[self.cohort.cortex_mask].T]))
+     #   vals_array = np.array(np.hstack([vals_array_lh[self.cohort.cortex_mask].T, vals_array_rh[self.cohort.cortex_mask].T]))
         
         #correct for sulc freesurfer
-        if '.on_lh.sulc.mgh' in features:
-            index_sulc = features.index('.on_lh.sulc.mgh')
-            vals_array[index_sulc] =  self.correct_sulc_freesurfer(vals_array[index_sulc])
+#         if '.on_lh.sulc.mgh' in features:
+#             index_sulc = features.index('.on_lh.sulc.mgh')
+#             vals_array[index_sulc] =  self.correct_sulc_freesurfer(vals_array[index_sulc])
         
         #if flag 'sclaling' scale data between 0 and 1  
-        if params['scaling'] != None:
-            scaling_params_file = os.path.join(BASE_PATH,params['scaling'])
-            preprocessed_data = self.scale_data(vals_array, features, scaling_params_file )
-        else:
-            preprocessed_data = copy.deepcopy(vals_array)
+#         if params['scaling'] != None:
+#             scaling_params_file = os.path.join(BASE_PATH,params['scaling'])
+#             preprocessed_data = self.scale_data(vals_array, features, scaling_params_file )
+#         else:
+#             preprocessed_data = copy.deepcopy(vals_array)
         if lobes:
             lesion_lh = self.lobes
             lesion_rh = self.lobes
         #transform data if feature not gaussian
         #TODO later
         #include medial wall back with 0 values
-        features_lh = np.zeros((len(features), NVERT))
-        features_lh[:, self.cohort.cortex_mask] = preprocessed_data[:, 0:sum(self.cohort.cortex_mask)]
-        features_rh = np.zeros((len(features), NVERT))
-        features_rh[:, self.cohort.cortex_mask] = preprocessed_data[:, sum(self.cohort.cortex_mask) : sum(self.cohort.cortex_mask)*2]
+#         features_lh = np.zeros((len(features), NVERT))
+#         features_lh[:, self.cohort.cortex_mask] = preprocessed_data[:, 0:sum(self.cohort.cortex_mask)]
+#         features_rh = np.zeros((len(features), NVERT))
+#         features_rh[:, self.cohort.cortex_mask] = preprocessed_data[:, sum(self.cohort.cortex_mask) : sum(self.cohort.cortex_mask)*2]
         
-        return features_lh, features_rh, lesion_lh, lesion_rh
+        return vals_array_lh.T, vals_array_rh.T, lesion_lh, lesion_rh
     
     def scale_data(self, matrix, features, file_name):
         """scale data features between 0 and 1"""
