@@ -4,6 +4,7 @@ from meld_classifier.dataset import load_combined_hemisphere_data
 from meld_graph.data_preprocessing import Preprocess
 from meld_graph.icospheres import IcoSpheres
 from meld_graph.models import HexPool
+from meld_graph.augment import Augment
 import numpy as np
 import torch
 import logging
@@ -24,6 +25,7 @@ class GraphDataset(torch_geometric.data.Dataset):
         if len(self.output_levels) != 0:
             self.icospheres = IcoSpheres()
             self.pool_layers = {level: HexPool(self.icospheres.get_neighbours(level=level)) for level in range(min(self.output_levels),7)[::-1]}
+        self._augment =  None
 
         # preload data in memory, with all preprocessing done
         self.data_list = []
@@ -68,6 +70,13 @@ class GraphDataset(torch_geometric.data.Dataset):
             output_levels=experiment.network_parameters['training_parameters'].get('deep_supervision', {}).get('levels', []),
         )
 
+    
+    @property
+    def augment(self):
+        if self._augment is None:
+            self._augment = Augment(self.params['augment_data']) 
+        return self._augment
+    
     def len(self):
         # every subject will be shown twice per epoch
         return 2*len(self.subject_ids)
@@ -75,6 +84,9 @@ class GraphDataset(torch_geometric.data.Dataset):
     def get(self, idx):
         #print('dataset get idx ', idx)
         features, labels = self.data_list[idx]
+        #apply data augmentation
+        if self.params['augment_data'] != None:
+            features, labels = self.augment.apply(features, labels)
         data = torch_geometric.data.Data(
             x=torch.tensor(features, dtype=torch.float), 
             y=torch.tensor(labels, dtype=torch.long), 
