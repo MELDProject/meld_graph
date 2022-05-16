@@ -43,23 +43,26 @@ def discover_trained_experiments(path=None):
 
 
 class Experiment:
-    def __init__(self, network_parameters, data_parameters, save_params=True):
-        self.log = logging.getLogger(__name__)
+    def __init__(self, network_parameters, data_parameters, save_params=True, verbose=logging.WARNING):
         self.network_parameters = network_parameters
         self.data_parameters = data_parameters
         self.model = None # loaded by self.load_model()
-        self.experiment_path = None
-        self.cohort = MeldCohort(
-            hdf5_file_root=self.data_parameters["hdf5_file_root"], dataset=self.data_parameters["dataset"]
-        )
         self.experiment_name = self.network_parameters['name']
         self.fold = self.data_parameters['fold_n']
         self.experiment_path = None
         if self.experiment_name is not None:
             self.experiment_path = os.path.join(EXPERIMENT_PATH, self.experiment_name, f'fold_{self.fold:02d}')
             os.makedirs(self.experiment_path, exist_ok=True)
-            if save_params:
-                self.save_parameters()
+        # init logging now, path is created
+        # if save_params, will overwrite/append to logs
+        self._init_logging(verbose, save_params)
+        self.log = logging.getLogger(__name__)
+
+        self.cohort = MeldCohort(
+            hdf5_file_root=self.data_parameters["hdf5_file_root"], dataset=self.data_parameters["dataset"]
+        )
+        if save_params:
+            self.save_parameters()
 
     @classmethod
     def from_folder(cls, experiment_path):
@@ -67,6 +70,39 @@ class Experiment:
         data_parameters = json.load(open(os.path.join(experiment_path, "data_parameters.json")))
         network_parameters = json.load(open(os.path.join(experiment_path, "network_parameters.json")))
         return cls(network_parameters, data_parameters, save_params=False)
+
+    def _init_logging(self, verbose, save_params=False):
+        """
+        Set up a logger for this experiment that logs to experiment_path and to stdout.
+        Should only be called once per experiment (overwrites existing log files of the same name)
+        """
+        # remove all previous logging handlers associated with the root logger
+        for handler in logging.root.handlers[:]:
+            logging.root.removeHandler(handler)
+        # set up logging handlers
+        if self.experiment_path is not None and save_params:
+            fname = os.path.join(self.experiment_path, "train.log")
+            fileFormatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+            fileHandler = logging.FileHandler(fname, 'w')
+            fileHandler.setFormatter(fileFormatter)
+            handlers=[
+                        fileHandler,
+                        logging.StreamHandler()
+                    ]
+        else:
+            handlers=[logging.StreamHandler()
+                ]
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(message)s",
+            handlers=handlers
+        )
+        # (mostly) silence tf logging
+        #tf_logger = logging.getLogger("tensorflow")
+        #tf_logger.setLevel(logging.ERROR)
+        # (mostly) silence matplotlib logging
+        #mpl_logger = logging.getLogger("matplotlib")
+        #mpl_logger.setLevel(logging.WARNING)
 
     def save_parameters(self):
         """

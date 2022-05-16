@@ -16,10 +16,25 @@ from meld_classifier.meld_cohort import MeldCohort, MeldSubject
 import time
 
 class Preprocess:
-    def __init__(self, cohort, site_codes=None, write_output_file=None, data_dir=BASE_PATH):
+    params = {
+        'scaling': None,
+        'zscore': False
+    }
+    def __init__(self, cohort, site_codes=None, write_output_file=None, data_dir=BASE_PATH, params={}):
+        """
+        Load and preprocess data. 
+
+        params:
+            scaling: scale data between 0 and 1 using precomputed scaling params (TODO currently not implemented)
+            zscore: z-score each feature for each subject (excluding medial wall)
+        
+        TODO : transform data if not gaussian 
+        TODO : if not using combat features, correct for sulc freesurfer
+        """
         self.cohort = cohort
         self.write_output_file = write_output_file
         self.data_dir = data_dir
+        self.params.update(params)
         # private attributes for site_codes and subject_ids properties
         self._site_codes = site_codes
         self._subject_ids = None
@@ -69,43 +84,66 @@ class Preprocess:
         return vals
 
     
-    def get_data_preprocessed(self, subject, features, params, lobes=False):
-        ''' This function preprocessed features data for a single subject$
-        preprocess: 
-        1) get data and lesion
-        2) scale data between 0 and 1
-        3) TODO : transform data if not gaussian 
-        '''
+    def get_data_preprocessed(self, subject, features, lobes=False, lesion_bias=False):
+        """
+        Preprocess features data for a single subject depending on params.
+
+        Args:
+            lobes: if True, return lobes task as lesion values
+            lesion_bias: if True, add lesion_bias value to lesional vertices. 
+                NOTE: should not be used for final models, only for testing
+        
+        Returns:
+            features_left, features_right, lesion_left, lesion_right
+        """
         subj = MeldSubject(subject, cohort=self.cohort)  
-        #load data & lesion
+        # load data & lesion
         vals_array_lh, lesion_lh = subj.load_feature_lesion_data(features, hemi='lh')
         vals_array_rh, lesion_rh = subj.load_feature_lesion_data(features, hemi='rh')
-     #   vals_array = np.array(np.hstack([vals_array_lh[self.cohort.cortex_mask].T, vals_array_rh[self.cohort.cortex_mask].T]))
+
+        if self.params['scaling'] is not None or self.params['zscore']:
+            # all values excluding medial wall
+            vals_array = np.array(np.hstack([vals_array_lh[self.cohort.cortex_mask].T, vals_array_rh[self.cohort.cortex_mask].T]))
         
-        #correct for sulc freesurfer
-#         if '.on_lh.sulc.mgh' in features:
-#             index_sulc = features.index('.on_lh.sulc.mgh')
-#             vals_array[index_sulc] =  self.correct_sulc_freesurfer(vals_array[index_sulc])
+            # correct for sulc freesurfer TODO only when not combat
+    #         if '.on_lh.sulc.mgh' in features:
+    #             index_sulc = features.index('.on_lh.sulc.mgh')
+    #             vals_array[index_sulc] =  self.correct_sulc_freesurfer(vals_array[index_sulc])
         
-        #if flag 'sclaling' scale data between 0 and 1  
-#         if params['scaling'] != None:
-#             scaling_params_file = os.path.join(BASE_PATH,params['scaling'])
-#             preprocessed_data = self.scale_data(vals_array, features, scaling_params_file )
-#         else:
-#             preprocessed_data = copy.deepcopy(vals_array)
+            # scale data between 0 and 1  
+            if self.params['scaling'] is not None:
+                scaling_params_file = os.path.join(BASE_PATH, self.params['scaling'])
+                vals_array = self.scale_data(vals_array, features, scaling_params_file )
+            # z-score data
+            if self.params['zscore']:
+                vals_array = self.zscore_data(vals_array)
+            # transform data if feature not gaussian
+            #TODO later
+            
+            # include medial wall back with 0 values
+            vals_array_lh = np.zeros((NVERT, len(features)))
+            vals_array_lh[self.cohort.cortex_mask] = vals_array[:, 0:sum(self.cohort.cortex_mask)].T
+            vals_array_rh = np.zeros((NVERT, len(features)))
+            vals_array_rh[self.cohort.cortex_mask] = vals_array[:, sum(self.cohort.cortex_mask) : sum(self.cohort.cortex_mask)*2].T
+    
+        # replace lesion data with lobes task if required
         if lobes:
             lesion_lh = self.lobes
             lesion_rh = self.lobes
-        #transform data if feature not gaussian
-        #TODO later
-        #include medial wall back with 0 values
-#         features_lh = np.zeros((len(features), NVERT))
-#         features_lh[:, self.cohort.cortex_mask] = preprocessed_data[:, 0:sum(self.cohort.cortex_mask)]
-#         features_rh = np.zeros((len(features), NVERT))
-#         features_rh[:, self.cohort.cortex_mask] = preprocessed_data[:, sum(self.cohort.cortex_mask) : sum(self.cohort.cortex_mask)*2]
-        
+        # add lesion bias
+        if lesion_bias:
+            vals_array_lh[lesion_lh==1] += lesion_bias
+            vals_array_rh[lesion_rh==1] += lesion_bias
+
         return vals_array_lh.T, vals_array_rh.T, lesion_lh, lesion_rh
     
+    def zscore_data(self, values):
+        """zscore features"""
+        std = values.std(axis=1, keepdims=True)
+        # for features with 0 std, set std to 1 to keep mean value (resulting in zscore 0)
+        std[std==0] = 1
+        return (values - values.mean(axis=1, keepdims=True)) / std
+
     def scale_data(self, matrix, features, file_name):
         """scale data features between 0 and 1"""
         self.log.info(f"Scale data using file {file_name}")

@@ -12,11 +12,11 @@ network_parameters = {
     },
     'training_parameters': {
         "max_patience": 400,
-        "num_epochs": 50,
+        "num_epochs": 20,
         'lr': 1e-4,
         'loss_dictionary': {  
-            'cross_entropy':{'weight':1},
-            'dice': {'weight': 1,'class_weights':[0.5,0.5]},
+            #'cross_entropy':{'weight':1},
+            #'dice': {'weight': 1,'class_weights':[0.5,0.5]},
             'focal_loss':{'weight':1, 'gamma':4, 'alpha': 0.4},
         },
         # list of metrics that should be printed during training
@@ -26,12 +26,12 @@ network_parameters = {
         # Set to list of levels (eg [6,5,4]), for which to add output layers for additional supervision.
         # 7 is highest level. (standard output).  # TODO add some error checking here, max val should be < 7.
         'deep_supervision': {
-            'levels': [6,5,4,3,2,1], 
+            'levels': [], #[4,5,6], 
             'weight': 0.5
         }
     },
     # experiment name. If none, experiment is not saved
-    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_deepsup2',
+    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_2' #+ '_full_cohort_deepsup',
 }
 
 data_parameters = {
@@ -116,10 +116,22 @@ data_parameters = {
     "fold_n": 0,
     "preprocessing_parameters": {
         "scaling":  None,  #"scaling_params_GDL.json"
+        "zscore": True,
     },
     "icosphere_parameters": {
         "distance_type": "exact", #"exact",  # exact or pseudo
     },
+    "augment_data": {
+        "spinning": None
+    },
     "combine_hemis": None,  # None, "stack", TODO: combine with graph
     "lobes": False, # If true task is frontal lobe parcellation, not lesion segmentation
+    "lesion_bias": False, # value is added to lesion values
+}
+
+# run several experiments
+# Nested levels are represented by $
+# e.g. "network_parameters$training_parameters$loss_dictionary$focal_loss" will set values for the focal loss.
+variable_parameters = {
+    'data_parameters$lesion_bias': [0.0,0.2,0.4,0.6],
 }

@@ -32,12 +32,12 @@ class GraphDataset(torch_geometric.data.Dataset):
 
         # preload data in memory, with all preprocessing done
         self.data_list = []
-        prep = Preprocess(cohort=self.cohort)
+        prep = Preprocess(cohort=self.cohort, params=self.params['preprocessing_parameters'])
         self.log.info("Loading and preprocessing data")
         self.log.info(f"Combine hemis {self.params['combine_hemis']}")
         for subj_id in self.subject_ids:
             features_left, features_right, lesion_left, lesion_right = prep.get_data_preprocessed(subject=subj_id, features=self.params['features'], 
-                params=self.params['preprocessing_parameters'], lobes = self.params['lobes'])
+                lobes = self.params['lobes'], lesion_bias=self.params.get('lesion_bias', False))
             if self.params['combine_hemis'] is None:
                 self.data_list.append((features_left.T, lesion_left))
                 self.data_list.append((features_right.T, lesion_right))
