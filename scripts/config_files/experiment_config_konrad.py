@@ -118,7 +118,7 @@ data_parameters = {
     "augment_data": {
          "spinning": 
               {'p': 0.99,
-               'file': '/rds/user/co-ripa1/hpc-work/scripts/meld_classifier_GDL/data/spinning/spinning_ico7_10.npy'
+               'file': 'data/spinning/spinning_ico7_10.npy'
                },
      }
     

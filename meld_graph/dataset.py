@@ -9,13 +9,17 @@ import logging
 import time
 
 class GraphDataset(torch_geometric.data.Dataset):
-    def __init__(self, subject_ids, cohort, params, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(self, subject_ids, cohort, params, mode='train', transform=None, pre_transform=None, pre_filter=None):
         super().__init__(None, transform, pre_transform, pre_filter)
         self.log = logging.getLogger(__name__)
         self.params = params
         self.subject_ids = subject_ids
         self.cohort = cohort
-        self._augment =  None
+        self.mode = mode
+        self.augment =  None
+        if (self.mode != 'test') & (self.params['augment_data'] != None):               
+            self.augment = Augment(self.params['augment_data'])
+          
 
         # preload data in memory, with all preprocessing done
         self.data_list = []
@@ -57,14 +61,8 @@ class GraphDataset(torch_geometric.data.Dataset):
             subject_ids=subject_ids,
             cohort=experiment.cohort,
             params=experiment.data_parameters,
+            mode=mode,
         )
-
-    
-    @property
-    def augment(self):
-        if self._augment is None:
-            self._augment = Augment(self.params['augment_data']) 
-        return self._augment
     
     def len(self):
         # every subject will be shown twice per epoch
@@ -74,9 +72,8 @@ class GraphDataset(torch_geometric.data.Dataset):
         #print('dataset get idx ', idx)
         features, labels = self.data_list[idx]
         #apply data augmentation
-        if self.params['augment_data'] != None:
+        if self.augment !=  None:
             features, labels = self.augment.apply(features, labels)
-        
         return torch_geometric.data.Data(
             x=torch.tensor(features, dtype=torch.float), 
             y=torch.tensor(labels, dtype=torch.long), 
