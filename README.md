@@ -74,6 +74,8 @@ Training is done by Trainer in `meld_graph/training.py`. Relevant params are in 
 Patience is implemented, with the best model being saved in the experiment directory. 
 Training logs and train/val scores are also saved in the experiment directory.
 
+Deep supervision can be achieved by adding a "deep_supervision" dict to `training_parameters`, containing "levels" (the isosphere levels at which to add supervision) and "weight" (the weight of the loss for the auxiliary loss).
+
 Evaluation is minimal at the moment. `notebooks/compare_experiments.ipynb` contains a function for plotting training curves from different experiments.
 
 # Usage

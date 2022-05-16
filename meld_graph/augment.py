@@ -50,30 +50,39 @@ class Augment():
             self.spinning = Transform(self.params['spinning'])
         else:
             self.spinning = None
-        if 'warp' in self.transform_types:
-            self.warp = Transform(self.params['warp'])
+        if 'warping' in self.transform_types:
+            self.warping = Transform(self.params['warping'])
         else:
-            self.warp = None
+            self.warping = None
+        if 'flipping' in self.transform_types:
+            self.flipping = Transform(self.params['flipping'])
+        else:
+            self.flipping = None
        
     def apply(self, features, lesions=None):
-        #spin
+        feat_tr = features
+        lesions_tr = lesions
+        #spinning
         if self.spinning != None:
             random_p = np.random.rand()
-            self.log.debug(f'random probability : {random_p}')
+            self.log.debug(f'random probability for spinning : {random_p}')
             if random_p < self.spinning.p:
                 self.log.debug('apply spinning')
-                feat_tr, lesions_tr= self.spinning.apply_transform(features, lesions)
-        #warp
-        if self.warp != None:
+                feat_tr, lesions_tr= self.spinning.apply_transform(feat_tr, lesions_tr)
+        #flipping
+        if self.flipping != None:
             random_p = np.random.rand()
-            self.log.debug(f'random probability : {random_p}')
-            if random_p < self.warp.p:
-                self.log.debug('apply warp')
-                feat_tr, lesions_tr= self.warp.apply_transform(features, lesions) 
-        else:
-            self.log.info('no augmentation')
-            feat_tr = features
-            lesions_tr = lesions
+            self.log.debug(f'random probability for flipping : {random_p}')
+            if random_p < self.flipping.p:
+                self.log.debug('apply flipping')
+                feat_tr, lesions_tr= self.flipping.apply_transform(feat_tr, lesions_tr) 
+        #warping
+        if self.warping != None:
+            random_p = np.random.rand()
+            self.log.debug(f'random probability for warping : {random_p}')
+            if random_p < self.warping.p:
+                self.log.debug('apply warping')
+                feat_tr, lesions_tr= self.warping.apply_transform(feat_tr, lesions_tr)            
         return feat_tr, lesions_tr
     
    
