@@ -11,7 +11,7 @@ import logging
 import time
 
 class GraphDataset(torch_geometric.data.Dataset):
-    def __init__(self, subject_ids, cohort, params, transform=None, pre_transform=None, pre_filter=None, output_levels=[]):
+    def __init__(self, subject_ids, cohort, params, mode='train', transform=None, pre_transform=None, pre_filter=None, output_levels=[]):
         """
         output_levels: list of icosphere levels for which y should be returned as well. Used for deep supervision.
             will be available as self.get().output_level<level>.
@@ -21,11 +21,14 @@ class GraphDataset(torch_geometric.data.Dataset):
         self.params = params
         self.subject_ids = subject_ids
         self.cohort = cohort
+        self.mode = mode
+        self.augment =  None
+        if (self.mode != 'test') & (self.params['augment_data'] != None):               
+            self.augment = Augment(self.params['augment_data'])         
         self.output_levels = sorted(output_levels)
         if len(self.output_levels) != 0:
             self.icospheres = IcoSpheres()
             self.pool_layers = {level: HexPool(self.icospheres.get_neighbours(level=level)) for level in range(min(self.output_levels),7)[::-1]}
-        self._augment =  None
 
         # preload data in memory, with all preprocessing done
         self.data_list = []
@@ -48,7 +51,6 @@ class GraphDataset(torch_geometric.data.Dataset):
                 raise NotImplementedError
             
 
-
     @classmethod
     def from_experiment(cls, experiment, mode):
         # set subject_ids
@@ -67,15 +69,9 @@ class GraphDataset(torch_geometric.data.Dataset):
             subject_ids=subject_ids,
             cohort=experiment.cohort,
             params=experiment.data_parameters,
+            mode=mode,
             output_levels=experiment.network_parameters['training_parameters'].get('deep_supervision', {}).get('levels', []),
         )
-
-    
-    @property
-    def augment(self):
-        if self._augment is None:
-            self._augment = Augment(self.params['augment_data']) 
-        return self._augment
     
     def len(self):
         # every subject will be shown twice per epoch
@@ -85,9 +81,8 @@ class GraphDataset(torch_geometric.data.Dataset):
         #print('dataset get idx ', idx)
         features, labels = self.data_list[idx]
         #apply data augmentation
-        if self.params['augment_data'] != None:
-            pass
-            #features, labels = self.augment.apply(features, labels)
+        if self.augment !=  None:
+            features, labels = self.augment.apply(features, labels)
         data = torch_geometric.data.Data(
             x=torch.tensor(features, dtype=torch.float), 
             y=torch.tensor(labels, dtype=torch.long), 
