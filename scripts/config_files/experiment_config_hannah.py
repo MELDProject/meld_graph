@@ -12,8 +12,8 @@ network_parameters = {
     },
     'training_parameters': {
         "max_patience": 400,
-        "num_epochs": 50,
-        'lr': 1e-4,
+        "num_epochs": 20,
+        'lr': 1e-3,
         'loss_dictionary': {  
             'cross_entropy':{'weight':1},
             'dice': {'weight': 1,'class_weights':[0.5,0.5]},
@@ -21,12 +21,12 @@ network_parameters = {
         },
         # list of metrics that should be printed during training
         'metrics': ['dice_lesion', 'dice_nonlesion', 'precision', 'recall', 'tp', 'fp', 'fn'], 
-        "batch_size": 2,
+        "batch_size": 1,
         "shuffle_each_epoch": True,
         # Set to list of levels (eg [6,5,4]), for which to add output layers for additional supervision.
         # 7 is highest level. (standard output).  # TODO add some error checking here, max val should be < 7.
         'deep_supervision': {
-            'levels': [1,2,3,4,5,6], 
+            'levels': [4,5,6], 
             'weight': 0.5
         }
     },
@@ -130,5 +130,5 @@ data_parameters = {
 }
 
 variable_parameters = {
-    'data_parameters$lesion_bias': [0.0,0.1,0.2,0.3,0.4],
+    'data_parameters$lesion_bias': [0.0,0.2,0.4,0.6],
 }

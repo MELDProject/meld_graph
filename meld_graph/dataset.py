@@ -86,7 +86,8 @@ class GraphDataset(torch_geometric.data.Dataset):
         features, labels = self.data_list[idx]
         #apply data augmentation
         if self.params['augment_data'] != None:
-            features, labels = self.augment.apply(features, labels)
+            pass
+            #features, labels = self.augment.apply(features, labels)
         data = torch_geometric.data.Data(
             x=torch.tensor(features, dtype=torch.float), 
             y=torch.tensor(labels, dtype=torch.long), 

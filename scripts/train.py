@@ -6,65 +6,61 @@ import meld_graph.experiment
 import meld_graph.dataset
 from meld_graph.paths import EXPERIMENT_PATH
 import numpy as np
-#importlib.reload(meld_graph)
-#importlib.reload(meld_graph.models)
-#importlib.reload(meld_graph.dataset)
-#importlib.reload(meld_graph.experiment)
 
 import logging
-#logging.basicConfig(level=logging.INFO)
 import argparse
+from copy import deepcopy
 import os
+from functools import reduce
+import operator
+from train import load_config
+import datetime
 
-def init_logging(level=logging.INFO, fname=None):
-    if fname is not None:
-        if not os.path.isdir(os.path.dirname(fname)):
-            os.makedirs(os.path.dirname(fname))
-        fileFormatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-        fileHandler = logging.FileHandler(fname)
-        fileHandler.setFormatter(fileFormatter)
-        handlers=[
-                fileHandler,
-                logging.StreamHandler()
-            ]
-    else:
-        handlers=[logging.StreamHandler()
-            ]
-    logging.basicConfig(
-            level=logging.INFO,
-            format="%(message)s",
-            handlers=handlers
-        )
+def nested_get(d, keys):
+    return reduce(operator.getitem, keys, d)
 
-def load_config(config_file):
-    """load config.py file and return config object"""
-    import importlib.machinery, importlib.util
+def nested_set(d, keys, value):
+    nested_get(d, keys[:-1])[keys[-1]] = value
 
-    loader = importlib.machinery.SourceFileLoader("config", config_file)
-    spec = importlib.util.spec_from_loader(loader.name, loader)
-    config = importlib.util.module_from_spec(spec)
-    loader.exec_module(config)
-    return config
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="""
+        Train model with variable network or data parameters. 
+        If config contains variable_parameters dict, will iterate over all params in this dict and create experiments.
+        """)
     parser.add_argument("--config_file", help="path to experiment_config.py", default="config_files/experiment_config.py")
     args = parser.parse_args()
 
-    
     config = load_config(args.config_file)
-    if config.network_parameters['name'] is not None:
-        # save model logs
-        fold = config.data_parameters['fold_n']
-        fname = os.path.join(EXPERIMENT_PATH, config.network_parameters['name'], f'fold_{fold:02d}', 'train.log')
-        init_logging(fname=fname)
-    else:
-        init_logging()
-    # create experiment
-    exp = meld_graph.experiment.Experiment(config.network_parameters, config.data_parameters)
-    # TODO: manual selection of train/val ids for testing
-    #_ = exp.get_train_val_test_ids()
-    #exp.data_parameters['train_ids'] = ['MELD_H4_3T_FCD_0011', 'MELD_H4_3T_FCD_0011'] #exp.data_parameters['train_ids'][:10]
-    #exp.data_parameters['val_ids'] = ['MELD_H4_3T_FCD_0011', 'MELD_H4_3T_FCD_0011'] #exp.data_parameters['train_ids'][:10]
-    # train the model
-    exp.train()
+    variable_parameters = getattr(config, 'variable_parameters', {})
+    # create and run experiments
+    for param, values in config.variable_parameters.items():
+        params = param.split('$')
+        path = '$'.join(params[1:])
+        for value in values:
+            name = f'{path}_{value}'
+            print(f'Starting experiment {path}, {name}')
+            cur_data_parameters = deepcopy(config.data_parameters)
+            cur_network_parameters = deepcopy(config.network_parameters)
+
+            # set name
+            cur_network_parameters['name'] = f'{datetime.datetime.now().strftime("%y-%m-%d")}_{path}/{name}'
+            # change variable params
+            if params[0] == 'network_parameters':
+                nested_set(cur_network_parameters, params[1:], value)
+            elif params[0] == 'data_parameters':
+                nested_set(cur_data_parameters, params[1:], value)
+                pass
+            else:
+                NotImplementedError(params[0])
+
+            # create experiment
+            exp = meld_graph.experiment.Experiment(cur_network_parameters, cur_data_parameters, verbose=logging.INFO)
+            # train the model
+            exp.train()
+    if len(variable_parameters) == 0:
+        # only one experiment to train
+        # create experiment
+        exp = meld_graph.experiment.Experiment(config.network_parameters, config.data_parameters, verbose=logging.INFO)
+        # train the model
+        exp.train()

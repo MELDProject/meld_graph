@@ -54,7 +54,8 @@ class Experiment:
             self.experiment_path = os.path.join(EXPERIMENT_PATH, self.experiment_name, f'fold_{self.fold:02d}')
             os.makedirs(self.experiment_path, exist_ok=True)
         # init logging now, path is created
-        self._init_logging(verbose)
+        # if save_params, will overwrite/append to logs
+        self._init_logging(verbose, save_params)
         self.log = logging.getLogger(__name__)
 
         self.cohort = MeldCohort(
@@ -70,7 +71,7 @@ class Experiment:
         network_parameters = json.load(open(os.path.join(experiment_path, "network_parameters.json")))
         return cls(network_parameters, data_parameters, save_params=False)
 
-    def _init_logging(self, verbose):
+    def _init_logging(self, verbose, save_params=False):
         """
         Set up a logger for this experiment that logs to experiment_path and to stdout.
         Should only be called once per experiment (overwrites existing log files of the same name)
@@ -79,10 +80,10 @@ class Experiment:
         for handler in logging.root.handlers[:]:
             logging.root.removeHandler(handler)
         # set up logging handlers
-        if self.experiment_path is not None:
+        if self.experiment_path is not None and save_params:
             fname = os.path.join(self.experiment_path, "train.log")
             fileFormatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-            fileHandler = logging.FileHandler(fname)
+            fileHandler = logging.FileHandler(fname, 'w')
             fileHandler.setFormatter(fileFormatter)
             handlers=[
                         fileHandler,
