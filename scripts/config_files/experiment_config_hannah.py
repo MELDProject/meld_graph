@@ -13,25 +13,25 @@ network_parameters = {
     'training_parameters': {
         "max_patience": 400,
         "num_epochs": 20,
-        'lr': 1e-3,
+        'lr': 1e-4,
         'loss_dictionary': {  
-            'cross_entropy':{'weight':1},
-            'dice': {'weight': 1,'class_weights':[0.5,0.5]},
+            #'cross_entropy':{'weight':1},
+            #'dice': {'weight': 1,'class_weights':[0.5,0.5]},
             'focal_loss':{'weight':1, 'gamma':4, 'alpha': 0.4},
         },
         # list of metrics that should be printed during training
         'metrics': ['dice_lesion', 'dice_nonlesion', 'precision', 'recall', 'tp', 'fp', 'fn'], 
-        "batch_size": 1,
+        "batch_size": 2,
         "shuffle_each_epoch": True,
         # Set to list of levels (eg [6,5,4]), for which to add output layers for additional supervision.
         # 7 is highest level. (standard output).  # TODO add some error checking here, max val should be < 7.
         'deep_supervision': {
-            'levels': [4,5,6], 
+            'levels': [], #[4,5,6], 
             'weight': 0.5
         }
     },
     # experiment name. If none, experiment is not saved
-    'name': None #datetime.datetime.now().strftime("%y-%m-%d") + '_full_cohort_deepsup',
+    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_2' #+ '_full_cohort_deepsup',
 }
 
 data_parameters = {
@@ -129,6 +129,9 @@ data_parameters = {
     "lesion_bias": False, # value is added to lesion values
 }
 
+# run several experiments
+# Nested levels are represented by $
+# e.g. "network_parameters$training_parameters$loss_dictionary$focal_loss" will set values for the focal loss.
 variable_parameters = {
     'data_parameters$lesion_bias': [0.0,0.2,0.4,0.6],
 }
