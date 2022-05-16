@@ -1,5 +1,3 @@
-
-#import importlib
 import meld_graph
 import meld_graph.models
 import meld_graph.experiment
@@ -13,8 +11,16 @@ from copy import deepcopy
 import os
 from functools import reduce
 import operator
-from train import load_config
-import datetime
+
+def load_config(config_file):
+    """load config.py file and return config object"""
+    import importlib.machinery, importlib.util
+
+    loader = importlib.machinery.SourceFileLoader("config", config_file)
+    spec = importlib.util.spec_from_loader(loader.name, loader)
+    config = importlib.util.module_from_spec(spec)
+    loader.exec_module(config)
+    return config
 
 def nested_get(d, keys):
     return reduce(operator.getitem, keys, d)
@@ -44,7 +50,7 @@ if __name__ == '__main__':
             cur_network_parameters = deepcopy(config.network_parameters)
 
             # set name
-            cur_network_parameters['name'] = f'{datetime.datetime.now().strftime("%y-%m-%d")}_{path}/{name}'
+            cur_network_parameters['name'] = f'{cur_network_parameters["name"]}_{path}/{name}'
             # change variable params
             if params[0] == 'network_parameters':
                 nested_set(cur_network_parameters, params[1:], value)
