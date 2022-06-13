@@ -265,17 +265,28 @@ class Trainer:
             shuffle=False, batch_size=self.params['batch_size'])
 
         # set up training loop
-        optimiser = torch.optim.Adam(self.experiment.model.parameters(), lr=self.params['lr'])
-    
+        # set up optimiser
+        if self.params['optimiser'] == 'adam':
+            optimiser = torch.optim.Adam(self.experiment.model.parameters(), **self.params['optimiser_parameters'])
+        elif self.params['optimiser'] == 'sgd':
+            optimiser = torch.optim.SGD(self.experiment.model.parameters(), **self.params['optimiser_parameters'])
+        # set up learning rate scheduler
+        lambda1 = lambda epoch: (1 - epoch / self.params['num_epochs'])**self.params['lr_decay']
+        scheduler = torch.optim.lr_scheduler.LambdaLR(optimiser, lr_lambda=lambda1, last_epoch=self.params['num_epochs'])
+        
         scores = {'train':[], 'val':[]}
         best_loss = 100000
         patience = 0
         for epoch in range(self.params['num_epochs']):
+            self.log.info(f'current epoch: {epoch}, learning rate: {scheduler.get_last_lr()}')
             cur_scores = self.train_epoch(train_data_loader, optimiser)
+            scheduler.step()  # update lr
+
+
             log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items())
             self.log.info(f'Epoch {epoch} :: Train {log_str}')
             scores['train'].append(cur_scores)
-        
+
             if epoch%1 ==0:
                 cur_scores = self.val_epoch(val_data_loader)
                 log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items())
