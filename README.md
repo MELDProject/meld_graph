@@ -61,7 +61,8 @@ conda install pyg -c pyg -c conda-forge
     Test if the torch-geometric installation worked by importing some packages: `from torch_geometric.data import Data`
 
 # Code Structure
-Example config files can be found in `scripts/config_files/example_experiment_config.py`. They define the data that the model is trained on, the model architecture, and training parameters.
+Example config files can be found in [`scripts/config_files/example_experiment_config.py`](scripts/config_files/example_experiment_config.py). They define the data that the model is trained on, the model architecture, and training parameters.
+
 Main class is the Experiment (`meld_graph/experiment.py`). It is initialised with data_parameters and network_parameters. Experiments are saved in folders in EXPERIMENT_PATH (defined in `meld_graph/paths.py`). Experiments are only saved when `network_parameters['name']` is not None.
 
 Data is loaded by GraphDataset in `meld_graph/dataset.py` using Preprocess in `meld_graph/data_preprocessing.py`. Preprocess returns per subject vertices and labels. In GraphDataset, each hemisphere is treated as a single datapoint, with optional stacking of hemisphere features (to eg allow the model to calculate assymetry) -- use `data_parameters['combine_hemis']` to modify this behaviour.
@@ -70,13 +71,14 @@ Models are defined in `meld_graph/models.py`. There is an implementation for a s
 
 Models instanciate the `IcoSpheres` class. This computes and returns icospheres (edge matrices, neighbours, edge attributes) at different levels. Level 7 is the highest resolution. GMMConv, SpiralConv, HexPool, and HexUnpool all use the edges/neighbours at different levels. IcoSpheres needs a few parameters for initalisation (`data_parameters['icosphere_parameters']`) - some parameters (`conv_type`) are automatically added to this dict in `Experiment.load_model()`. 
 
-Training is done by Trainer in `meld_graph/training.py`. Relevant params are in `network_parameters['training_parameters']`. Several metrics can be tracked during training (dice_lesion, dice_nonlesion, etc). Training is possible with multiple hemispheres (data points) at once (by specifying a batch_size larger than 1). Internally this is achieved by looping over all elements in this batch and stacking them afterwards (the GMMConv and SpiralConv expect the batch dimension to be the number of vertices in the graph). 
+Training is done by Trainer in `meld_graph/training.py`. Relevant params are in `network_parameters['training_parameters']`. Several metrics can be tracked during training (dice_lesion, dice_nonlesion, etc). Training is possible with multiple hemispheres (data points) at once (by specifying a batch_size larger than 1). Internally this is achieved by looping over all elements in this batch and stacking them afterwards (the GMMConv and SpiralConv expect the batch dimension to be the number of vertices in the graph). Deep supervision can be achieved by adding a "deep_supervision" dict to `training_parameters`, containing "levels" (the isosphere levels at which to add supervision) and "weight" (the weight of the loss for the auxiliary loss).
+
 Patience is implemented, with the best model being saved in the experiment directory. 
 Training logs and train/val scores are also saved in the experiment directory.
 
-Deep supervision can be achieved by adding a "deep_supervision" dict to `training_parameters`, containing "levels" (the isosphere levels at which to add supervision) and "weight" (the weight of the loss for the auxiliary loss).
-
 Evaluation is minimal at the moment. `notebooks/compare_experiments.ipynb` contains a function for plotting training curves from different experiments.
+
+Multiple models can be trained at once, using the `variable_parameters` dict. This can set different parameters (keys in the dict) to different values. Hereby, nested dictionary levels are represented by `$`, e.g. `"network_parameters$training_parameters$loss_dictionary$focal_loss"` will set values for the focal loss.
 
 # Usage
 - `create_scaling_parameters.py`: calculates scaling params file. Only needs to be run once.
@@ -84,9 +86,12 @@ Evaluation is minimal at the moment. `notebooks/compare_experiments.ipynb` conta
 - `train.py --config-file config_files/example_experiment_config.py` trains a model using the specified data and model architecture
 - on HPC: `sbatch train.sh <full-path-to-config-file>/example_experiment_config.py` to train model using scheduler
 
-NOTE: currently only one model can be trained at a time, although different folds can be specified in the experiment_config. 
 
-## Lobe parcellation task
+## Auxiliary tasks
+### Lesion bias
+To make lesions more distinctive, a constant value can be added to all lesional vertices. Set this value with `lesion_bias` in `data_parameters`
+
+### Lobe parcellation task
 To test on an easier task, use the frontal lobe parcellation task. This is another binary classification task,
 that can be used as a drop-in task for the harder lesion segmentation.
 In `data_parameters`, set `lobe = True`, to train on this task.

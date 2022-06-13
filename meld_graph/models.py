@@ -17,7 +17,7 @@ class GMMConv(nn.Module):
         
 # define model
 class MoNet(nn.Module):
-    def __init__(self, num_features, layer_sizes, dim=2, kernel_size=3, icosphere_params={}):
+    def __init__(self, num_features, layer_sizes, dim=2, kernel_size=3, icosphere_params={}, activation_fn='relu'):
         """
         Model with only conv layers.
 
@@ -39,7 +39,12 @@ class MoNet(nn.Module):
             conv_layers.append(GMMConv(in_size, out_size, dim=dim, kernel_size=kernel_size))
         self.conv_layers = nn.ModuleList(conv_layers)
         self.fc = nn.Linear(self.layer_sizes[-1], 2)
-        self.activation_function = nn.ReLU()
+        if activation_fn == 'relu':
+            self.activation_function = nn.ReLU()
+        elif activation_fn == 'leaky_relu':
+            self.activation_function = nn.LeakyReLU()
+        else:
+            raise NotImplementedErrror('activation_fn: '+activation_fn)
         # TODO when changing aggregation of hemis, might need to use different graph here 
         # TODO for different coord systems, pass arguments to IcoSpheres here
         # TODO ideally passed as params to IcoSpheres that then returns the correct graphs at the right levels
@@ -70,7 +75,8 @@ class MoNetUnet(nn.Module):
     def __init__(self, num_features, layer_sizes, dim=2, kernel_size=3, 
                  
                  icosphere_params={}, conv_type='GMMConv', spiral_len=10,
-                 deep_supervision=[]):
+                 deep_supervision=[],
+                 activation_fn='relu'):
         """
         Unet model
         dim: dim for GMMConv, dimension of coord representation - 2 or 3 (for GMMConv)
@@ -89,7 +95,12 @@ class MoNetUnet(nn.Module):
         self.num_features = num_features
         self.conv_type = conv_type
         self.deep_supervision = sorted(deep_supervision)
-        self.activation_function = nn.ReLU()
+        if activation_fn == 'relu':
+            self.activation_function = nn.ReLU()
+        elif activation_fn == 'leaky_relu':
+            self.activation_function = nn.LeakyReLU()
+        else:
+            raise NotImplementedErrror('activation_fn: '+activation_fn)
         # TODO when changing aggregation of hemis, might need to use different graph here 
         # TODO for different coord systems, pass arguments to IcoSpheres here
         # TODO ideally passed as params to IcoSpheres that then returns the correct graphs at the right levels
