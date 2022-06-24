@@ -55,7 +55,10 @@ network_parameters = {
         'deep_supervision': {
             'levels': [], #[4,5,6], 
             'weight': 0.5
-        }
+        },
+        # ovesampling: oversample lesional vertices to 33% lesional and 66% random.
+        # size of epoch will be num_lesional_examples * 3
+        'oversampling': False
     },
     # name: experiment name. If none, experiment is not saved
     'name': datetime.datetime.now().strftime("%y-%m-%d") + '_example',
@@ -159,6 +162,18 @@ data_parameters = {
     # dictionary containing augmentation method as keys, and Transform params as values ("p" and "file")
     # possible augmentation methods: spinning, warping, flipping
     "augment_data": {
+        #"spinning": {
+        #          'p': 0.01,
+        #          'file': 'data/spinning/spinning_ico7_10.npy'
+        #          },
+        #"warping": 
+        #          {'p': 0.01,
+        #           'file': 'data/warping/warping_ico7_10.npy'
+        #          },
+        #"flipping":
+        #          {'p': 0.01,
+        #           'file': 'data/flipping/flipping_ico7_3.npy'
+        #          },
     },
     # combine_hemis: how to combine hemisphere data, one of: None, stack
     # None: no combination of hemispheres. 

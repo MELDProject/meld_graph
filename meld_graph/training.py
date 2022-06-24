@@ -2,7 +2,7 @@ import logging
 import os
 import torch
 import torch_geometric.data
-from meld_graph.dataset import GraphDataset
+from meld_graph.dataset import GraphDataset, Oversampler
 import numpy as np
 from meld_graph.paths import EXPERIMENT_PATH
 from functools import partial
@@ -170,19 +170,6 @@ class Metrics:
             else:
                 metrics[metric] = np.sum(self.running_scores[metric])
         return metrics
-    
-
-
-def nnunet_sampling_dset(dset,lesional_idxs,oversampling=False):
-    """ resample train dataset to present,
-    33% lesional 66% random """
-    if not oversampling:
-        return dset    
-    n_l = len(lesional_idxs)
-    n_non = 2* n_l
-    non_ids = np.random.choice(len(dset),n_non,replace=False)
-    ids_to_choose = np.hstack([lesional_idxs,non_ids])
-    return dset[ids_to_choose]
 
 
 class Trainer:
@@ -270,8 +257,17 @@ class Trainer:
         self.experiment.model.to(device)
 
         # get dataset
-        dset = GraphDataset.from_experiment(self.experiment, mode='train')
-        dset.get_lesional_ids()
+        train_dset = GraphDataset.from_experiment(self.experiment, mode='train')
+        sampler = None
+        shuffle = self.params['shuffle_each_epoch']
+        if self.params['oversampling']:
+            sampler = Oversampler(train_dset)
+            shuffle = False  # oversampler will do shuffling
+
+        train_data_loader = torch_geometric.loader.DataLoader(
+             train_dset, sampler=sampler, 
+             shuffle=shuffle,
+             batch_size=self.params['batch_size'])
         val_data_loader = torch_geometric.loader.DataLoader(
             GraphDataset.from_experiment(self.experiment, mode='val'),
             shuffle=False, batch_size=self.params['batch_size'])
@@ -291,14 +287,6 @@ class Trainer:
         best_loss = 100000
         patience = 0
         for epoch in range(self.params['num_epochs']):
-            #create data loader, with optional resampling
-            training_dset = nnunet_sampling_dset(dset,dset.lesional_idxs,oversampling = self.params['oversampling'])
-            
-            train_data_loader = torch_geometric.loader.DataLoader(
-                            training_dset, 
-            shuffle=self.params['shuffle_each_epoch'],
-            batch_size=self.params['batch_size'])
-            
             self.log.info(f'Epoch {epoch} :: learning rate {scheduler.get_last_lr()[0]}')
             cur_scores = self.train_epoch(train_data_loader, optimiser)
             scheduler.step()  # update lr

@@ -97,7 +97,6 @@ class Preprocess:
             features_left, features_right, lesion_left, lesion_right
         """
         subj = MeldSubject(subject, cohort=self.cohort)  
-        print(subject)
         # load data & lesion
         vals_array_lh, lesion_lh = subj.load_feature_lesion_data(features, hemi='lh')
         vals_array_rh, lesion_rh = subj.load_feature_lesion_data(features, hemi='rh')
