@@ -271,6 +271,8 @@ class Trainer:
         val_data_loader = torch_geometric.loader.DataLoader(
             GraphDataset.from_experiment(self.experiment, mode='val'),
             shuffle=False, batch_size=self.params['batch_size'])
+        self.train_data_loader = train_data_loader
+        self.val_data_loader = val_data_loader
 
         # set up training loop
         # set up optimiser
@@ -278,6 +280,8 @@ class Trainer:
             optimiser = torch.optim.Adam(self.experiment.model.parameters(), **self.params['optimiser_parameters'])
         elif self.params['optimiser'] == 'sgd':
             optimiser = torch.optim.SGD(self.experiment.model.parameters(), **self.params['optimiser_parameters'])
+        self.optimiser = optimiser
+
         # set up learning rate scheduler
         lambda1 = lambda epoch: (1 - epoch / self.params['num_epochs'])**self.params['lr_decay']
         # NOTE: when resuming training, need to set last epoch to epoch-1

@@ -17,7 +17,7 @@ class GMMConv(nn.Module):
         
 # define model
 class MoNet(nn.Module):
-    def __init__(self, num_features, layer_sizes, dim=2, kernel_size=3, icosphere_params={}, 
+    def __init__(self, num_features, layer_sizes = [], dim=2, kernel_size=3, icosphere_params={}, 
                 conv_type='GMMConv', spiral_len=10,
                 activation_fn='relu', **kwargs):
         """
@@ -39,7 +39,6 @@ class MoNet(nn.Module):
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.num_features = num_features
         self.conv_type = conv_type
-        assert len(layer_sizes) >= 1
         layer_sizes.insert(0, num_features)
         self.layer_sizes = layer_sizes
         # activation function to be used throughout
@@ -58,6 +57,8 @@ class MoNet(nn.Module):
         # TODO to device call necessary here because icoshperes need to be on GPU during conv layer init
         self.icospheres.to(self.device)
 
+        #store n_vertices for batch rearrangement
+        self.n_vertices = len(self.icospheres.icospheres[7]['coords'])
         # set up conv layers + final fcl
         conv_layers = []
         for in_size, out_size in zip(layer_sizes[:-1], layer_sizes[1:]):
@@ -67,7 +68,7 @@ class MoNet(nn.Module):
                 edge_vectors = self.icospheres.get_edge_vectors(level=7)
                 cl = GMMConv(in_size, out_size, dim=dim, kernel_size=kernel_size, edges=edges, edge_vectors=edge_vectors)
             elif self.conv_type == 'SpiralConv':
-                indices = self.icospheres.get_spirals(level=level)
+                indices = self.icospheres.get_spirals(level=7)
                 # TODO several spiral_len? one per block? 
                 # TODO implement dilations
                 indices = indices[:,:spiral_len]
@@ -75,7 +76,7 @@ class MoNet(nn.Module):
             else:
                 raise NotImplementedError()
 
-            conv_layers.append(GMMConv(in_size, out_size, dim=dim, kernel_size=kernel_size))
+            conv_layers.append(cl)
         self.conv_layers = nn.ModuleList(conv_layers)
         self.fc = nn.Linear(self.layer_sizes[-1], 2)
         

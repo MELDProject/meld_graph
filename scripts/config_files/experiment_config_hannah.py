@@ -11,13 +11,13 @@ network_parameters = {
     #    'layer_sizes': [[32,32,32],[32,32,32],[64,64,64],[64,64,64],[128,128,128],[128,128,128],[256,256,256]],
     #    # activation_fn: activation function, one of: relu, leaky_relu
     #    'activation_fn': 'leaky_relu',
-    #    # conv_type: convolution to use, one of: SpiralConv, GMMConv. Only for MoNetUnet
+    #    # conv_type: convolution to use, one of: SpiralConv, GMMConv.
     #    'conv_type': 'SpiralConv',
     #    # dim: coord dim for GMMConv
     #    'dim': 2,
     #    # kernel_size: number of gaussian kernels for GMMConv
     #    'kernel_size': 3, # number of gaussian kernels
-    #    # spiral_len: size of the spiral for SpiralConv. Only for MoNetUnet
+    #    # spiral_len: size of the spiral for SpiralConv.
     #    # TODO implement dilation / different spiral len per unet block
     #    'spiral_len': 10, 
     #},
@@ -31,13 +31,13 @@ network_parameters = {
         'layer_sizes': [],
         # activation_fn: activation function, one of: relu, leaky_relu
         'activation_fn': 'leaky_relu',
-        # conv_type: convolution to use, one of: SpiralConv, GMMConv. Only for MoNetUnet
+        # conv_type: convolution to use, one of: SpiralConv, GMMConv.
         'conv_type': 'SpiralConv',
         # dim: coord dim for GMMConv
         'dim': 2,
         # kernel_size: number of gaussian kernels for GMMConv
         'kernel_size': 3, # number of gaussian kernels
-        # spiral_len: size of the spiral for SpiralConv. Only for MoNetUnet
+        # spiral_len: size of the spiral for SpiralConv.
         # TODO implement dilation / different spiral len per unet block
         'spiral_len': 1, 
     },
@@ -45,13 +45,13 @@ network_parameters = {
     # training_parameters: used by Trainer to set up model training
     'training_parameters': {
         "max_patience": 400,
-        "num_epochs": 20,
+        "num_epochs": 100,
         # optimiser: optimiser to use, one of: adam, sgd
         "optimiser": 'sgd',
         # optimiser_parameters: parameters passed to torch optimiser class
         # for sgd with nesterov momentum use: momentum:0.99, nesterov:True
         "optimiser_parameters": {
-            "lr": 1e-5,
+            "lr": 1e-4,
             "momentum": 0.99,
             "nesterov": True
         },
@@ -90,9 +90,9 @@ network_parameters = {
 data_parameters = {
     'hdf5_file_root': "{site_code}_{group}_featurematrix_combat_6.hdf5",
     'site_codes': [
-        "H1",
-        "H2",
-        "H3",
+    #    "H1",
+    #    "H2",
+    #    "H3",
         "H4",
     #    "H5",
     #    "H6",
