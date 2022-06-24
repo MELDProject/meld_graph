@@ -35,7 +35,7 @@ network_parameters = {
         },
         # lr_decay: exponent for exponential learning rate decay: lr*(1-epoch/max_epochs)**lr_decay
         # set to 0 to turn lr decay off
-        'lr_decay': 0.9,
+        'lr_decay': 0,  # default NNUnet param: 0.9
         # loss_dictionary: losses to be used for model training and parameters for losses
         # possible keys: cross_entropy, focal_loss, dice
         # values: dict with keys: "weight" and loss arguments (alpha/gamma for focal_loss, class_weights for dice)
