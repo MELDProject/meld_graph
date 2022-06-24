@@ -159,7 +159,19 @@ data_parameters = {
     # dictionary containing augmentation method as keys, and Transform params as values ("p" and "file")
     # possible augmentation methods: spinning, warping, flipping
     "augment_data": {
-    },
+        "spinning":
+                  {'p': 0.80,
+                  'file': 'data/spinning/spinning_ico7_10.npy'
+                  },
+        "warping": 
+                  {'p': 0.80,
+                   'file': 'data/warping/warping_ico7_10.npy'
+                  },
+        "flipping":
+                  {'p': 0.80,
+                   'file': 'data/flipping/flipping_ico7_3.npy'
+                  },
+                    },
     # combine_hemis: how to combine hemisphere data, one of: None, stack
     # None: no combination of hemispheres. 
     # "stack": stack features of both hemispheres.

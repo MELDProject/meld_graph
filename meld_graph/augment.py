@@ -60,8 +60,7 @@ class Transform():
         l2 = np.tile(l2[:,np.newaxis], n_feat)
         feats_transf = l0*feats[i0] + l1*feats[i1] + l2*feats[i2]        
         feats_transf_clean=np.zeros(feats_transf.shape)
-        for i in range(0,n_feat):
-            feats_transf_clean[:,i]=np.clip(feats_transf[:,i], np.percentile(feats_transf[:,i], 0.01),np.percentile(feats_transf[:,i], 99.9))  
+        feats_transf_clean=np.clip(feats_transf, np.percentile(feats_transf, 0.01),np.percentile(feats_transf, 99.9)) 
         return feats_transf_clean, lesions_transf
 
 class Augment():
