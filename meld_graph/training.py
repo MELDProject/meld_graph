@@ -95,11 +95,12 @@ class FocalLoss(torch.nn.Module):
             return loss.sum()
 
 
-def tp_fp_fn(pred, target):
+def tp_fp_fn_tn(pred, target):
     tp = torch.sum(torch.logical_and((target==1), (pred==1)))
     fp = torch.sum(torch.logical_and((target==0), (pred==1)))
     fn = torch.sum(torch.logical_and((target==1), (pred==0)))
-    return tp, fp, fn
+    tn = torch.sum(torch.logical_and((target==0), (pred==0)))
+    return tp, fp, fn, tn
     
 def calculate_loss(loss_weight_dictionary,estimates,labels, device=None):
     """ 
@@ -128,7 +129,7 @@ class Metrics:
         self.metrics = metrics
         self.metrics_to_track = self.metrics
         if 'precision' in self.metrics or 'recall' in self.metrics:
-            self.metrics_to_track = list(set(self.metrics_to_track + ['tp', 'fp', 'fn']))
+            self.metrics_to_track = list(set(self.metrics_to_track + ['tp', 'fp', 'fn','tn']))
         self.running_scores = self.reset()
 
     def reset(self):
@@ -149,10 +150,11 @@ class Metrics:
             if 'dice_masked_nonlesion' in self.metrics_to_track:
                 self.running_scores['dice_masked_nonlesion'].append(dice_coeffs[0].item())
         if 'tp' in self.metrics_to_track:
-            tp, fp, fn = tp_fp_fn(pred, target)
+            tp, fp, fn, tn = tp_fp_fn_tn(pred, target)
             self.running_scores['tp'].append(tp.item())
             self.running_scores['fp'].append(fp.item())
             self.running_scores['fn'].append(fn.item())
+            self.running_scores['tn'].append(tn.item())
 
     def get_aggregated_metrics(self):
         metrics = {}
