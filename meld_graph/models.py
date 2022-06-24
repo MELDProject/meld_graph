@@ -266,3 +266,58 @@ class HexUnpool(nn.Module):
         new_x[:limit] = x
         new_x[limit:] = torch.mean(x[self.upsample_indices],dim=1)
         return new_x
+
+class SimpleNet(nn.Module):
+    def __init__(self, num_features, layer_sizes, dim=2, kernel_size=1,
+                 icosphere_params={}, conv_type='GMMConv', spiral_len=1,
+                 activation_fn='relu'):
+        super(MoNetUnet, self).__init__()
+        #self.device = None
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.num_features = num_features
+        self.conv_type = conv_type
+        if activation_fn == 'relu':
+            self.activation_function = nn.ReLU()
+        elif activation_fn == 'leaky_relu':
+            self.activation_function = nn.LeakyReLU()
+        else:
+            raise NotImplementedErrror('activation_fn: '+activation_fn)
+        # TODO when changing aggregation of hemis, might need to use different graph here
+        # TODO for different coord systems, pass arguments to IcoSpheres here
+        # TODO ideally passed as params to IcoSpheres that then returns the correct graphs at the right levels
+        self.icospheres = IcoSpheres(**icosphere_params)  # pseudo
+
+        # TODO to device call necessary here because icoshperes need to be on GPU during conv layer init
+        self.icospheres.to(self.device)
+        num_blocks = len(layer_sizes)
+        assert(num_blocks <= 7)  # cannot pool more levels than icospheres
+        in_size = self.num_features
+        if self.conv_type == 'GMMConv':
+                    edges = self.icospheres.get_edges(level=level)
+                    edge_vectors = self.icospheres.get_edge_vectors(level=level)
+                    cl = GMMConv(in_size, out_size, dim=dim, kernel_size=kernel_size, edges=edges, edge_vectors=edge_vectors)
+                elif self.conv_type == 'SpiralConv':
+                    indices = self.icospheres.get_spirals(level=level)
+                    indices = indices[:,:spiral_len]
+                    cl = SpiralConv(in_size, out_size, indices=indices)
+
+        level=7
+        self.n_vertices = len(self.icospheres.icospheres[level]['coords'])
+
+
+
+    def to(self, device, **kwargs):
+        super(MoNetUnet, self).to(device, **kwargs)
+        #self.icospheres.to(device)
+        self.device = device
+
+    def forward(self, data):
+        batch_x = data
+        #reshape input to batch,n_vertices
+        original_shape = batch_x.shape
+
+        batch_x = batch_x.view((batch_x.shape[0]//self.n_vertices, self.n_vertices,self.num_features))
+        outputs=[]
+        for x in batch_x:
+            x = cl(x, device=self.device)
+            x = self.activation_function(x)
