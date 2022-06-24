@@ -29,7 +29,7 @@ network_parameters = {
         # optimiser_parameters: parameters passed to torch optimiser class
         # for sgd with nesterov momentum use: momentum:0.99, nesterov:True
         "optimiser_parameters": {
-            "lr": 1e-4,
+            "lr": 1e-5,
             "momentum": 0.99,
             "nesterov": True
         },
@@ -41,13 +41,13 @@ network_parameters = {
         # values: dict with keys: "weight" and loss arguments (alpha/gamma for focal_loss, class_weights for dice)
         'loss_dictionary': {  
             #'cross_entropy':{'weight':1},
-            #'focal_loss':{'weight':1, 'alpha':0.4, 'gamma':4},
-            'dice':{'weight': 1, 'class_weights': [0.5, 0.5]}
+            'focal_loss':{'weight':1, 'alpha':0.4, 'gamma':4},
+            #'dice':{'weight': 1, 'class_weights': [0.5, 0.5]}
         },
          # metrics: list of metrics that should be printed during training
          # possible values: dice_lesion, dice_nonlesion, precision, recall, tp, fp, fn, tn
         'metrics': ['dice_lesion', 'dice_nonlesion', 'precision', 'recall', 'tp', 'fp', 'fn'], 
-        "batch_size": 1,
+        "batch_size": 2,
         "shuffle_each_epoch": True,
         # deep_supervision: add loss at specified levels of the unet (for MoNetUnet).
         # Set to list of levels (eg [6,5,4]), for which to add output layers for additional supervision.
@@ -65,9 +65,9 @@ network_parameters = {
 data_parameters = {
     'hdf5_file_root': "{site_code}_{group}_featurematrix_combat_6.hdf5",
     'site_codes': [
-    #    "H1",
-    #    "H2",
-    #    "H3",
+        "H1",
+        "H2",
+        "H3",
         "H4",
     #    "H5",
     #    "H6",
