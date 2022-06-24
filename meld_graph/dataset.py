@@ -10,6 +10,48 @@ import torch
 import logging
 import time
 
+class Oversampler(torch.utils.data.Sampler):
+    """
+    NNUnet-like oversampling.
+    33% lesional, 66% random.
+
+    Shuffles data after sampling
+    """
+    def __init__(self, data_source):
+        self.log = logging.getLogger(__name__)
+        self.data_source = data_source
+        self._num_samples = None
+
+        if not isinstance(self.num_samples, int) or self.num_samples <= 0:
+            raise ValueError(
+                "num_samples should be a positive integer "
+                "value, but got num_samples={}".format(self.num_samples)
+            )
+
+    @property
+    def num_samples(self):
+        if self._num_samples is None:
+            return len(self.data_source.lesional_idxs)*3
+        return self._num_samples
+
+    def get_sampling_idxs(self):
+        """
+        return list of len num_samples, containing data_source idxs to sample.
+        Call once per epoch (when restarting iterator)
+        """
+        n_non = len(self.data_source.lesional_idxs)*2
+        non_ids = torch.randperm(len(self.data_source), dtype=torch.int64)[:n_non]
+        ids_to_choose = torch.hstack([torch.from_numpy(self.data_source.lesional_idxs),non_ids])
+        return ids_to_choose[torch.randperm(len(ids_to_choose), dtype=torch.int64)]
+
+    def __iter__(self):
+        ids_to_choose = self.get_sampling_idxs()
+        #self.log.info(f'iterating over ids: {ids_to_choose}')
+        return iter(ids_to_choose.tolist())
+
+    def __len__(self):
+        return self.num_samples
+
 class GraphDataset(torch_geometric.data.Dataset):
     def __init__(self, subject_ids, cohort, params, mode='train', transform=None, pre_transform=None, pre_filter=None, output_levels=[]):
         """
@@ -29,6 +71,7 @@ class GraphDataset(torch_geometric.data.Dataset):
         if len(self.output_levels) != 0:
             self.icospheres = IcoSpheres()
             self.pool_layers = {level: HexPool(self.icospheres.get_neighbours(level=level)) for level in range(min(self.output_levels),7)[::-1]}
+        self._lesional_idxs = None
 
         # preload data in memory, with all preprocessing done
         self.data_list = []
@@ -95,5 +138,17 @@ class GraphDataset(torch_geometric.data.Dataset):
             for level in self.output_levels:
                 setattr(data, f"output_level{level}", labels_pooled[level])
         return data
+    
+    @property
+    def lesional_idxs(self):
+        """find ids of data entries with lesional examples"""
+        if self._lesional_idxs is None:
+            lesional_idxs = []
+            for i,d in enumerate(self.data_list):
+                if d[1].sum():
+                    lesional_idxs.append(i)
+            self._lesional_idxs = np.array(lesional_idxs)
+            #self.log.info(f'lesional idxs: {self._lesional_idxs}')
+        return self._lesional_idxs
 
 

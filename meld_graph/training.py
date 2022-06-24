@@ -2,7 +2,7 @@ import logging
 import os
 import torch
 import torch_geometric.data
-from meld_graph.dataset import GraphDataset
+from meld_graph.dataset import GraphDataset, Oversampler
 import numpy as np
 from meld_graph.paths import EXPERIMENT_PATH
 from functools import partial
@@ -171,6 +171,7 @@ class Metrics:
                 metrics[metric] = np.sum(self.running_scores[metric])
         return metrics
 
+
 class Trainer:
     def __init__(self, experiment):
         self.log = logging.getLogger(__name__)
@@ -255,11 +256,18 @@ class Trainer:
         self.experiment.load_model()
         self.experiment.model.to(device)
 
-        # get data
+        # get dataset
+        train_dset = GraphDataset.from_experiment(self.experiment, mode='train')
+        sampler = None
+        shuffle = self.params['shuffle_each_epoch']
+        if self.params['oversampling']:
+            sampler = Oversampler(train_dset)
+            shuffle = False  # oversampler will do shuffling
+
         train_data_loader = torch_geometric.loader.DataLoader(
-            GraphDataset.from_experiment(self.experiment, mode='train'), 
-            shuffle=self.params['shuffle_each_epoch'],
-            batch_size=self.params['batch_size'])
+             train_dset, sampler=sampler, 
+             shuffle=shuffle,
+             batch_size=self.params['batch_size'])
         val_data_loader = torch_geometric.loader.DataLoader(
             GraphDataset.from_experiment(self.experiment, mode='val'),
             shuffle=False, batch_size=self.params['batch_size'])

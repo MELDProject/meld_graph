@@ -55,7 +55,10 @@ network_parameters = {
         'deep_supervision': {
             'levels': [], #[4,5,6], 
             'weight': 0.5
-        }
+        },
+        # ovesampling: oversample lesional vertices to 33% lesional and 66% random.
+        # size of epoch will be num_lesional_examples * 3
+        'oversampling': True,
     },
     # name: experiment name. If none, experiment is not saved
     'name': datetime.datetime.now().strftime("%y-%m-%d") + '_example',
