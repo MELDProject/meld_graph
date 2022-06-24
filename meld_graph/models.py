@@ -271,11 +271,13 @@ class SimpleNet(nn.Module):
     def __init__(self, num_features, layer_sizes, dim=2, kernel_size=1,
                  icosphere_params={}, conv_type='GMMConv', spiral_len=1,
                  activation_fn='relu'):
-        super(MoNetUnet, self).__init__()
+        """Simple net to test whether it can learn easy classifier"""
+        super(SimpleNet, self).__init__()
         #self.device = None
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.num_features = num_features
         self.conv_type = conv_type
+        self.layer_sizes = layer_sizes
         if activation_fn == 'relu':
             self.activation_function = nn.ReLU()
         elif activation_fn == 'leaky_relu':
@@ -292,6 +294,8 @@ class SimpleNet(nn.Module):
         num_blocks = len(layer_sizes)
         assert(num_blocks <= 7)  # cannot pool more levels than icospheres
         in_size = self.num_features
+        block = []
+        
         if self.conv_type == 'GMMConv':
                     edges = self.icospheres.get_edges(level=level)
                     edge_vectors = self.icospheres.get_edge_vectors(level=level)
@@ -307,7 +311,7 @@ class SimpleNet(nn.Module):
 
 
     def to(self, device, **kwargs):
-        super(MoNetUnet, self).to(device, **kwargs)
+        super(SimpleNet, self).to(device, **kwargs)
         #self.icospheres.to(device)
         self.device = device
 
