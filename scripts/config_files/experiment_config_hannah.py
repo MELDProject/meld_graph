@@ -2,12 +2,33 @@ import os, datetime
 
 # model and training parameters, passed to model and Trainer, respectively
 network_parameters = {
+    # MONETUNET
+    ## network_type: model class, one of: MoNet, MoNetUnet (see models.py)
+    #'network_type': 'MoNetUnet',
+    ## model_parameters: passed to model class initialiser
+    #'model_parameters': {
+    #    # model architecture: list of lists for Unet, and list for MoNet (simple convs)
+    #    'layer_sizes': [[32,32,32],[32,32,32],[64,64,64],[64,64,64],[128,128,128],[128,128,128],[256,256,256]],
+    #    # activation_fn: activation function, one of: relu, leaky_relu
+    #    'activation_fn': 'leaky_relu',
+    #    # conv_type: convolution to use, one of: SpiralConv, GMMConv. Only for MoNetUnet
+    #    'conv_type': 'SpiralConv',
+    #    # dim: coord dim for GMMConv
+    #    'dim': 2,
+    #    # kernel_size: number of gaussian kernels for GMMConv
+    #    'kernel_size': 3, # number of gaussian kernels
+    #    # spiral_len: size of the spiral for SpiralConv. Only for MoNetUnet
+    #    # TODO implement dilation / different spiral len per unet block
+    #    'spiral_len': 10, 
+    #},
+
+    # MONET
     # network_type: model class, one of: MoNet, MoNetUnet (see models.py)
-    'network_type': 'MoNetUnet',
+    'network_type': 'MoNet',
     # model_parameters: passed to model class initialiser
     'model_parameters': {
         # model architecture: list of lists for Unet, and list for MoNet (simple convs)
-        'layer_sizes': [[32,32,32],[32,32,32],[64,64,64],[64,64,64],[128,128,128],[128,128,128],[256,256,256]],
+        'layer_sizes': [],
         # activation_fn: activation function, one of: relu, leaky_relu
         'activation_fn': 'leaky_relu',
         # conv_type: convolution to use, one of: SpiralConv, GMMConv. Only for MoNetUnet
@@ -18,8 +39,9 @@ network_parameters = {
         'kernel_size': 3, # number of gaussian kernels
         # spiral_len: size of the spiral for SpiralConv. Only for MoNetUnet
         # TODO implement dilation / different spiral len per unet block
-        'spiral_len': 10, 
+        'spiral_len': 1, 
     },
+
     # training_parameters: used by Trainer to set up model training
     'training_parameters': {
         "max_patience": 400,

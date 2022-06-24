@@ -17,7 +17,9 @@ class GMMConv(nn.Module):
         
 # define model
 class MoNet(nn.Module):
-    def __init__(self, num_features, layer_sizes, dim=2, kernel_size=3, icosphere_params={}, activation_fn='relu'):
+    def __init__(self, num_features, layer_sizes, dim=2, kernel_size=3, icosphere_params={}, 
+                conv_type='GMMConv', spiral_len=10,
+                activation_fn='relu', **kwargs):
         """
         Model with only conv layers.
 
@@ -26,49 +28,86 @@ class MoNet(nn.Module):
         layer_sizes: (list) output size of each conv layer. a final linear layer for going to 2 (binary classification) is added
         num_features: number of input features (input size)
         icosphere_params: params passes to IcoShperes for edges, coords, and neighbours
-        
+        conv_type: "GMMConv" or "SpiralConv"
+        spiral_len: number of neighbors included in each convolution (for SpiralConv) TODO implement dilation as well
+       
+
         Model outputs log softmax scores. Need to call torch.exp to get probabilities
         """
         super(MoNet, self).__init__()
+        # set class parameters
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.num_features = num_features
+        self.conv_type = conv_type
         assert len(layer_sizes) >= 1
         layer_sizes.insert(0, num_features)
         self.layer_sizes = layer_sizes
-        conv_layers = []
-        for in_size, out_size in zip(layer_sizes[:-1], layer_sizes[1:]):
-            conv_layers.append(GMMConv(in_size, out_size, dim=dim, kernel_size=kernel_size))
-        self.conv_layers = nn.ModuleList(conv_layers)
-        self.fc = nn.Linear(self.layer_sizes[-1], 2)
+        # activation function to be used throughout
         if activation_fn == 'relu':
             self.activation_function = nn.ReLU()
         elif activation_fn == 'leaky_relu':
             self.activation_function = nn.LeakyReLU()
         else:
             raise NotImplementedErrror('activation_fn: '+activation_fn)
+
         # TODO when changing aggregation of hemis, might need to use different graph here 
         # TODO for different coord systems, pass arguments to IcoSpheres here
         # TODO ideally passed as params to IcoSpheres that then returns the correct graphs at the right levels
         self.icospheres = IcoSpheres(**icosphere_params)  # pseudo
-        # initialise
-        #self.reset_parameters()
+
+        # TODO to device call necessary here because icoshperes need to be on GPU during conv layer init
+        self.icospheres.to(self.device)
+
+        # set up conv layers + final fcl
+        conv_layers = []
+        for in_size, out_size in zip(layer_sizes[:-1], layer_sizes[1:]):
+            print('conv', in_size, out_size)
+            if self.conv_type == 'GMMConv':
+                edges = self.icospheres.get_edges(level=7)
+                edge_vectors = self.icospheres.get_edge_vectors(level=7)
+                cl = GMMConv(in_size, out_size, dim=dim, kernel_size=kernel_size, edges=edges, edge_vectors=edge_vectors)
+            elif self.conv_type == 'SpiralConv':
+                indices = self.icospheres.get_spirals(level=level)
+                # TODO several spiral_len? one per block? 
+                # TODO implement dilations
+                indices = indices[:,:spiral_len]
+                cl = SpiralConv(in_size, out_size, indices=indices)
+            else:
+                raise NotImplementedError()
+
+            conv_layers.append(GMMConv(in_size, out_size, dim=dim, kernel_size=kernel_size))
+        self.conv_layers = nn.ModuleList(conv_layers)
+        self.fc = nn.Linear(self.layer_sizes[-1], 2)
+        
 
     def to(self, device, **kwargs):
         super(MoNet, self).to(device, **kwargs)
-        self.icospheres.to(device)
+        #self.icospheres.to(device)
+        self.device = device
 
     def reset_parameters(self):
         for layer in self.conv_layers:
             layer.reset_parameters()
     
     def forward(self, data):
-        x = data
-        for cl in self.conv_layers:
-            x = cl(x, self.icospheres.get_edges(level=7), self.icospheres.get_edge_vectors(level=7))
-            x = self.activation_function(x)
-        # add final linear layer
-        x = self.fc(x)
-        x = nn.LogSoftmax(dim=1)(x)
-        return x
+        batch_x = data
+        #reshape input to batch,n_vertices
+        original_shape = batch_x.shape
+        batch_x = batch_x.view((batch_x.shape[0]//self.n_vertices, self.n_vertices,self.num_features))
+
+        outputs = []
+        for x in batch_x:
+            for cl in self.conv_layers:
+                x = cl(x, device=self.device)
+                x = self.activation_function(x)
+            # add final linear layer
+            x = self.fc(x)
+            x = nn.LogSoftmax(dim=1)(x)
+            outputs.append(x)
+        batch_x = torch.stack(outputs)
+        #reshape output to batch, n_vertices
+        x = batch_x.view((original_shape[0],-1))
+        return [x]  # return list, as other models return multiple outputs
 
 
 class MoNetUnet(nn.Module):
@@ -90,7 +129,6 @@ class MoNetUnet(nn.Module):
         Model outputs log softmax scores. Need to call torch.exp to get probabilities
         """
         super(MoNetUnet, self).__init__()
-        #self.device = None
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.num_features = num_features
         self.conv_type = conv_type
@@ -267,61 +305,3 @@ class HexUnpool(nn.Module):
         new_x[limit:] = torch.mean(x[self.upsample_indices],dim=1)
         return new_x
 
-class SimpleNet(nn.Module):
-    def __init__(self, num_features, layer_sizes, dim=2, kernel_size=1,
-                 icosphere_params={}, conv_type='GMMConv', spiral_len=1,
-                 activation_fn='relu'):
-        """Simple net to test whether it can learn easy classifier"""
-        super(SimpleNet, self).__init__()
-        #self.device = None
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.num_features = num_features
-        self.conv_type = conv_type
-        self.layer_sizes = layer_sizes
-        if activation_fn == 'relu':
-            self.activation_function = nn.ReLU()
-        elif activation_fn == 'leaky_relu':
-            self.activation_function = nn.LeakyReLU()
-        else:
-            raise NotImplementedErrror('activation_fn: '+activation_fn)
-        # TODO when changing aggregation of hemis, might need to use different graph here
-        # TODO for different coord systems, pass arguments to IcoSpheres here
-        # TODO ideally passed as params to IcoSpheres that then returns the correct graphs at the right levels
-        self.icospheres = IcoSpheres(**icosphere_params)  # pseudo
-
-        # TODO to device call necessary here because icoshperes need to be on GPU during conv layer init
-        self.icospheres.to(self.device)
-        num_blocks = len(layer_sizes)
-        assert(num_blocks <= 7)  # cannot pool more levels than icospheres
-        in_size = self.num_features
-        block = []
-        
-        if self.conv_type == 'GMMConv':
-                    edges = self.icospheres.get_edges(level=level)
-                    edge_vectors = self.icospheres.get_edge_vectors(level=level)
-                    cl = GMMConv(in_size, out_size, dim=dim, kernel_size=kernel_size, edges=edges, edge_vectors=edge_vectors)
-                elif self.conv_type == 'SpiralConv':
-                    indices = self.icospheres.get_spirals(level=level)
-                    indices = indices[:,:spiral_len]
-                    cl = SpiralConv(in_size, out_size, indices=indices)
-
-        level=7
-        self.n_vertices = len(self.icospheres.icospheres[level]['coords'])
-
-
-
-    def to(self, device, **kwargs):
-        super(SimpleNet, self).to(device, **kwargs)
-        #self.icospheres.to(device)
-        self.device = device
-
-    def forward(self, data):
-        batch_x = data
-        #reshape input to batch,n_vertices
-        original_shape = batch_x.shape
-
-        batch_x = batch_x.view((batch_x.shape[0]//self.n_vertices, self.n_vertices,self.num_features))
-        outputs=[]
-        for x in batch_x:
-            x = cl(x, device=self.device)
-            x = self.activation_function(x)
