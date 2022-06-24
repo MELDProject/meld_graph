@@ -40,9 +40,9 @@ network_parameters = {
         # possible keys: cross_entropy, focal_loss, dice
         # values: dict with keys: "weight" and loss arguments (alpha/gamma for focal_loss, class_weights for dice)
         'loss_dictionary': {  
-            'cross_entropy':{'weight':1},
-            'dice': {'weight': 1,'class_weights':[0.5,0.5]},
-            #'focal_loss':{'weight':1, 'gamma':4, 'alpha': 0.4},
+            #'cross_entropy':{'weight':1},
+            #'focal_loss':{'weight':1, 'alpha':0.4, 'gamma':4},
+            'dice':{'weight': 1, 'class_weights': [0.5, 0.5]}
         },
          # metrics: list of metrics that should be printed during training
          # possible values: dice_lesion, dice_nonlesion, precision, recall, tp, fp, fn, tn
@@ -55,8 +55,8 @@ network_parameters = {
         'deep_supervision': {
             'levels': [], #[4,5,6], 
             'weight': 0.5
-            
         },
+        # TODO put in example config
         'oversampling':True,
     },
     # name: experiment name. If none, experiment is not saved
@@ -148,39 +148,15 @@ data_parameters = {
     "fold_n": 0,
     # preprocessing_parameters: params for data_preprocessing
     "preprocessing_parameters": {
-<<<<<<< HEAD
-        "scaling":  None,  #"scaling_params_GDL.json"
-        "zscore": False,
-=======
         "scaling": None, #"scaling_params_GDL.json"
         # zscore: normalise all values (per subject)
         "zscore": True,
->>>>>>> 1fbe85e44ac714b49ed91a157680b7ff9e3508d0
     },
     # icosphere_parameters: passed to Icospheres class
     "icosphere_parameters": {
         # distance_type: coords to return as edge attributes (for GMMConv), one of: exact, pseudo
         "distance_type": "exact",
     },
-<<<<<<< HEAD
-     "augment_data":  {
-        "spinning": {
-                  'p': 0.01,
-                  'file': 'data/spinning/spinning_ico7_10.npy'
-                  },
-         "warping": 
-                  {'p': 0.01,
-                   'file': 'data/warping/warping_ico7_10.npy'
-                  },
-                "flipping":
-                  {'p': 0.01,
-                   'file': 'data/flipping/flipping_ico7_3.npy'
-                  },
-                    },
-    "combine_hemis": None,  # None, "stack", TODO: combine with graph
-    "lobes": False, # If true task is frontal lobe parcellation, not lesion segmentation
-    "lesion_bias": 10, # value is added to lesion values
-=======
     # augment_data: parameters passed to Augment class
     # dictionary containing augmentation method as keys, and Transform params as values ("p" and "file")
     # possible augmentation methods: spinning, warping, flipping
@@ -195,7 +171,6 @@ data_parameters = {
     "lobes": False,
     # lesion_bias: add this value to lesion values to make prediction task easier
     "lesion_bias": 10,
->>>>>>> 1fbe85e44ac714b49ed91a157680b7ff9e3508d0
 }
 
 # run several experiments
@@ -203,8 +178,4 @@ data_parameters = {
 # e.g. "network_parameters$training_parameters$loss_dictionary$focal_loss" will set values for the focal loss.
 # if left empty, the above configuration is run.
 variable_parameters = {
-<<<<<<< HEAD
-    'data_parameters$lesion_bias': [10.],
-=======
->>>>>>> 1fbe85e44ac714b49ed91a157680b7ff9e3508d0
 }

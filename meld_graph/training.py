@@ -283,10 +283,8 @@ class Trainer:
         elif self.params['optimiser'] == 'sgd':
             optimiser = torch.optim.SGD(self.experiment.model.parameters(), **self.params['optimiser_parameters'])
         # set up learning rate scheduler
-        #optimiser['initial_lr'] = 0.1
         lambda1 = lambda epoch: (1 - epoch / self.params['num_epochs'])**self.params['lr_decay']
-        scheduler = torch.optim.lr_scheduler.LambdaLR(optimiser, lr_lambda=lambda1, last_epoch=self.params['num_epochs'],
-                                                     )
+        scheduler = torch.optim.lr_scheduler.LambdaLR(optimiser, lr_lambda=lambda1, last_epoch=self.params['num_epochs'])
         
         scores = {'train':[], 'val':[]}
         best_loss = 100000
@@ -299,6 +297,7 @@ class Trainer:
                             training_dset, 
             shuffle=self.params['shuffle_each_epoch'],
             batch_size=self.params['batch_size'])
+            
             self.log.info(f'current epoch: {epoch}, learning rate: {scheduler.get_last_lr()}')
             cur_scores = self.train_epoch(train_data_loader, optimiser)
             scheduler.step()  # update lr
