@@ -171,6 +171,9 @@ class Experiment:
         elif network_type == 'MoNetUnet':
             self.model = meld_graph.models.MoNetUnet(**self.network_parameters['model_parameters'], num_features=num_features, 
                 icosphere_params=icosphere_params, deep_supervision=self.network_parameters['training_parameters'].get('deep_supervision', {}).get('levels', []))
+        elif network_type == 'SimpleNet':
+            self.model = meld_graph.models.SimpleNet(**self.network_parameters['model_parameters'], num_features=num_features,
+                icosphere_params=icosphere_params)
         else:
             raise(NotImplementedError, network_type)
         

@@ -10,13 +10,13 @@ network_parameters = {
         'layer_sizes': [[32,32,32],[32,32,32],[64,64,64],[64,64,64],[128,128,128],[128,128,128],[256,256,256]],
         # activation_fn: activation function, one of: relu, leaky_relu
         'activation_fn': 'leaky_relu',
-        # conv_type: convolution to use, one of: SpiralConv, GMMConv. Only for MoNetUnet
+        # conv_type: convolution to use, one of: SpiralConv, GMMConv.
         'conv_type': 'SpiralConv',
         # dim: coord dim for GMMConv
         'dim': 2,
         # kernel_size: number of gaussian kernels for GMMConv
         'kernel_size': 3, # number of gaussian kernels
-        # spiral_len: size of the spiral for SpiralConv. Only for MoNetUnet
+        # spiral_len: size of the spiral for SpiralConv.
         # TODO implement dilation / different spiral len per unet block
         'spiral_len': 10, 
     },
@@ -55,7 +55,10 @@ network_parameters = {
         'deep_supervision': {
             'levels': [], #[4,5,6], 
             'weight': 0.5
-        }
+        },
+        # ovesampling: oversample lesional vertices to 33% lesional and 66% random.
+        # size of epoch will be num_lesional_examples * 3
+        'oversampling': True,
     },
     # name: experiment name. If none, experiment is not saved
     'name': datetime.datetime.now().strftime("%y-%m-%d") + '_example',
@@ -159,7 +162,19 @@ data_parameters = {
     # dictionary containing augmentation method as keys, and Transform params as values ("p" and "file")
     # possible augmentation methods: spinning, warping, flipping
     "augment_data": {
-    },
+        "spinning":
+                  {'p': 0.80,
+                  'file': 'data/spinning/spinning_ico7_10.npy'
+                  },
+        "warping": 
+                  {'p': 0.80,
+                   'file': 'data/warping/warping_ico7_10.npy'
+                  },
+        "flipping":
+                  {'p': 0.80,
+                   'file': 'data/flipping/flipping_ico7_3.npy'
+                  },
+                    },
     # combine_hemis: how to combine hemisphere data, one of: None, stack
     # None: no combination of hemispheres. 
     # "stack": stack features of both hemispheres.

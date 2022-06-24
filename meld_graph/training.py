@@ -2,7 +2,7 @@ import logging
 import os
 import torch
 import torch_geometric.data
-from meld_graph.dataset import GraphDataset
+from meld_graph.dataset import GraphDataset, Oversampler
 import numpy as np
 from meld_graph.paths import EXPERIMENT_PATH
 from functools import partial
@@ -173,6 +173,7 @@ class Metrics:
                 metrics[metric] = np.sum(self.running_scores[metric])
         return metrics
 
+
 class Trainer:
     def __init__(self, experiment):
         self.log = logging.getLogger(__name__)
@@ -257,14 +258,23 @@ class Trainer:
         self.experiment.load_model()
         self.experiment.model.to(device)
 
-        # get data
+        # get dataset
+        train_dset = GraphDataset.from_experiment(self.experiment, mode='train')
+        sampler = None
+        shuffle = self.params['shuffle_each_epoch']
+        if self.params['oversampling']:
+            sampler = Oversampler(train_dset)
+            shuffle = False  # oversampler will do shuffling
+
         train_data_loader = torch_geometric.loader.DataLoader(
-            GraphDataset.from_experiment(self.experiment, mode='train'), 
-            shuffle=self.params['shuffle_each_epoch'],
-            batch_size=self.params['batch_size'])
+             train_dset, sampler=sampler, 
+             shuffle=shuffle,
+             batch_size=self.params['batch_size'])
         val_data_loader = torch_geometric.loader.DataLoader(
             GraphDataset.from_experiment(self.experiment, mode='val'),
             shuffle=False, batch_size=self.params['batch_size'])
+        self.train_data_loader = train_data_loader
+        self.val_data_loader = val_data_loader
 
         # set up training loop
         # set up optimiser
@@ -272,6 +282,8 @@ class Trainer:
             optimiser = torch.optim.Adam(self.experiment.model.parameters(), **self.params['optimiser_parameters'])
         elif self.params['optimiser'] == 'sgd':
             optimiser = torch.optim.SGD(self.experiment.model.parameters(), **self.params['optimiser_parameters'])
+        self.optimiser = optimiser
+
         # set up learning rate scheduler
         lambda1 = lambda epoch: (1 - epoch / self.params['num_epochs'])**self.params['lr_decay']
         # NOTE: when resuming training, need to set last epoch to epoch-1
