@@ -58,7 +58,7 @@ network_parameters = {
         },
         # ovesampling: oversample lesional vertices to 33% lesional and 66% random.
         # size of epoch will be num_lesional_examples * 3
-        'oversampling': False
+        'oversampling': True,
     },
     # name: experiment name. If none, experiment is not saved
     'name': datetime.datetime.now().strftime("%y-%m-%d") + '_example',
