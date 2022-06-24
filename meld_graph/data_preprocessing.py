@@ -132,6 +132,7 @@ class Preprocess:
             lesion_rh = self.lobes
         # add lesion bias
         if lesion_bias:
+           
             vals_array_lh[lesion_lh==1] += lesion_bias
             vals_array_rh[lesion_rh==1] += lesion_bias
 
