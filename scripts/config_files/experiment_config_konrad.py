@@ -115,4 +115,19 @@ data_parameters = {
     },
     "combine_hemis": None,  # None, "stack", TODO: combine with graph
     "lobes":False, # "False" if true task is frontal lobe parcellation, not lesion segmentation
-}
+    "augment_data": {
+        "spinning": {
+                  {'p': 0.80,
+                  'file': 'data/spinning/spinning_ico7_10.npy'
+                  },
+                "warping": 
+                  {'p': 0.80,
+                   'file': 'data/warping/warping_ico7_10.npy'
+                  },
+                "flipping":
+                  {'p': 0.80,
+                   'file': 'data/flipping/flipping_ico7_3.npy'
+                  },
+                    }
+     }
+    

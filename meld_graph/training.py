@@ -35,9 +35,6 @@ def dice_coeff(pred, target,mask=False):
     return  dice
 
 
-
-
-
 class DiceLoss(torch.nn.Module):
     def __init__(self, loss_weight_dictionary=None):
         super(DiceLoss, self).__init__()
@@ -173,12 +170,28 @@ class Metrics:
             else:
                 metrics[metric] = np.sum(self.running_scores[metric])
         return metrics
+    
+
+
+def nnunet_sampling_dset(dset,lesional_idxs,oversampling=False):
+    """ resample train dataset to present,
+    33% lesional 66% random """
+    if not oversampling:
+        return dset    
+    n_l = len(lesional_idxs)
+    n_non = 2* n_l
+    non_ids = np.random.choice(len(dset),n_non,replace=False)
+    ids_to_choose = np.hstack([lesional_idxs,non_ids])
+    return dset[ids_to_choose]
+
 
 class Trainer:
     def __init__(self, experiment):
         self.log = logging.getLogger(__name__)
         self.experiment = experiment
         self.params = self.experiment.network_parameters['training_parameters']
+        self.deep_supervision = self.params.get('deep_supervision', {'levels':[], 'weight': 1})
+
 
     def train_epoch(self, data_loader, optimiser):
         """
@@ -196,12 +209,18 @@ class Trainer:
             optimiser.zero_grad()
             estimates = model(data.x)
             labels = data.y.squeeze()
-            loss = calculate_loss(self.params['loss_dictionary'],estimates, labels, device=device)
+            loss = calculate_loss(self.params['loss_dictionary'],estimates[0], labels, device=device)
+            # add deep supervision outputs # TODO add loss weight param for deep supervision?
+            for i,level in enumerate(sorted(self.deep_supervision['levels'])):
+                cur_estimates = estimates[i+1]
+                cur_labels = getattr(data, f"output_level{level}")
+                #print(cur_estimates.shape, cur_labels.shape)
+                loss += self.deep_supervision['weight'] * calculate_loss(self.params['loss_dictionary'], cur_estimates, cur_labels, device=device)
             loss.backward()
             optimiser.step()
             running_loss.append(loss.item())
             # metrics
-            pred = torch.argmax(estimates, axis=1)
+            pred = torch.argmax(estimates[0], axis=1)
             # update running metrics
             metrics.update(pred, labels)
             
@@ -221,10 +240,16 @@ class Trainer:
                 #fake_x = torch.vstack([data.y for _ in range(22)]).t().type(torch.float)
                 estimates = model(data.x)
                 labels = data.y.squeeze()
-                loss = calculate_loss(self.params['loss_dictionary'],estimates, labels, device =device)
+                loss = calculate_loss(self.params['loss_dictionary'],estimates[0], labels, device=device)
+                # add deep supervision outputs # TODO add loss weight param for deep supervision?
+                for i,level in enumerate(sorted(self.deep_supervision['levels'])):
+                    cur_estimates = estimates[i+1]
+                    cur_labels = getattr(data, f"output_level{level}")
+                    #print(cur_estimates.shape, cur_labels.shape)
+                    loss += self.deep_supervision['weight'] * calculate_loss(self.params['loss_dictionary'], cur_estimates, cur_labels, device=device)
                 running_loss.append(loss.item())
                 # metrics
-                pred = torch.argmax(estimates, axis=1)
+                pred = torch.argmax(estimates[0], axis=1)
                 # update running metrics
                 metrics.update(pred, labels)
      
@@ -244,27 +269,45 @@ class Trainer:
         self.experiment.load_model()
         self.experiment.model.to(device)
 
-        # get data
-        train_data_loader = torch_geometric.loader.DataLoader(
-            GraphDataset.from_experiment(self.experiment, mode='train'), 
-            shuffle=self.params['shuffle_each_epoch'],
-            batch_size=self.params['batch_size'])
+        # get dataset
+        dset = GraphDataset.from_experiment(self.experiment, mode='train')
+        dset.get_lesional_ids()
         val_data_loader = torch_geometric.loader.DataLoader(
             GraphDataset.from_experiment(self.experiment, mode='val'),
             shuffle=False, batch_size=self.params['batch_size'])
 
         # set up training loop
-        optimiser = torch.optim.Adam(self.experiment.model.parameters(), lr=self.params['lr'])
-    
+        # set up optimiser
+        if self.params['optimiser'] == 'adam':
+            optimiser = torch.optim.Adam(self.experiment.model.parameters(), **self.params['optimiser_parameters'])
+        elif self.params['optimiser'] == 'sgd':
+            optimiser = torch.optim.SGD(self.experiment.model.parameters(), **self.params['optimiser_parameters'])
+        # set up learning rate scheduler
+        #optimiser['initial_lr'] = 0.1
+        lambda1 = lambda epoch: (1 - epoch / self.params['num_epochs'])**self.params['lr_decay']
+        scheduler = torch.optim.lr_scheduler.LambdaLR(optimiser, lr_lambda=lambda1, last_epoch=self.params['num_epochs'],
+                                                     )
+        
         scores = {'train':[], 'val':[]}
         best_loss = 100000
         patience = 0
         for epoch in range(self.params['num_epochs']):
+            #create data loader, with optional resampling
+            training_dset = nnunet_sampling_dset(dset,dset.lesional_idxs,oversampling = self.params['oversampling'])
+            
+            train_data_loader = torch_geometric.loader.DataLoader(
+                            training_dset, 
+            shuffle=self.params['shuffle_each_epoch'],
+            batch_size=self.params['batch_size'])
+            self.log.info(f'current epoch: {epoch}, learning rate: {scheduler.get_last_lr()}')
             cur_scores = self.train_epoch(train_data_loader, optimiser)
+            scheduler.step()  # update lr
+
+
             log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items())
             self.log.info(f'Epoch {epoch} :: Train {log_str}')
             scores['train'].append(cur_scores)
-        
+
             if epoch%1 ==0:
                 cur_scores = self.val_epoch(val_data_loader)
                 log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items())
