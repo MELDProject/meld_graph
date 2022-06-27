@@ -214,12 +214,12 @@ class Preprocess:
         print(f"parameters saved in {file}")
 
         
-    def clockwiseangle_and_distance(self,point):
+    def clockwiseangle_and_distance(self,point,origin):
         import math
 
         refvec = [0, 1]
         # Vector between point and the origin: v = p - o
-        vector = [point[0]-self.origin[0], point[1]-self.origin[1]]
+        vector = [point[0]-origin[0], point[1]-origin[1]]
         # Length of vector: ||v||
         lenvector = math.hypot(vector[0], vector[1])
         # If length is zero there is no angle
@@ -238,21 +238,21 @@ class Preprocess:
         # but if two vectors have the same angle then the shorter distance should come first.
         return angle, lenvector
 
-    def generate_synthetic_data(self,coords,n_features,bias):
+    def generate_synthetic_data(self,coords,n_features,bias,radius=0.5):
         import matplotlib.path as mpltPath
-
+        from sklearn.metrics import pairwise_distances
+        f_radius = np.clip(np.random.normal(radius,radius/2),0.05,2)
+        f_bias = np.clip(np.random.normal(bias,bias/2),0,100)
         com_i = np.random.choice(len(coords))
-        max_d = np.array([0.75,1.5])
+        origin=coords[com_i]
+        distances=pairwise_distances(origin.reshape(-1,1).T,coords, metric='haversine')[0]
         n_points = np.random.choice(6)+4
-        shifted = coords-coords[com_i]
-        subset = coords[(np.abs(shifted)<max_d).all(axis=1)]
+        subset = coords[distances<f_radius]
         poly_i=np.random.choice(len(subset),n_points)
-        self.origin=coords[com_i]
         polygon=subset[poly_i]
-        polygon=np.array(sorted(polygon, key=self.clockwiseangle_and_distance))
-
+        polygon=np.array(sorted(polygon, key=lambda point: self.clockwiseangle_and_distance(point,origin)))
         path = mpltPath.Path(polygon)
         lesion = path.contains_points(coords)
         n_verts=len(coords)
-        features = np.random.normal(0,1,(n_features,n_verts))+lesion.astype(int)*bias
+        features = np.random.normal(0,1,(n_features,n_verts))+lesion.astype(int)*f_bias
         return features, lesion

@@ -185,10 +185,14 @@ data_parameters = {
     "lobes": False,
     # lesion_bias: add this value to lesion values to make prediction task easier
     "lesion_bias": 10,
+    #Synthetic lesions. non-lesional vertices given mu=0, std = 1. 
+    #Lesional vertices controlled by bias terms in the synthetic dictionary
+    #bias and radius control gaussian distributions
     'synthetic_data':None, 
     #{'n_features':2,
 #                       'n_subs':100,
-#                       'bias':1}
+#                       'bias':1,
+#                        'radius':0.5}
 }
 
 # run several experiments

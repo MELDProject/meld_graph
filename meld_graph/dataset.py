@@ -85,10 +85,12 @@ class GraphDataset(torch_geometric.data.Dataset):
             if self.params['synthetic_data'] !=None:
                 features_left, lesion_left = prep.generate_synthetic_data(self.icospheres.icospheres[7]['spherical_coords'],
                                                                       self.params['synthetic_data']['n_features'],
-                                                                      self.params['synthetic_data']['bias'])
+                                                                      self.params['synthetic_data']['bias'],
+                                                                         self.params['synthetic_data']['radius'])
                 features_right, lesion_right = prep.generate_synthetic_data(self.icospheres.icospheres[7]['spherical_coords'],
                                                                       self.params['synthetic_data']['n_features'],
-                                                                      self.params['synthetic_data']['bias'])
+                                                                      self.params['synthetic_data']['bias'],
+                                                                           self.params['synthetic_data']['radius'])
             else:
                 features_left, features_right, lesion_left, lesion_right = prep.get_data_preprocessed(subject=subj_id, features=self.params['features'], 
                 lobes = self.params['lobes'], lesion_bias=self.params.get('lesion_bias', False))
