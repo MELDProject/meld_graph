@@ -28,7 +28,7 @@ network_parameters = {
     # model_parameters: passed to model class initialiser
     'model_parameters': {
         # model architecture: list of lists for Unet, and list for MoNet (simple convs)
-        'layer_sizes': [],
+        'layer_sizes': [16],
         # activation_fn: activation function, one of: relu, leaky_relu
         'activation_fn': 'leaky_relu',
         # conv_type: convolution to use, one of: SpiralConv, GMMConv.
@@ -39,13 +39,13 @@ network_parameters = {
         'kernel_size': 3, # number of gaussian kernels
         # spiral_len: size of the spiral for SpiralConv.
         # TODO implement dilation / different spiral len per unet block
-        'spiral_len': 1, 
+        'spiral_len': 7, 
     },
 
     # training_parameters: used by Trainer to set up model training
     'training_parameters': {
         "max_patience": 400,
-        "num_epochs": 10,
+        "num_epochs": 200,
         # optimiser: optimiser to use, one of: adam, sgd
         "optimiser": 'sgd',
         # optimiser_parameters: parameters passed to torch optimiser class
@@ -83,34 +83,35 @@ network_parameters = {
         'oversampling':True,
     },
     # name: experiment name. If none, experiment is not saved
-    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_lr_decay',
+    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_synth_1layer_7spiral',
 }
+
 # data parameters, passed to GraphDataset and Preprocess
 data_parameters = {
     'hdf5_file_root': "{site_code}_{group}_featurematrix_combat_6.hdf5",
     'site_codes': [
-#         "H1",
-#         "H2",
-#         "H3",
+    #    "H1",
+    #    "H2",
+    #    "H3",
         "H4",
-#        "H5",
-#        "H6",
-#        "H7",
-#        "H9",
-#        "H10",
-#        "H11",
-#        "H12",
-#        "H14",
-#        "H15",
-#        "H16",
-#        "H17",
-#        "H18",
-#        "H19",
-#        "H21",
-#        "H23",
-#        "H24",
-#        "H26",
-#        "H27",
+    #    "H5",
+    #    "H6",
+    #    "H7",
+    #    "H9",
+    #    "H10",
+    #    "H11",
+    #    "H12",
+    #    "H14",
+    #    "H15",
+    #    "H16",
+    #    "H17",
+    #    "H18",
+    #    "H19",
+    #    "H21",
+    #    "H23",
+    #    "H24",
+    #    "H26",
+    #    "H27",
     ],
     'scanners': ['15T','3T'],
     'dataset': 'MELD_dataset_V6.csv',
@@ -131,39 +132,39 @@ data_parameters = {
         #    '.on_lh.w-g.pct.mgh',
         #    '.on_lh.wm_FLAIR_0.5.mgh',
         #    '.on_lh.wm_FLAIR_1.mgh',
-#         '.combat.on_lh.pial.K_filtered.sm20.mgh',
-        '.combat.on_lh.thickness.sm10.mgh',
-#         '.combat.on_lh.w-g.pct.sm10.mgh',
-#         '.combat.on_lh.sulc.sm5.mgh',
-#         '.combat.on_lh.curv.sm5.mgh',
-#         '.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
-#         '.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
-#         '.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
-#         '.combat.on_lh.gm_FLAIR_0.sm10.mgh',
-#         '.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
-#         '.combat.on_lh.wm_FLAIR_1.sm10.mgh',
-#         '.inter_z.intra_z.combat.on_lh.pial.K_filtered.sm20.mgh',
-#         '.inter_z.intra_z.combat.on_lh.thickness.sm10.mgh',
-#         '.inter_z.intra_z.combat.on_lh.w-g.pct.sm10.mgh',
-#         '.inter_z.intra_z.combat.on_lh.sulc.sm5.mgh',
-#         '.inter_z.intra_z.combat.on_lh.curv.sm5.mgh',
-#         '.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
-#         '.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
-#         '.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
-#         '.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.sm10.mgh',
-#         '.inter_z.intra_z.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
-#         '.inter_z.intra_z.combat.on_lh.wm_FLAIR_1.sm10.mgh',
-#         '.inter_z.asym.intra_z.combat.on_lh.pial.K_filtered.sm20.mgh',
-#         '.inter_z.asym.intra_z.combat.on_lh.thickness.sm10.mgh',
-#         '.inter_z.asym.intra_z.combat.on_lh.w-g.pct.sm10.mgh',
-#         '.inter_z.asym.intra_z.combat.on_lh.sulc.sm5.mgh',
-#         '.inter_z.asym.intra_z.combat.on_lh.curv.sm5.mgh',
-#         '.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
-#         '.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
-#         '.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
-#         '.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.sm10.mgh',
-#         '.inter_z.asym.intra_z.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
-#         '.inter_z.asym.intra_z.combat.on_lh.wm_FLAIR_1.sm10.mgh',
+        '.combat.on_lh.pial.K_filtered.sm20.mgh',
+        #'.combat.on_lh.thickness.sm10.mgh',
+        #'.combat.on_lh.w-g.pct.sm10.mgh',
+        #'.combat.on_lh.sulc.sm5.mgh',
+        #'.combat.on_lh.curv.sm5.mgh',
+        #'.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
+        #'.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
+        #'.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
+        #'.combat.on_lh.gm_FLAIR_0.sm10.mgh',
+        #'.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
+        #'.combat.on_lh.wm_FLAIR_1.sm10.mgh',
+        #'.inter_z.intra_z.combat.on_lh.pial.K_filtered.sm20.mgh',
+        #'.inter_z.intra_z.combat.on_lh.thickness.sm10.mgh',
+        #'.inter_z.intra_z.combat.on_lh.w-g.pct.sm10.mgh',
+        #'.inter_z.intra_z.combat.on_lh.sulc.sm5.mgh',
+        #'.inter_z.intra_z.combat.on_lh.curv.sm5.mgh',
+        #'.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
+        #'.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
+        #'.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
+        #'.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.sm10.mgh',
+        #'.inter_z.intra_z.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
+        #'.inter_z.intra_z.combat.on_lh.wm_FLAIR_1.sm10.mgh',
+        #'.inter_z.asym.intra_z.combat.on_lh.pial.K_filtered.sm20.mgh',
+        #'.inter_z.asym.intra_z.combat.on_lh.thickness.sm10.mgh',
+        #'.inter_z.asym.intra_z.combat.on_lh.w-g.pct.sm10.mgh',
+        #'.inter_z.asym.intra_z.combat.on_lh.sulc.sm5.mgh',
+        #'.inter_z.asym.intra_z.combat.on_lh.curv.sm5.mgh',
+        #'.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
+        #'.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
+        #'.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
+        #'.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.sm10.mgh',
+        #'.inter_z.asym.intra_z.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
+        #'.inter_z.asym.intra_z.combat.on_lh.wm_FLAIR_1.sm10.mgh',
     ],
     # specify this if manually specifying features
     "features_to_replace_with_0": [], 
@@ -183,21 +184,8 @@ data_parameters = {
     # augment_data: parameters passed to Augment class
     # dictionary containing augmentation method as keys, and Transform params as values ("p" and "file")
     # possible augmentation methods: spinning, warping, flipping
-    "augment_data": None,
-#     {
-#         "spinning":
-#                   {'p': 0.80,
-#                   'file': 'data/spinning/spinning_ico7_10.npy'
-#                   },
-#         "warping": 
-#                   {'p': 0.80,
-#                    'file': 'data/warping/warping_ico7_10.npy'
-#                   },
-#         "flipping":
-#                   {'p': 0.80,
-#                    'file': 'data/flipping/flipping_ico7_3.npy'
-#                   },
-#                     },
+    "augment_data": {
+    },
     # combine_hemis: how to combine hemisphere data, one of: None, stack
     # None: no combination of hemispheres. 
     # "stack": stack features of both hemispheres.
@@ -207,6 +195,10 @@ data_parameters = {
     "lobes": False,
     # lesion_bias: add this value to lesion values to make prediction task easier
     "lesion_bias": 10,
+    'synthetic_data': {
+        'n_subs': 100,
+        'bias': 1
+    }
 }
 
 # run several experiments
@@ -214,4 +206,5 @@ data_parameters = {
 # e.g. "network_parameters$training_parameters$loss_dictionary$focal_loss" will set values for the focal loss.
 # if left empty, the above configuration is run.
 variable_parameters = {
+    "data_parameters$synthetic_data$bias": [0, 0.5, 1, 2, 5, 10]
 }

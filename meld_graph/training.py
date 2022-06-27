@@ -138,13 +138,13 @@ class Metrics:
 
     def update(self, pred, target):
         if len(set(['dice_lesion', 'dice_nonlesion']).intersection(self.metrics_to_track)) > 0:
-            dice_coeffs = dice_coeff(torch.nn.functional.one_hot(pred), target)
+            dice_coeffs = dice_coeff(torch.nn.functional.one_hot(pred, num_classes=2), target)
             if 'dice_lesion' in self.metrics_to_track:
                 self.running_scores['dice_lesion'].append(dice_coeffs[1].item())
             if 'dice_nonlesion' in self.metrics_to_track:
                 self.running_scores['dice_nonlesion'].append(dice_coeffs[0].item())
         if len(set(['dice_masked_lesion', 'dice_masked_nonlesion']).intersection(self.metrics_to_track)) > 0:
-            dice_coeffs = dice_coeff(torch.nn.functional.one_hot(pred), target, mask=True)
+            dice_coeffs = dice_coeff(torch.nn.functional.one_hot(pred, num_classes=2), target, mask=True)
             if 'dice_masked_lesion' in self.metrics_to_track:
                 self.running_scores['dice_masked_lesion_masked'].append(dice_coeffs[1].item())
             if 'dice_masked_nonlesion' in self.metrics_to_track:
