@@ -241,8 +241,15 @@ class Preprocess:
     def generate_synthetic_data(self,coords,n_features,bias,radius=0.5):
         import matplotlib.path as mpltPath
         from sklearn.metrics import pairwise_distances
-        f_radius = np.clip(np.random.normal(radius,radius/2),0.05,2)
-        f_bias = np.clip(np.random.normal(bias,bias/2),0,100)
+        if bias==0:
+            f_bias=0
+        else:
+            f_bias = np.clip(np.random.normal(bias,bias/2),0,100)
+        if radius==0:
+            f_radius=0
+        else:
+            f_radius = np.clip(np.random.normal(radius,radius/2),0.05,2)
+        
         com_i = np.random.choice(len(coords))
         origin=coords[com_i]
         distances=pairwise_distances(origin.reshape(-1,1).T,coords, metric='haversine')[0]
