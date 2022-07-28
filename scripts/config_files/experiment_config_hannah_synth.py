@@ -4,31 +4,11 @@ import os, datetime
 network_parameters = {
     # MONETUNET
     ## network_type: model class, one of: MoNet, MoNetUnet (see models.py)
-    #'network_type': 'MoNetUnet',
+    'network_type': 'MoNetUnet',
     ## model_parameters: passed to model class initialiser
-    #'model_parameters': {
-    #    # model architecture: list of lists for Unet, and list for MoNet (simple convs)
-    #    'layer_sizes': [[32,32,32],[32,32,32],[64,64,64],[64,64,64],[128,128,128],[128,128,128],[256,256,256]],
-    #    # activation_fn: activation function, one of: relu, leaky_relu
-    #    'activation_fn': 'leaky_relu',
-    #    # conv_type: convolution to use, one of: SpiralConv, GMMConv.
-    #    'conv_type': 'SpiralConv',
-    #    # dim: coord dim for GMMConv
-    #    'dim': 2,
-    #    # kernel_size: number of gaussian kernels for GMMConv
-    #    'kernel_size': 3, # number of gaussian kernels
-    #    # spiral_len: size of the spiral for SpiralConv.
-    #    # TODO implement dilation / different spiral len per unet block
-    #    'spiral_len': 10, 
-    #},
-
-    # MONET
-    # network_type: model class, one of: MoNet, MoNetUnet (see models.py)
-    'network_type': 'MoNet',
-    # model_parameters: passed to model class initialiser
     'model_parameters': {
         # model architecture: list of lists for Unet, and list for MoNet (simple convs)
-        'layer_sizes': [16],
+        'layer_sizes': [[32,32,32],[32,32,32],[64,64,64],[64,64,64],[128,128,128],[128,128,128],[256,256,256]],
         # activation_fn: activation function, one of: relu, leaky_relu
         'activation_fn': 'leaky_relu',
         # conv_type: convolution to use, one of: SpiralConv, GMMConv.
@@ -41,6 +21,26 @@ network_parameters = {
         # TODO implement dilation / different spiral len per unet block
         'spiral_len': 7, 
     },
+
+    # MONET
+    # network_type: model class, one of: MoNet, MoNetUnet (see models.py)
+    #'network_type': 'MoNet',
+    # model_parameters: passed to model class initialiser
+    #'model_parameters': {
+    #    # model architecture: list of lists for Unet, and list for MoNet (simple convs)
+    #    'layer_sizes': [16],
+    #    # activation_fn: activation function, one of: relu, leaky_relu
+    #    'activation_fn': 'leaky_relu',
+    #    # conv_type: convolution to use, one of: SpiralConv, GMMConv.
+    #    'conv_type': 'SpiralConv',
+    #    # dim: coord dim for GMMConv
+    #    'dim': 2,
+    #    # kernel_size: number of gaussian kernels for GMMConv
+    #    'kernel_size': 3, # number of gaussian kernels
+    #    # spiral_len: size of the spiral for SpiralConv.
+    #    # TODO implement dilation / different spiral len per unet block
+    #    'spiral_len': 7, 
+    #},
 
     # training_parameters: used by Trainer to set up model training
     'training_parameters': {
@@ -83,7 +83,7 @@ network_parameters = {
         'oversampling':True,
     },
     # name: experiment name. If none, experiment is not saved
-    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_synth_1layer_7spiral',
+    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_synth_unet',
 }
 
 # data parameters, passed to GraphDataset and Preprocess
@@ -197,7 +197,8 @@ data_parameters = {
     "lesion_bias": 10,
     'synthetic_data': {
         'n_subs': 100,
-        'bias': 1
+        'bias': 0.5,
+        'radius': 0.5,
     }
 }
 
@@ -206,5 +207,6 @@ data_parameters = {
 # e.g. "network_parameters$training_parameters$loss_dictionary$focal_loss" will set values for the focal loss.
 # if left empty, the above configuration is run.
 variable_parameters = {
-    "data_parameters$synthetic_data$bias": [0, 0.5, 1, 2, 5, 10]
+#    "data_parameters$synthetic_data$bias": [0.5, 1, 2, 5],
+    "data_parameters$synthetic_data$radius": [0.25]
 }
