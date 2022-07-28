@@ -2,33 +2,11 @@ import os, datetime
 
 # model and training parameters, passed to model and Trainer, respectively
 network_parameters = {
-    # MONETUNET
-    ## network_type: model class, one of: MoNet, MoNetUnet (see models.py)
-    #'network_type': 'MoNetUnet',
+    'network_type': 'MoNetUnet',
     ## model_parameters: passed to model class initialiser
-    #'model_parameters': {
-    #    # model architecture: list of lists for Unet, and list for MoNet (simple convs)
-    #    'layer_sizes': [[32,32,32],[32,32,32],[64,64,64],[64,64,64],[128,128,128],[128,128,128],[256,256,256]],
-    #    # activation_fn: activation function, one of: relu, leaky_relu
-    #    'activation_fn': 'leaky_relu',
-    #    # conv_type: convolution to use, one of: SpiralConv, GMMConv.
-    #    'conv_type': 'SpiralConv',
-    #    # dim: coord dim for GMMConv
-    #    'dim': 2,
-    #    # kernel_size: number of gaussian kernels for GMMConv
-    #    'kernel_size': 3, # number of gaussian kernels
-    #    # spiral_len: size of the spiral for SpiralConv.
-    #    # TODO implement dilation / different spiral len per unet block
-    #    'spiral_len': 10, 
-    #},
-
-    # MONET
-    # network_type: model class, one of: MoNet, MoNetUnet (see models.py)
-    'network_type': 'MoNet',
-    # model_parameters: passed to model class initialiser
     'model_parameters': {
         # model architecture: list of lists for Unet, and list for MoNet (simple convs)
-        'layer_sizes': [16],
+        'layer_sizes': [[32,32,32],[32,32,32],[64,64,64],[64,64,64],[128,128,128],[128,128,128],[256,256,256]],
         # activation_fn: activation function, one of: relu, leaky_relu
         'activation_fn': 'leaky_relu',
         # conv_type: convolution to use, one of: SpiralConv, GMMConv.
@@ -42,16 +20,36 @@ network_parameters = {
         'spiral_len': 7, 
     },
 
+#     # MONET
+#     # network_type: model class, one of: MoNet, MoNetUnet (see models.py)
+#     'network_type': 'MoNet',
+#     # model_parameters: passed to model class initialiser
+#     'model_parameters': {
+#         # model architecture: list of lists for Unet, and list for MoNet (simple convs)
+#         'layer_sizes': [16,16,16],
+#         # activation_fn: activation function, one of: relu, leaky_relu
+#         'activation_fn': 'leaky_relu',
+#         # conv_type: convolution to use, one of: SpiralConv, GMMConv.
+#         'conv_type': 'SpiralConv',
+#         # dim: coord dim for GMMConv
+#         'dim': 2,
+#         # kernel_size: number of gaussian kernels for GMMConv
+#         'kernel_size': 3, # number of gaussian kernels
+#         # spiral_len: size of the spiral for SpiralConv.
+#         # TODO implement dilation / different spiral len per unet block
+#         'spiral_len': 7, 
+#     },
+
     # training_parameters: used by Trainer to set up model training
     'training_parameters': {
         "max_patience": 400,
-        "num_epochs": 200,
+        "num_epochs": 300,
         # optimiser: optimiser to use, one of: adam, sgd
         "optimiser": 'sgd',
         # optimiser_parameters: parameters passed to torch optimiser class
         # for sgd with nesterov momentum use: momentum:0.99, nesterov:True
         "optimiser_parameters": {
-            "lr": 1e-4,
+            "lr": 1e-2,
             "momentum": 0.99,
             "nesterov": True
         },
@@ -63,7 +61,7 @@ network_parameters = {
         # values: dict with keys: "weight" and loss arguments (alpha/gamma for focal_loss, class_weights for dice)
         'loss_dictionary': {  
             #'cross_entropy':{'weight':1},
-            'focal_loss':{'weight':1, 'alpha':0.4, 'gamma':4},
+            'focal_loss':{'weight':1, 'alpha':0.4, 'gamma':2},
             #'dice':{'weight': 1, 'class_weights': [0.5, 0.5]}
         },
          # metrics: list of metrics that should be printed during training
@@ -83,7 +81,7 @@ network_parameters = {
         'oversampling':True,
     },
     # name: experiment name. If none, experiment is not saved
-    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_synth_1layer_7spiral',
+    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_synth_unet_gamma_2',
 }
 
 # data parameters, passed to GraphDataset and Preprocess
@@ -120,7 +118,7 @@ data_parameters = {
     "subject_features_to_exclude": [],
     # features: manually specify features (instead of features_to_exclude)
     "features": [
-        '.on_lh.lesion.mgh',
+       # '.on_lh.lesion.mgh',
         #    '.on_lh.curv.mgh',
         #    '.on_lh.gm_FLAIR_0.25.mgh',
         #    '.on_lh.gm_FLAIR_0.5.mgh',
@@ -133,38 +131,38 @@ data_parameters = {
         #    '.on_lh.wm_FLAIR_0.5.mgh',
         #    '.on_lh.wm_FLAIR_1.mgh',
         '.combat.on_lh.pial.K_filtered.sm20.mgh',
-        #'.combat.on_lh.thickness.sm10.mgh',
-        #'.combat.on_lh.w-g.pct.sm10.mgh',
-        #'.combat.on_lh.sulc.sm5.mgh',
-        #'.combat.on_lh.curv.sm5.mgh',
-        #'.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
-        #'.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
-        #'.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
-        #'.combat.on_lh.gm_FLAIR_0.sm10.mgh',
-        #'.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
-        #'.combat.on_lh.wm_FLAIR_1.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.pial.K_filtered.sm20.mgh',
-        #'.inter_z.intra_z.combat.on_lh.thickness.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.w-g.pct.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.sulc.sm5.mgh',
-        #'.inter_z.intra_z.combat.on_lh.curv.sm5.mgh',
-        #'.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.wm_FLAIR_1.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.pial.K_filtered.sm20.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.thickness.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.w-g.pct.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.sulc.sm5.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.curv.sm5.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.wm_FLAIR_1.sm10.mgh',
+        '.combat.on_lh.thickness.sm10.mgh',
+        '.combat.on_lh.w-g.pct.sm10.mgh',
+        '.combat.on_lh.sulc.sm5.mgh',
+        '.combat.on_lh.curv.sm5.mgh',
+        '.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
+        '.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
+        '.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
+        '.combat.on_lh.gm_FLAIR_0.sm10.mgh',
+        '.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
+        '.combat.on_lh.wm_FLAIR_1.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.pial.K_filtered.sm20.mgh',
+        '.inter_z.intra_z.combat.on_lh.thickness.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.w-g.pct.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.sulc.sm5.mgh',
+        '.inter_z.intra_z.combat.on_lh.curv.sm5.mgh',
+        '.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.wm_FLAIR_1.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.pial.K_filtered.sm20.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.thickness.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.w-g.pct.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.sulc.sm5.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.curv.sm5.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.wm_FLAIR_1.sm10.mgh',
     ],
     # specify this if manually specifying features
     "features_to_replace_with_0": [], 
@@ -194,11 +192,14 @@ data_parameters = {
     # lobes: if True, train on predicting frontal lobe vs other instead of the lesion predicting task
     "lobes": False,
     # lesion_bias: add this value to lesion values to make prediction task easier
-    "lesion_bias": 10,
+    "lesion_bias": 0,
     'synthetic_data': {
-        'n_subs': 500,
+        'n_subs': 300,
+        #amount of bias
         'bias': 1,
+        #mean radii of lesions
         'radius':0.5,
+        'n_subtypes':5,
     }
 }
 
@@ -207,6 +208,6 @@ data_parameters = {
 # e.g. "network_parameters$training_parameters$loss_dictionary$focal_loss" will set values for the focal loss.
 # if left empty, the above configuration is run.
 variable_parameters = {
-    "data_parameters$synthetic_data$bias": [0, 0.5, 1, 2, 5],
-    "data_parameters$synthetic_data$radius": [0, 0.5, 1, 2]
+  #  "data_parameters__synthetic_data__bias": [0.05] #,0.1,0.2,0.5] #, 0.5, 1, 2, 5],
+   "data_parameters__synthetic_data__radius": [0.2] #,0.2,0.3,0.5, 1]
 }

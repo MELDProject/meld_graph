@@ -9,6 +9,7 @@ SCRIPTS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 for EXPERIMENT_PATH in [
     '/Users/hannah.spitzer/projects/MELD/experiments_graph',  # Hannah's local experiment folder
     "/rds/project/kw350/rds-kw350-meld/experiments_graph/{}".format(username),  # user-specific rds experiment folder
+    '/home/kw350/software/gdl/meld_classifier_GDL/scripts/'
 ]:
     if os.path.exists(EXPERIMENT_PATH):
         print("Setting EXPERIMENT_PATH to " + EXPERIMENT_PATH)

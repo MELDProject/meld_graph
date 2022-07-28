@@ -238,18 +238,19 @@ class Preprocess:
         # but if two vectors have the same angle then the shorter distance should come first.
         return angle, lenvector
 
-    def generate_synthetic_data(self,coords,n_features,bias,radius=0.5):
+    def generate_synthetic_data(self,coords,n_features,bias,radius=0.5,histo_type_seed=0):
+        """coords - spherical coordinates
+        n_features - number of input features
+        bias  - mean of the difference in biases
+        radius - mean size of lesion
+        histo_type_seed - randomly generate different histologies."""
         import matplotlib.path as mpltPath
         from sklearn.metrics import pairwise_distances
-        if bias==0:
-            f_bias=0
-        else:
-            f_bias = np.clip(np.random.normal(bias,bias/2),0,100)
-        if radius==0:
-            f_radius=0
-        else:
-            f_radius = np.clip(np.random.normal(radius,radius/2),0.05,2)
-        
+        f_bias = np.clip(np.random.normal(bias,bias/2),0,100)
+        np.random.seed(histo_type_seed)
+        #create a histological signature of -1,0,1 on which features are abnormal
+        histo_signature = np.random.randint(-1,2,n_features)
+        f_radius = np.clip(np.random.normal(radius,radius/2),0.05,2)
         com_i = np.random.choice(len(coords))
         origin=coords[com_i]
         distances=pairwise_distances(origin.reshape(-1,1).T,coords, metric='haversine')[0]
@@ -261,5 +262,9 @@ class Preprocess:
         path = mpltPath.Path(polygon)
         lesion = path.contains_points(coords)
         n_verts=len(coords)
-        features = np.random.normal(0,1,(n_features,n_verts))+lesion.astype(int)*f_bias
+        #features = np.random.normal(0,1,(n_features,n_verts))+lesion.astype(int)*f_bias
+        features = np.random.normal(0,1,
+                                    (n_features,n_verts))+(np.tile(lesion.reshape(-1,1),
+                                     n_features)*histo_signature*f_bias).T
+
         return features, lesion

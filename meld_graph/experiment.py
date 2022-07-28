@@ -250,6 +250,7 @@ class Experiment:
         return train_ids, val_ids, test_ids
 
     def get_scores(self, split='val'):
+        print(self.experiment_path)
         if is_experiment(self.experiment_path, trained=True):
             df = pd.read_csv(os.path.join(self.experiment_path, f'{split}_scores.csv'), index_col=0)
             return df
