@@ -149,6 +149,8 @@ class Experiment:
     def load_model(self, checkpoint_path=None, force=False):
         """
         build model and optionally load weights from checkpoint
+
+        checkpoint_path: absolute path to checkpoint
         """
         if self.model is not None and not force:
             self.log.info("model already exists. Specify force=True to force reloading and initialisation")
@@ -180,7 +182,7 @@ class Experiment:
         # TODO below code is unchecked
         if checkpoint_path is not None and os.path.isfile(checkpoint_path):
             # checkpoint contains both model architecture + weights
-            self.log.info("Loading model weights from checkpoint")
+            self.log.info(f"Loading model weights from checkpoint {checkpoint_path}")
             self.model.load_state_dict(torch.load(checkpoint_path))
             self.model.eval()
 
