@@ -45,7 +45,7 @@ network_parameters = {
     # training_parameters: used by Trainer to set up model training
     'training_parameters': {
         "max_patience": 400,
-        "num_epochs": 10,
+        "num_epochs": 200,
         # optimiser: optimiser to use, one of: adam, sgd
         "optimiser": 'sgd',
         # optimiser_parameters: parameters passed to torch optimiser class
@@ -68,7 +68,7 @@ network_parameters = {
         },
          # metrics: list of metrics that should be printed during training
          # possible values: dice_lesion, dice_nonlesion, precision, recall, tp, fp, fn, tn
-        'metrics': ['dice_lesion', 'dice_nonlesion', 'precision', 'recall', 'tp', 'fp', 'fn', 'tn'], 
+        'metrics': ['dice_lesion', 'dice_nonlesion', 'precision', 'recall', 'tp', 'fp', 'fn', 'tn', 'sensitivity'], 
         "batch_size": 2,
         "shuffle_each_epoch": True,
         # deep_supervision: add loss at specified levels of the unet (for MoNetUnet).
@@ -83,8 +83,9 @@ network_parameters = {
         'oversampling':True,
     },
     # name: experiment name. If none, experiment is not saved
-    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_lr_decay',
+    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_synth_sensitivity',
 }
+
 # data parameters, passed to GraphDataset and Preprocess
 data_parameters = {
     'hdf5_file_root': "{site_code}_{group}_featurematrix_combat_6.hdf5",
@@ -131,8 +132,8 @@ data_parameters = {
         #    '.on_lh.w-g.pct.mgh',
         #    '.on_lh.wm_FLAIR_0.5.mgh',
         #    '.on_lh.wm_FLAIR_1.mgh',
-#         '.combat.on_lh.pial.K_filtered.sm20.mgh',
-        '.combat.on_lh.thickness.sm10.mgh',
+        '.combat.on_lh.pial.K_filtered.sm20.mgh',
+#         '.combat.on_lh.thickness.sm10.mgh',
 #         '.combat.on_lh.w-g.pct.sm10.mgh',
 #         '.combat.on_lh.sulc.sm5.mgh',
 #         '.combat.on_lh.curv.sm5.mgh',
@@ -207,6 +208,14 @@ data_parameters = {
     "lobes": False,
     # lesion_bias: add this value to lesion values to make prediction task easier
     "lesion_bias": 10,
+    'synthetic_data': {
+        'n_subs': 300,
+        #amount of bias
+        'bias': 1,
+        #mean radii of lesions
+        'radius':0.5,
+        'n_subtypes':5,
+    }
 }
 
 # run several experiments
