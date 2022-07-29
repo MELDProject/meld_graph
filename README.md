@@ -79,7 +79,7 @@ Training logs and train/val scores are also saved in the experiment directory.
 
 Evaluation is minimal at the moment. `notebooks/compare_experiments.ipynb` contains a function for plotting training curves from different experiments.
 
-Multiple models can be trained at once, using the `variable_parameters` dict. This can set different parameters (keys in the dict) to different values. Hereby, nested dictionary levels are represented by `$`, e.g. `"network_parameters$training_parameters$loss_dictionary$focal_loss"` will set values for the focal loss.
+Multiple models can be trained at once, using the `variable_parameters` dict. This can set different parameters (keys in the dict) to different values. Hereby, nested dictionary levels are represented by `__`, e.g. `"network_parameters__training_parameters__loss_dictionary__focal_loss"` will set values for the focal loss.
 
 # Usage
 - `create_scaling_parameters.py`: calculates scaling params file. Only needs to be run once.

@@ -63,6 +63,7 @@ class Experiment:
         )
         if save_params:
             self.save_parameters()
+        self.log.info(f'Initialised Experiment {self.experiment_name}')
 
     @classmethod
     def from_folder(cls, experiment_path):
