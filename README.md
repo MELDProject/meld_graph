@@ -74,6 +74,8 @@ Models instanciate the `IcoSpheres` class. This computes and returns icospheres 
 
 Training is done by Trainer in `meld_graph/training.py`. Relevant params are in `network_parameters['training_parameters']`. Several metrics can be tracked during training (dice_lesion, dice_nonlesion, etc). Training is possible with multiple hemispheres (data points) at once (by specifying a batch_size larger than 1). Internally this is achieved by looping over all elements in this batch and stacking them afterwards (the GMMConv and SpiralConv expect the batch dimension to be the number of vertices in the graph). Deep supervision can be achieved by adding a "deep_supervision" dict to `training_parameters`, containing "levels" (the isosphere levels at which to add supervision) and "weight" (the weight of the loss for the auxiliary loss).
 
+Training can be started from pretrained models. These models need to have an *identical* configuration to the current model. Point `network_parameters['training_parameters']['init_weights']` to a saved `model.pt` file to initialise this model with the saved weights.
+
 Patience is implemented, with the best model being saved in the experiment directory. 
 Training logs and train/val scores are also saved in the experiment directory.
 
