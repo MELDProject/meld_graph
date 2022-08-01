@@ -1,5 +1,6 @@
 import torch_geometric
 import torch.nn as nn
+from copy import deepcopy
 
 from meld_graph.icospheres import IcoSpheres
 import torch
@@ -39,6 +40,8 @@ class MoNet(nn.Module):
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.num_features = num_features
         self.conv_type = conv_type
+        # ensure that we don't have side effects when modifying layer sizes
+        layer_sizes = deepcopy(layer_sizes)
         layer_sizes.insert(0, num_features)
         self.layer_sizes = layer_sizes
         # activation function to be used throughout
