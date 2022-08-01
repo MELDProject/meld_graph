@@ -247,9 +247,9 @@ class Preprocess:
         import matplotlib.path as mpltPath
         from sklearn.metrics import pairwise_distances
         f_bias = np.clip(np.random.normal(bias,bias/2),0,100)
-        np.random.seed(histo_type_seed)
+        rng = np.random.default_rng(histo_type_seed) 
         #create a histological signature of -1,0,1 on which features are abnormal
-        histo_signature = np.random.randint(-1,2,n_features)
+        histo_signature = rng.integers(low=-1,high=2,size=n_features)
         f_radius = np.clip(np.random.normal(radius,radius/2),0.05,2)
         com_i = np.random.choice(len(coords))
         origin=coords[com_i]
