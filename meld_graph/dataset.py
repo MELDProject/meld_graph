@@ -82,7 +82,7 @@ class GraphDataset(torch_geometric.data.Dataset):
             self.subject_ids = np.arange(self.params['synthetic_data']['n_subs']).astype(str)
             self.icospheres = IcoSpheres()
         for subj_id in self.subject_ids:
-            subtype=np.random.choice(self.params['synthetic_data']['n_subtypes'])
+            subtype=np.random.choice(self.params['synthetic_data'].get('n_subtypes', 1))
             if self.params['synthetic_data'] !=None:
                 features_left, lesion_left = prep.generate_synthetic_data(self.icospheres.icospheres[7]['spherical_coords'],
                                                                       len(self.params['features']),
