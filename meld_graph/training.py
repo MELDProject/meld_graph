@@ -94,7 +94,12 @@ class FocalLoss(torch.nn.Module):
         else: 
             return loss.sum()
 
-
+def get_sensitivity(pred, target):
+    if torch.sum(torch.logical_and((target==1), (pred==1))) > 0:
+        return 1
+    else:
+        return 0
+    
 def tp_fp_fn_tn(pred, target):
     tp = torch.sum(torch.logical_and((target==1), (pred==1)))
     fp = torch.sum(torch.logical_and((target==0), (pred==1)))
@@ -155,6 +160,8 @@ class Metrics:
             self.running_scores['fp'].append(fp.item())
             self.running_scores['fn'].append(fn.item())
             self.running_scores['tn'].append(tn.item())
+        if 'sensitivity' in self.metrics_to_track:
+            self.running_scores['sensitivity'].append(get_sensitivity(pred, target))
 
     def get_aggregated_metrics(self):
         metrics = {}
@@ -169,6 +176,9 @@ class Metrics:
                 metrics['recall'] = (tp/(tp+fn)).item()
             elif 'dice' in metric:
                 metrics[metric] = np.mean(self.running_scores[metric])
+            elif 'sensitivity' in metric:
+                sensitivity = self.running_scores['sensitivity']
+                metrics['sensitivity'] = np.sum(sensitivity)/len(sensitivity)*100
             else:
                 metrics[metric] = np.sum(self.running_scores[metric])
         return metrics
