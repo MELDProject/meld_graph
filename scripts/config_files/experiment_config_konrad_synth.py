@@ -43,7 +43,7 @@ network_parameters = {
     # training_parameters: used by Trainer to set up model training
     'training_parameters': {
         "max_patience": 400,
-        "num_epochs": 300,
+        "num_epochs": 50,
         # optimiser: optimiser to use, one of: adam, sgd
         "optimiser": 'sgd',
         # optimiser_parameters: parameters passed to torch optimiser class
@@ -111,9 +111,9 @@ data_parameters = {
     #    "H26",
     #    "H27",
     ],
-    'scanners': ['15T','3T'],
+    'scanners': ['3T'],
     'dataset': 'MELD_dataset_V6.csv',
-    'group': 'both',
+    'group': 'control',
     "features_to_exclude": [],
     "subject_features_to_exclude": [],
     # features: manually specify features (instead of features_to_exclude)
@@ -171,8 +171,8 @@ data_parameters = {
     # preprocessing_parameters: params for data_preprocessing
     "preprocessing_parameters": {
         "scaling": None, #"scaling_params_GDL.json"
-        # zscore: normalise all values (per subject)
-        "zscore": False,
+        # zscore: normalise all values by overall mu std. ignores 0s.
+        "zscore": True,
     },
     # icosphere_parameters: passed to Icospheres class
     "icosphere_parameters": {
@@ -194,12 +194,23 @@ data_parameters = {
     # lesion_bias: add this value to lesion values to make prediction task easier
     "lesion_bias": 0,
     'synthetic_data': {
-        'n_subs': 300,
-        #amount of bias
+        #master switch for whether to run the synthetic task. True means run it.
+        'run_synthetic':True,
+        #controls the number of subjects. randomly sampled from subject ids (i.e. duplicates will exist)
+        'n_subs': 200,
+        #amount of bias - controls mean from which actual bias per feature will be calculated
         'bias': 1,
-        #mean radii of lesions
+        #mean radii of lesions, in units of XX
         'radius':0.5,
-        'n_subtypes':5,
+        #number of histological subtypes - controls number of "fingerprint" seeds
+        #a fingerprint which features change, by how much (multiplied by the bias term).
+        'n_subtypes':1,
+        #proportion of the features that are abnormal. 0.2 means only 20% of features, all others remain unchanged.
+      'proportion_features_abnormal':0.9,
+        #proportion subjects lesional, controls a random variable that determines whether a lesion is added to the control data
+        #in the training this could mean two hemispheres from the same subject both have lesions
+        #I think this is the easiest way to control this.
+        'proportion_hemispheres_lesional':0.5 
     }
 }
 
@@ -208,6 +219,6 @@ data_parameters = {
 # e.g. "network_parameters$training_parameters$loss_dictionary$focal_loss" will set values for the focal loss.
 # if left empty, the above configuration is run.
 variable_parameters = {
-  #  "data_parameters__synthetic_data__bias": [0.05] #,0.1,0.2,0.5] #, 0.5, 1, 2, 5],
-   "data_parameters__synthetic_data__radius": [0.2] #,0.2,0.3,0.5, 1]
+    "data_parameters__synthetic_data__bias": [1] , #0.01, 0.05,0.1,1] #, 0.5, 1, 2, 5],
+  # "data_parameters__synthetic_data__radius": [0.2] #,0.2,0.3,0.5, 1]
 }
