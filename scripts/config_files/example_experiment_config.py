@@ -59,6 +59,8 @@ network_parameters = {
         # ovesampling: oversample lesional vertices to 33% lesional and 66% random.
         # size of epoch will be num_lesional_examples * 3
         'oversampling': True,
+        # init_weights: path to checkpoint file to init weights from. Relative to EXPERIMENT_PATH
+        'init_weights': False,
     },
     # name: experiment name. If none, experiment is not saved
     'name': datetime.datetime.now().strftime("%y-%m-%d") + '_example',
@@ -188,6 +190,7 @@ data_parameters = {
     #Synthetic lesions. non-lesional vertices given mu=0, std = 1. 
     #Lesional vertices controlled by bias terms in the synthetic dictionary
     #bias and radius control gaussian distributions
+    # TODO document n_subtypes
     'synthetic_data':None, 
     #{'n_features':2,
 #                       'n_subs':100,
@@ -196,8 +199,8 @@ data_parameters = {
 }
 
 # run several experiments
-# Nested levels are represented by $
-# e.g. "network_parameters$training_parameters$loss_dictionary$focal_loss" will set values for the focal loss.
+# Nested levels are represented by __
+# e.g. "network_parameters__training_parameters__loss_dictionary__focal_loss" will set values for the focal loss.
 # if left empty, the above configuration is run.
 variable_parameters = {
 }

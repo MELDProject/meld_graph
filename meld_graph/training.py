@@ -191,6 +191,11 @@ class Trainer:
         self.params = self.experiment.network_parameters['training_parameters']
         self.deep_supervision = self.params.get('deep_supervision', {'levels':[], 'weight': 1})
 
+        init_weights = self.params.get('init_weights', None)
+        if init_weights is not None:
+            init_weights = os.path.join(EXPERIMENT_PATH, init_weights)
+            assert os.path.isfile(init_weights), f"Weights file {init_weights} does not exist"
+        self.init_weights = init_weights
 
     def train_epoch(self, data_loader, optimiser):
         """
@@ -265,7 +270,7 @@ class Trainer:
         """
         # set up model & put on correct device
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.experiment.load_model()
+        self.experiment.load_model(checkpoint_path=self.init_weights)
         self.experiment.model.to(device)
 
         # get dataset

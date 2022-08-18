@@ -41,8 +41,8 @@ if __name__ == '__main__':
     variable_parameters = getattr(config, 'variable_parameters', {})
     # create and run experiments
     for param, values in config.variable_parameters.items():
-        params = param.split('$')
-        path = '$'.join(params[1:])
+        params = param.split('__')
+        path = '__'.join(params[1:])
         for value in values:
             name = f'{path}_{value}'
             print(f'Starting experiment {path}, {name}')

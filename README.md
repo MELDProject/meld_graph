@@ -74,12 +74,14 @@ Models instanciate the `IcoSpheres` class. This computes and returns icospheres 
 
 Training is done by Trainer in `meld_graph/training.py`. Relevant params are in `network_parameters['training_parameters']`. Several metrics can be tracked during training (dice_lesion, dice_nonlesion, etc). Training is possible with multiple hemispheres (data points) at once (by specifying a batch_size larger than 1). Internally this is achieved by looping over all elements in this batch and stacking them afterwards (the GMMConv and SpiralConv expect the batch dimension to be the number of vertices in the graph). Deep supervision can be achieved by adding a "deep_supervision" dict to `training_parameters`, containing "levels" (the isosphere levels at which to add supervision) and "weight" (the weight of the loss for the auxiliary loss).
 
+Training can be started from pretrained models. These models need to have an *identical* configuration to the current model. Point `network_parameters['training_parameters']['init_weights']` to a saved `model.pt` file to initialise this model with the saved weights.
+
 Patience is implemented, with the best model being saved in the experiment directory. 
 Training logs and train/val scores are also saved in the experiment directory.
 
 Evaluation is minimal at the moment. `notebooks/compare_experiments.ipynb` contains a function for plotting training curves from different experiments.
 
-Multiple models can be trained at once, using the `variable_parameters` dict. This can set different parameters (keys in the dict) to different values. Hereby, nested dictionary levels are represented by `$`, e.g. `"network_parameters$training_parameters$loss_dictionary$focal_loss"` will set values for the focal loss.
+Multiple models can be trained at once, using the `variable_parameters` dict. This can set different parameters (keys in the dict) to different values. Hereby, nested dictionary levels are represented by `__`, e.g. `"network_parameters__training_parameters__loss_dictionary__focal_loss"` will set values for the focal loss.
 
 # Usage
 - `create_scaling_parameters.py`: calculates scaling params file. Only needs to be run once.
