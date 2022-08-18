@@ -4,29 +4,9 @@ import os, datetime
 network_parameters = {
     'network_type': 'MoNetUnet',
     ## model_parameters: passed to model class initialiser
-    'model_parameters': {
-        # model architecture: list of lists for Unet, and list for MoNet (simple convs)
-        'layer_sizes': [[32,32,32],[32,32,32],[64,64,64],[64,64,64],[128,128,128],[128,128,128],[256,256,256]],
-        # activation_fn: activation function, one of: relu, leaky_relu
-        'activation_fn': 'leaky_relu',
-        # conv_type: convolution to use, one of: SpiralConv, GMMConv.
-        'conv_type': 'SpiralConv',
-        # dim: coord dim for GMMConv
-        'dim': 2,
-        # kernel_size: number of gaussian kernels for GMMConv
-        'kernel_size': 3, # number of gaussian kernels
-        # spiral_len: size of the spiral for SpiralConv.
-        # TODO implement dilation / different spiral len per unet block
-        'spiral_len': 7, 
-    },
-
-#     # MONET
-#     # network_type: model class, one of: MoNet, MoNetUnet (see models.py)
-#     'network_type': 'MoNet',
-#     # model_parameters: passed to model class initialiser
 #     'model_parameters': {
 #         # model architecture: list of lists for Unet, and list for MoNet (simple convs)
-#         'layer_sizes': [16,16,16],
+#         'layer_sizes': [[32,32,32],[32,32,32],[64,64,64],[64,64,64],[128,128,128],[128,128,128],[256,256,256]],
 #         # activation_fn: activation function, one of: relu, leaky_relu
 #         'activation_fn': 'leaky_relu',
 #         # conv_type: convolution to use, one of: SpiralConv, GMMConv.
@@ -39,6 +19,26 @@ network_parameters = {
 #         # TODO implement dilation / different spiral len per unet block
 #         'spiral_len': 7, 
 #     },
+
+    # MONET
+    # network_type: model class, one of: MoNet, MoNetUnet (see models.py)
+    'network_type': 'MoNet',
+    # model_parameters: passed to model class initialiser
+    'model_parameters': {
+        # model architecture: list of lists for Unet, and list for MoNet (simple convs)
+        'layer_sizes': [16,16,16],
+        # activation_fn: activation function, one of: relu, leaky_relu
+        'activation_fn': 'leaky_relu',
+        # conv_type: convolution to use, one of: SpiralConv, GMMConv.
+        'conv_type': 'SpiralConv',
+        # dim: coord dim for GMMConv
+        'dim': 2,
+        # kernel_size: number of gaussian kernels for GMMConv
+        'kernel_size': 3, # number of gaussian kernels
+        # spiral_len: size of the spiral for SpiralConv.
+        # TODO implement dilation / different spiral len per unet block
+        'spiral_len': 7, 
+    },
 
     # training_parameters: used by Trainer to set up model training
     'training_parameters': {
@@ -198,6 +198,8 @@ data_parameters = {
         'run_synthetic':True,
         #controls the number of subjects. randomly sampled from subject ids (i.e. duplicates will exist)
         'n_subs': 200,
+        #Superimpose lesions on controls, or on white noise features
+        'use_controls':False,
         #amount of bias - controls mean from which actual bias per feature will be calculated
         'bias': 1,
         #mean radii of lesions, in units of XX
@@ -210,7 +212,7 @@ data_parameters = {
         #proportion subjects lesional, controls a random variable that determines whether a lesion is added to the control data
         #in the training this could mean two hemispheres from the same subject both have lesions
         #I think this is the easiest way to control this.
-        'proportion_hemispheres_lesional':0.5 
+        'proportion_hemispheres_lesional':0.9
     }
 }
 

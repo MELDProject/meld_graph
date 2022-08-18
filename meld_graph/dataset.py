@@ -89,6 +89,12 @@ class GraphDataset(torch_geometric.data.Dataset):
                 #if wanting multiple samples of same subjects
                 self.subject_samples = np.sort(np.random.choice(np.arange(len(self.subject_ids)),
                                                         self.params['synthetic_data']['n_subs']))
+            if not self.params['synthetic_data']['use_controls']:
+                for s in np.arange(self.params['synthetic_data']['n_subs']):
+                    sfl, sfr, sll, slr = self.synthetic_lesion()
+                    self.data_list.append((sfl.T, sll))
+                        self.data_list.append((sfr.T, slr))
+                                                               
                 
         for s_i,subj_id in enumerate(self.subject_ids):
             #load in control data
@@ -99,7 +105,8 @@ class GraphDataset(torch_geometric.data.Dataset):
             if self.params['synthetic_data']['run_synthetic']:
                 for duplicate in np.arange(np.sum(self.subject_samples==s_i)):
                     sfl, sfr, sll, slr = self.synthetic_lesion(features_left.copy(),
-                                                                                         features_right.copy())
+                                                               features_right.copy(),
+                                                              )
                     if self.params['combine_hemis'] is None:
                         self.data_list.append((sfl.T, sll))
                         self.data_list.append((sfr.T, slr))
@@ -117,7 +124,7 @@ class GraphDataset(torch_geometric.data.Dataset):
                 else:
                     raise NotImplementedError
     
-    def synthetic_lesion(self,features_left,features_right):
+    def synthetic_lesion(self,features_left=None,features_right=None):
         """add synthetic lesion to input features for both hemis"""
         fs=[]
         ls=[]
