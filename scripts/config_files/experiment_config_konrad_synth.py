@@ -2,7 +2,7 @@ import os, datetime
 
 # model and training parameters, passed to model and Trainer, respectively
 network_parameters = {
-    'network_type': 'MoNetUnet',
+   # 'network_type': 'MoNetUnet',
     ## model_parameters: passed to model class initialiser
 #     'model_parameters': {
 #         # model architecture: list of lists for Unet, and list for MoNet (simple convs)

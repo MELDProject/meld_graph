@@ -78,6 +78,7 @@ class GraphDataset(torch_geometric.data.Dataset):
         self.prep = Preprocess(cohort=self.cohort, params=self.params['preprocessing_parameters'])
         self.log.info("Loading and preprocessing data")
         self.log.info(f"Combine hemis {self.params['combine_hemis']}")
+        
         #switch for synthetic task here
         if self.params['synthetic_data']['run_synthetic']:
             self.icospheres = IcoSpheres()
@@ -89,18 +90,21 @@ class GraphDataset(torch_geometric.data.Dataset):
                 #if wanting multiple samples of same subjects
                 self.subject_samples = np.sort(np.random.choice(np.arange(len(self.subject_ids)),
                                                         self.params['synthetic_data']['n_subs']))
+                
             if not self.params['synthetic_data']['use_controls']:
+                self.subject_ids = np.array(self.subject_ids)[self.subject_samples]
                 for s in np.arange(self.params['synthetic_data']['n_subs']):
                     sfl, sfr, sll, slr = self.synthetic_lesion()
                     self.data_list.append((sfl.T, sll))
-                        self.data_list.append((sfr.T, slr))
+                    self.data_list.append((sfr.T, slr))
+                return
                                                                
                 
         for s_i,subj_id in enumerate(self.subject_ids):
             #load in control data
             features_left, features_right, lesion_left, lesion_right = self.prep.get_data_preprocessed(subject=subj_id, 
                                                                      features=params['features'], 
-            lobes = params['lobes'], lesion_bias=False)
+                                        lobes = params['lobes'], lesion_bias=False)
             #add lesion
             if self.params['synthetic_data']['run_synthetic']:
                 for duplicate in np.arange(np.sum(self.subject_samples==s_i)):
@@ -123,6 +127,7 @@ class GraphDataset(torch_geometric.data.Dataset):
                     self.data_list.append((features, lesion_right))
                 else:
                     raise NotImplementedError
+        return
     
     def synthetic_lesion(self,features_left=None,features_right=None):
         """add synthetic lesion to input features for both hemis"""
@@ -130,23 +135,20 @@ class GraphDataset(torch_geometric.data.Dataset):
         ls=[]
         for f in [features_left,features_right]:
             #controls the proportion of examples with lesions.
-            if np.random.random()<self.params['synthetic_data']['proportion_hemispheres_lesional']:
-                subtype=np.random.choice(self.params['synthetic_data']['n_subtypes'])
-                f, l = self.prep.generate_synthetic_data(self.icospheres.icospheres[7]['spherical_coords'],
-                                                                  len(self.params['features']),
-                                                                  self.params['synthetic_data']['bias'],
-                                                                 self.params['synthetic_data']['radius'],
-                                                                 histo_type_seed=subtype,
-                proportion_features_abnormal=self.params['synthetic_data']['proportion_features_abnormal'],
-                                              neighbours_4_smoothing = self.icospheres.icospheres[7]['neighbours'],
-                                                     features=f)
-                f[:,self.cohort.cortex_mask]=0
-                l[self.cohort.cortex_mask]=0
-            else:
-                l=np.zeros(len(self.icospheres.icospheres[7]['spherical_coords']),dtype=bool)
+
+            subtype=np.random.choice(self.params['synthetic_data']['n_subtypes'])
+            f, l = self.prep.generate_synthetic_data(self.icospheres.icospheres[7]['spherical_coords'],
+                                                              len(self.params['features']),
+                                                              self.params['synthetic_data']['bias'],
+                                                             self.params['synthetic_data']['radius'],
+                                                             histo_type_seed=subtype,
+                    proportion_features_abnormal=self.params['synthetic_data']['proportion_features_abnormal'],
+                    proportion_hemispheres_abnormal=self.params['synthetic_data']['proportion_hemispheres_lesional'],
+                                                 features=f)
+            f[:,~self.cohort.cortex_mask]=0
+            l[~self.cohort.cortex_mask]=0
             fs.append(f)
             ls.append(l)
-                          
         return fs[0],fs[1],ls[0],ls[1]
             
 
