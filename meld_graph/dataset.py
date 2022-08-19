@@ -75,39 +75,81 @@ class GraphDataset(torch_geometric.data.Dataset):
 
         # preload data in memory, with all preprocessing done
         self.data_list = []
-        prep = Preprocess(cohort=self.cohort, params=self.params['preprocessing_parameters'])
+        self.prep = Preprocess(cohort=self.cohort, params=self.params['preprocessing_parameters'])
         self.log.info("Loading and preprocessing data")
         self.log.info(f"Combine hemis {self.params['combine_hemis']}")
-        if self.params['synthetic_data']:
-            self.subject_ids = np.arange(self.params['synthetic_data']['n_subs']).astype(str)
+        
+        #switch for synthetic task here
+        if self.params['synthetic_data']['run_synthetic']:
             self.icospheres = IcoSpheres()
-        for subj_id in self.subject_ids:
-            subtype=np.random.choice(self.params['synthetic_data'].get('n_subtypes', 1))
-            if self.params['synthetic_data'] !=None:
-                features_left, lesion_left = prep.generate_synthetic_data(self.icospheres.icospheres[7]['spherical_coords'],
-                                                                      len(self.params['features']),
-                                                                      self.params['synthetic_data']['bias'],
-                                                                         self.params['synthetic_data']['radius'],
-                                                                         histo_type_seed=subtype)
-                features_right, lesion_right = prep.generate_synthetic_data(self.icospheres.icospheres[7]['spherical_coords'],
-                                                                      len(self.params['features']),
-                                                                      self.params['synthetic_data']['bias'],
-                                                                           self.params['synthetic_data']['radius'],
-                                                                           histo_type_seed=subtype)
+            #undersample subject ids to get controlled number
+            if self.params['synthetic_data']['n_subs']<len(self.subject_ids):
+                self.subject_ids = np.random.choice(self.subject_ids,self.params['synthetic_data']['n_subs'])
+                self.subject_samples = np.arange(len(self.subject_ids))
+            elif self.params['synthetic_data']['n_subs']>len(self.subject_ids):
+                #if wanting multiple samples of same subjects
+                self.subject_samples = np.sort(np.random.choice(np.arange(len(self.subject_ids)),
+                                                        self.params['synthetic_data']['n_subs']))
+                
+            if not self.params['synthetic_data']['use_controls']:
+                self.subject_ids = np.array(self.subject_ids)[self.subject_samples]
+                for s in np.arange(self.params['synthetic_data']['n_subs']):
+                    sfl, sfr, sll, slr = self.synthetic_lesion()
+                    self.data_list.append((sfl.T, sll))
+                    self.data_list.append((sfr.T, slr))
+                return
+                                                               
+                
+        for s_i,subj_id in enumerate(self.subject_ids):
+            #load in control data
+            features_left, features_right, lesion_left, lesion_right = self.prep.get_data_preprocessed(subject=subj_id, 
+                                                                     features=params['features'], 
+                                        lobes = params['lobes'], lesion_bias=False)
+            #add lesion
+            if self.params['synthetic_data']['run_synthetic']:
+                for duplicate in np.arange(np.sum(self.subject_samples==s_i)):
+                    sfl, sfr, sll, slr = self.synthetic_lesion(features_left.copy(),
+                                                               features_right.copy(),
+                                                              )
+                    if self.params['combine_hemis'] is None:
+                        self.data_list.append((sfl.T, sll))
+                        self.data_list.append((sfr.T, slr))
             else:
-                features_left, features_right, lesion_left, lesion_right = prep.get_data_preprocessed(subject=subj_id, features=self.params['features'], 
-                lobes = self.params['lobes'], lesion_bias=self.params.get('lesion_bias', False))
-            if self.params['combine_hemis'] is None:
-                self.data_list.append((features_left.T, lesion_left))
-                self.data_list.append((features_right.T, lesion_right))
-            elif self.params['combine_hemis'] == 'stack':
-                features = np.vstack([features_left, features_right]).T
-                self.data_list.append((features, lesion_left))
 
-                features = np.vstack([features_right, features_left]).T
-                self.data_list.append((features, lesion_right))
-            else:
-                raise NotImplementedError
+                if self.params['combine_hemis'] is None:
+                    self.data_list.append((features_left.T, lesion_left))
+                    self.data_list.append((features_right.T, lesion_right))
+                elif self.params['combine_hemis'] == 'stack':
+                    #this code doesn't look correct. surely lesions also should be stacked?
+                    features = np.vstack([features_left, features_right]).T
+                    self.data_list.append((features, lesion_left))
+                    features = np.vstack([features_right, features_left]).T
+                    self.data_list.append((features, lesion_right))
+                else:
+                    raise NotImplementedError
+        return
+    
+    def synthetic_lesion(self,features_left=None,features_right=None):
+        """add synthetic lesion to input features for both hemis"""
+        fs=[]
+        ls=[]
+        for f in [features_left,features_right]:
+            #controls the proportion of examples with lesions.
+
+            subtype=np.random.choice(self.params['synthetic_data']['n_subtypes'])
+            f, l = self.prep.generate_synthetic_data(self.icospheres.icospheres[7]['spherical_coords'],
+                                                              len(self.params['features']),
+                                                              self.params['synthetic_data']['bias'],
+                                                             self.params['synthetic_data']['radius'],
+                                                             histo_type_seed=subtype,
+                    proportion_features_abnormal=self.params['synthetic_data']['proportion_features_abnormal'],
+                    proportion_hemispheres_abnormal=self.params['synthetic_data']['proportion_hemispheres_lesional'],
+                                                 features=f)
+            f[:,~self.cohort.cortex_mask]=0
+            l[~self.cohort.cortex_mask]=0
+            fs.append(f)
+            ls.append(l)
+        return fs[0],fs[1],ls[0],ls[1]
             
 
     @classmethod

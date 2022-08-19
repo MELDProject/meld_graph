@@ -40,6 +40,9 @@ class Preprocess:
         self._subject_ids = None
         self.log = logging.getLogger(__name__)
         self._lobes = None
+        if self.params['zscore']:
+            self.load_z_params()
+     
 
     @property
     def site_codes(self):
@@ -59,7 +62,10 @@ class Preprocess:
         if self._lobes is None:
             self._lobes = self.load_lobar_parcellation()
         return self._lobes
+    
 
+        
+        
     def load_lobar_parcellation(self, lobe = 1):
         parc=nb.freesurfer.io.read_annot(os.path.join(self.data_dir,'fsaverage_sym','label','lh.lobes.annot'))[0]
         lobes = (parc==lobe).astype(int)
@@ -102,8 +108,12 @@ class Preprocess:
         # load data & lesion
         vals_array_lh, lesion_lh = subj.load_feature_lesion_data(features, hemi='lh')
         vals_array_rh, lesion_rh = subj.load_feature_lesion_data(features, hemi='rh')
-
-        if self.params['scaling'] is not None or self.params['zscore']:
+        # z-score data
+        if self.params['zscore']:
+            vals_array_lh = self.zscore_data(vals_array_lh.T,features).T
+            vals_array_rh = self.zscore_data(vals_array_rh.T,features).T
+            
+        if self.params['scaling'] is not None:
             # all values excluding medial wall
             vals_array = np.array(np.hstack([vals_array_lh[self.cohort.cortex_mask].T, vals_array_rh[self.cohort.cortex_mask].T]))
         
@@ -116,9 +126,7 @@ class Preprocess:
             if self.params['scaling'] is not None:
                 scaling_params_file = os.path.join(BASE_PATH, self.params['scaling'])
                 vals_array = self.scale_data(vals_array, features, scaling_params_file )
-            # z-score data
-            if self.params['zscore']:
-                vals_array = self.zscore_data(vals_array)
+            
             # transform data if feature not gaussian
             #TODO later
             
@@ -140,12 +148,25 @@ class Preprocess:
 
         return vals_array_lh.T, vals_array_rh.T, lesion_lh, lesion_rh
     
-    def zscore_data(self, values):
-        """zscore features"""
-        std = values.std(axis=1, keepdims=True)
-        # for features with 0 std, set std to 1 to keep mean value (resulting in zscore 0)
-        std[std==0] = 1
-        return (values - values.mean(axis=1, keepdims=True)) / std
+    def load_z_params(self):
+        import json
+        with open('../data/feature_means.json', 'r') as fp:
+            self.z_params=json.load( fp)
+            
+            
+    def zscore_data(self, values,features):
+        """zscore features using precalculated means and stds"""
+        for fi,f_value in enumerate(values):
+            if np.std(f_value)!=0:
+                values[fi] = (f_value-self.z_params[features[fi]]['mean'])/self.z_params[features[fi]]['std']
+        return values
+        #old zscoring code, was problematic with synthetic lesions
+#         std = values.std(axis=1, keepdims=True)
+#         # for features with 0 std, set std to 1 to keep mean value (resulting in zscore 0)
+#         std[std==0] = 1
+#         return (values - values.mean(axis=1, keepdims=True)) / std
+    
+    
 
     def scale_data(self, matrix, features, file_name):
         """scale data features between 0 and 1"""
@@ -238,19 +259,41 @@ class Preprocess:
         # but if two vectors have the same angle then the shorter distance should come first.
         return angle, lenvector
 
-    def generate_synthetic_data(self,coords,n_features,bias,radius=0.5,histo_type_seed=0):
+    def generate_synthetic_data(self,coords,n_features,
+                                bias,radius=0.5,histo_type_seed=0,
+                               proportion_features_abnormal = 0.2,
+                                proportion_hemispheres_abnormal = 0.5,
+                               
+                               features=None):
         """coords - spherical coordinates
         n_features - number of input features
         bias  - mean of the difference in biases
         radius - mean size of lesion
-        histo_type_seed - randomly generate different histologies."""
+        histo_type_seed - randomly generate different histologies.
+        proportion_features_abnormal - proportion of features abnormal
+        neighbours_4_smoothing - smooth edge of lesions"""
+        
+        
+        #create a histological signature of -1,0,1 on which features are abnormal
+        
+        n_verts=len(coords)
+        lesion = np.zeros(n_verts,dtype=bool)
+        if features is None:
+            features = np.random.normal(0,1,
+                                    (n_features,n_verts))
+            
+        if np.random.random()<proportion_hemispheres_abnormal:
+            features,lesion = self.add_lesion(features, coords,n_features,
+                                bias,radius,histo_type_seed,
+                               proportion_features_abnormal)
+        return features, lesion
+    
+    def create_lesion_mask(self,radius,coords,return_smoothed=True):
+        """create irregular polygon lesion mask"""
         import matplotlib.path as mpltPath
         from sklearn.metrics import pairwise_distances
-        f_bias = np.clip(np.random.normal(bias,bias/2),0,100)
-        rng = np.random.default_rng(histo_type_seed) 
-        #create a histological signature of -1,0,1 on which features are abnormal
-        histo_signature = rng.integers(low=-1,high=2,size=n_features)
         f_radius = np.clip(np.random.normal(radius,radius/2),0.05,2)
+        
         com_i = np.random.choice(len(coords))
         origin=coords[com_i]
         distances=pairwise_distances(origin.reshape(-1,1).T,coords, metric='haversine')[0]
@@ -261,10 +304,47 @@ class Preprocess:
         polygon=np.array(sorted(polygon, key=lambda point: self.clockwiseangle_and_distance(point,origin)))
         path = mpltPath.Path(polygon)
         lesion = path.contains_points(coords)
-        n_verts=len(coords)
-        #features = np.random.normal(0,1,(n_features,n_verts))+lesion.astype(int)*f_bias
-        features = np.random.normal(0,1,
-                                    (n_features,n_verts))+(np.tile(lesion.reshape(-1,1),
-                                     n_features)*histo_signature*f_bias).T
+        if return_smoothed:
+            return lesion,lesion
+        else:
+            return lesion
+    
+    def create_fingerprint(self,n_features, histo_type_seed, proportion_features_abnormal):
+        """creates a vector of biases, seeded by the histological subtype integer.
+        this is multiplied by the controlled bias term"""
+        rng = np.random.default_rng(histo_type_seed) 
+        feature_mask = rng.random(n_features)<proportion_features_abnormal
+        histo_bias_multipliers = rng.random(size=n_features)
+        histo_signature = rng.integers(low=0,high=2,size=n_features)*2-1
+        fingerprint = feature_mask*histo_bias_multipliers*histo_signature
+        return fingerprint
+    
+    def sample_fingerprint(self,fingerprint):
+        """use fingerprint as starting point for generating a slightly jittered individual fingerprint"""
+        sampled_fingerprint=np.zeros_like(fingerprint)
+        for fi,f in enumerate(fingerprint):
+            if f!=0:
+                sampled_fingerprint[fi] = np.random.normal(f,np.abs(f)/2)
+        return sampled_fingerprint
+        
+    def add_lesion(self, features,coords,n_features, bias, radius, histo_type_seed, 
+                   proportion_features_abnormal):
+        """superimpose a synthetic lesion on input data 
+       
+       """
+        #create lesion mask
+        lesion, smoothed_lesion = self.create_lesion_mask(radius,coords,return_smoothed=True)
+       
+        #set of biases
+        #f_bias = np.clip(np.random.normal(bias,bias/2, size=n_features),0,100)
+        #histo_signature - controls which features, how important and what sign
+        
+        fingerprint = self.create_fingerprint(n_features,histo_type_seed,proportion_features_abnormal)
+        sampled_fingerprint = self.sample_fingerprint(fingerprint)
+        
+        features= features + (np.tile(smoothed_lesion.reshape(-1,1),
+                                     n_features)*sampled_fingerprint*bias).T
 
-        return features, lesion
+        return features,lesion
+    
+    
