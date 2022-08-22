@@ -181,7 +181,6 @@ class Evaluator:
         
         # columns: ID, group, detected,  number extra-lesional clusters,border detected
         # calculate stats first
-        patient_dice_vars = {"TP": 0, "FP": 0, "FN": 0}
         for subject in self.data_dictionary.keys():
             prediction = self.data_dictionary[subject]["result"]
             labels = self.data_dictionary[subject]["input_labels"]
@@ -201,17 +200,18 @@ class Evaluator:
         #     border_detected = np.sum(prediction == cluster_index)
         # else:
         #     border_detected = 0
-
+            patient_dice_vars = {"TP": 0, "FP": 0, "FN": 0, "TN": 0}
             if group == 1:
                 mask = prediction.astype(bool)
                 label = labels.astype(bool)
                 patient_dice_vars["TP"] += np.sum(mask * label)
                 patient_dice_vars["FP"] += np.sum(mask * ~label)
                 patient_dice_vars["FN"] += np.sum(~mask * label)
+                patient_dice_vars["TN"] += np.sum(~mask * ~label)
             
             sub_df = pd.DataFrame(
-                np.array([subject, group, detected, n_clusters, patient_dice_vars["TP"], patient_dice_vars["FP"], patient_dice_vars["FN"]]).reshape(-1, 1).T,
-                columns=["ID", "group", "detected", "n_clusters", 'dice_tp', 'dice_fp', 'dice_fn' ],
+                np.array([subject, group, detected, patient_dice_vars["TP"], patient_dice_vars["FP"], patient_dice_vars["FN"], patient_dice_vars["TN"]]).reshape(-1, 1).T,
+                columns=["ID", "group", "detected", 'dice_tp', 'dice_fp', 'dice_fn', 'dice_tn' ],
             )
             filename = os.path.join(self.save_dir, "results", f"test_results{suffix}.csv")
             if fold is not None:
@@ -234,7 +234,7 @@ class Evaluator:
     def plot_subjects_prediction(self, rootfile=None, flat_map=True):
         """plot predicted subjects"""
         import matplotlib.pyplot as plt
-        import matplotlib_surface_plotting.matplotlib_surface_plotting as msp
+        from matplotlib.gridspec import GridSpec
 
         plt.close("all")
 
@@ -273,24 +273,22 @@ class Evaluator:
                     )
                 )
                 coords, faces = flat.darrays[0].data, flat.darrays[1].data
-
-            msp.plot_surf(
-                coords,
-                faces,
-                [
-                    result_hemis["left"],
-                    # thresholded["left"],
-                    label_hemis["left"],
-                    result_hemis["right"],
-                    # thresholded["right"],
-                    label_hemis["right"],
-                ],
-                flat_map=flat_map,
-                rotate=[90, 270],
-                filename=filename,
-                vmin=0.4,
-                vmax=0.6,
-            )
+            
+           
+             # round up to get the square grid size
+            fig= plt.figure(figsize=(8,8), constrained_layout=True)
+            gs1 = GridSpec(2, 2, width_ratios=[1, 1],  wspace=0.1, hspace=0.1)
+            data_to_plot= [result_hemis['left'], result_hemis['right'], label_hemis['left'], label_hemis['right']]
+            titles=['predictions left hemi', 'predictions right hemi', 'labels left hemi', 'labels right hemi']
+            for i,overlay in enumerate(data_to_plot):
+                ax = fig.add_subplot(gs1[i])
+                im = create_surface_plots(coords,faces,overlay,flat_map=True)
+                ax.imshow(im)
+                ax.axis('off')
+                ax.set_title(titles[i], loc='left', fontsize=20)
+            fig.savefig(filename)
+    
+            fig.savefig(filename, bbox_inches='tight')
             plt.close("all")
 
     def divide_subjects(self, subject_ids, n_controls=5):
@@ -367,3 +365,24 @@ def save_json(json_filename, json_results):
     # data_parameters
     json.dump(json_results, open(json_filename, "w"), indent=4)
     return
+
+
+def create_surface_plots(coords,faces,overlay,flat_map=True):
+    """plot and reload surface images"""
+    from meld_classifier.meld_plotting import trim
+    import matplotlib_surface_plotting.matplotlib_surface_plotting as msp
+    from PIL import Image
+
+    msp.plot_surf(coords,faces, 
+                overlay,
+                flat_map=flat_map,
+                rotate=[90, 270],
+                filename='tmp.png',
+                vmin=0.4,
+                vmax=0.6,
+             )
+    im = Image.open('tmp.png')
+    im = trim(im)
+    im = im.convert("RGBA")
+    im1 = np.array(im)
+    return im1
