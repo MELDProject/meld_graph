@@ -183,8 +183,9 @@ class Experiment:
         # TODO below code is unchecked
         if checkpoint_path is not None and os.path.isfile(checkpoint_path):
             # checkpoint contains both model architecture + weights
+            device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
             self.log.info(f"Loading model weights from checkpoint {checkpoint_path}")
-            self.model.load_state_dict(torch.load(checkpoint_path))
+            self.model.load_state_dict(torch.load(checkpoint_path, map_location=device), strict=False)
             self.model.eval()
 
     def train(self):
