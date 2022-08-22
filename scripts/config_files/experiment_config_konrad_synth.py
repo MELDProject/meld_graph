@@ -197,9 +197,9 @@ data_parameters = {
         #master switch for whether to run the synthetic task. True means run it.
         'run_synthetic':True,
         #controls the number of subjects. randomly sampled from subject ids (i.e. duplicates will exist)
-        'n_subs': 200,
+        'n_subs': 20,
         #Superimpose lesions on controls, or on white noise features
-        'use_controls':False,
+        'use_controls':True,
         #amount of bias - controls mean from which actual bias per feature will be calculated
         'bias': 1,
         #mean radii of lesions, in units of XX
@@ -212,7 +212,10 @@ data_parameters = {
         #proportion subjects lesional, controls a random variable that determines whether a lesion is added to the control data
         #in the training this could mean two hemispheres from the same subject both have lesions
         #I think this is the easiest way to control this.
-        'proportion_hemispheres_lesional':0.9
+        'proportion_hemispheres_lesional':0.9,
+        #determines the amount of variance of subjects around the fingerprint bias terms.
+        # std=bias/jitter_factor
+        'jitter_factor':2,
     }
 }
 

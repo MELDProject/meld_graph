@@ -263,7 +263,7 @@ class Preprocess:
                                 bias,radius=0.5,histo_type_seed=0,
                                proportion_features_abnormal = 0.2,
                                 proportion_hemispheres_abnormal = 0.5,
-                               
+                               jitter_factor=2,
                                features=None):
         """coords - spherical coordinates
         n_features - number of input features
@@ -285,7 +285,7 @@ class Preprocess:
         if np.random.random()<proportion_hemispheres_abnormal:
             features,lesion = self.add_lesion(features, coords,n_features,
                                 bias,radius,histo_type_seed,
-                               proportion_features_abnormal)
+                               proportion_features_abnormal,jitter_factor)
         return features, lesion
     
     def create_lesion_mask(self,radius,coords,return_smoothed=True):
@@ -295,19 +295,37 @@ class Preprocess:
         f_radius = np.clip(np.random.normal(radius,radius/2),0.05,2)
         
         com_i = np.random.choice(len(coords))
-        origin=coords[com_i]
-        distances=pairwise_distances(origin.reshape(-1,1).T,coords, metric='haversine')[0]
+        origin = coords[com_i]
+        distances = pairwise_distances(origin.reshape(-1,1).T,coords, metric='haversine')[0]
         n_points = np.random.choice(6)+4
         subset = coords[distances<f_radius]
-        poly_i=np.random.choice(len(subset),n_points)
-        polygon=subset[poly_i]
-        polygon=np.array(sorted(polygon, key=lambda point: self.clockwiseangle_and_distance(point,origin)))
+        poly_i = np.random.choice(len(subset),n_points)
+        polygon = subset[poly_i]
+        polygon = np.array(sorted(polygon, key=lambda point: self.clockwiseangle_and_distance(point,origin)))
         path = mpltPath.Path(polygon)
         lesion = path.contains_points(coords)
+        #smoothed mask
+        
         if return_smoothed:
-            return lesion,lesion
+#             ds=pairwise_distances(coords[np.logical_and(distances<f_radius,~lesion)],
+#                               coords[lesion], metric='haversine')
+#             in_dists = np.min(ds,axis=0)
+#             in_dists = in_dists/np.max(in_dists)
+#             out_dists = np.min(ds,axis=1)
+#             out_dists = out_dists/np.max(out_dists)
+#             dist_m = np.zeros(len(lesion))
+#             dist_m[lesion]=in_dists
+#             dist_m[np.logical_and(distances<f_radius,~lesion)] = -out_dists
+#             smoothed_mask = self.sigmoid_dists(dist_m)
+            return lesion, lesion #smoothed_mask
         else:
             return lesion
+    
+    def sigmoid_dists(self,dists):
+        m = dists==0
+        z = 1/(1 + np.exp(-dists*5))
+        z[m]=0
+        return z
     
     def create_fingerprint(self,n_features, histo_type_seed, proportion_features_abnormal):
         """creates a vector of biases, seeded by the histological subtype integer.
@@ -319,28 +337,28 @@ class Preprocess:
         fingerprint = feature_mask*histo_bias_multipliers*histo_signature
         return fingerprint
     
-    def sample_fingerprint(self,fingerprint):
+    def sample_fingerprint(self,fingerprint,jitter_factor):
         """use fingerprint as starting point for generating a slightly jittered individual fingerprint"""
         sampled_fingerprint=np.zeros_like(fingerprint)
         for fi,f in enumerate(fingerprint):
             if f!=0:
-                sampled_fingerprint[fi] = np.random.normal(f,np.abs(f)/2)
+                sampled_fingerprint[fi] = np.random.normal(f,np.abs(f)/jitter_factor)
         return sampled_fingerprint
         
     def add_lesion(self, features,coords,n_features, bias, radius, histo_type_seed, 
-                   proportion_features_abnormal):
+                   proportion_features_abnormal,jitter_factor):
         """superimpose a synthetic lesion on input data 
        
        """
         #create lesion mask
         lesion, smoothed_lesion = self.create_lesion_mask(radius,coords,return_smoothed=True)
-       
+
         #set of biases
         #f_bias = np.clip(np.random.normal(bias,bias/2, size=n_features),0,100)
         #histo_signature - controls which features, how important and what sign
-        
         fingerprint = self.create_fingerprint(n_features,histo_type_seed,proportion_features_abnormal)
-        sampled_fingerprint = self.sample_fingerprint(fingerprint)
+        
+        sampled_fingerprint = self.sample_fingerprint(fingerprint,jitter_factor)
         
         features= features + (np.tile(smoothed_lesion.reshape(-1,1),
                                      n_features)*sampled_fingerprint*bias).T

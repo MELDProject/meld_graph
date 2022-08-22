@@ -83,6 +83,13 @@ class GraphDataset(torch_geometric.data.Dataset):
         if self.params['synthetic_data']['run_synthetic']:
             self.icospheres = IcoSpheres()
             #undersample subject ids to get controlled number
+            if not self.params['synthetic_data']['use_controls']:
+                self.subject_ids = np.arange(self.params['synthetic_data']['n_subs'])
+                for s in np.arange(self.params['synthetic_data']['n_subs']):
+                    sfl, sfr, sll, slr = self.synthetic_lesion()
+                    self.data_list.append((sfl.T, sll))
+                    self.data_list.append((sfr.T, slr))
+                return
             if self.params['synthetic_data']['n_subs']<len(self.subject_ids):
                 self.subject_ids = np.random.choice(self.subject_ids,self.params['synthetic_data']['n_subs'])
                 self.subject_samples = np.arange(len(self.subject_ids))
@@ -91,13 +98,7 @@ class GraphDataset(torch_geometric.data.Dataset):
                 self.subject_samples = np.sort(np.random.choice(np.arange(len(self.subject_ids)),
                                                         self.params['synthetic_data']['n_subs']))
                 
-            if not self.params['synthetic_data']['use_controls']:
-                self.subject_ids = np.array(self.subject_ids)[self.subject_samples]
-                for s in np.arange(self.params['synthetic_data']['n_subs']):
-                    sfl, sfr, sll, slr = self.synthetic_lesion()
-                    self.data_list.append((sfl.T, sll))
-                    self.data_list.append((sfr.T, slr))
-                return
+            
                                                                
                 
         for s_i,subj_id in enumerate(self.subject_ids):
@@ -127,6 +128,9 @@ class GraphDataset(torch_geometric.data.Dataset):
                     self.data_list.append((features, lesion_right))
                 else:
                     raise NotImplementedError
+        #dataset has weird properties. subject_ids needs to be the right length, matching the data length
+        if self.params['synthetic_data']['n_subs']>len(self.subject_ids):
+            self.subject_ids = np.array(self.subject_ids)[self.subject_samples]
         return
     
     def synthetic_lesion(self,features_left=None,features_right=None):
@@ -144,7 +148,8 @@ class GraphDataset(torch_geometric.data.Dataset):
                                                              histo_type_seed=subtype,
                     proportion_features_abnormal=self.params['synthetic_data']['proportion_features_abnormal'],
                     proportion_hemispheres_abnormal=self.params['synthetic_data']['proportion_hemispheres_lesional'],
-                                                 features=f)
+                                                 features=f,
+                                                    jitter_factor=self.params['synthetic_data']['jitter_factor'])
             f[:,~self.cohort.cortex_mask]=0
             l[~self.cohort.cortex_mask]=0
             fs.append(f)
