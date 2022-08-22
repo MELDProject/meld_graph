@@ -288,38 +288,64 @@ class Preprocess:
                                proportion_features_abnormal,jitter_factor)
         return features, lesion
     
+    def clip_spherical_coords(self,coordinates):
+        """make sure spherical coords in range"""
+        coordinates[:,0]= np.clip(coordinates[:,0],-np.pi/2,np.pi/2)
+        coordinates[:,1]= np.clip(coordinates[:,1],-np.pi,np.pi)
+        return coordinates
+
+
     def create_lesion_mask(self,radius,coords,return_smoothed=True):
         """create irregular polygon lesion mask"""
         import matplotlib.path as mpltPath
         from sklearn.metrics import pairwise_distances
+        from scipy import interpolate,ndimage
+
+        coords = self.clip_spherical_coords(coords)
         f_radius = np.clip(np.random.normal(radius,radius/2),0.05,2)
-        
-        com_i = np.random.choice(len(coords))
-        origin = coords[com_i]
-        distances = pairwise_distances(origin.reshape(-1,1).T,coords, metric='haversine')[0]
+        res=1000
+        xnew = np.linspace(-np.pi/2,np.pi/2,res)
+        ynew = np.linspace(-np.pi,np.pi,res*2)
+        gridshape=(2*res,res)
+        grid_coords = np.meshgrid(xnew,ynew,indexing='ij')
+        grid_coords=np.vstack([grid_coords[0].ravel(),grid_coords[1].ravel()]).T
+        com_i = np.random.choice(len(grid_coords))
+        #com_i=150
+        origin = grid_coords[com_i]
+        distances = pairwise_distances(origin.reshape(-1,1).T,grid_coords, metric='haversine')[0]
         n_points = np.random.choice(6)+4
-        subset = coords[distances<f_radius]
+        mask = (distances<f_radius).reshape(gridshape)
+        shifted_grid_coords = grid_coords.copy()
+        if mask[0].any() and mask[-1].any():
+            shifted_grid_coords[:,1] = shifted_grid_coords[:,1]% (2*np.pi)
+            origin[1] = origin[1]% (2*np.pi)
+        subset = shifted_grid_coords[distances<f_radius]
         poly_i = np.random.choice(len(subset),n_points)
         polygon = subset[poly_i]
         polygon = np.array(sorted(polygon, key=lambda point: self.clockwiseangle_and_distance(point,origin)))
         path = mpltPath.Path(polygon)
-        lesion = path.contains_points(coords)
+        lesion = path.contains_points(grid_coords)
+        arr_lesion = lesion.reshape(gridshape,order='f').astype(float)
+        smoothed = ndimage.gaussian_filter(arr_lesion,10)
+        #interpolate to coordinates
+        f_near=interpolate.RegularGridInterpolator((xnew,ynew),
+                                                   arr_lesion.T,
+                                                  method='nearest')
+
+        interpolated_lesion=f_near(coords)
+
         #smoothed mask
-        
         if return_smoothed:
-#             ds=pairwise_distances(coords[np.logical_and(distances<f_radius,~lesion)],
-#                               coords[lesion], metric='haversine')
-#             in_dists = np.min(ds,axis=0)
-#             in_dists = in_dists/np.max(in_dists)
-#             out_dists = np.min(ds,axis=1)
-#             out_dists = out_dists/np.max(out_dists)
-#             dist_m = np.zeros(len(lesion))
-#             dist_m[lesion]=in_dists
-#             dist_m[np.logical_and(distances<f_radius,~lesion)] = -out_dists
-#             smoothed_mask = self.sigmoid_dists(dist_m)
-            return lesion, lesion #smoothed_mask
+            f_lin=interpolate.RegularGridInterpolator((xnew,ynew),
+                                                   smoothed.T,
+                                                  method='linear')
+            #return grid_coords,smoothed
+            interpolated_smoothed = f_lin(coords)
+            return interpolated_lesion, interpolated_smoothed 
         else:
-            return lesion
+            return interpolated_lesion
+    
+    
     
     def sigmoid_dists(self,dists):
         m = dists==0
