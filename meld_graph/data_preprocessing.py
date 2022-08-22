@@ -353,15 +353,15 @@ class Preprocess:
         #create lesion mask
         lesion, smoothed_lesion = self.create_lesion_mask(radius,coords,return_smoothed=True)
 
-        #set of biases
-        #f_bias = np.clip(np.random.normal(bias,bias/2, size=n_features),0,100)
+        #bias is sampled from a normal dist so that some subjects are easier than others.
+        sampled_bias = np.clip(np.random.normal(bias,bias/jitter_factor),0,100)
         #histo_signature - controls which features, how important and what sign
         fingerprint = self.create_fingerprint(n_features,histo_type_seed,proportion_features_abnormal)
         
         sampled_fingerprint = self.sample_fingerprint(fingerprint,jitter_factor)
         
         features= features + (np.tile(smoothed_lesion.reshape(-1,1),
-                                     n_features)*sampled_fingerprint*bias).T
+                                     n_features)*sampled_fingerprint*sampled_bias).T
 
         return features,lesion
     
