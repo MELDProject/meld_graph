@@ -7,6 +7,7 @@ from meld_classifier.meld_cohort import MeldCohort, MeldSubject
 import numpy as np
 import scipy
 import json
+import pandas as pd
 
 
 def load_config(config_file):
@@ -30,7 +31,7 @@ class Evaluator:
         checkpoint_path=None,
         make_images=False,
         subject_ids=None,
-        test_parameters=None,
+
         save_dir=None,
     ):
 
@@ -45,7 +46,6 @@ class Evaluator:
         ), "mode needs to be either test or val or train or inference"
         self.mode = mode
         self.make_images = make_images
-        self.test_parameters = test_parameters
         self.subject_ids = subject_ids
 
         self.data_dictionary = None
@@ -63,30 +63,8 @@ class Evaluator:
             self.save_dir = self.experiment.path
         else:
             self.save_dir = save_dir
-
-        # load test parameters and save in file
-        if test_parameters != None:
-            self.experiment.data_parameters = load_config(
-                self.test_parameters
-            ).data_parameters
-            self.experiment.network_parameters = load_config(
-                self.test_parameters
-            ).network_parameters
-            # Save experiment parameters:
-            save_json(
-                os.path.join(self.save_dir, "network_parameters.json"),
-                self.experiment.network_parameters,
-            )
-            save_json(
-                os.path.join(self.save_dir, "data_parameters.json"),
-                self.experiment.data_parameters,
-            )
-            # TODO : Update subjects_ids list
-
-        else:
-            self.data_parameters = self.experiment.data_parameters
-            self.network_parameters = self.experiment.network_parameters
-
+        
+        # TODO : Update subjects_ids list
         # get subject_ids
         train_ids, val_ids, test_ids = self.experiment.get_train_val_test_ids()
         if mode == "train":
@@ -107,7 +85,7 @@ class Evaluator:
                 force=True,
             )
 
-    def evaluate(self):
+    def evaluate(self,):
         """
         Evaluate the model.
         Runs `self.get_metrics(); self.plot_prediction_space(); self.plot_subjects_prediction()`
@@ -116,48 +94,12 @@ class Evaluator:
         # need to load and predict data
         if self.data_dictionary is None:
             self.load_predict_data()
+        # calculate stats 
+        self.stat_subjects()
         # make images if asked for
         if self.make_images:
             self.plot_subjects_prediction()
 
-    def cluster_and_area_threshold(self, mask, island_count=0):
-        """cluster predictions and threshold based on min_area_threshold
-        Args:
-            mask: boolean mask of the per-vertex lesion predictions to cluster"""
-        n_comp, labels = scipy.sparse.csgraph.connected_components(
-            self.experiment.cohort.adj_mat[mask][:, mask]
-        )
-        islands = np.zeros(len(mask))
-        # only include islands larger than minimum size.
-        for island_index in np.arange(n_comp):
-            include_vec = labels == island_index
-            size = np.sum(include_vec)
-            if size >= self.min_area_threshold:
-                island_count += 1
-                island_mask = mask.copy()
-                island_mask[mask] = include_vec
-                islands[island_mask] = island_count
-        return islands
-
-    def threshold_and_cluster(self, data_dictionary=None):
-        return_dict = data_dictionary is not None
-        if data_dictionary is None:
-            data_dictionary = self.data_dictionary
-        for subj_id, data in data_dictionary.items():
-            data["cluster_thresholded"] = {}
-            predictions = self.experiment.cohort.split_hemispheres(data["result"])
-            island_count = 0
-            for h, hemi in enumerate(["left", "right"]):
-                mask = predictions[hemi] >= self.threshold
-                islands = self.cluster_and_area_threshold(
-                    mask, island_count=island_count
-                )
-                data["cluster_thresholded"][hemi] = islands
-                island_count += np.max(islands)
-        if return_dict:
-            return data_dictionary
-        else:
-            self.data_dictionary = data_dictionary
 
     def load_predict_data(
         self,
@@ -174,12 +116,11 @@ class Evaluator:
         )
         dataset = GraphDataset(subject_ids, cohort, self.experiment.data_parameters)
         # predict on data
+        #TODO: enable batch_size > 1
         data_loader = torch_geometric.loader.DataLoader(
             dataset,
             shuffle=False,
-            batch_size=self.experiment.network_parameters["training_parameters"][
-                "batch_size"
-            ],
+            batch_size=1,
         )
         self.data_dictionary = {}
         prediction_array = []
@@ -230,14 +171,65 @@ class Evaluator:
             if self.mode != "train":
                 self.data_dictionary[subj_id]["input_features"] = features_array[i]
 
-    def get_metrics(
-        self,
-    ):
-        metrics = Metrics(
-            self.network_parameters["metrics"]
-        )  # for keeping track of running metrics
 
-        return metrics.get_aggregated_metrics()
+    def stat_subjects(self, suffix="", fold=None):
+        """calculate stats for each subjects
+        """
+        
+        #TODO: need to add boundaries and clusters
+        # boundary_label = MeldSubject(subject, self.experiment.cohort).load_boundary_zone(max_distance=20)
+        
+        # columns: ID, group, detected,  number extra-lesional clusters,border detected
+        # calculate stats first
+        patient_dice_vars = {"TP": 0, "FP": 0, "FN": 0}
+        for subject in self.data_dictionary.keys():
+            prediction = self.data_dictionary[subject]["result"]
+            labels = self.data_dictionary[subject]["input_labels"]
+            group = labels.sum()!= 0
+            
+            detected = np.logical_and(prediction, labels).any()
+            difference = np.setdiff1d(np.unique(prediction), np.unique(prediction[labels]))
+            difference = difference[difference > 0]
+            n_clusters = len(difference)
+        # # if not detected, does a cluster overlap boundary zone and if so, how big is the cluster?
+        # if not detected and prediction[np.logical_and(boundary_label, ~labels)].sum() > 0:
+        #     border_verts = prediction[np.logical_and(boundary_label, ~labels)]
+        #     i, counts = np.unique(border_verts, return_counts=True)
+        #     counts = counts[i > 0]
+        #     i = i[i > 0]
+        #     cluster_index = i[np.argmax(counts)]
+        #     border_detected = np.sum(prediction == cluster_index)
+        # else:
+        #     border_detected = 0
+
+            if group == 1:
+                mask = prediction.astype(bool)
+                label = labels.astype(bool)
+                patient_dice_vars["TP"] += np.sum(mask * label)
+                patient_dice_vars["FP"] += np.sum(mask * ~label)
+                patient_dice_vars["FN"] += np.sum(~mask * label)
+            
+            sub_df = pd.DataFrame(
+                np.array([subject, group, detected, n_clusters, patient_dice_vars["TP"], patient_dice_vars["FP"], patient_dice_vars["FN"]]).reshape(-1, 1).T,
+                columns=["ID", "group", "detected", "n_clusters", 'dice_tp', 'dice_fp', 'dice_fn' ],
+            )
+            filename = os.path.join(self.save_dir, "results", f"test_results{suffix}.csv")
+            if fold is not None:
+                filename = os.path.join(self.save_dir, "results", f"test_results_{fold}{suffix}.csv")
+
+            if os.path.isfile(filename):
+                done = False
+                while not done:
+                    try:
+                        df = pd.read_csv(filename, index_col=False)
+                        # df = df.append(sub_df, ignore_index=True)
+                        df = pd.concat([df, sub_df], ignore_index=True, sort=False)
+                        df.to_csv(filename, index=False)
+                        done = True
+                    except pd.errors.EmptyDataError:
+                        done = False
+            else:
+                sub_df.to_csv(filename, index=False)
 
     def plot_subjects_prediction(self, rootfile=None, flat_map=True):
         """plot predicted subjects"""
@@ -253,6 +245,7 @@ class Evaluator:
                 filename = os.path.join(
                     self.save_dir, "results", "images", "{}.jpg".format(subject)
                 )
+                os.makedirs(os.path.join(self.save_dir, "results", "images",), exist_ok=True)
 
             result = self.data_dictionary[subject]["result"]
             # thresholded = self.data_dictionary[subject]["cluster_thresholded"]
