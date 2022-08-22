@@ -81,9 +81,11 @@ network_parameters = {
         # ovesampling: oversample lesional vertices to 33% lesional and 66% random.
         # size of epoch will be num_lesional_examples * 3
         'oversampling':True,
+        # init_weights: path to checkpoint file to init weights from. Relative to EXPERIMENT_PATH
+        'init_weights': '22-08-22' + '_synth_3layer/baselineFTprop_features0.2FTradius0.5/fold_00/best_model.pt',
     },
     # name: experiment name. If none, experiment is not saved
-    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_real_3layer/from_scratch',
+    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_real_3layer/from_synth_baselineFTprop_features0.2FTradius0.5',
 }
 
 # data parameters, passed to GraphDataset and Preprocess
