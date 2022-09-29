@@ -149,8 +149,9 @@ class GraphDataset(torch_geometric.data.Dataset):
                 else:
                     raise NotImplementedError
         #dataset has weird properties. subject_ids needs to be the right length, matching the data length
-        if self.params['synthetic_data']['n_subs']>len(self.subject_ids):
-            self.subject_ids = np.array(self.subject_ids)[self.subject_samples]
+        if self.params['synthetic_data']['run_synthetic']:
+            if self.params['synthetic_data']['n_subs']>len(self.subject_ids):
+                self.subject_ids = np.array(self.subject_ids)[self.subject_samples]
         return
 
     def synthetic_lesion(self, features_left=None, features_right=None):
