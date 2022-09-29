@@ -153,7 +153,7 @@ data_parameters = {
     # preprocessing_parameters: params for data_preprocessing
     "preprocessing_parameters": {
         "scaling": None, #"scaling_params_GDL.json"
-        # zscore: normalise all values (per subject)
+        # zscore: normalise all values by overall mu std. ignores 0s.
         "zscore": False,
     },
     # icosphere_parameters: passed to Icospheres class
@@ -187,15 +187,35 @@ data_parameters = {
     "lobes": False,
     # lesion_bias: add this value to lesion values to make prediction task easier
     "lesion_bias": 10,
-    #Synthetic lesions. non-lesional vertices given mu=0, std = 1. 
-    #Lesional vertices controlled by bias terms in the synthetic dictionary
-    #bias and radius control gaussian distributions
-    # TODO document n_subtypes
-    'synthetic_data':None, 
-    #{'n_features':2,
-#                       'n_subs':100,
-#                       'bias':1,
-#                        'radius':0.5}
+    # synthetic lesions on synthetic data or on controls.
+    'synthetic_data': {
+        # run_synthetic: master switch for whether to run the synthetic task. True means run it.
+        'run_synthetic':True,
+        # n_subs: controls the number of subjects. Randomly sampled from subject ids (i.e. duplicates will exist)
+        'n_subs': 200,
+        # use_controls: superimpose lesions on controls, or on white noise features
+        'use_controls':False,
+        # radius: mean radii of lesions, in units of XX. 
+        # For each lesion, actual radius is sampled from N(radius,radius/2)
+        'radius': 0.5,
+        # n_subtypes: number of lesion "fingerprints" generated (number of histological subtypes)
+        # A fingerprint determines which features (using proportion_features_abnormal) change, 
+        # in which direction they change, and by how much (sampled from U(0,1)*bias).
+        'n_subtypes':1,
+        # jitter_factor: determines the amount of variance of subjects around the fingerprint bias terms.
+        # For each subject with fingerprint f, the actual lesion values are sampled from: N(f, f/jitter_factor)
+        'jitter_factor':2,
+        # bias: multiplier for fingerprint, determines overall abnormality of lesion.
+        # For each subject, on bias term is sampled from N(bias, bias/jitter_factor).
+        'bias': 1,
+        # proportion_features_abnormal: proportion of the features that are abnormal. 
+        # 0.2 means only 20% of features, all others remain unchanged.
+        'proportion_features_abnormal': 0.9,
+        # proportion_hemispheres_lesional: proportion subjects lesional
+        # controls a random variable that determines whether a lesion is added to the control data
+        # In the training this could mean two hemispheres from the same subject both have lesions.
+        'proportion_hemispheres_lesional': 0.9,
+    }
 }
 
 # run several experiments

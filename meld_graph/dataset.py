@@ -162,7 +162,7 @@ class GraphDataset(torch_geometric.data.Dataset):
             #controls the proportion of examples with lesions.
 
             subtype=np.random.choice(self.params['synthetic_data']['n_subtypes'])
-            f, l = self.prep.generate_synthetic_data(self.icospheres.icospheres[7]['spherical_coords'],
+            f, l = self.prep.generate_synthetic_data(self.icospheres.icospheres[7]['coords'],
                                                               len(self.params['features']),
                                                               self.params['synthetic_data']['bias'],
                                                              self.params['synthetic_data']['radius'],

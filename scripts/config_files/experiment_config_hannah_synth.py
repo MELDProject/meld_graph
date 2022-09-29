@@ -4,31 +4,11 @@ import os, datetime
 network_parameters = {
     # MONETUNET
     ## network_type: model class, one of: MoNet, MoNetUnet (see models.py)
-    'network_type': 'MoNetUnet',
-    ## model_parameters: passed to model class initialiser
-    'model_parameters': {
-        # model architecture: list of lists for Unet, and list for MoNet (simple convs)
-        'layer_sizes': [[32,32,32],[32,32,32],[64,64,64],[64,64,64],[128,128,128],[128,128,128],[256,256,256]],
-        # activation_fn: activation function, one of: relu, leaky_relu
-        'activation_fn': 'leaky_relu',
-        # conv_type: convolution to use, one of: SpiralConv, GMMConv.
-        'conv_type': 'SpiralConv',
-        # dim: coord dim for GMMConv
-        'dim': 2,
-        # kernel_size: number of gaussian kernels for GMMConv
-        'kernel_size': 3, # number of gaussian kernels
-        # spiral_len: size of the spiral for SpiralConv.
-        # TODO implement dilation / different spiral len per unet block
-        'spiral_len': 7, 
-    },
-
-    # MONET
-    # network_type: model class, one of: MoNet, MoNetUnet (see models.py)
-    #'network_type': 'MoNet',
-    # model_parameters: passed to model class initialiser
+    #'network_type': 'MoNetUnet',
+    ### model_parameters: passed to model class initialiser
     #'model_parameters': {
     #    # model architecture: list of lists for Unet, and list for MoNet (simple convs)
-    #    'layer_sizes': [16],
+    #    'layer_sizes': [[32,32,32],[32,32,32],[64,64,64],[64,64,64],[128,128,128],[128,128,128],[256,256,256]],
     #    # activation_fn: activation function, one of: relu, leaky_relu
     #    'activation_fn': 'leaky_relu',
     #    # conv_type: convolution to use, one of: SpiralConv, GMMConv.
@@ -42,16 +22,36 @@ network_parameters = {
     #    'spiral_len': 7, 
     #},
 
+    # MONET
+    # network_type: model class, one of: MoNet, MoNetUnet (see models.py)
+    'network_type': 'MoNet',
+    # model_parameters: passed to model class initialiser
+    'model_parameters': {
+        # model architecture: list of lists for Unet, and list for MoNet (simple convs)
+        'layer_sizes': [16,16,16],
+        # activation_fn: activation function, one of: relu, leaky_relu
+        'activation_fn': 'leaky_relu',
+        # conv_type: convolution to use, one of: SpiralConv, GMMConv.
+        'conv_type': 'SpiralConv',
+        # dim: coord dim for GMMConv
+        'dim': 2,
+        # kernel_size: number of gaussian kernels for GMMConv
+        'kernel_size': 3, # number of gaussian kernels
+        # spiral_len: size of the spiral for SpiralConv.
+        # TODO implement dilation / different spiral len per unet block
+        'spiral_len': 7, 
+    },
+
     # training_parameters: used by Trainer to set up model training
     'training_parameters': {
         "max_patience": 400,
-        "num_epochs": 200,
+        "num_epochs": 50,
         # optimiser: optimiser to use, one of: adam, sgd
         "optimiser": 'sgd',
         # optimiser_parameters: parameters passed to torch optimiser class
         # for sgd with nesterov momentum use: momentum:0.99, nesterov:True
         "optimiser_parameters": {
-            "lr": 1e-4,
+            "lr": 1e-2,
             "momentum": 0.99,
             "nesterov": True
         },
@@ -81,9 +81,11 @@ network_parameters = {
         # ovesampling: oversample lesional vertices to 33% lesional and 66% random.
         # size of epoch will be num_lesional_examples * 3
         'oversampling':True,
+        # init_weights: path to checkpoint file to init weights from. Relative to EXPERIMENT_PATH
+        'init_weights': '22-08-22' + '_synth_3layer/baselineFTprop_features0.2FTradius0.5/fold_00/best_model.pt',
     },
     # name: experiment name. If none, experiment is not saved
-    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_synth_unet',
+    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_synth_3layer/baselineFTprop_features0.2FTradius0.5FTprop_lesion0.3',
 }
 
 # data parameters, passed to GraphDataset and Preprocess
@@ -120,7 +122,7 @@ data_parameters = {
     "subject_features_to_exclude": [],
     # features: manually specify features (instead of features_to_exclude)
     "features": [
-        '.on_lh.lesion.mgh',
+        # '.on_lh.lesion.mgh',
         #    '.on_lh.curv.mgh',
         #    '.on_lh.gm_FLAIR_0.25.mgh',
         #    '.on_lh.gm_FLAIR_0.5.mgh',
@@ -133,38 +135,38 @@ data_parameters = {
         #    '.on_lh.wm_FLAIR_0.5.mgh',
         #    '.on_lh.wm_FLAIR_1.mgh',
         '.combat.on_lh.pial.K_filtered.sm20.mgh',
-        #'.combat.on_lh.thickness.sm10.mgh',
-        #'.combat.on_lh.w-g.pct.sm10.mgh',
-        #'.combat.on_lh.sulc.sm5.mgh',
-        #'.combat.on_lh.curv.sm5.mgh',
-        #'.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
-        #'.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
-        #'.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
-        #'.combat.on_lh.gm_FLAIR_0.sm10.mgh',
-        #'.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
-        #'.combat.on_lh.wm_FLAIR_1.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.pial.K_filtered.sm20.mgh',
-        #'.inter_z.intra_z.combat.on_lh.thickness.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.w-g.pct.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.sulc.sm5.mgh',
-        #'.inter_z.intra_z.combat.on_lh.curv.sm5.mgh',
-        #'.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.wm_FLAIR_1.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.pial.K_filtered.sm20.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.thickness.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.w-g.pct.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.sulc.sm5.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.curv.sm5.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.wm_FLAIR_1.sm10.mgh',
+        '.combat.on_lh.thickness.sm10.mgh',
+        '.combat.on_lh.w-g.pct.sm10.mgh',
+        '.combat.on_lh.sulc.sm5.mgh',
+        '.combat.on_lh.curv.sm5.mgh',
+        '.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
+        '.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
+        '.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
+        '.combat.on_lh.gm_FLAIR_0.sm10.mgh',
+        '.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
+        '.combat.on_lh.wm_FLAIR_1.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.pial.K_filtered.sm20.mgh',
+        '.inter_z.intra_z.combat.on_lh.thickness.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.w-g.pct.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.sulc.sm5.mgh',
+        '.inter_z.intra_z.combat.on_lh.curv.sm5.mgh',
+        '.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.wm_FLAIR_1.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.pial.K_filtered.sm20.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.thickness.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.w-g.pct.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.sulc.sm5.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.curv.sm5.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.wm_FLAIR_1.sm10.mgh',
     ],
     # specify this if manually specifying features
     "features_to_replace_with_0": [], 
@@ -174,7 +176,7 @@ data_parameters = {
     "preprocessing_parameters": {
         "scaling": None, #"scaling_params_GDL.json"
         # zscore: normalise all values (per subject)
-        "zscore": False,
+        "zscore": True,
     },
     # icosphere_parameters: passed to Icospheres class
     "icosphere_parameters": {
@@ -194,11 +196,35 @@ data_parameters = {
     # lobes: if True, train on predicting frontal lobe vs other instead of the lesion predicting task
     "lobes": False,
     # lesion_bias: add this value to lesion values to make prediction task easier
-    "lesion_bias": 10,
+    "lesion_bias": 0,
+    # synthetic lesions on synthetic data or on controls.
     'synthetic_data': {
-        'n_subs': 100,
-        'bias': 0.5,
+        # run_synthetic: master switch for whether to run the synthetic task. True means run it.
+        'run_synthetic': True,
+        # n_subs: controls the number of subjects. Randomly sampled from subject ids (i.e. duplicates will exist)
+        'n_subs': 200,
+        # use_controls: superimpose lesions on controls, or on white noise features
+        'use_controls': True,
+        # radius: mean radii of lesions, in units of XX. 
+        # For each lesion, actual radius is sampled from N(radius,radius/2)
         'radius': 0.5,
+        # n_subtypes: number of lesion "fingerprints" generated (number of histological subtypes)
+        # A fingerprint determines which features (using proportion_features_abnormal) change, 
+        # in which direction they change, and by how much (sampled from U(0,1)*bias).
+        'n_subtypes': 4,
+        # jitter_factor: determines the amount of variance of subjects around the fingerprint bias terms.
+        # For each subject with fingerprint f, the actual lesion values are sampled from: N(f, f/jitter_factor)
+        'jitter_factor': 2,
+        # bias: multiplier for fingerprint, determines overall abnormality of lesion.
+        # For each subject, on bias term is sampled from N(bias, bias/2).
+        'bias': 1,
+        # proportion_features_abnormal: proportion of the features that are abnormal. 
+        # 0.2 means only 20% of features, all others remain unchanged.
+        'proportion_features_abnormal': 0.2,
+        # proportion_hemispheres_lesional: proportion subjects lesional
+        # controls a random variable that determines whether a lesion is added to the control data
+        # In the training this could mean two hemispheres from the same subject both have lesions.
+        'proportion_hemispheres_lesional': 0.3,
     }
 }
 
@@ -208,5 +234,5 @@ data_parameters = {
 # if left empty, the above configuration is run.
 variable_parameters = {
 #    "data_parameters$synthetic_data$bias": [0.5, 1, 2, 5],
-    "data_parameters$synthetic_data$radius": [0.25]
+#    "data_parameters__synthetic_data__radius": [2]
 }

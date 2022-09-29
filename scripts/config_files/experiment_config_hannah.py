@@ -28,7 +28,7 @@ network_parameters = {
     # model_parameters: passed to model class initialiser
     'model_parameters': {
         # model architecture: list of lists for Unet, and list for MoNet (simple convs)
-        'layer_sizes': [],
+        'layer_sizes': [16,16,16],
         # activation_fn: activation function, one of: relu, leaky_relu
         'activation_fn': 'leaky_relu',
         # conv_type: convolution to use, one of: SpiralConv, GMMConv.
@@ -39,19 +39,19 @@ network_parameters = {
         'kernel_size': 3, # number of gaussian kernels
         # spiral_len: size of the spiral for SpiralConv.
         # TODO implement dilation / different spiral len per unet block
-        'spiral_len': 1, 
+        'spiral_len': 7, 
     },
 
     # training_parameters: used by Trainer to set up model training
     'training_parameters': {
         "max_patience": 400,
-        "num_epochs": 400,
+        "num_epochs": 50,
         # optimiser: optimiser to use, one of: adam, sgd
         "optimiser": 'sgd',
         # optimiser_parameters: parameters passed to torch optimiser class
         # for sgd with nesterov momentum use: momentum:0.99, nesterov:True
         "optimiser_parameters": {
-            "lr": 1e-4,
+            "lr": 1e-2,
             "momentum": 0.99,
             "nesterov": True
         },
@@ -81,37 +81,39 @@ network_parameters = {
         # ovesampling: oversample lesional vertices to 33% lesional and 66% random.
         # size of epoch will be num_lesional_examples * 3
         'oversampling':True,
+        # init_weights: path to checkpoint file to init weights from. Relative to EXPERIMENT_PATH
+        'init_weights': '22-08-22' + '_synth_3layer/baselineFTprop_features0.2FTradius0.5/fold_00/best_model.pt',
     },
     # name: experiment name. If none, experiment is not saved
-    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_lr_decay',
+    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_real_3layer/from_synth_baselineFTprop_features0.2FTradius0.5',
 }
 
 # data parameters, passed to GraphDataset and Preprocess
 data_parameters = {
     'hdf5_file_root': "{site_code}_{group}_featurematrix_combat_6.hdf5",
     'site_codes': [
-    #    "H1",
-    #    "H2",
-    #    "H3",
+        "H1",
+        "H2",
+        "H3",
         "H4",
-    #    "H5",
-    #    "H6",
-    #    "H7",
-    #    "H9",
-    #    "H10",
-    #    "H11",
-    #    "H12",
-    #    "H14",
-    #    "H15",
-    #    "H16",
-    #    "H17",
-    #    "H18",
-    #    "H19",
-    #    "H21",
-    #    "H23",
-    #    "H24",
-    #    "H26",
-    #    "H27",
+        "H5",
+        "H6",
+        "H7",
+        "H9",
+        "H10",
+        "H11",
+        "H12",
+        "H14",
+        "H15",
+        "H16",
+        "H17",
+        "H18",
+        "H19",
+        "H21",
+        "H23",
+        "H24",
+        "H26",
+        "H27",
     ],
     'scanners': ['15T','3T'],
     'dataset': 'MELD_dataset_V6.csv',
@@ -120,7 +122,7 @@ data_parameters = {
     "subject_features_to_exclude": [],
     # features: manually specify features (instead of features_to_exclude)
     "features": [
-        '.on_lh.lesion.mgh',
+        #'.on_lh.lesion.mgh',
         #    '.on_lh.curv.mgh',
         #    '.on_lh.gm_FLAIR_0.25.mgh',
         #    '.on_lh.gm_FLAIR_0.5.mgh',
@@ -133,38 +135,38 @@ data_parameters = {
         #    '.on_lh.wm_FLAIR_0.5.mgh',
         #    '.on_lh.wm_FLAIR_1.mgh',
         '.combat.on_lh.pial.K_filtered.sm20.mgh',
-        #'.combat.on_lh.thickness.sm10.mgh',
-        #'.combat.on_lh.w-g.pct.sm10.mgh',
-        #'.combat.on_lh.sulc.sm5.mgh',
-        #'.combat.on_lh.curv.sm5.mgh',
-        #'.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
-        #'.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
-        #'.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
-        #'.combat.on_lh.gm_FLAIR_0.sm10.mgh',
-        #'.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
-        #'.combat.on_lh.wm_FLAIR_1.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.pial.K_filtered.sm20.mgh',
-        #'.inter_z.intra_z.combat.on_lh.thickness.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.w-g.pct.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.sulc.sm5.mgh',
-        #'.inter_z.intra_z.combat.on_lh.curv.sm5.mgh',
-        #'.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
-        #'.inter_z.intra_z.combat.on_lh.wm_FLAIR_1.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.pial.K_filtered.sm20.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.thickness.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.w-g.pct.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.sulc.sm5.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.curv.sm5.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
-        #'.inter_z.asym.intra_z.combat.on_lh.wm_FLAIR_1.sm10.mgh',
+        '.combat.on_lh.thickness.sm10.mgh',
+        '.combat.on_lh.w-g.pct.sm10.mgh',
+        '.combat.on_lh.sulc.sm5.mgh',
+        '.combat.on_lh.curv.sm5.mgh',
+        '.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
+        '.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
+        '.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
+        '.combat.on_lh.gm_FLAIR_0.sm10.mgh',
+        '.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
+        '.combat.on_lh.wm_FLAIR_1.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.pial.K_filtered.sm20.mgh',
+        '.inter_z.intra_z.combat.on_lh.thickness.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.w-g.pct.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.sulc.sm5.mgh',
+        '.inter_z.intra_z.combat.on_lh.curv.sm5.mgh',
+        '.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.gm_FLAIR_0.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
+        '.inter_z.intra_z.combat.on_lh.wm_FLAIR_1.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.pial.K_filtered.sm20.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.thickness.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.w-g.pct.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.sulc.sm5.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.curv.sm5.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.75.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.5.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.25.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.gm_FLAIR_0.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.wm_FLAIR_0.5.sm10.mgh',
+        '.inter_z.asym.intra_z.combat.on_lh.wm_FLAIR_1.sm10.mgh',
     ],
     # specify this if manually specifying features
     "features_to_replace_with_0": [], 
@@ -174,7 +176,7 @@ data_parameters = {
     "preprocessing_parameters": {
         "scaling": None, #"scaling_params_GDL.json"
         # zscore: normalise all values (per subject)
-        "zscore": False,
+        "zscore": True,
     },
     # icosphere_parameters: passed to Icospheres class
     "icosphere_parameters": {
@@ -194,7 +196,10 @@ data_parameters = {
     # lobes: if True, train on predicting frontal lobe vs other instead of the lesion predicting task
     "lobes": False,
     # lesion_bias: add this value to lesion values to make prediction task easier
-    "lesion_bias": 10,
+    "lesion_bias": 0,
+    'synthetic_data': {
+        'run_synthetic': False
+    },
 }
 
 # run several experiments

@@ -295,31 +295,38 @@ class Preprocess:
         return coordinates
 
 
-    def create_lesion_mask(self,radius,coords,return_smoothed=True):
+    def create_lesion_mask(self,radius,cartesian_coords,return_smoothed=True):
         """create irregular polygon lesion mask"""
         import matplotlib.path as mpltPath
         from sklearn.metrics import pairwise_distances
         from scipy import interpolate,ndimage
+        import copy
+        from meld_graph.resampling_meshes import spinning_coords
+        from meld_classifier import mesh_tools as mt
+        spun_coords = spinning_coords(cartesian_coords)
+        spherical_coords = mt.spherical_np(spun_coords)[:,1:]
+        spherical_coords[:,0] = spherical_coords[:,0]-np.pi/2
+        spherical_coords = self.clip_spherical_coords(spherical_coords)
 
-        coords = self.clip_spherical_coords(coords)
+        #select a radius
         f_radius = np.clip(np.random.normal(radius,radius/2),0.05,2)
+        #resolution for the regular grid used to generate the lesions
         res=1000
         xnew = np.linspace(-np.pi/2,np.pi/2,res)
         ynew = np.linspace(-np.pi,np.pi,res*2)
+        #calculate the shape of the grid
         gridshape=(2*res,res)
+        #meshgrid, weird indexing required for the interpolator function
         grid_coords = np.meshgrid(xnew,ynew,indexing='ij')
         grid_coords=np.vstack([grid_coords[0].ravel(),grid_coords[1].ravel()]).T
-        com_i = np.random.choice(len(grid_coords))
-        #com_i=150
-        origin = grid_coords[com_i]
-        distances = pairwise_distances(origin.reshape(-1,1).T,grid_coords, metric='haversine')[0]
+
+        origin = np.array([0,0])
+        distances = pairwise_distances(origin.reshape(-1,1).T,
+                                       grid_coords, metric='haversine')[0]
         n_points = np.random.choice(6)+4
-        mask = (distances<f_radius).reshape(gridshape)
-        shifted_grid_coords = grid_coords.copy()
-        if mask[0].any() and mask[-1].any():
-            shifted_grid_coords[:,1] = shifted_grid_coords[:,1]% (2*np.pi)
-            origin[1] = origin[1]% (2*np.pi)
-        subset = shifted_grid_coords[distances<f_radius]
+        mask = (distances<f_radius).reshape(gridshape,order='f')
+
+        subset = grid_coords[distances<f_radius]
         poly_i = np.random.choice(len(subset),n_points)
         polygon = subset[poly_i]
         polygon = np.array(sorted(polygon, key=lambda point: self.clockwiseangle_and_distance(point,origin)))
@@ -331,8 +338,7 @@ class Preprocess:
         f_near=interpolate.RegularGridInterpolator((xnew,ynew),
                                                    arr_lesion.T,
                                                   method='nearest')
-
-        interpolated_lesion=f_near(coords)
+        interpolated_lesion=f_near(spherical_coords)
 
         #smoothed mask
         if return_smoothed:
@@ -340,11 +346,10 @@ class Preprocess:
                                                    smoothed.T,
                                                   method='linear')
             #return grid_coords,smoothed
-            interpolated_smoothed = f_lin(coords)
+            interpolated_smoothed = f_lin(spherical_coords)
             return interpolated_lesion, interpolated_smoothed 
         else:
             return interpolated_lesion
-    
     
     
     def sigmoid_dists(self,dists):
