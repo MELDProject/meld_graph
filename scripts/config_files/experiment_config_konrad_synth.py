@@ -197,11 +197,11 @@ data_parameters = {
         #master switch for whether to run the synthetic task. True means run it.
         'run_synthetic':True,
         #controls the number of subjects. randomly sampled from subject ids (i.e. duplicates will exist)
-        'n_subs': 20,
+        'n_subs': 40,
         #Superimpose lesions on controls, or on white noise features
         'use_controls':True,
         #amount of bias - controls mean from which actual bias per feature will be calculated
-        'bias': 1,
+        'bias': 2,
         #mean radii of lesions, in units of XX
         'radius':0.5,
         #number of histological subtypes - controls number of "fingerprint" seeds
