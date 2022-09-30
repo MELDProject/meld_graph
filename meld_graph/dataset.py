@@ -149,8 +149,9 @@ class GraphDataset(torch_geometric.data.Dataset):
                 else:
                     raise NotImplementedError
         #dataset has weird properties. subject_ids needs to be the right length, matching the data length
-        if self.params['synthetic_data']['n_subs']>len(self.subject_ids):
-            self.subject_ids = np.array(self.subject_ids)[self.subject_samples]
+        if self.params['synthetic_data']['run_synthetic']:
+            if self.params['synthetic_data']['n_subs']>len(self.subject_ids):
+                self.subject_ids = np.array(self.subject_ids)[self.subject_samples]
         return
 
     def synthetic_lesion(self, features_left=None, features_right=None):
@@ -169,7 +170,8 @@ class GraphDataset(torch_geometric.data.Dataset):
                     proportion_features_abnormal=self.params['synthetic_data']['proportion_features_abnormal'],
                     proportion_hemispheres_abnormal=self.params['synthetic_data']['proportion_hemispheres_lesional'],
                                                  features=f,
-                                                    jitter_factor=self.params['synthetic_data']['jitter_factor'])
+                                                    jitter_factor=self.params['synthetic_data']['jitter_factor'],
+                                                    smooth_lesion=self.params['synthetic_data'].get('smooth_lesion', False))
             f[:,~self.cohort.cortex_mask]=0
             l[~self.cohort.cortex_mask]=0
             fs.append(f)
