@@ -170,7 +170,8 @@ class GraphDataset(torch_geometric.data.Dataset):
                     proportion_features_abnormal=self.params['synthetic_data']['proportion_features_abnormal'],
                     proportion_hemispheres_abnormal=self.params['synthetic_data']['proportion_hemispheres_lesional'],
                                                  features=f,
-                                                    jitter_factor=self.params['synthetic_data']['jitter_factor'])
+                                                    jitter_factor=self.params['synthetic_data']['jitter_factor'],
+                                                    smooth_lesion=self.params['synthetic_data'].get('smooth_lesion', False))
             f[:,~self.cohort.cortex_mask]=0
             l[~self.cohort.cortex_mask]=0
             fs.append(f)

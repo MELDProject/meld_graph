@@ -264,14 +264,15 @@ class Preprocess:
                                proportion_features_abnormal = 0.2,
                                 proportion_hemispheres_abnormal = 0.5,
                                jitter_factor=2,
-                               features=None):
+                               features=None,
+                               smooth_lesion=False):
         """coords - spherical coordinates
         n_features - number of input features
         bias  - mean of the difference in biases
         radius - mean size of lesion
         histo_type_seed - randomly generate different histologies.
         proportion_features_abnormal - proportion of features abnormal
-        neighbours_4_smoothing - smooth edge of lesions"""
+        smooth_lesion - smooth edge of lesions"""
         
         
         #create a histological signature of -1,0,1 on which features are abnormal
@@ -285,7 +286,7 @@ class Preprocess:
         if np.random.random()<proportion_hemispheres_abnormal:
             features,lesion = self.add_lesion(features, coords,n_features,
                                 bias,radius,histo_type_seed,
-                               proportion_features_abnormal,jitter_factor)
+                               proportion_features_abnormal,jitter_factor,smooth_lesion=smooth_lesion)
         return features, lesion
     
     def clip_spherical_coords(self,coordinates):
@@ -377,12 +378,15 @@ class Preprocess:
         return sampled_fingerprint
         
     def add_lesion(self, features,coords,n_features, bias, radius, histo_type_seed, 
-                   proportion_features_abnormal,jitter_factor):
+                   proportion_features_abnormal,jitter_factor,smooth_lesion=False):
         """superimpose a synthetic lesion on input data 
        
        """
         #create lesion mask
-        lesion, smoothed_lesion = self.create_lesion_mask(radius,coords,return_smoothed=True)
+        if smooth_lesion:
+            lesion, smoothed_lesion = self.create_lesion_mask(radius,coords,return_smoothed=True)
+        else:
+            lesion = smoothed_lesion = self.create_lesion_mask(radius, coords, return_smoothed=False)
 
         #bias is sampled from a normal dist so that some subjects are easier than others.
         sampled_bias = np.clip(np.random.normal(bias,bias/jitter_factor),0,100)
