@@ -56,7 +56,6 @@ class Oversampler(torch.utils.data.Sampler):
     def __len__(self):
         return self.num_samples
 
-
 class GraphDataset(torch_geometric.data.Dataset):
     def __init__(
         self,
@@ -120,18 +119,21 @@ class GraphDataset(torch_geometric.data.Dataset):
                 
             
                                                                
-                
+        import time
         for s_i,subj_id in enumerate(self.subject_ids):
             #load in control data
+            
             features_left, features_right, lesion_left, lesion_right = self.prep.get_data_preprocessed(subject=subj_id, 
                                                                      features=params['features'], 
                                         lobes = params['lobes'], lesion_bias=False)
+            
             #add lesion
             if self.params['synthetic_data']['run_synthetic']:
                 for duplicate in np.arange(np.sum(self.subject_samples==s_i)):
                     sfl, sfr, sll, slr = self.synthetic_lesion(features_left.copy(),
                                                                features_right.copy(),
                                                               )
+                    
                     if self.params['combine_hemis'] is None:
                         self.data_list.append((sfl.T, sll))
                         self.data_list.append((sfr.T, slr))
@@ -140,6 +142,7 @@ class GraphDataset(torch_geometric.data.Dataset):
                 if self.params["combine_hemis"] is None:
                     self.data_list.append((features_left.T, lesion_left))
                     self.data_list.append((features_right.T, lesion_right))
+                    
                 elif self.params["combine_hemis"] == "stack":
                     # this code doesn't look correct. surely lesions also should be stacked?
                     features = np.vstack([features_left, features_right]).T
@@ -172,8 +175,8 @@ class GraphDataset(torch_geometric.data.Dataset):
                                                  features=f,
                                                     jitter_factor=self.params['synthetic_data']['jitter_factor'],
                                                     smooth_lesion=self.params['synthetic_data'].get('smooth_lesion', False))
-            f[:,~self.cohort.cortex_mask]=0
-            l[~self.cohort.cortex_mask]=0
+            #f[:,~self.cohort.cortex_mask]=0
+            #l[~self.cohort.cortex_mask]=0
             fs.append(f)
             ls.append(l)
         return fs[0], fs[1], ls[0], ls[1]

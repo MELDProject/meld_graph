@@ -298,10 +298,11 @@ class Preprocess:
 
     
     def initialise_distances(self,res=1000):
-        """function to precalculate pairwise differences"""
+        """function to precalculate pairwise differences
+        res - resolution, higher resolutions lead to slower synthetic generation
+        lower resolutions give pixelated lesions"""
         from sklearn.metrics import pairwise_distances
         
-        res=1000
         self.xnew = np.linspace(-np.pi/2,np.pi/2,res)
         self.ynew = np.linspace(-np.pi,np.pi,res*2)
         #calculate the shape of the grid
@@ -405,21 +406,24 @@ class Preprocess:
        
        """
         #create lesion mask
+        import time
         if smooth_lesion:
             lesion, smoothed_lesion = self.create_lesion_mask(radius,coords,return_smoothed=True)
         else:
             lesion = smoothed_lesion = self.create_lesion_mask(radius, coords, return_smoothed=False)
-
+        lesion[~self.cohort.cortex_mask]=0
+        smoothed_lesion[~self.cohort.cortex_mask]=0
         #bias is sampled from a normal dist so that some subjects are easier than others.
         sampled_bias = np.clip(np.random.normal(bias,bias/jitter_factor),0,100)
         #histo_signature - controls which features, how important and what sign
         fingerprint = self.create_fingerprint(n_features,histo_type_seed,proportion_features_abnormal)
         
         sampled_fingerprint = self.sample_fingerprint(fingerprint,jitter_factor)
+        lesion_tiled = np.tile(smoothed_lesion.reshape(-1,1),
+                                     n_features)
+        synth_bias_features = (lesion_tiled*sampled_fingerprint*sampled_bias).T
+        features= features + synth_bias_features
         
-        features= features + (np.tile(smoothed_lesion.reshape(-1,1),
-                                     n_features)*sampled_fingerprint*sampled_bias).T
-
         return features,lesion
     
     
