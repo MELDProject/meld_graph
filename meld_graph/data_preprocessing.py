@@ -40,9 +40,10 @@ class Preprocess:
         self._subject_ids = None
         self.log = logging.getLogger(__name__)
         self._lobes = None
+        self.initialise_distances()
         if self.params['zscore']:
             self.load_z_params()
-     
+         
 
     @property
     def site_codes(self):
@@ -295,11 +296,30 @@ class Preprocess:
         coordinates[:,1]= np.clip(coordinates[:,1],-np.pi,np.pi)
         return coordinates
 
+    
+    def initialise_distances(self,res=1000):
+        """function to precalculate pairwise differences"""
+        from sklearn.metrics import pairwise_distances
+        
+        res=1000
+        self.xnew = np.linspace(-np.pi/2,np.pi/2,res)
+        self.ynew = np.linspace(-np.pi,np.pi,res*2)
+        #calculate the shape of the grid
+        self.gridshape=(2*res,res)
+        #meshgrid, weird indexing required for the interpolator function
+        self.grid_coords_grid = np.meshgrid(self.xnew,self.ynew,indexing='ij')
+        self.grid_coords=np.vstack([self.grid_coords_grid[0].ravel(),self.grid_coords_grid[1].ravel()]).T
+
+        self.origin = np.array([0,0])
+        self.distances = pairwise_distances(self.origin.reshape(-1,1).T,
+                                       self.grid_coords, metric='haversine')[0]
+        return
+        
 
     def create_lesion_mask(self,radius,cartesian_coords,return_smoothed=True):
         """create irregular polygon lesion mask"""
         import matplotlib.path as mpltPath
-        from sklearn.metrics import pairwise_distances
+        #from sklearn.metrics import pairwise_distances
         from scipy import interpolate,ndimage
         import copy
         from meld_graph.resampling_meshes import spinning_coords
@@ -311,40 +331,42 @@ class Preprocess:
 
         #select a radius
         f_radius = np.clip(np.random.normal(radius,radius/2),0.05,2)
-        #resolution for the regular grid used to generate the lesions
-        res=1000
-        xnew = np.linspace(-np.pi/2,np.pi/2,res)
-        ynew = np.linspace(-np.pi,np.pi,res*2)
-        #calculate the shape of the grid
-        gridshape=(2*res,res)
-        #meshgrid, weird indexing required for the interpolator function
-        grid_coords = np.meshgrid(xnew,ynew,indexing='ij')
-        grid_coords=np.vstack([grid_coords[0].ravel(),grid_coords[1].ravel()]).T
-
-        origin = np.array([0,0])
-        distances = pairwise_distances(origin.reshape(-1,1).T,
-                                       grid_coords, metric='haversine')[0]
+        
+        
         n_points = np.random.choice(6)+4
-        mask = (distances<f_radius).reshape(gridshape,order='f')
-
-        subset = grid_coords[distances<f_radius]
+        subset = self.grid_coords[self.distances<f_radius]
+        #establish mask and mask coordinates
+        x_mask = np.logical_and(self.grid_coords_grid[0]>-f_radius,self.grid_coords_grid[0]<f_radius)
+        y_mask = np.logical_and(self.grid_coords_grid[1]>-f_radius,self.grid_coords_grid[1]<f_radius)
+        grid_mask = np.logical_and(x_mask
+            ,y_mask
+            )
+        mask_shape=(x_mask.any(axis=1).sum(),y_mask.any(axis=0).sum())
+        masked_grid_coords = np.vstack([self.grid_coords_grid[0][grid_mask],
+                      self.grid_coords_grid[1][grid_mask]]).T
+        
         poly_i = np.random.choice(len(subset),n_points)
         polygon = subset[poly_i]
-        polygon = np.array(sorted(polygon, key=lambda point: self.clockwiseangle_and_distance(point,origin)))
+        polygon = np.array(sorted(polygon, key=lambda point: self.clockwiseangle_and_distance(point,self.origin)))
         path = mpltPath.Path(polygon)
-        lesion = path.contains_points(grid_coords)
-        arr_lesion = lesion.reshape(gridshape,order='f').astype(float)
-        smoothed = ndimage.gaussian_filter(arr_lesion,10)
+        lesion = path.contains_points(masked_grid_coords)
+        #lesion = path.contains_points(self.grid_coords)
+        arr_lesion = lesion.reshape(mask_shape,order='f').astype(float)
+        #arr_lesion = lesion.reshape(self.gridshape,order='f').astype(float)
         #interpolate to coordinates
-        f_near=interpolate.RegularGridInterpolator((xnew,ynew),
-                                                   arr_lesion.T,
+        
+        full_lesion = np.zeros(self.gridshape,dtype=float)
+        full_lesion[grid_mask.T] = arr_lesion.ravel()
+        f_near=interpolate.RegularGridInterpolator((self.xnew,self.ynew),
+                                                   full_lesion.T,
                                                   method='nearest')
         interpolated_lesion=f_near(spherical_coords)
-
         #smoothed mask
         if return_smoothed:
-            f_lin=interpolate.RegularGridInterpolator((xnew,ynew),
-                                                   smoothed.T,
+            smoothed = ndimage.gaussian_filter(arr_lesion,10)
+            full_lesion[grid_mask.T] = smoothed.ravel()
+            f_lin=interpolate.RegularGridInterpolator((self.xnew,self.ynew),
+                                                   full_lesion.T,
                                                   method='linear')
             #return grid_coords,smoothed
             interpolated_smoothed = f_lin(spherical_coords)
