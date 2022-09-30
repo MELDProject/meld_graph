@@ -6,6 +6,7 @@ import torch_geometric.data
 from meld_graph.dataset import GraphDataset
 from meld_classifier.meld_cohort import MeldCohort, MeldSubject
 import numpy as np
+import h5py
 import scipy
 import json
 import pandas as pd
@@ -134,7 +135,7 @@ class Evaluator:
         labels_array = np.array(labels_array)
         features_array = np.array(features_array)
 
-        # concatenate left and right predictions and labelsBe
+        # concatenate left and right predictions and labels
         if self.experiment.data_parameters["combine_hemis"] is None:
             prediction_array = (
                 prediction_array[:, self.cohort.cortex_mask]
@@ -163,6 +164,8 @@ class Evaluator:
                 "input_labels": labels_array[i],
                 "result": prediction_array[i],
             }
+            #save prediction
+            self.save_prediction(subj_id, prediction_array[i])
             if self.mode != "train":
                 self.data_dictionary[subj_id]["input_features"] = features_array[i]
 
@@ -226,6 +229,7 @@ class Evaluator:
             else:
                 sub_df.to_csv(filename, index=False)
 
+    
     def plot_subjects_prediction(self, rootfile=None, flat_map=True):
         """plot predicted subjects"""
         import matplotlib.pyplot as plt
@@ -283,73 +287,47 @@ class Evaluator:
                 ax.set_title(titles[i], loc='left', fontsize=20)  
             fig.savefig(filename, bbox_inches='tight')
             plt.close("all")
-
-    def divide_subjects(self, subject_ids, n_controls=5):
-        """divide subject_ids into patients and controls
-        if only trained on patients, controls are added.
-        If self.mode is test, controls from test set (defined by dataset csv file) are added.
-        If self.mode is train/val, the first/last n_controls are added.
+    
+    def save_prediction(self, subject, prediction, dataset_str="prediction", dtype=None):
         """
-        if self.experiment.data_parameters["group"] == "patient":
-            # get n_control ids (not in subject_ids, because training was only on patients)
-            # get all valid control ids (with correct features etc)
-            data_parameters_copy = self.experiment.data_parameters.copy()
-            data_parameters_copy["group"] = "control"
-            control_ids = self.experiment.cohort.get_subject_ids(
-                **data_parameters_copy, verbose=False
-            )
-            # shuffle control ids
-            np.random.seed(5)
-            np.random.shuffle(control_ids)
-            # filter controls by self.mode (make sure when mode is test, only test controls are used)
-            if self.mode == "test":
-                (
-                    _,
-                    _,
-                    dataset_test_ids,
-                ) = self.experiment.cohort.read_subject_ids_from_dataset()
-                control_ids = np.array(control_ids)[
-                    np.in1d(control_ids, dataset_test_ids)
-                ]
-                # select n_controls
-                control_ids = control_ids[:n_controls]
-            elif self.mode in ("train", "val"):
-                (
-                    _,
-                    dataset_trainval_ids,
-                    _,
-                ) = self.experiment.cohort.read_subject_ids_from_dataset()
-                control_ids = np.array(control_ids)[
-                    np.in1d(control_ids, dataset_trainval_ids)
-                ]
-                # select n_controls (first n if mode is train, last n if mode is val)
-                if len(control_ids) < n_controls * 2:
-                    n_controls_train = len(control_ids) // 2
-                    n_controls_val = len(control_ids) - n_controls_train
-                else:
-                    n_controls_train = n_controls_val = n_controls
-                if self.mode == "train":
-                    control_ids = control_ids[:n_controls_train]
-                else:  # mode is val
-                    control_ids = control_ids[-n_controls_val:]
-                control_ids = list(control_ids)
-            if len(control_ids) < n_controls:
-                self.log.warning(
-                    "only {} controls available for mode {} (requested {})".format(
-                        len(control_ids), self.mode, n_controls
-                    )
-                )
-            patient_ids = subject_ids
-        else:
-            patient_ids = []
-            control_ids = []
-            for subj_id in subject_ids:
-                if MeldSubject(subj_id, self.experiment.cohort).is_patient:
-                    patient_ids.append(subj_id)
-                else:
-                    control_ids.append(subj_id)
-        return patient_ids, control_ids
+        saves prediction to {experiment_path}/results/predictions_{experiment_name}.hdf5.
+        the hdf5 has the structure (subject_id/hemisphere/prediction).
+        and contains predictions for all vertices inside the cortex mask
+        dataset_str: name of the dataset to save prediction. If is 'prediction', also saves threshold
+        dtype: dtype of the dataset. If none, use dtype of prediction.
+        suffix: suffix for the filename for the prediction: "predictions_<self.experiment.name><suffix>.hdf5" is used
+        """
+        # make sure that give prediction has expected length
+        nvert_hemi = len(self.experiment.cohort.cortex_label)
+        assert len(prediction) == nvert_hemi * 2
+        # get dtype
+        if dtype is None:
+            dtype = prediction.dtype
 
+        filename = os.path.join(self.save_dir, "results", f"predictions.hdf5")
+        if not os.path.isfile(filename):
+            mode = "a"
+        else:
+            mode = "r+"
+        done = False
+        while not done:
+            try:
+                with h5py.File(filename, mode=mode) as f:
+                    self.log.info(f"saving {dataset_str} for {subject}")
+                    for i, hemi in enumerate(["lh", "rh"]):
+                        shape = tuple([nvert_hemi] + list(prediction.shape[1:]))
+                        # create dataset
+                        dset = f.require_dataset(f"{subject}/{hemi}/{dataset_str}", shape=shape, dtype=dtype)
+                        # save prediction in dataset
+                        dset[:] = prediction[i * nvert_hemi : (i + 1) * nvert_hemi]
+                        # if dataset_str == "prediction":
+                            # save threshold as attribute in dataset
+                            # dset.attrs["threshold"] = self.threshold
+                    done = True
+            except OSError:
+                done = False
+
+    
 
 def save_json(json_filename, json_results):
     """
