@@ -1,3 +1,4 @@
+from itertools import combinations_with_replacement
 import logging
 import os
 import torch
@@ -30,8 +31,9 @@ class Evaluator:
         mode="test",
         checkpoint_path=None,
         make_images=False,
+        dataset=None,
+        cohort=None,
         subject_ids=None,
-
         save_dir=None,
     ):
 
@@ -46,7 +48,6 @@ class Evaluator:
         ), "mode needs to be either test or val or train or inference"
         self.mode = mode
         self.make_images = make_images
-        self.subject_ids = subject_ids
 
         self.data_dictionary = None
 
@@ -64,19 +65,18 @@ class Evaluator:
         else:
             self.save_dir = save_dir
         
-        # TODO : Update subjects_ids list
-        # get subject_ids
-        train_ids, val_ids, test_ids = self.experiment.get_train_val_test_ids()
-        if mode == "train":
-            subject_ids = train_ids
-        elif mode == "val":
-            subject_ids = val_ids
-        elif mode == "test":
-            subject_ids = test_ids
-        self.patient_ids, self.control_ids = self.divide_subjects(
-            subject_ids, n_controls=5
-        )
-        self.combined_ids = list(self.patient_ids) + list(self.control_ids)
+
+        # update dataset, cohort and subjects if provided
+        if dataset != None: 
+            self.dataset = dataset
+        if cohort != None:
+            self.cohort = cohort
+        else:
+            self.cohort = self.experiment.cohort
+        if subject_ids != None:
+            self.subject_ids = subject_ids
+        else:
+            self.subject_ids = self.cohort.get_subject_ids()
 
         # if checkpoint load model
         if checkpoint_path:
@@ -103,22 +103,17 @@ class Evaluator:
 
     def load_predict_data(
         self,
-        subject_ids=None,
     ):
         """ """
-        if subject_ids == None:
-            subject_ids = self.combined_ids
         self.log.info("loading data and predicting model")
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         # load dataset
-        cohort = MeldCohort(
-            hdf5_file_root=self.experiment.data_parameters["hdf5_file_root"]
-        )
-        dataset = GraphDataset(subject_ids, cohort, self.experiment.data_parameters)
+        if self.dataset==None:
+            dataset = GraphDataset(self.subject_ids, self.cohort, self.experiment.data_parameters)
         # predict on data
         #TODO: enable batch_size > 1
         data_loader = torch_geometric.loader.DataLoader(
-            dataset,
+            self.dataset,
             shuffle=False,
             batch_size=1,
         )
@@ -130,8 +125,8 @@ class Evaluator:
             data = data.to(device)
             estimates = self.experiment.model(data.x)
             labels = data.y.squeeze()
-            prediction = torch.argmax(estimates[0], axis=1)
-            prediction_array.append(prediction.numpy())
+            prediction = torch.exp(estimates[0])[:,1]
+            prediction_array.append(prediction.detach().numpy())
             labels_array.append(labels.numpy())
             features_array.append(data.x.numpy())
 
@@ -139,31 +134,31 @@ class Evaluator:
         labels_array = np.array(labels_array)
         features_array = np.array(features_array)
 
-        # concatenate left and right predictions and labels
+        # concatenate left and right predictions and labelsBe
         if self.experiment.data_parameters["combine_hemis"] is None:
             prediction_array = (
-                prediction_array[:, cohort.cortex_mask]
+                prediction_array[:, self.cohort.cortex_mask]
                 .flatten()
-                .reshape((len(subject_ids), cohort.cortex_mask.sum() * 2))
+                .reshape((len(self.subject_ids), self.cohort.cortex_mask.sum() * 2))
             )
             labels_array = (
-                labels_array[:, cohort.cortex_mask]
+                labels_array[:, self.cohort.cortex_mask]
                 .flatten()
-                .reshape((len(subject_ids), cohort.cortex_mask.sum() * 2))
+                .reshape((len(self.subject_ids), self.cohort.cortex_mask.sum() * 2))
             )
             features_array = (
-                features_array[:, cohort.cortex_mask, :]
+                features_array[:, self.cohort.cortex_mask, :]
                 .flatten()
                 .reshape(
                     (
-                        len(subject_ids),
-                        cohort.cortex_mask.sum() * 2,
+                        len(self.subject_ids),
+                        self.cohort.cortex_mask.sum() * 2,
                         features_array.shape[2],
                     )
                 )
             )
 
-        for i, subj_id in enumerate(subject_ids):
+        for i, subj_id in enumerate(self.subject_ids):
             self.data_dictionary[subj_id] = {
                 "input_labels": labels_array[i],
                 "result": prediction_array[i],
@@ -202,7 +197,7 @@ class Evaluator:
         #     border_detected = 0
             patient_dice_vars = {"TP": 0, "FP": 0, "FN": 0, "TN": 0}
             if group == 1:
-                mask = prediction.astype(bool)
+                mask = prediction>0.5
                 label = labels.astype(bool)
                 patient_dice_vars["TP"] += np.sum(mask * label)
                 patient_dice_vars["FP"] += np.sum(mask * ~label)
@@ -285,9 +280,7 @@ class Evaluator:
                 im = create_surface_plots(coords,faces,overlay,flat_map=True)
                 ax.imshow(im)
                 ax.axis('off')
-                ax.set_title(titles[i], loc='left', fontsize=20)
-            fig.savefig(filename)
-    
+                ax.set_title(titles[i], loc='left', fontsize=20)  
             fig.savefig(filename, bbox_inches='tight')
             plt.close("all")
 
