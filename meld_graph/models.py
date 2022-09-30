@@ -65,7 +65,7 @@ class MoNet(nn.Module):
         # set up conv layers + final fcl
         conv_layers = []
         for in_size, out_size in zip(layer_sizes[:-1], layer_sizes[1:]):
-            print('conv', in_size, out_size)
+            #print('conv', in_size, out_size)
             if self.conv_type == 'GMMConv':
                 edges = self.icospheres.get_edges(level=7)
                 edge_vectors = self.icospheres.get_edge_vectors(level=7)
@@ -164,10 +164,10 @@ class MoNetUnet(nn.Module):
         self.n_vertices = len(self.icospheres.icospheres[level]['coords'])
         for i in range(num_blocks):
             block = []
-            print('encoder block', i, 'at level', level)
+            #print('encoder block', i, 'at level', level)
             for j,out_size in enumerate(layer_sizes[i]):
                 # create conv layers
-                print('conv', in_size, out_size)
+                #print('conv', in_size, out_size)
                 if self.conv_type == 'GMMConv':
                     edges = self.icospheres.get_edges(level=level)
                     edge_vectors = self.icospheres.get_edge_vectors(level=level)
@@ -182,12 +182,12 @@ class MoNetUnet(nn.Module):
                     raise NotImplementedError()
                 block.append(cl)
                 in_size = out_size
-            print('skip features for block', i, out_size)
+            #print('skip features for block', i, out_size)
             num_features_on_skip.append(out_size)
             encoder_conv_layers.append(nn.ModuleList(block))
             # only pool if not in last block
             if i < num_blocks-1:
-                print('pool for block', i)
+                #print('pool for block', i)
                 level -= 1
                 neigh_indices = self.icospheres.get_neighbours(level=level)
                 pool_layers.append(HexPool(neigh_indices=neigh_indices))
@@ -204,8 +204,8 @@ class MoNetUnet(nn.Module):
             if level in deep_supervision:
                 deep_supervision_fcs[str(level)] = nn.Linear(in_size, 2)
             level += 1
-            print('decoder block', i, 'at level', level)
-            print('adding unpool to level', level)
+            #print('decoder block', i, 'at level', level)
+            #print('adding unpool to level', level)
             num = len(self.icospheres.get_neighbours(level=level))
             upsample = self.icospheres.get_upsample(target_level=level)
             unpool_layers.append(HexUnpool(upsample_indices=upsample, target_size=num))
@@ -213,9 +213,9 @@ class MoNetUnet(nn.Module):
             for j,out_size in enumerate(layer_sizes[i][::-1]):
                 if j == 0:
                     in_size = in_size+num_features_on_skip[i]
-                    print('skip features', num_features_on_skip[i])
+                    #print('skip features', num_features_on_skip[i])
                 
-                print('adding conv ', in_size, out_size)
+                #print('adding conv ', in_size, out_size)
                 if self.conv_type == 'GMMConv':
                     edges = self.icospheres.get_edges(level=level)
                     edge_vectors = self.icospheres.get_edge_vectors(level=level)

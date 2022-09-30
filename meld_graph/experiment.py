@@ -96,6 +96,7 @@ class Experiment:
         logging.basicConfig(
             level=logging.INFO,
             format="%(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
             handlers=handlers
         )
         # (mostly) silence tf logging
@@ -110,7 +111,7 @@ class Experiment:
         Save dictionaries to experiment_path using json
         """
         if self.experiment_path is not None:
-            self.log.info(f"saving parameter files to {self.experiment_path}")
+            self.log.info(f"Saving parameter files to {self.experiment_path}")
             # data_parameters
             fname = os.path.join(self.experiment_path, "data_parameters.json")
             json.dump(self.data_parameters, open(fname, "w"), indent=4)
@@ -118,7 +119,7 @@ class Experiment:
             fname = os.path.join(self.experiment_path, "network_parameters.json")
             json.dump(self.network_parameters, open(fname, "w"), indent=4)
         else:
-            self.log.info("experiment_path is None, could not save parameters")
+            self.log.info("Experiment_path is None, could not save parameters")
 
     def get_features(self):
         """
@@ -154,8 +155,8 @@ class Experiment:
         checkpoint_path: absolute path to checkpoint
         """
         if self.model is not None and not force:
-            self.log.info("model already exists. Specify force=True to force reloading and initialisation")
-
+            self.log.info("Model already exists. Specify force=True to force reloading and initialisation")
+        self.log.info("Creating model")
         # get number of features - depends on how hemis are combined
         if self.data_parameters['combine_hemis'] is None:
             num_features = len(self.get_features()[0])
@@ -200,7 +201,7 @@ class Experiment:
         returns train_ids, val_ids, test_ids
         """
         if "train_ids" not in self.data_parameters:
-            self.log.info("getting train val test split")
+            self.log.info("Getting train val test split")
             # get subject ids restricted to desired subjects
             subject_ids = self.cohort.get_subject_ids(**self.data_parameters)
             # get train val test split

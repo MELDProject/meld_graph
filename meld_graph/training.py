@@ -327,13 +327,14 @@ class Trainer:
                     if self.experiment.experiment_path is not None:
                         fname = os.path.join(self.experiment.experiment_path, 'best_model.pt')
                         torch.save(self.experiment.model.state_dict(), fname)
-                        self.log.info('saved_new_best')
+                        self.log.info(f'Saved new best model to {fname}')
                     patience = 0
                 else:
                     patience+=1
                 if patience >= self.params['max_patience']:
-                    self.log.info(f'stopping early at epoch {epoch}, with patience {patience}')
+                    self.log.info(f'Stopping early at epoch {epoch}, with patience {patience}')
                     break
+        self.log.info(f'Finished training')
         # save train/val scores
         if self.experiment.experiment_path is not None:
             pd.DataFrame(scores['train']).to_csv(os.path.join(self.experiment.experiment_path, 'train_scores.csv'))

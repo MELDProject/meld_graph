@@ -110,10 +110,12 @@ class Preprocess:
         vals_array_rh, lesion_rh = subj.load_feature_lesion_data(features, hemi='rh')
         # z-score data
         if self.params['zscore']:
+            self.log.info("Z-scoring data")
             vals_array_lh = self.zscore_data(vals_array_lh.T,features).T
             vals_array_rh = self.zscore_data(vals_array_rh.T,features).T
             
         if self.params['scaling'] is not None:
+            self.log.info("Scaling data")
             # all values excluding medial wall
             vals_array = np.array(np.hstack([vals_array_lh[self.cohort.cortex_mask].T, vals_array_rh[self.cohort.cortex_mask].T]))
         
@@ -142,7 +144,7 @@ class Preprocess:
             lesion_rh = self.lobes
         # add lesion bias
         if lesion_bias:
-           
+            self.log.info(f"WARNING: adding lesion bias of {lesion_bias}")
             vals_array_lh[lesion_lh==1] += lesion_bias
             vals_array_rh[lesion_rh==1] += lesion_bias
 

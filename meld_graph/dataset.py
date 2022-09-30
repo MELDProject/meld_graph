@@ -96,20 +96,23 @@ class GraphDataset(torch_geometric.data.Dataset):
         self.prep = Preprocess(
             cohort=self.cohort, params=self.params["preprocessing_parameters"]
         )
-        self.log.info("Loading and preprocessing data")
-        self.log.info(f"Combine hemis {self.params['combine_hemis']}")
+        self.log.info(f"Loading and preprocessing {mode} data")
+        self.log.debug(f"Combine hemis {self.params['combine_hemis']}")
 
         # switch for synthetic task here
         if self.params["synthetic_data"]["run_synthetic"]:
-            self.icospheres = IcoSpheres()
-            #undersample subject ids to get controlled number
+            self.icospheres = IcoSpheres() # TODO why instanciate again?
+            # if not using controls, generate data and return
             if not self.params['synthetic_data']['use_controls']:
                 self.subject_ids = np.arange(self.params['synthetic_data']['n_subs'])
+                self.log.info(f"WARNING: Simulating {len(self.subject_ids)} subjects")
                 for s in np.arange(self.params['synthetic_data']['n_subs']):
                     sfl, sfr, sll, slr = self.synthetic_lesion()
                     self.data_list.append((sfl.T, sll))
                     self.data_list.append((sfr.T, slr))
                 return
+            #undersample subject ids to get controlled number
+            n_subs_before = len(self.subject_ids)
             if self.params['synthetic_data']['n_subs']<len(self.subject_ids):
                 self.subject_ids = np.random.choice(self.subject_ids,self.params['synthetic_data']['n_subs'])
                 self.subject_samples = np.arange(len(self.subject_ids))
@@ -117,9 +120,7 @@ class GraphDataset(torch_geometric.data.Dataset):
                 #if wanting multiple samples of same subjects
                 self.subject_samples = np.sort(np.random.choice(np.arange(len(self.subject_ids)),
                                                         self.params['synthetic_data']['n_subs']))
-                
-            
-                                                               
+            self.log.info(f"WARNING: Simulating {len(self.subject_samples)} subjects using {n_subs_before} controls")                                       
                 
         for s_i,subj_id in enumerate(self.subject_ids):
             #load in control data

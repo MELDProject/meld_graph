@@ -34,7 +34,7 @@ class IcoSpheres():
         self.icospheres={}
         self.conv_type = conv_type
         self.distance_type = distance_type
-        self.log.info(f'Using coord type {self.distance_type}')
+        self.log.debug(f'Using coord type {self.distance_type}')
         self.load_all_levels()
         
     def load_all_levels(self):
