@@ -3,32 +3,12 @@ import os, datetime
 # model and training parameters, passed to model and Trainer, respectively
 network_parameters = {
     # MONETUNET
-    ## network_type: model class, one of: MoNet, MoNetUnet (see models.py)
-    #'network_type': 'MoNetUnet',
-    ### model_parameters: passed to model class initialiser
-    #'model_parameters': {
-    #    # model architecture: list of lists for Unet, and list for MoNet (simple convs)
-    #    'layer_sizes': [[32,32,32],[32,32,32],[64,64,64],[64,64,64],[128,128,128],[128,128,128],[256,256,256]],
-    #    # activation_fn: activation function, one of: relu, leaky_relu
-    #    'activation_fn': 'leaky_relu',
-    #    # conv_type: convolution to use, one of: SpiralConv, GMMConv.
-    #    'conv_type': 'SpiralConv',
-    #    # dim: coord dim for GMMConv
-    #    'dim': 2,
-    #    # kernel_size: number of gaussian kernels for GMMConv
-    #    'kernel_size': 3, # number of gaussian kernels
-    #    # spiral_len: size of the spiral for SpiralConv.
-    #    # TODO implement dilation / different spiral len per unet block
-    #    'spiral_len': 7, 
-    #},
-
-    # MONET
     # network_type: model class, one of: MoNet, MoNetUnet (see models.py)
-    'network_type': 'MoNet',
+    'network_type': 'MoNetUnet',
     # model_parameters: passed to model class initialiser
     'model_parameters': {
         # model architecture: list of lists for Unet, and list for MoNet (simple convs)
-        'layer_sizes': [40,10,10],
+        'layer_sizes': [[32,32,32],[32,32,32],[64,64,64],[64,64,64],[128,128,128],[128,128,128],[256,256,256]],
         # activation_fn: activation function, one of: relu, leaky_relu
         'activation_fn': 'leaky_relu',
         # conv_type: convolution to use, one of: SpiralConv, GMMConv.
@@ -41,6 +21,26 @@ network_parameters = {
         # TODO implement dilation / different spiral len per unet block
         'spiral_len': 7, 
     },
+
+    ## MONET
+    ## network_type: model class, one of: MoNet, MoNetUnet (see models.py)
+    #'network_type': 'MoNet',
+    ## model_parameters: passed to model class initialiser
+    #'model_parameters': {
+    #    # model architecture: list of lists for Unet, and list for MoNet (simple convs)
+    #    'layer_sizes': [16,16,16],
+    #    # activation_fn: activation function, one of: relu, leaky_relu
+    #    'activation_fn': 'leaky_relu',
+    #    # conv_type: convolution to use, one of: SpiralConv, GMMConv.
+    #    'conv_type': 'SpiralConv',
+    #    # dim: coord dim for GMMConv
+    #    'dim': 2,
+    #    # kernel_size: number of gaussian kernels for GMMConv
+    #    'kernel_size': 3, # number of gaussian kernels
+    #    # spiral_len: size of the spiral for SpiralConv.
+    #    # TODO implement dilation / different spiral len per unet block
+    #    'spiral_len': 7, 
+    #},
 
     # training_parameters: used by Trainer to set up model training
     'training_parameters': {
@@ -81,12 +81,9 @@ network_parameters = {
         # ovesampling: oversample lesional vertices to 33% lesional and 66% random.
         # size of epoch will be num_lesional_examples * 3
         'oversampling':True,
-        # init_weights: path to checkpoint file to init weights from. Relative to EXPERIMENT_PATH
-        'init_weights': None, #'22-08-22' + '_synth_3layer/baselineFTprop_features0.2FTradius0.5/fold_00/best_model.pt',
     },
     # name: experiment name. If none, experiment is not saved
-    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_synth/conv-40-10-10/baseline-prop_features0.2/nsub1000',
-    #'name': '22-09-30_synth_3layer_large_200/baseline-prop_features0.2/nsub1000',
+    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_synth/unet/baseline-prop_features0.2/nsub1000',
 }
 
 # data parameters, passed to GraphDataset and Preprocess
@@ -208,7 +205,7 @@ data_parameters = {
         'use_controls': True,
         # radius: mean radii of lesions, in units of XX. 
         # For each lesion, actual radius is sampled from N(radius,radius/2)
-        'radius': 2, #0.5,
+        'radius': 2,
         # n_subtypes: number of lesion "fingerprints" generated (number of histological subtypes)
         # A fingerprint determines which features (using proportion_features_abnormal) change, 
         # in which direction they change, and by how much (sampled from U(0,1)*bias).
@@ -225,8 +222,7 @@ data_parameters = {
         # proportion_hemispheres_lesional: proportion subjects lesional
         # controls a random variable that determines whether a lesion is added to the control data
         # In the training this could mean two hemispheres from the same subject both have lesions.
-        'proportion_hemispheres_lesional': 0.9, #0.3,
-        'smooth_lesion': True,
+        'proportion_hemispheres_lesional': 0.9,
     }
 }
 
