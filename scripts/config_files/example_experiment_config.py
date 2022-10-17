@@ -197,7 +197,7 @@ data_parameters = {
         'use_controls':False,
         # radius: mean radii of lesions, in units of XX. 
         # For each lesion, actual radius is sampled from N(radius,radius/2)
-        'radius': 0.5,
+        'radius': 0.5,  # realisic: 0.5
         # n_subtypes: number of lesion "fingerprints" generated (number of histological subtypes)
         # A fingerprint determines which features (using proportion_features_abnormal) change, 
         # in which direction they change, and by how much (sampled from U(0,1)*bias).
@@ -210,11 +210,14 @@ data_parameters = {
         'bias': 1,
         # proportion_features_abnormal: proportion of the features that are abnormal. 
         # 0.2 means only 20% of features, all others remain unchanged.
-        'proportion_features_abnormal': 0.9,
+        'proportion_features_abnormal': 0.9,  # realistic 0.2
         # proportion_hemispheres_lesional: proportion subjects lesional
         # controls a random variable that determines whether a lesion is added to the control data
         # In the training this could mean two hemispheres from the same subject both have lesions.
-        'proportion_hemispheres_lesional': 0.9,
+        'proportion_hemispheres_lesional': 0.9,  # realistic 0.3
+        # smooth_lesion: True / False, if True, returns smoothed lesion features 
+        # for better transitions between non-lesion and lesional data
+        'smooth_lesion': False,
     }
 }
 

@@ -334,6 +334,12 @@ class Trainer:
                 if patience >= self.params['max_patience']:
                     self.log.info(f'Stopping early at epoch {epoch}, with patience {patience}')
                     break
+            if epoch%5==0:
+                # save train/val scores
+                if self.experiment.experiment_path is not None:
+                    pd.DataFrame(scores['train']).to_csv(os.path.join(self.experiment.experiment_path, 'train_scores.csv'))
+                    pd.DataFrame(scores['val']).to_csv(os.path.join(self.experiment.experiment_path, 'val_scores.csv'))
+                    
         self.log.info(f'Finished training')
         # save train/val scores
         if self.experiment.experiment_path is not None:
