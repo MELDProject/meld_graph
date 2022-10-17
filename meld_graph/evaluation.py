@@ -65,6 +65,8 @@ class Evaluator:
             self.save_dir = self.experiment.path
         else:
             self.save_dir = save_dir
+        if not os.path.isdir(os.path.join(save_dir,'results')):
+            os.makedirs(os.path.join(save_dir,'results'),exist_ok = True)
         
 
         # update dataset, cohort and subjects if provided
@@ -177,14 +179,14 @@ class Evaluator:
         #TODO: need to add boundaries and clusters
         # boundary_label = MeldSubject(subject, self.experiment.cohort).load_boundary_zone(max_distance=20)
         
-        # columns: ID, group, detected,  number extra-lesional clusters,border detected
         # calculate stats first
+        threshold=0.5
         for subject in self.data_dictionary.keys():
             prediction = self.data_dictionary[subject]["result"]
             labels = self.data_dictionary[subject]["input_labels"]
             group = labels.sum()!= 0
             
-            detected = np.logical_and(prediction, labels).any()
+            detected = np.logical_and(prediction>threshold, labels).any()
             difference = np.setdiff1d(np.unique(prediction), np.unique(prediction[labels]))
             difference = difference[difference > 0]
             n_clusters = len(difference)
@@ -200,7 +202,7 @@ class Evaluator:
         #     border_detected = 0
             patient_dice_vars = {"TP": 0, "FP": 0, "FN": 0, "TN": 0}
             if group == 1:
-                mask = prediction>0.5
+                mask = prediction>threshold
                 label = labels.astype(bool)
                 patient_dice_vars["TP"] += np.sum(mask * label)
                 patient_dice_vars["FP"] += np.sum(mask * ~label)
@@ -211,6 +213,7 @@ class Evaluator:
                 np.array([subject, group, detected, patient_dice_vars["TP"], patient_dice_vars["FP"], patient_dice_vars["FN"], patient_dice_vars["TN"]]).reshape(-1, 1).T,
                 columns=["ID", "group", "detected", 'dice_tp', 'dice_fp', 'dice_fn', 'dice_tn' ],
             )
+            #save results
             filename = os.path.join(self.save_dir, "results", f"test_results{suffix}.csv")
             if fold is not None:
                 filename = os.path.join(self.save_dir, "results", f"test_results_{fold}{suffix}.csv")
@@ -236,6 +239,11 @@ class Evaluator:
         from matplotlib.gridspec import GridSpec
 
         plt.close("all")
+
+        #create directory to save images
+        #save prediction
+        if not os.path.isdir(os.path.join(self.save_dir,'results','images')):
+            os.makedirs(os.path.join(self.save_dir,'results','images'),exist_ok = True)
 
         for subject in self.data_dictionary.keys():
             if rootfile is not None:
