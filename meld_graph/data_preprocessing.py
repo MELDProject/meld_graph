@@ -331,8 +331,6 @@ class Preprocess:
 
         #select a radius
         f_radius = np.clip(np.random.normal(radius,radius/2),0.05,2)
-        
-        
         n_points = np.random.choice(6)+4
         subset = self.grid_coords[self.distances<f_radius]
         #establish mask and mask coordinates
@@ -356,7 +354,7 @@ class Preprocess:
         #interpolate to coordinates
         
         full_lesion = np.zeros(self.gridshape,dtype=float)
-        full_lesion[grid_mask.T] = arr_lesion.ravel()
+        full_lesion[grid_mask.T] = arr_lesion.T.ravel()
         f_near=interpolate.RegularGridInterpolator((self.xnew,self.ynew),
                                                    full_lesion.T,
                                                   method='nearest')
@@ -364,7 +362,8 @@ class Preprocess:
         #smoothed mask
         if return_smoothed:
             smoothed = ndimage.gaussian_filter(arr_lesion,10)
-            full_lesion[grid_mask.T] = smoothed.ravel()
+            full_lesion[grid_mask.T] = smoothed.T.ravel()
+
             f_lin=interpolate.RegularGridInterpolator((self.xnew,self.ynew),
                                                    full_lesion.T,
                                                   method='linear')

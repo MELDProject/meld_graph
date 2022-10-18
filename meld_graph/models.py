@@ -5,22 +5,33 @@ from copy import deepcopy
 from meld_graph.icospheres import IcoSpheres
 import torch
 from meld_graph.spiralconv import SpiralConv
+from torch_geometric.nn import InstanceNorm
 
 class GMMConv(nn.Module):
-    def __init__(self, in_channels, out_channels, dim, kernel_size, edges, edge_vectors):
+    def __init__(self, in_channels, out_channels, dim, kernel_size, edges, edge_vectors, norm=None):
         super(GMMConv, self).__init__()
         self.layer = torch_geometric.nn.GMMConv(in_channels, out_channels, dim=dim, kernel_size=kernel_size)
         self.edges = edges
         self.edge_vectors = edge_vectors
+        if norm is not None:
+            if norm == 'instance':
+                self.norm = InstanceNorm(in_channels=out_channels, eps = 1e-05, momentum = 0.1, affine = False, track_running_stats = False)
+            else:
+                raise NotImplementedError(norm)
+        else:
+            self.norm = None
 
     def forward(self, x, device):
-        return self.layer(x, self.edges, self.edge_vectors)
+        x = self.layer(x, self.edges, self.edge_vectors)
+        if self.norm is not None:
+            x = self.norm(x)
+        return x
         
 # define model
 class MoNet(nn.Module):
     def __init__(self, num_features, layer_sizes = [], dim=2, kernel_size=3, icosphere_params={}, 
                 conv_type='GMMConv', spiral_len=10,
-                activation_fn='relu', **kwargs):
+                activation_fn='relu', norm=None, **kwargs):
         """
         Model with only conv layers.
 
@@ -31,7 +42,7 @@ class MoNet(nn.Module):
         icosphere_params: params passes to IcoShperes for edges, coords, and neighbours
         conv_type: "GMMConv" or "SpiralConv"
         spiral_len: number of neighbors included in each convolution (for SpiralConv) TODO implement dilation as well
-       
+        norm: "instance" or None
 
         Model outputs log softmax scores. Need to call torch.exp to get probabilities
         """
@@ -69,13 +80,13 @@ class MoNet(nn.Module):
             if self.conv_type == 'GMMConv':
                 edges = self.icospheres.get_edges(level=7)
                 edge_vectors = self.icospheres.get_edge_vectors(level=7)
-                cl = GMMConv(in_size, out_size, dim=dim, kernel_size=kernel_size, edges=edges, edge_vectors=edge_vectors)
+                cl = GMMConv(in_size, out_size, dim=dim, kernel_size=kernel_size, edges=edges, edge_vectors=edge_vectors, norm=norm)
             elif self.conv_type == 'SpiralConv':
                 indices = self.icospheres.get_spirals(level=7)
                 # TODO several spiral_len? one per block? 
                 # TODO implement dilations
                 indices = indices[:,:spiral_len]
-                cl = SpiralConv(in_size, out_size, indices=indices)
+                cl = SpiralConv(in_size, out_size, indices=indices, norm=norm)
             else:
                 raise NotImplementedError()
 
@@ -119,7 +130,7 @@ class MoNetUnet(nn.Module):
                  
                  icosphere_params={}, conv_type='GMMConv', spiral_len=10,
                  deep_supervision=[],
-                 activation_fn='relu'):
+                 activation_fn='relu', norm=None):
         """
         Unet model
         dim: dim for GMMConv, dimension of coord representation - 2 or 3 (for GMMConv)
@@ -130,6 +141,8 @@ class MoNetUnet(nn.Module):
         conv_type: "GMMConv" or "SpiralConv"
         spiral_len: number of neighbors included in each convolution (for SpiralConv) TODO implement dilation as well
         deep_supervision: list of levels at which deep supervision should be added, adds linear "squeeze" layer to the end of the block, and outputs these levels.
+        norm: "instance" or None
+
         Model outputs log softmax scores. Need to call torch.exp to get probabilities
         """
         super(MoNetUnet, self).__init__()
@@ -171,13 +184,13 @@ class MoNetUnet(nn.Module):
                 if self.conv_type == 'GMMConv':
                     edges = self.icospheres.get_edges(level=level)
                     edge_vectors = self.icospheres.get_edge_vectors(level=level)
-                    cl = GMMConv(in_size, out_size, dim=dim, kernel_size=kernel_size, edges=edges, edge_vectors=edge_vectors)
+                    cl = GMMConv(in_size, out_size, dim=dim, kernel_size=kernel_size, edges=edges, edge_vectors=edge_vectors, norm=norm)
                 elif self.conv_type == 'SpiralConv':
                     indices = self.icospheres.get_spirals(level=level)
                     # TODO several spiral_len? one per block? 
                     # TODO implement dilations
                     indices = indices[:,:spiral_len]
-                    cl = SpiralConv(in_size, out_size, indices=indices)
+                    cl = SpiralConv(in_size, out_size, indices=indices, norm=norm)
                 else:
                     raise NotImplementedError()
                 block.append(cl)

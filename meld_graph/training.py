@@ -189,7 +189,7 @@ class Trainer:
         self.log = logging.getLogger(__name__)
         self.experiment = experiment
         self.params = self.experiment.network_parameters['training_parameters']
-        self.deep_supervision = self.params.get('deep_supervision', {'levels':[], 'weight': 1})
+        self.deep_supervision = self.params.get('deep_supervision', {'levels':[], 'weight': []})
 
         init_weights = self.params.get('init_weights', None)
         if init_weights is not None:
@@ -214,12 +214,12 @@ class Trainer:
             estimates = model(data.x)
             labels = data.y.squeeze()
             loss = calculate_loss(self.params['loss_dictionary'],estimates[0], labels, device=device)
-            # add deep supervision outputs # TODO add loss weight param for deep supervision?
+            # add deep supervision outputs
             for i,level in enumerate(sorted(self.deep_supervision['levels'])):
                 cur_estimates = estimates[i+1]
                 cur_labels = getattr(data, f"output_level{level}")
                 #print(cur_estimates.shape, cur_labels.shape)
-                loss += self.deep_supervision['weight'] * calculate_loss(self.params['loss_dictionary'], cur_estimates, cur_labels, device=device)
+                loss += self.deep_supervision['weight'][i] * calculate_loss(self.params['loss_dictionary'], cur_estimates, cur_labels, device=device)
             loss.backward()
             optimiser.step()
             running_loss.append(loss.item())
@@ -250,7 +250,7 @@ class Trainer:
                     cur_estimates = estimates[i+1]
                     cur_labels = getattr(data, f"output_level{level}")
                     #print(cur_estimates.shape, cur_labels.shape)
-                    loss += self.deep_supervision['weight'] * calculate_loss(self.params['loss_dictionary'], cur_estimates, cur_labels, device=device)
+                    loss += self.deep_supervision['weight'][i] * calculate_loss(self.params['loss_dictionary'], cur_estimates, cur_labels, device=device)
                 running_loss.append(loss.item())
                 # metrics
                 pred = torch.argmax(estimates[0], axis=1)

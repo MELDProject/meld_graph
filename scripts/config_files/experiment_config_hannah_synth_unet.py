@@ -20,6 +20,8 @@ network_parameters = {
         # spiral_len: size of the spiral for SpiralConv.
         # TODO implement dilation / different spiral len per unet block
         'spiral_len': 7, 
+        # normalisation: choices: None, "instance"
+        'norm': "instance",
     },
 
     ## MONET
@@ -45,7 +47,7 @@ network_parameters = {
     # training_parameters: used by Trainer to set up model training
     'training_parameters': {
         "max_patience": 200,
-        "num_epochs": 1000,
+        "num_epochs": 1,
         # optimiser: optimiser to use, one of: adam, sgd
         "optimiser": 'sgd',
         # optimiser_parameters: parameters passed to torch optimiser class
@@ -57,7 +59,7 @@ network_parameters = {
         },
         # lr_decay: exponent for exponential learning rate decay: lr*(1-epoch/max_epochs)**lr_decay
         # set to 0 to turn lr decay off
-        'lr_decay': 0,
+        'lr_decay': 0.9,
         # loss_dictionary: losses to be used for model training and parameters for losses
         # possible keys: cross_entropy, focal_loss, dice
         # values: dict with keys: "weight" and loss arguments (alpha/gamma for focal_loss, class_weights for dice)
@@ -75,47 +77,47 @@ network_parameters = {
         # Set to list of levels (eg [6,5,4]), for which to add output layers for additional supervision.
         # 7 is highest level. (standard output).  # TODO add some error checking here, max val should be < 7.
         'deep_supervision': {
-            'levels': [], #[4,5,6], 
-            'weight': 0.5
+            'levels': [6,5,4,3], 
+            'weight': [0.5,0.25,0.125,0.0625],
         },
         # ovesampling: oversample lesional vertices to 33% lesional and 66% random.
         # size of epoch will be num_lesional_examples * 3
         'oversampling':True,
     },
     # name: experiment name. If none, experiment is not saved
-    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_synth/unet/baseline-prop_features0.2/nsub1000',
+    'name': datetime.datetime.now().strftime("%y-%m-%d") + 'test', #'_synth/unet/baseline-prop_features0.2/nsub1000',
 }
 
 # data parameters, passed to GraphDataset and Preprocess
 data_parameters = {
     'hdf5_file_root': "{site_code}_{group}_featurematrix_combat_6.hdf5",
     'site_codes': [
-        "H1",
-        "H2",
-        "H3",
+        #"H1",
+        #"H2",
+        #"H3",
         "H4",
-        "H5",
-        "H6",
-        "H7",
-        "H9",
-        "H10",
-        "H11",
-        "H12",
-        "H14",
-        "H15",
-        "H16",
-        "H17",
-        "H18",
-        "H19",
-        "H21",
-        "H23",
-        "H24",
-        "H26",
-        "H27",
+        #"H5",
+        #"H6",
+        #"H7",
+        #"H9",
+        #"H10",
+        #"H11",
+        #"H12",
+        #"H14",
+        #"H15",
+        #"H16",
+        #"H17",
+        #"H18",
+        #"H19",
+        #"H21",
+        #"H23",
+        #"H24",
+        #"H26",
+        #"H27",
     ],
     'scanners': ['15T','3T'],
     'dataset': 'MELD_dataset_V6.csv',
-    'group': 'control',
+    'group': 'control', #'control',
     "features_to_exclude": [],
     "subject_features_to_exclude": [],
     # features: manually specify features (instead of features_to_exclude)

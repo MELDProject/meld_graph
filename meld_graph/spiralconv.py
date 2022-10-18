@@ -1,13 +1,16 @@
 # From https://github.com/sw-gong/spiralnet_plus/blob/master/conv/spiralconv.py
 import torch
 import torch.nn as nn
+import logging
+from torch_geometric.nn import InstanceNorm
  
 
 # TODO remove dim parameter
 
 class SpiralConv(nn.Module):
-    def __init__(self, in_channels, out_channels, indices, dim=1):
+    def __init__(self, in_channels, out_channels, indices, dim=1, norm=None):
         super(SpiralConv, self).__init__()
+        self.log = logging.getLogger(__name__)
         self.dim = dim
         self.indices = indices
         self.in_channels = in_channels
@@ -15,6 +18,14 @@ class SpiralConv(nn.Module):
         self.seq_length = indices.size(1)
 
         self.layer = nn.Linear(in_channels * self.seq_length, out_channels)
+        if norm is not None:
+            if norm == 'instance':
+                self.log.info('Spiral Conv: Using instance norm')
+                self.norm = InstanceNorm(in_channels=out_channels, eps = 1e-05, momentum = 0.1, affine = False, track_running_stats = False)
+            else:
+                raise NotImplementedError(norm)
+        else:
+            self.norm = None
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -36,6 +47,8 @@ class SpiralConv(nn.Module):
                 'x.dim() is expected to be 2 or 3, but received {}'.format(
                     x.dim()))
         x = self.layer(x)
+        if self.norm is not None:
+            x = self.norm(x)
         return x
 
     def __repr__(self):
