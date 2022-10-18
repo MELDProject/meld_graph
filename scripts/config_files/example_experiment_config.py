@@ -18,7 +18,9 @@ network_parameters = {
         'kernel_size': 3, # number of gaussian kernels
         # spiral_len: size of the spiral for SpiralConv.
         # TODO implement dilation / different spiral len per unet block
-        'spiral_len': 10, 
+        'spiral_len': 10,
+        # normalisation: choices: None, "instance"
+        'norm': "instance"
     },
     # training_parameters: used by Trainer to set up model training
     'training_parameters': {
@@ -54,7 +56,7 @@ network_parameters = {
         # 7 is highest level. (standard output).  # TODO add some error checking here, max val should be < 7.
         'deep_supervision': {
             'levels': [], #[4,5,6], 
-            'weight': 0.5
+            'weight': [],
         },
         # ovesampling: oversample lesional vertices to 33% lesional and 66% random.
         # size of epoch will be num_lesional_examples * 3
