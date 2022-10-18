@@ -97,28 +97,37 @@ class GraphDataset(torch_geometric.data.Dataset):
         )
         self.log.info(f"Loading and preprocessing {mode} data")
         self.log.debug(f"Combine hemis {self.params['combine_hemis']}")
-
+        
         # switch for synthetic task here
         if self.params["synthetic_data"]["run_synthetic"]:
             self.icospheres = IcoSpheres() # TODO why instanciate again?
+            self.n_subs_split_i = self.params['synthetic_data']['n_subs']//self.params['number_of_folds']
+            if mode=='train':
+                self.n_subs_split = self.n_subs_split_i*(self.params['number_of_folds']-1)
+            elif mode=='val':
+                self.n_subs_split = self.n_subs_split_i
+            else:
+                self.n_subs_split = self.params['synthetic_data']['n_subs']
+                
             # if not using controls, generate data and return
             if not self.params['synthetic_data']['use_controls']:
-                self.subject_ids = np.arange(self.params['synthetic_data']['n_subs'])
+                self.subject_ids = np.arange(self.n_subs_split)
                 self.log.info(f"WARNING: Simulating {len(self.subject_ids)} subjects")
-                for s in np.arange(self.params['synthetic_data']['n_subs']):
+                for s in np.arange(self.n_subs_split):
                     sfl, sfr, sll, slr = self.synthetic_lesion()
                     self.data_list.append((sfl.T, sll))
                     self.data_list.append((sfr.T, slr))
                 return
             #undersample subject ids to get controlled number
             n_subs_before = len(self.subject_ids)
-            if self.params['synthetic_data']['n_subs']<len(self.subject_ids):
-                self.subject_ids = np.random.choice(self.subject_ids,self.params['synthetic_data']['n_subs'])
+            if self.n_subs_split<=len(self.subject_ids):
+                self.subject_ids = np.random.choice(self.subject_ids,self.n_subs_split)
                 self.subject_samples = np.arange(len(self.subject_ids))
-            elif self.params['synthetic_data']['n_subs']>len(self.subject_ids):
+            elif self.n_subs_split>len(self.subject_ids):
                 #if wanting multiple samples of same subjects
                 self.subject_samples = np.sort(np.random.choice(np.arange(len(self.subject_ids)),
-                                                        self.params['synthetic_data']['n_subs']))
+                                                        self.n_subs_split))
+        
             self.log.info(f"WARNING: Simulating {len(self.subject_samples)} subjects using {n_subs_before} controls")                                       
     
         for s_i,subj_id in enumerate(self.subject_ids):
@@ -154,7 +163,7 @@ class GraphDataset(torch_geometric.data.Dataset):
                     raise NotImplementedError
         #dataset has weird properties. subject_ids needs to be the right length, matching the data length
         if self.params['synthetic_data']['run_synthetic']:
-            if self.params['synthetic_data']['n_subs']>len(self.subject_ids):
+            if self.n_subs_split>len(self.subject_ids):
                 self.subject_ids = np.array(self.subject_ids)[self.subject_samples]
         return
 
