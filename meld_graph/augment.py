@@ -17,7 +17,7 @@ class Transform():
     """Class transform paramaters"""
     def __init__(self, params_transform):
         self.p = params_transform['p']
-        self.lambdas, self.indices = np.load(os.path.join(SCRIPTS_DIR,params_transform['file']))
+        self.indices = np.load(os.path.join(SCRIPTS_DIR,params_transform['file']))
         self.indices = self.indices.astype('int') 
     
     def apply_transform_old(self, feats, lesions=None):
@@ -38,6 +38,7 @@ class Transform():
     
     #fastest version
     def apply_transform(self, feats, lesions=None):
+        #we don't need to use this, even though it's correct, nearest is much faster.
         # select random transformation parameter
         transf = np.random.randint(0,len(self.lambdas))
         #initiate lambdas and indices to speed up
@@ -63,7 +64,23 @@ class Transform():
         feats_transf_clean=np.clip(feats_transf, np.percentile(feats_transf, 0.01),np.percentile(feats_transf, 99.9)) 
         return feats_transf_clean, lesions_transf
     
-
+    def apply_transform_nearest(self, feats, lesions=None):
+        # select random transformation parameter
+        transf = np.random.randint(0,len(self.indices))
+        #initiate lambdas and indices to speed up
+        indices=copy.deepcopy(self.indices[transf])
+        # spin lesions if exist
+        if lesions.any()!= None:            
+            lesions_transf = lesions[indices] 
+        # spin features
+        feats_transf = feats[indices] 
+        return feats_transf, lesions_transf
+    
+    def get_indices(self):
+        transf = np.random.randint(0,len(self.indices))
+        #initiate lambdas and indices to speed up
+        indices = copy.deepcopy(self.indices[transf])
+        return indices
 
 class Augment():
     """Class to augment data"""
@@ -151,64 +168,73 @@ class Augment():
             feat_tr[:,c] = feat_tr[:,c] / (feat_tr[:,c].std() + 1e-8) * sd
             feat_tr[:,c] = feat_tr[:,c] + mn
         return feat_tr
-                
-        
+    
+    def apply_indices(self,indices, feats, lesions=None):
+        # spin lesions if exist
+        if lesions.any()!= None:            
+            lesions_transf = lesions[indices] 
+        # spin features
+        feats_transf = feats[indices] 
+        return feats_transf, lesions_transf
        
     def apply(self, features, lesions=None):
         feat_tr = features
         lesions_tr = lesions
-        #spinning        
+        #spinning   
+        mesh_transform = False
+        indices = np.arange(feat_tr.shape[0],dtype=int)
+
         if np.random.rand() < self.get_p_param('spinning'):
-  #          self.log.debug('apply spinning')
-            feat_tr, lesions_tr= self.spinning.apply_transform(feat_tr, lesions_tr)
-            
+            mesh_transform = True
+            indices = indices[self.spinning.get_indices()]
+            #feat_tr, lesions_tr= self.spinning.apply_transform(feat_tr, lesions_tr)
         #warping
         if np.random.rand() < self.get_p_param('warping'):
-   #         self.log.debug('apply warping')
-            feat_tr, lesions_tr= self.warping.apply_transform(feat_tr, lesions_tr)
+            mesh_transform = True
+            indices = indices[self.warping.get_indices()]
+            #feat_tr, lesions_tr= self.warping.apply_transform(feat_tr, lesions_tr)
             
+        if np.random.rand() < self.get_p_param('flipping'):
+            mesh_transform = True
+            indices = indices[self.flipping.get_indices()]
+            #feat_tr, lesions_tr= self.flipping.apply_transform(feat_tr, lesions_tr)
+        
+        if mesh_transform:
+            feat_tr, lesions_tr = self.apply_indices(indices,feat_tr,lesions_tr)
+        
+        
         #Gaussian noise
         if np.random.rand() < self.get_p_param('noise'):
-    #        self.log.debug('apply Gaussian noise')
             feat_tr= self.add_gaussian_noise(feat_tr)
             
         #Gaussian blur - not implemented
         if np.random.rand() < self.get_p_param('blur'):
-     #       self.log.debug('apply Gaussian blur')
             feat_tr= self.add_gaussian_blur(feat_tr)
         
         #Brightness scaling
         if np.random.rand() < self.get_p_param('brightness'):
-      #      self.log.debug('apply Brightness scaling')
             feat_tr= self.add_brightness_scaling(feat_tr)
         
         #adjust contrast
         if np.random.rand() < self.get_p_param('contrast'):
-       #     self.log.debug('apply Brightness scaling')
             feat_tr= self.add_brightness_scaling(feat_tr)
             
         #low res - not implemented
         if np.random.rand() < self.get_p_param('low_res'):
-        #    self.log.debug('apply low res')
             feat_tr= self.add_low_res(feat_tr)
             
             
         #gamma intensity
         if np.random.rand() < self.get_p_param('gamma'):
-         #   self.log.debug('apply gamma')
             feat_tr = self.add_gamma_scale(feat_tr)
         
         #inverted gamma intensity
         if np.random.rand() < self.get_p_param('gamma'):
-          #  self.log.debug('apply gamma')
-            #inverted gamma
             feat_tr = - self.add_gamma_scale( -feat_tr)
             
         
         #flipping
-        if np.random.rand() < self.get_p_param('flipping'):
-          #  self.log.debug('apply flipping')
-            feat_tr, lesions_tr= self.flipping.apply_transform(feat_tr, lesions_tr)
+        
                 
             
         return feat_tr, lesions_tr
