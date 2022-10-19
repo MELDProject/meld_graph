@@ -41,8 +41,8 @@ class Preprocess:
         self.log = logging.getLogger(__name__)
         self._lobes = None
         self.initialise_distances()
-        if self.params['zscore']:
-            self.load_z_params()
+        if self.params['zscore'] != False:
+            self.load_z_params(self.params['zscore'])
          
 
     @property
@@ -148,9 +148,9 @@ class Preprocess:
 
         return vals_array_lh.T, vals_array_rh.T, lesion_lh, lesion_rh
     
-    def load_z_params(self):
+    def load_z_params(self, file='../data/feature_means.json'):
         import json
-        with open('../data/feature_means.json', 'r') as fp:
+        with open(file, 'r') as fp:
             self.z_params=json.load( fp)
             
             
