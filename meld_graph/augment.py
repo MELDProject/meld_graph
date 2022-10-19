@@ -62,12 +62,24 @@ class Transform():
         feats_transf_clean=np.zeros(feats_transf.shape)
         feats_transf_clean=np.clip(feats_transf, np.percentile(feats_transf, 0.01),np.percentile(feats_transf, 99.9)) 
         return feats_transf_clean, lesions_transf
+    
+
 
 class Augment():
     """Class to augment data"""
     def __init__(self, params):
         """Augment class
         params - dictionary containing augmentation method, file, and probability of apply transformation (p)
+        following guidance from nnUNET
+        transformations in the following order:
+        Rotation & scaling - p=0.2
+        Gaussian noise - p=0.15, mu=0,std = U(0,0.1)
+        Gaussian blur - p=0.2 if applied, p=0.5 per modality if triggered, width in voxels is U(0.5,1.5)
+        Brightness - *x U(0.7,1.3) p =0.15 to all modalities
+        Contrast - *x U(0.65,1.5) p=0.15, clipped to original range to all modalidies
+        Low resolution - p=0.25, if applied p=0.5 per modality, Down sampled U(1,2) nearest neighbour
+        Gamma augmentation - invert p=0.1, Gamma, non-invert p=0.3
+        Mirroring - flipping p=0.5
         """ 
         self.log = logging.getLogger(__name__)
         self.params=params
@@ -84,31 +96,121 @@ class Augment():
             self.flipping = Transform(self.params['flipping'])
         else:
             self.flipping = None
+            
+    def get_p_param(self, param):
+        """check pvalue, set to zero if not found"""
+        if self.params[param]['p'] ==None:
+            return 0
+        else:
+            return self.params[param]['p']
+    
+    def add_gaussian_noise(self,feat_tr):
+        """ add a gaussian noise"""
+        variance = np.random.uniform(0,0.1)
+        feat_tr = feat_tr + np.random.normal(0.0, variance, size=feat_tr.shape)
+        return feat_tr
+    
+    def add_gaussian_blur(self,feat_tr):
+        """add gaussian blur function"""
+        return feat_tr
+    
+    def add_brightness_scaling(self,feat_tr):
+        """ scale brightness"""
+        for c in range(feat_tr.shape[1]):
+            multiplier = np.random.uniform(0.75, 1.25)
+            feat_tr[:,c] *= multiplier
+        return feat_tr
+    
+    def adjust_contrast(self,feat_tr):
+        """adjust contrast"""
+        for c in range(feat_tr.shape[1]):
+            factor = np.random.uniform(0.65,1.5)
+            mn = feat_tr[:,c].mean()
+            minm = feat_tr[:,c].min()
+            maxm = feat_tr[:,c].max()
+            feat_tr[:,c] = (feat_tr[:,c] - mn) * factor + mn            
+            feat_tr[:,c][feat_tr[:,c] < minm] = minm
+            feat_tr[:,c][feat_tr[:,c] > maxm] = maxm
+        return feat_tr
+    
+    def add_low_res(self,feat_tr):
+        """add low resolution version"""
+        return feat_tr
+    
+    def add_gamma_scale(self,feat_tr):
+        """ add gamma scaling"""
+        epsilon=1e-7
+        for c in range(feat_tr.shape[1]):
+            mn = feat_tr[:,c].mean()
+            sd = feat_tr[:,c].std()
+            gamma = np.random.uniform(0.7, 1.5)
+            minm = feat_tr[:,c].min()
+            rnge = feat_tr[:,c].max() - minm
+            feat_tr[:,c] = np.power(((feat_tr[:,c] - minm) / float(rnge + epsilon)), gamma) * float(rnge + epsilon) + minm
+            feat_tr[:,c] = feat_tr[:,c] - feat_tr[:,c].mean()
+            feat_tr[:,c] = feat_tr[:,c] / (feat_tr[:,c].std() + 1e-8) * sd
+            feat_tr[:,c] = feat_tr[:,c] + mn
+        return feat_tr
+                
+        
        
     def apply(self, features, lesions=None):
         feat_tr = features
         lesions_tr = lesions
-        #spinning
-        if self.spinning != None:
-            random_p = np.random.rand()
-            self.log.debug(f'random probability for spinning : {random_p}')
-            if random_p < self.spinning.p:
-                self.log.debug('apply spinning')
-                feat_tr, lesions_tr= self.spinning.apply_transform(feat_tr, lesions_tr)
-        #flipping
-        if self.flipping != None:
-            random_p = np.random.rand()
-            self.log.debug(f'random probability for flipping : {random_p}')
-            if random_p < self.flipping.p:
-                self.log.debug('apply flipping')
-                feat_tr, lesions_tr= self.flipping.apply_transform(feat_tr, lesions_tr) 
+        #spinning        
+        if np.random.rand() < self.get_p_param('spinning'):
+  #          self.log.debug('apply spinning')
+            feat_tr, lesions_tr= self.spinning.apply_transform(feat_tr, lesions_tr)
+            
         #warping
-        if self.warping != None:
-            random_p = np.random.rand()
-            self.log.debug(f'random probability for warping : {random_p}')
-            if random_p < self.warping.p:
-                self.log.debug('apply warping')
-                feat_tr, lesions_tr= self.warping.apply_transform(feat_tr, lesions_tr)            
+        if np.random.rand() < self.get_p_param('warping'):
+   #         self.log.debug('apply warping')
+            feat_tr, lesions_tr= self.warping.apply_transform(feat_tr, lesions_tr)
+            
+        #Gaussian noise
+        if np.random.rand() < self.get_p_param('noise'):
+    #        self.log.debug('apply Gaussian noise')
+            feat_tr= self.add_gaussian_noise(feat_tr)
+            
+        #Gaussian blur - not implemented
+        if np.random.rand() < self.get_p_param('blur'):
+     #       self.log.debug('apply Gaussian blur')
+            feat_tr= self.add_gaussian_blur(feat_tr)
+        
+        #Brightness scaling
+        if np.random.rand() < self.get_p_param('brightness'):
+      #      self.log.debug('apply Brightness scaling')
+            feat_tr= self.add_brightness_scaling(feat_tr)
+        
+        #adjust contrast
+        if np.random.rand() < self.get_p_param('contrast'):
+       #     self.log.debug('apply Brightness scaling')
+            feat_tr= self.add_brightness_scaling(feat_tr)
+            
+        #low res - not implemented
+        if np.random.rand() < self.get_p_param('low_res'):
+        #    self.log.debug('apply low res')
+            feat_tr= self.add_low_res(feat_tr)
+            
+            
+        #gamma intensity
+        if np.random.rand() < self.get_p_param('gamma'):
+         #   self.log.debug('apply gamma')
+            feat_tr = self.add_gamma_scale(feat_tr)
+        
+        #inverted gamma intensity
+        if np.random.rand() < self.get_p_param('gamma'):
+          #  self.log.debug('apply gamma')
+            #inverted gamma
+            feat_tr = - self.add_gamma_scale( -feat_tr)
+            
+        
+        #flipping
+        if np.random.rand() < self.get_p_param('flipping'):
+          #  self.log.debug('apply flipping')
+            feat_tr, lesions_tr= self.flipping.apply_transform(feat_tr, lesions_tr)
+                
+            
         return feat_tr, lesions_tr
     
    
