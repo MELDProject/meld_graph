@@ -349,7 +349,7 @@ class Preprocess:
         path = mpltPath.Path(polygon)
         lesion = path.contains_points(masked_grid_coords)
         #lesion = path.contains_points(self.grid_coords)
-        arr_lesion = lesion.reshape(mask_shape,order='f').astype(float)
+        arr_lesion = lesion.reshape(mask_shape).astype(float)
         #arr_lesion = lesion.reshape(self.gridshape,order='f').astype(float)
         #interpolate to coordinates
         
