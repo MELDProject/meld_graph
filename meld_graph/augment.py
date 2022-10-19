@@ -99,7 +99,7 @@ class Augment():
             
     def get_p_param(self, param):
         """check pvalue, set to zero if not found"""
-        if self.params[param]['p'] ==None:
+        if self.params[param].get('p', None) == None:
             return 0
         else:
             return self.params[param]['p']
@@ -158,12 +158,12 @@ class Augment():
         feat_tr = features
         lesions_tr = lesions
         #spinning        
-        if np.random.rand() < self.get_p_param('spinning'):
+        if (self.spinning is not None) and (np.random.rand() < self.get_p_param('spinning')):
   #          self.log.debug('apply spinning')
             feat_tr, lesions_tr= self.spinning.apply_transform(feat_tr, lesions_tr)
             
         #warping
-        if np.random.rand() < self.get_p_param('warping'):
+        if (self.warping is not None) and (np.random.rand() < self.get_p_param('warping')):
    #         self.log.debug('apply warping')
             feat_tr, lesions_tr= self.warping.apply_transform(feat_tr, lesions_tr)
             
@@ -192,7 +192,6 @@ class Augment():
         #    self.log.debug('apply low res')
             feat_tr= self.add_low_res(feat_tr)
             
-            
         #gamma intensity
         if np.random.rand() < self.get_p_param('gamma'):
          #   self.log.debug('apply gamma')
@@ -204,9 +203,8 @@ class Augment():
             #inverted gamma
             feat_tr = - self.add_gamma_scale( -feat_tr)
             
-        
         #flipping
-        if np.random.rand() < self.get_p_param('flipping'):
+        if (self.flipping is not None) and (np.random.rand() < self.get_p_param('flipping')):
           #  self.log.debug('apply flipping')
             feat_tr, lesions_tr= self.flipping.apply_transform(feat_tr, lesions_tr)
                 
