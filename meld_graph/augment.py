@@ -116,7 +116,7 @@ class Augment():
             
     def get_p_param(self, param):
         """check pvalue, set to zero if not found"""
-        if self.params[param]['p'] ==None:
+        if self.params[param].get('p', None) == None:
             return 0
         else:
             return self.params[param]['p']
@@ -223,7 +223,6 @@ class Augment():
         if np.random.rand() < self.get_p_param('low_res'):
             feat_tr= self.add_low_res(feat_tr)
             
-            
         #gamma intensity
         if np.random.rand() < self.get_p_param('gamma'):
             feat_tr = self.add_gamma_scale(feat_tr)
@@ -232,9 +231,6 @@ class Augment():
         if np.random.rand() < self.get_p_param('gamma'):
             feat_tr = - self.add_gamma_scale( -feat_tr)
             
-        
-        #flipping
-        
                 
             
         return feat_tr, lesions_tr

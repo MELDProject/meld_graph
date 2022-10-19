@@ -7,6 +7,7 @@ import numpy as np
 from meld_graph.paths import EXPERIMENT_PATH
 from functools import partial
 import pandas as pd
+import time
 
 def dice_coeff(pred, target,mask=False):
     """This definition generalize to real valued pred and target vector.
@@ -284,10 +285,12 @@ class Trainer:
         train_data_loader = torch_geometric.loader.DataLoader(
              train_dset, sampler=sampler, 
              shuffle=shuffle,
-             batch_size=self.params['batch_size'])
+             batch_size=self.params['batch_size'],
+             num_workers=4, persistent_workers=True, prefetch_factor=2)
         val_data_loader = torch_geometric.loader.DataLoader(
             GraphDataset.from_experiment(self.experiment, mode='val'),
-            shuffle=False, batch_size=self.params['batch_size'])
+            shuffle=False, batch_size=self.params['batch_size'],
+            num_workers=4, persistent_workers=True, prefetch_factor=2)
         self.train_data_loader = train_data_loader
         self.val_data_loader = val_data_loader
 
@@ -309,7 +312,9 @@ class Trainer:
         patience = 0
         for epoch in range(self.params['num_epochs']):
             self.log.info(f'Epoch {epoch} :: learning rate {scheduler.get_last_lr()[0]}')
+            start = time.time()
             cur_scores = self.train_epoch(train_data_loader, optimiser)
+            self.log.info(f'Epoch {epoch} :: time {time.time()-start}')
             scheduler.step()  # update lr
 
             log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items())
