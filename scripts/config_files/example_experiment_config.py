@@ -156,7 +156,7 @@ data_parameters = {
     "preprocessing_parameters": {
         "scaling": None, #"scaling_params_GDL.json"
         # zscore: normalise all values by overall mu std. ignores 0s.
-        "zscore": False,
+        "zscore":'../data/feature_means.json', #False or file_path
     },
     # icosphere_parameters: passed to Icospheres class
     "icosphere_parameters": {
