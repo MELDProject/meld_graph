@@ -1,5 +1,5 @@
 import logging
-import os
+import os, psutil
 import torch
 import torch_geometric.data
 from meld_graph.dataset import GraphDataset, Oversampler
@@ -204,7 +204,7 @@ class Trainer:
         """
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         model = self.experiment.model
-        model.train()
+        model.train()    
 
         metrics = Metrics(self.params['metrics'])  # for keeping track of running metrics
         running_loss = []
@@ -231,6 +231,7 @@ class Trainer:
             
         scores = {'loss': np.mean(running_loss)}
         scores.update(metrics.get_aggregated_metrics())
+
         return scores
 
     def val_epoch(self, data_loader):
@@ -286,11 +287,13 @@ class Trainer:
              train_dset, sampler=sampler, 
              shuffle=shuffle,
              batch_size=self.params['batch_size'],
-             num_workers=4, persistent_workers=True, prefetch_factor=2)
+             num_workers=4, persistent_workers=True, prefetch_factor=2
+             )
         val_data_loader = torch_geometric.loader.DataLoader(
             GraphDataset.from_experiment(self.experiment, mode='val'),
             shuffle=False, batch_size=self.params['batch_size'],
-            num_workers=4, persistent_workers=True, prefetch_factor=2)
+            num_workers=4, persistent_workers=True, prefetch_factor=2
+            )
         self.train_data_loader = train_data_loader
         self.val_data_loader = val_data_loader
 
@@ -316,6 +319,11 @@ class Trainer:
             cur_scores = self.train_epoch(train_data_loader, optimiser)
             self.log.info(f'Epoch {epoch} :: time {time.time()-start}')
             scheduler.step()  # update lr
+            #get memory usage
+            process = psutil.Process(os.getpid())
+            with open('memory_usage_gpu_parrallel.txt', 'a') as f:
+                f.write(f'Epoch {epoch} :: memory usage {process.memory_info().rss / 1024 ** 2}MB-  time {time.time()-start} \n ')
+            self.log.info(f'Epoch {epoch} :: memory usage {process.memory_info().rss / 1024 ** 2}MB')  # in bytes
 
             log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items())
             self.log.info(f'Epoch {epoch} :: Train {log_str}')

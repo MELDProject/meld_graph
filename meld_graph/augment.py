@@ -202,7 +202,6 @@ class Augment():
         #apply just once
         if mesh_transform:
             feat_tr, lesions_tr = self.apply_indices(indices,feat_tr,lesions_tr)
-        print(indices.shape)
         
         #Gaussian noise
         if np.random.rand() < self.get_p_param('noise'):
