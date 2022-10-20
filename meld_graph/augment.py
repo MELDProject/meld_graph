@@ -116,7 +116,7 @@ class Augment():
             
     def get_p_param(self, param):
         """check pvalue, set to zero if not found"""
-        if self.params[param].get('p', None) == None:
+        if param not in list(self.params.keys()):
             return 0
         else:
             return self.params[param]['p']
@@ -183,7 +183,7 @@ class Augment():
         #spinning   
         mesh_transform = False
         indices = np.arange(feat_tr.shape[0],dtype=int)
-
+        #stack the transformations into a single indexing step
         if np.random.rand() < self.get_p_param('spinning'):
             mesh_transform = True
             indices = indices[self.spinning.get_indices()]
@@ -199,9 +199,10 @@ class Augment():
             indices = indices[self.flipping.get_indices()]
             #feat_tr, lesions_tr= self.flipping.apply_transform(feat_tr, lesions_tr)
         
+        #apply just once
         if mesh_transform:
             feat_tr, lesions_tr = self.apply_indices(indices,feat_tr,lesions_tr)
-        
+        print(indices.shape)
         
         #Gaussian noise
         if np.random.rand() < self.get_p_param('noise'):
