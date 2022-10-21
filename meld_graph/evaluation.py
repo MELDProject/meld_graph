@@ -79,7 +79,7 @@ class Evaluator:
         if subject_ids != None:
             self.subject_ids = subject_ids
         else:
-            self.subject_ids = self.cohort.get_subject_ids()
+            self.subject_ids = self.dataset.subject_ids
 
         # if checkpoint load model
         if checkpoint_path:
@@ -112,7 +112,7 @@ class Evaluator:
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         # load dataset
         if self.dataset==None:
-            dataset = GraphDataset(self.subject_ids, self.cohort, self.experiment.data_parameters)
+            self.dataset = GraphDataset(self.subject_ids, self.cohort, self.experiment.data_parameters)
         # predict on data
         #TODO: enable batch_size > 1
         data_loader = torch_geometric.loader.DataLoader(
@@ -126,7 +126,7 @@ class Evaluator:
         features_array = []
         for i, data in enumerate(data_loader):
             data = data.to(device)
-            estimates = self.experiment.model(data.x)
+            estimates = self.experiment.model.to(device)(data.x)
             labels = data.y.squeeze()
             prediction = torch.exp(estimates[0])[:,1]
             prediction_array.append(prediction.detach().numpy())
