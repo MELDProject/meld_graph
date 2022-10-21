@@ -189,7 +189,7 @@ class GraphDataset(torch_geometric.data.Dataset):
             #l[~self.cohort.cortex_mask]=0
             fs.append(f)
             ls.append(l)
-        return fs[0], fs[1], ls[0], ls[1]
+        return fs[0].astype('float32'), fs[1].astype('float32'), ls[0].astype('int32'), ls[1].astype('int32')
 
     @classmethod
     def from_experiment(cls, experiment, mode):

@@ -422,6 +422,6 @@ class Preprocess:
         synth_bias_features = (lesion_tiled*sampled_fingerprint*sampled_bias).T
         features= features + synth_bias_features
         
-        return features,lesion
+        return features.astype('float32'),lesion.astype('int32')
     
     
