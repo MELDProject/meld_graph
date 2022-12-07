@@ -161,6 +161,10 @@ class GraphDataset(torch_geometric.data.Dataset):
                     if self.params['combine_hemis'] is None:
                         self.data_list.append((sfl.T, sll))
                         self.data_list.append((sfr.T, slr))
+
+                    #TODO also insert distance map list here
+                    if distance_map:
+                        pass
             else:
 
                 if self.params["combine_hemis"] is None:
@@ -179,7 +183,7 @@ class GraphDataset(torch_geometric.data.Dataset):
                     raise NotImplementedError
 
             # load geodesic distance maps for regression task / lesion augmentation
-            if distance_maps is True:
+            if distance_maps:
                 subj = MeldSubject(subj_id, cohort=self.prep.cohort)
                 # same hemisphere order
                 for hemi in ('lh', 'rh'):
