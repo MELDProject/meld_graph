@@ -77,7 +77,7 @@ class DistanceRegressionLoss(torch.nn.Module):
         # calculate mean squared error
         loss = torch.square(torch.subtract(inputs, distance_map))
         if self.weigh_by_gt:
-            loss = torch.div(loss, distance_map+1e-15)
+            loss = torch.div(loss, torch.add(distance_map,1e-15))
         loss = loss.mean()
         return loss
         
