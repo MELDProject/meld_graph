@@ -18,9 +18,9 @@ network_parameters = {
         'kernel_size': 3, # number of gaussian kernels
         # spiral_len: size of the spiral for SpiralConv.
         # TODO implement dilation / different spiral len per unet block
-        'spiral_len': 10,
+        'spiral_len': 7,
         # normalisation: choices: None, "instance"
-        'norm': "instance",
+        'norm': None,
     },
     # training_parameters: used by Trainer to set up model training
     'training_parameters': {
@@ -50,7 +50,7 @@ network_parameters = {
         'loss_dictionary': {  
             #'cross_entropy':{'weight':1},
             #'focal_loss':{'weight':1, 'alpha':0.4, 'gamma':4},
-            'dice':{'weight': 1, 'class_weights': [0.5, 0.5]},
+            'dice':{'weight': 1, 'class_weights': [1.0, 0.0]},
             #'distance_regression': {'weight': 1, 'weigh_by_gt': True}
         },
          # metrics: list of metrics that should be printed during training
@@ -62,8 +62,8 @@ network_parameters = {
         # Set to list of levels (eg [6,5,4]), for which to add output layers for additional supervision.
         # 7 is highest level. (standard output).  # TODO add some error checking here, max val should be < 7.
         'deep_supervision': {
-            'levels': [], #[4,5,6], 
-            'weight': [],
+              'levels': [6,5,4,3], 
+            'weight': [0.5,0.25,0.125,0.0625],
         },
         # ovesampling: oversample lesional vertices to 33% lesional and 66% random.
         # size of epoch will be num_lesional_examples * 3
@@ -80,32 +80,33 @@ data_parameters = {
     
     'hdf5_file_root': "{site_code}_{group}_featurematrix_combat_6.hdf5",
     'site_codes': [
-        "H1",
+       "H1",
         "H2",
         "H3",
         "H4",
-    #    "H5",
-    #    "H6",
-    #    "H7",
-    #    "H9",
-    #    "H10",
-    #    "H11",
-    #    "H12",
-    #    "H14",
-    #    "H15",
-    #    "H16",
-    #    "H17",
-    #    "H18",
-    #    "H19",
-    #    "H21",
-    #    "H23",
-    #    "H24",
-    #    "H26",
-    #    "H27",
+        "H5",
+        "H6",
+        "H7",
+        "H9",
+        "H10",
+        "H11",
+        "H12",
+        "H14",
+        "H15",
+        "H16",
+        "H17",
+        "H18",
+        "H19",
+        "H21",
+        "H23",
+        "H24",
+        "H26",
+    
     ],
     'scanners': ['15T','3T'],
     'dataset': 'MELD_dataset_V6.csv',
-    'group': 'both',
+    #THIS NEEDS TO BE CHANGED IF REAL TRAINING TO BOTH
+    'group': 'control',
     "features_to_exclude": [],
     "subject_features_to_exclude": [],
     # features: manually specify features (instead of features_to_exclude)
@@ -173,20 +174,21 @@ data_parameters = {
     # augment_data: parameters passed to Augment class
     # dictionary containing augmentation method as keys, and Transform params as values ("p" and "file")
     # possible augmentation methods: spinning, warping, flipping
+    # gaussian noise, blurring
+    # brightness, contrast
+    # low res - I don't think this is implemented
+    # gamma - intensity shifting
     "augment_data": {
-        "spinning":
-                  {'p': 0.80,
-                  'file': 'data/spinning/spinning_ico7_10.npy'
-                  },
-        "warping": 
-                  {'p': 0.80,
-                   'file': 'data/warping/warping_ico7_10.npy'
-                  },
-        "flipping":
-                  {'p': 0.80,
-                   'file': 'data/flipping/flipping_ico7_3.npy'
-                  },
-                    },
+        'spinning': {'p': 0.2, 'file': 'data/spinning/spinning_ico7_10.npy'},
+        'warping': {'p': 0.2, 'file': 'data/warping/warping_ico7_10.npy'},
+        'noise': {'p': 0.15},
+        'blur': {'p': 0.2},
+        'brightness': {'p': 0.15},
+        'contrast': {'p': 0.15},
+        'low_res': {'p': 0.25},
+        'gamma': {'p': 0.15},
+        'flipping': {'p': 0.5, 'file': 'data/flipping/flipping_ico7_3.npy'}
+        },
     # combine_hemis: how to combine hemisphere data, one of: None, stack
     # None: no combination of hemispheres. 
     # "stack": stack features of both hemispheres.
@@ -195,22 +197,22 @@ data_parameters = {
     # lobes: if True, train on predicting frontal lobe vs other instead of the lesion predicting task
     "lobes": False,
     # lesion_bias: add this value to lesion values to make prediction task easier
-    "lesion_bias": 10,
+    "lesion_bias": 0,
     # synthetic lesions on synthetic data or on controls.
     'synthetic_data': {
         # run_synthetic: master switch for whether to run the synthetic task. True means run it.
         'run_synthetic':True,
         # n_subs: controls the number of subjects. Randomly sampled from subject ids (i.e. duplicates will exist)
-        'n_subs': 200,
+        'n_subs': 1000,
         # use_controls: superimpose lesions on controls, or on white noise features
-        'use_controls':False,
+        'use_controls':True,
         # radius: mean radii of lesions, in units of XX. 
         # For each lesion, actual radius is sampled from N(radius,radius/2)
         'radius': 0.5,  # realisic: 0.5
         # n_subtypes: number of lesion "fingerprints" generated (number of histological subtypes)
         # A fingerprint determines which features (using proportion_features_abnormal) change, 
         # in which direction they change, and by how much (sampled from U(0,1)*bias).
-        'n_subtypes':1,
+        'n_subtypes':25,
         # jitter_factor: determines the amount of variance of subjects around the fingerprint bias terms.
         # For each subject with fingerprint f, the actual lesion values are sampled from: N(f, f/jitter_factor)
         'jitter_factor':2,
@@ -219,7 +221,7 @@ data_parameters = {
         'bias': 1,
         # proportion_features_abnormal: proportion of the features that are abnormal. 
         # 0.2 means only 20% of features, all others remain unchanged.
-        'proportion_features_abnormal': 0.9,  # realistic 0.2
+        'proportion_features_abnormal': 0.2,  # realistic 0.2
         # proportion_hemispheres_lesional: proportion subjects lesional
         # controls a random variable that determines whether a lesion is added to the control data
         # In the training this could mean two hemispheres from the same subject both have lesions.
