@@ -9,30 +9,20 @@ from functools import partial
 import pandas as pd
 import time
 
-def dice_coeff(pred, target,mask=False):
+def dice_coeff(pred, target):
     """This definition generalize to real valued pred and target vector.
     This should be differentiable.
     pred: tensor with first dimension as batch
     target: tensor with first dimension as batch (not one-hot encoded)
-    mask: if mask is true, we want to ignore hemispheres without lesions for the 1 column
-        otherwise loss averages lots of 0s for these examples
     NOTE assumes that pred is softmax output of model, might need torch.exp before
     """
-    
     target_hot = torch.nn.functional.one_hot(target,num_classes=2)
     smooth = 1e-15 
     iflat = pred.contiguous()
     tflat = target_hot.contiguous()
-    #here split into subjects
-    if mask:
-        n_vert = 163842
-        full_len = iflat.shape
-        iflat = iflat.view(n_vert,full_len[0]//n_vert,full_len[1])
-        tflat = tflat.view(n_vert,full_len[0]//n_vert,full_len[1])
     intersection = (iflat * tflat).sum(dim=0)
     A_sum = torch.sum(iflat * iflat ,dim=0)
     B_sum = torch.sum(tflat * tflat ,dim=0)
-    #at this point mask B_sum all zeros in second column
     dice = (2. * intersection + smooth) / (A_sum + B_sum + smooth)
     return  dice
 
@@ -45,8 +35,8 @@ class DiceLoss(torch.nn.Module):
             if 'class_weights' in loss_weight_dictionary['dice']:
                 self.class_weights = loss_weight_dictionary['dice']['class_weights']
 
-    def forward(self, inputs, targets, mask=False,device=None, **kwargs):
-        dice = dice_coeff(torch.exp(inputs),targets,mask=mask)
+    def forward(self, inputs, targets, device=None, **kwargs):
+        dice = dice_coeff(torch.exp(inputs),targets)
         if device is not None:
             class_weights = torch.tensor(self.class_weights,dtype=float).to(device)
         dice = dice[0]*class_weights[0] + dice[1]*class_weights[1]
@@ -77,7 +67,7 @@ class DistanceRegressionLoss(torch.nn.Module):
         # calculate mean squared error
         loss = torch.square(torch.subtract(inputs, distance_map))
         if self.weigh_by_gt:
-            loss = torch.div(loss, distance_map+1e-15)
+            loss = torch.div(loss, torch.add(distance_map,1e-15))
         loss = loss.mean()
         return loss
         
@@ -176,12 +166,6 @@ class Metrics:
                 self.running_scores['dice_lesion'].append(dice_coeffs[1].item())
             if 'dice_nonlesion' in self.metrics_to_track:
                 self.running_scores['dice_nonlesion'].append(dice_coeffs[0].item())
-        if len(set(['dice_masked_lesion', 'dice_masked_nonlesion']).intersection(self.metrics_to_track)) > 0:
-            dice_coeffs = dice_coeff(torch.nn.functional.one_hot(pred, num_classes=2), target, mask=True)
-            if 'dice_masked_lesion' in self.metrics_to_track:
-                self.running_scores['dice_masked_lesion_masked'].append(dice_coeffs[1].item())
-            if 'dice_masked_nonlesion' in self.metrics_to_track:
-                self.running_scores['dice_masked_nonlesion'].append(dice_coeffs[0].item())
         if 'tp' in self.metrics_to_track:
             tp, fp, fn, tn = tp_fp_fn_tn(pred, target)
             self.running_scores['tp'].append(tp.item())

@@ -49,9 +49,9 @@ network_parameters = {
         # values: dict with keys: "weight" and loss arguments (alpha/gamma for focal_loss, class_weights for dice)
         'loss_dictionary': {  
             #'cross_entropy':{'weight':1},
-            #'focal_loss':{'weight':1, 'alpha':0.4, 'gamma':4},
-            'dice':{'weight': 1, 'class_weights': [1.0, 0.0]},
-            #'distance_regression': {'weight': 1, 'weigh_by_gt': True}
+            'focal_loss':{'weight':1, 'alpha':0.4, 'gamma':4},
+            #'dice':{'weight': 1, 'class_weights': [1.0, 0.0]},
+           # 'distance_regression': {'weight': 1, 'weigh_by_gt': True}
         },
          # metrics: list of metrics that should be printed during training
          # possible values: dice_lesion, dice_nonlesion, precision, recall, tp, fp, fn, tn
@@ -69,10 +69,9 @@ network_parameters = {
         # size of epoch will be num_lesional_examples * 3
         'oversampling': True,
         # init_weights: path to checkpoint file to init weights from. Relative to EXPERIMENT_PATH
-        'init_weights': False,
     },
     # name: experiment name. If none, experiment is not saved
-    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_example',
+    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_losses/focal',
 }
 
 # data parameters, passed to GraphDataset and Preprocess
@@ -208,7 +207,7 @@ data_parameters = {
         'use_controls':True,
         # radius: mean radii of lesions, in units of XX. 
         # For each lesion, actual radius is sampled from N(radius,radius/2)
-        'radius': 0.5,  # realisic: 0.5
+        'radius': 2,  # realisic: 0.5
         # n_subtypes: number of lesion "fingerprints" generated (number of histological subtypes)
         # A fingerprint determines which features (using proportion_features_abnormal) change, 
         # in which direction they change, and by how much (sampled from U(0,1)*bias).

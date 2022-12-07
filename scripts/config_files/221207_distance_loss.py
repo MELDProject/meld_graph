@@ -49,14 +49,14 @@ network_parameters = {
         # values: dict with keys: "weight" and loss arguments (alpha/gamma for focal_loss, class_weights for dice)
         'loss_dictionary': {  
             #'cross_entropy':{'weight':1},
-            #'focal_loss':{'weight':1, 'alpha':0.4, 'gamma':4},
-            'dice':{'weight': 1, 'class_weights': [1.0, 0.0]},
-            #'distance_regression': {'weight': 1, 'weigh_by_gt': True}
+            'focal_loss':{'weight':1, 'alpha':0.4, 'gamma':4},
+            #'dice':{'weight': 1, 'class_weights': [1.0, 0.0]},
+            'distance_regression': {'weight': 1, 'weigh_by_gt': True}
         },
          # metrics: list of metrics that should be printed during training
          # possible values: dice_lesion, dice_nonlesion, precision, recall, tp, fp, fn, tn
         'metrics': ['dice_lesion', 'dice_nonlesion', 'precision', 'recall', 'tp', 'fp', 'fn'], 
-        "batch_size": 8,
+        "batch_size": 1,
         "shuffle_each_epoch": True,
         # deep_supervision: add loss at specified levels of the unet (for MoNetUnet).
         # Set to list of levels (eg [6,5,4]), for which to add output layers for additional supervision.
