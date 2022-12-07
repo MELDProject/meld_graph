@@ -127,10 +127,10 @@ class MoNet(nn.Module):
 
 class MoNetUnet(nn.Module):
     def __init__(self, num_features, layer_sizes, dim=2, kernel_size=3, 
-                 
                  icosphere_params={}, conv_type='GMMConv', spiral_len=10,
                  deep_supervision=[],
-                 activation_fn='relu', norm=None):
+                 activation_fn='relu', norm=None
+                 ):
         """
         Unet model
         dim: dim for GMMConv, dimension of coord representation - 2 or 3 (for GMMConv)
@@ -304,9 +304,14 @@ class HexPool(nn.Module):
         super(HexPool, self).__init__()
         self.neigh_indices = neigh_indices
         
-    def forward(self, x):
+    def forward(self, x, center_pool=False):
+        # center_pool: default is max pool, set center_pool to true to do center pool
         x = x[:len(self.neigh_indices)][self.neigh_indices]
-        x = torch.max(x, dim=1)[0]
+        if center_pool:
+            x = x[:,0]
+        else:
+            x = torch.max(x, dim=1)[0]
+        #print('hexpool', x.shape)
         return x
 
 class HexUnpool(nn.Module):
