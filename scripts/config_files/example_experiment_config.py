@@ -20,7 +20,7 @@ network_parameters = {
         # TODO implement dilation / different spiral len per unet block
         'spiral_len': 10,
         # normalisation: choices: None, "instance"
-        'norm': "instance"
+        'norm': "instance",
     },
     # training_parameters: used by Trainer to set up model training
     'training_parameters': {
@@ -39,12 +39,19 @@ network_parameters = {
         # set to 0 to turn lr decay off
         'lr_decay': 0,  # default NNUnet param: 0.9
         # loss_dictionary: losses to be used for model training and parameters for losses
-        # possible keys: cross_entropy, focal_loss, dice
+        # possible keys: 
+        #   "cross_entropy"
+        #   "focal_loss"
+        #   "dice"
+        #   "distance_regression": predict geodesic distance from lesion mask
+        #       if present in this dict, model will have head with 
+        #       layer_sizes - 1 (regression head) - 2 (classification head)
         # values: dict with keys: "weight" and loss arguments (alpha/gamma for focal_loss, class_weights for dice)
         'loss_dictionary': {  
             #'cross_entropy':{'weight':1},
             #'focal_loss':{'weight':1, 'alpha':0.4, 'gamma':4},
-            'dice':{'weight': 1, 'class_weights': [0.5, 0.5]}
+            'dice':{'weight': 1, 'class_weights': [0.5, 0.5]},
+            #'distance_regression': {'weight': 1, 'weigh_by_gt': True}
         },
          # metrics: list of metrics that should be printed during training
          # possible values: dice_lesion, dice_nonlesion, precision, recall, tp, fp, fn, tn

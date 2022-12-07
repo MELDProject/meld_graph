@@ -67,10 +67,17 @@ class GraphDataset(torch_geometric.data.Dataset):
         pre_transform=None,
         pre_filter=None,
         output_levels=[],
+        distance_maps=True
     ):
         """
         output_levels: list of icosphere levels for which y should be returned as well. Used for deep supervision.
             will be available as self.get().output_level<level>.
+        distance_maps: 
+            Flag to enable loading of geodesic distance maps. 
+            Values for controls will be maximum possible value (200).
+            Will be available as self.get().distance_map.
+            If output_levels are defined as well, will additionally make downsampled distance maps 
+            available as self.get().output_level<level>_distance_map.
         """
         super().__init__(None, transform, pre_transform, pre_filter)
         self.log = logging.getLogger(__name__)
@@ -95,6 +102,12 @@ class GraphDataset(torch_geometric.data.Dataset):
         self.prep = Preprocess(
             cohort=self.cohort, params=self.params["preprocessing_parameters"]
         )
+        # if distance maps are required, load them in this list
+        if distance_maps:
+            self.distance_map_list = []
+            print('dataset using distance_maps')
+        else:
+            self.distance_map_list = None
         self.log.info(f"Loading and preprocessing {mode} data")
         self.log.debug(f"Combine hemis {self.params['combine_hemis']}")
         
@@ -131,7 +144,8 @@ class GraphDataset(torch_geometric.data.Dataset):
             self.log.info(f"WARNING: Simulating {len(self.subject_samples)} subjects using {n_subs_before} controls")                                       
     
         for s_i,subj_id in enumerate(self.subject_ids):
-            #load in control data
+            #load in (control) data
+            # features are appended to list in order: left, right
             
             features_left, features_right, lesion_left, lesion_right = self.prep.get_data_preprocessed(subject=subj_id, 
                                                                      features=params['features'], 
@@ -155,12 +169,29 @@ class GraphDataset(torch_geometric.data.Dataset):
                     
                 elif self.params["combine_hemis"] == "stack":
                     # this code doesn't look correct. surely lesions also should be stacked?
+                    # NOTE: the stacking is just for features, this gives more context to the current hemi that should
+                    # be segmented. Currently might not be necessary, because we use normalisation by the other hemisphere
                     features = np.vstack([features_left, features_right]).T
                     self.data_list.append((features, lesion_left))
                     features = np.vstack([features_right, features_left]).T
                     self.data_list.append((features, lesion_right))
                 else:
                     raise NotImplementedError
+
+            # load geodesic distance maps for regression task / lesion augmentation
+            if distance_maps is True:
+                subj = MeldSubject(subj_id, cohort=self.prep.cohort)
+                # same hemisphere order
+                for hemi in ('lh', 'rh'):
+                    gdist = subj.load_feature_values('.on_lh.boundary_zone.mgh', hemi=hemi)
+                    # threshold to range 0,200
+                    gdist = np.clip(gdist, 0, 200)
+                    # no lesion on this hemi?
+                    # NOTE this will also put 200 in the medial wall - fine for our purposes
+                    if (not subj.is_patient) or (subj.get_lesion_hemisphere() != hemi):
+                        gdist[:] = 200
+                    self.distance_map_list.append(gdist)
+
         #dataset has weird properties. subject_ids needs to be the right length, matching the data length
         if self.params['synthetic_data']['run_synthetic']:
             if self.n_subs_split>len(self.subject_ids):
@@ -213,6 +244,8 @@ class GraphDataset(torch_geometric.data.Dataset):
             output_levels=experiment.network_parameters["training_parameters"]
             .get("deep_supervision", {})
             .get("levels", []),
+            distance_maps='distance_regression' in experiment.network_parameters['training_parameters']["loss_dictionary"].keys(),
+            # TODO also load distance maps when doing lesion augmentation
         )
 
     def len(self):
@@ -223,6 +256,7 @@ class GraphDataset(torch_geometric.data.Dataset):
         # print('dataset get idx ', idx)
         features, labels = self.data_list[idx]
         # apply data augmentation
+        # TODO also augment lesion mask
         if self.augment != None:
             features, labels = self.augment.apply(features, labels)
         data = torch_geometric.data.Data(
@@ -230,13 +264,26 @@ class GraphDataset(torch_geometric.data.Dataset):
             y=torch.tensor(labels, dtype=torch.long),
             num_nodes=len(features),
         )
+
+        # set geodesic distance attr to data
+        if self.distance_map_list is not None:
+            setattr(data, "distance_map", torch.tensor(self.distance_map_list[idx], dtype=torch.float))
+
+        # add extra output levels to data
         if len(self.output_levels) != 0:
-            # add extra output levels to data
             labels_pooled = {7: data.y}
             for level in range(min(self.output_levels), 7)[::-1]:
                 labels_pooled[level] = self.pool_layers[level](labels_pooled[level + 1])
             for level in self.output_levels:
                 setattr(data, f"output_level{level}", labels_pooled[level])
+            # add downsampled distance maps if required
+            if self.distance_map_list is not None:
+                dists_pooled = {7: data.y}
+                for level in range(min(self.output_levels), 7)[::-1]:
+                    dists_pooled[level] = self.pool_layers[level](dists_pooled[level + 1], center_pool=True)
+                for level in self.output_levels:
+                    setattr(data, f"output_level{level}_distance_map", dists_pooled[level])
+        
         return data
 
     @property
