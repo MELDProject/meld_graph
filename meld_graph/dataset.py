@@ -79,7 +79,7 @@ class GraphDataset(torch_geometric.data.Dataset):
         self.cohort = cohort
         self.mode = mode
         self.augment = None
-        if (self.mode != "test") & (self.params["augment_data"] != None):
+        if (self.mode == "train") & (self.params["augment_data"] != None):
             self.augment = Augment(self.params["augment_data"])
         self.output_levels = sorted(output_levels)
         if len(self.output_levels) != 0:
