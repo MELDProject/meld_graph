@@ -10,6 +10,7 @@ import h5py
 import scipy
 import json
 import pandas as pd
+from meld_graph.training import tp_fp_fn_tn, dice_coeff
 
 
 def load_config(config_file):
@@ -126,7 +127,7 @@ class Evaluator:
         features_array = []
         for i, data in enumerate(data_loader):
             data = data.to(device)
-            estimates = self.experiment.model.to(device)(data.x)
+            estimates = self.experiment.model(data.x)
             labels = data.y.squeeze()
             prediction = torch.exp(estimates[0])[:,1]
             prediction_array.append(prediction.detach().numpy())
@@ -201,17 +202,15 @@ class Evaluator:
         # else:
         #     border_detected = 0
             patient_dice_vars = {"TP": 0, "FP": 0, "FN": 0, "TN": 0}
-            if group == 1:
-                mask = prediction>threshold
-                label = labels.astype(bool)
-                patient_dice_vars["TP"] += np.sum(mask * label)
-                patient_dice_vars["FP"] += np.sum(mask * ~label)
-                patient_dice_vars["FN"] += np.sum(~mask * label)
-                patient_dice_vars["TN"] += np.sum(~mask * ~label)
+            mask = torch.as_tensor(np.array(prediction>threshold)).long()
+            label = torch.as_tensor(np.array(labels.astype(bool))).long()
+            dices = dice_coeff(torch.nn.functional.one_hot(mask, num_classes=2),label)
+            patient_dice_vars["TP"], patient_dice_vars["FP"], patient_dice_vars["FN"],patient_dice_vars["TN"]=tp_fp_fn_tn(mask, label)
+            patient_dice_vars["Dice non-lesion"], patient_dice_vars["Dice lesion"] = list(dices)
             
             sub_df = pd.DataFrame(
-                np.array([subject, group, detected, patient_dice_vars["TP"], patient_dice_vars["FP"], patient_dice_vars["FN"], patient_dice_vars["TN"]]).reshape(-1, 1).T,
-                columns=["ID", "group", "detected", 'dice_tp', 'dice_fp', 'dice_fn', 'dice_tn' ],
+                np.array([subject, group, detected, patient_dice_vars["TP"].numpy(), patient_dice_vars["FP"].numpy(), patient_dice_vars["FN"].numpy(), patient_dice_vars["TN"].numpy(), patient_dice_vars["Dice lesion"].numpy(), patient_dice_vars["Dice non-lesion"].numpy()]).reshape(-1, 1).T,
+                columns=["ID", "group", "detected", 'tp', 'fp', 'fn', 'tn', 'dice lesional', 'dice non-lesional'],
             )
             #save results
             filename = os.path.join(self.save_dir, "results", f"test_results{suffix}.csv")
