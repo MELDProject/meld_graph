@@ -171,13 +171,19 @@ class Experiment:
         icosphere_params['combine_hemis'] = self.data_parameters['combine_hemis']
         icosphere_params['conv_type'] = self.network_parameters['model_parameters']['conv_type']
         if network_type == 'MoNet':
-            self.model = meld_graph.models.MoNet(**self.network_parameters['model_parameters'], num_features=num_features, icosphere_params=icosphere_params)
+            self.model = meld_graph.models.MoNet(**self.network_parameters['model_parameters'], num_features=num_features, 
+            icosphere_params=icosphere_params)
         elif network_type == 'MoNetUnet':
             self.model = meld_graph.models.MoNetUnet(**self.network_parameters['model_parameters'], num_features=num_features, 
-                icosphere_params=icosphere_params, deep_supervision=self.network_parameters['training_parameters'].get('deep_supervision', {}).get('levels', []))
+                icosphere_params=icosphere_params, deep_supervision=self.network_parameters['training_parameters'].get('deep_supervision', {}).get('levels', []),
+            )
+                #distance_regression=self.network_parameters['training_parameters']['loss_dictionary'].get('distance_regression', None) != None,
+            
         elif network_type == 'SimpleNet':
             self.model = meld_graph.models.SimpleNet(**self.network_parameters['model_parameters'], num_features=num_features,
                 icosphere_params=icosphere_params)
+                #distance_regression=self.network_parameters['training_parameters']['loss_dictionary'].get('distance_regression', None) != None,
+            #)
         else:
             raise(NotImplementedError, network_type)
         
