@@ -18,13 +18,14 @@ def dice_coeff(pred, target,mask=False):
         otherwise loss averages lots of 0s for these examples
     NOTE assumes that pred is softmax output of model, might need torch.exp before
     """
-    n_vert = 163842
+    
     target_hot = torch.nn.functional.one_hot(target,num_classes=2)
     smooth = 1e-15 
     iflat = pred.contiguous()
     tflat = target_hot.contiguous()
     #here split into subjects
     if mask:
+        n_vert = 163842
         full_len = iflat.shape
         iflat = iflat.view(n_vert,full_len[0]//n_vert,full_len[1])
         tflat = tflat.view(n_vert,full_len[0]//n_vert,full_len[1])
@@ -39,7 +40,7 @@ def dice_coeff(pred, target,mask=False):
 class DiceLoss(torch.nn.Module):
     def __init__(self, loss_weight_dictionary=None):
         super(DiceLoss, self).__init__()
-        self.class_weights = [0.5,0.5]
+        self.class_weights = [1.0 ,0.0]
         if 'dice' in loss_weight_dictionary.keys():
             if 'class_weights' in loss_weight_dictionary['dice']:
                 self.class_weights = loss_weight_dictionary['dice']['class_weights']
