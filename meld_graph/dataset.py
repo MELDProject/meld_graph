@@ -163,7 +163,7 @@ class GraphDataset(torch_geometric.data.Dataset):
                         self.data_list.append((sfr.T, slr))
 
                     #TODO also insert distance map list here
-                    if distance_map:
+                    if distance_maps:
                         pass
             else:
 

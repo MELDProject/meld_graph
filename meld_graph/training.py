@@ -64,10 +64,11 @@ class DistanceRegressionLoss(torch.nn.Module):
         inputs = torch.exp(inputs.select(1,1))
         # normalise distance map
         distance_map = torch.div(distance_map, 200)
+        #print(inputs[:10], distance_map[:10])
         # calculate mean squared error
         loss = torch.square(torch.subtract(inputs, distance_map))
         if self.weigh_by_gt:
-            loss = torch.div(loss, torch.add(distance_map,1e-15))
+            loss = torch.div(loss, torch.add(distance_map,1))
         loss = loss.mean()
         return loss
         
@@ -219,24 +220,29 @@ class Trainer:
 
         metrics = Metrics(self.params['metrics'])  # for keeping track of running metrics
         running_losses = {key: [] for key in self.params['loss_dictionary'].keys()}
+        running_losses['loss'] = []
         for i, data in enumerate(data_loader):  
             data = data.to(device)
             model.train()
             optimiser.zero_grad()
             estimates = model(data.x)
             labels = data.y.squeeze()
+            #print('overall loss')
             loss, loss_list = calculate_loss(self.params['loss_dictionary'],estimates[0], labels, distance_map=getattr(data, "distance_map", None), device=device)
             # add deep supervision outputs
             for i,level in enumerate(sorted(self.deep_supervision['levels'])):
                 cur_estimates = estimates[i+1]
                 cur_labels = getattr(data, f"output_level{level}")
-                cur_distance_map = getattr(data, "output_level{level}_distance_map", None)
-                #print(i, cur_estimates.shape, cur_labels.shape, cur_distance_map)
+                cur_distance_map = getattr(data, f"output_level{level}_distance_map", None)
+                #print('deepsup', i, cur_estimates.shape, cur_labels.shape, cur_distance_map)
+
                 loss += self.deep_supervision['weight'][i] * calculate_loss(self.params['loss_dictionary'], cur_estimates, cur_labels, distance_map=cur_distance_map, device=device)[0]
             loss.backward()
             optimiser.step()
-            for i, key in enumerate(running_losses.keys()):
+            for i, key in enumerate(self.params['loss_dictionary'].keys()):
                 running_losses[key].append(loss_list[i].item())
+                #print(key, loss_list[i].item())
+            running_losses['loss'].append(loss.item())
                 #print(key, loss_list[i].item())
             # metrics
             pred = torch.argmax(estimates[0], axis=1)
@@ -244,7 +250,7 @@ class Trainer:
             metrics.update(pred, labels)
             # TODO add distance regression to metrics
             
-        scores = {f'loss_{key}': np.mean(running_losses[key]) for key in running_losses.keys()}
+        scores = {key: np.mean(running_losses[key]) for key in running_losses.keys()}
         scores.update(metrics.get_aggregated_metrics())
         return scores
 
@@ -255,6 +261,7 @@ class Trainer:
         with torch.no_grad():
             metrics = Metrics(self.params['metrics'])  # for keeping track of running metrics
             running_losses = {key: [] for key in self.params['loss_dictionary'].keys()}
+            running_losses['loss'] = []
             for i, data in enumerate(data_loader):
                 data = data.to(device)
                 #fake_x = torch.vstack([data.y for _ in range(22)]).t().type(torch.float)
@@ -266,18 +273,19 @@ class Trainer:
                     cur_estimates = estimates[i+1]
                     cur_labels = getattr(data, f"output_level{level}")
                     #print(cur_estimates.shape, cur_labels.shape)
-                    cur_distance_map = getattr(data, "output_level{level}_distance_map", None)
+                    cur_distance_map = getattr(data, f"output_level{level}_distance_map", None)
                     loss += self.deep_supervision['weight'][i] * calculate_loss(self.params['loss_dictionary'], cur_estimates, cur_labels, distance_map=cur_distance_map, device=device)[0]
                 
-                for i, key in enumerate(running_losses.keys()):
+                for i, key in enumerate(self.params['loss_dictionary'].keys()):
                     running_losses[key].append(loss_list[i].item())
+                running_losses['loss'].append(loss.item())
                     #print(key, loss_list[i].item())
                 # metrics
                 pred = torch.argmax(estimates[0], axis=1)
                 # update running metrics
                 metrics.update(pred, labels)
      
-        scores = {f'loss_{key}': np.mean(running_losses[key]) for key in running_losses.keys()}
+        scores = {key: np.mean(running_losses[key]) for key in running_losses.keys()}
         scores.update(metrics.get_aggregated_metrics())
         # set model back to training mode
         model.train()

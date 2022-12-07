@@ -69,6 +69,7 @@ network_parameters = {
         # size of epoch will be num_lesional_examples * 3
         'oversampling': True,
         # init_weights: path to checkpoint file to init weights from. Relative to EXPERIMENT_PATH
+        'init_weights': None,
     },
     # name: experiment name. If none, experiment is not saved
     'name': datetime.datetime.now().strftime("%y-%m-%d") + '_losses/focal',
@@ -100,7 +101,6 @@ data_parameters = {
         "H23",
         "H24",
         "H26",
-    
     ],
     'scanners': ['15T','3T'],
     'dataset': 'MELD_dataset_V6.csv',

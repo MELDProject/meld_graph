@@ -69,10 +69,10 @@ network_parameters = {
         # size of epoch will be num_lesional_examples * 3
         'oversampling': True,
         # init_weights: path to checkpoint file to init weights from. Relative to EXPERIMENT_PATH
-        'init_weights': False,
+        'init_weights': None,
     },
     # name: experiment name. If none, experiment is not saved
-    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_example',
+    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_distance_real',
 }
 
 # data parameters, passed to GraphDataset and Preprocess
@@ -106,7 +106,7 @@ data_parameters = {
     'scanners': ['15T','3T'],
     'dataset': 'MELD_dataset_V6.csv',
     #THIS NEEDS TO BE CHANGED IF REAL TRAINING TO BOTH
-    'group': 'control',
+    'group': 'both',
     "features_to_exclude": [],
     "subject_features_to_exclude": [],
     # features: manually specify features (instead of features_to_exclude)
@@ -201,7 +201,7 @@ data_parameters = {
     # synthetic lesions on synthetic data or on controls.
     'synthetic_data': {
         # run_synthetic: master switch for whether to run the synthetic task. True means run it.
-        'run_synthetic':True,
+        'run_synthetic':False,
         # n_subs: controls the number of subjects. Randomly sampled from subject ids (i.e. duplicates will exist)
         'n_subs': 1000,
         # use_controls: superimpose lesions on controls, or on white noise features
