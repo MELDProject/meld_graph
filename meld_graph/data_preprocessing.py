@@ -20,7 +20,8 @@ class Preprocess:
         'scaling': None,
         'zscore': False
     }
-    def __init__(self, cohort, site_codes=None, write_output_file=None, data_dir=BASE_PATH, params={}):
+    def __init__(self, cohort, site_codes=None, write_output_file=None,
+    icospheres = None, data_dir=BASE_PATH, params={}):
         """
         Load and preprocess data. 
 
@@ -41,6 +42,7 @@ class Preprocess:
         self.log = logging.getLogger(__name__)
         self._lobes = None
         self.initialise_distances()
+        self.icospheres = icospheres
         if self.params['zscore'] != False:
             self.load_z_params(self.params['zscore'])
          

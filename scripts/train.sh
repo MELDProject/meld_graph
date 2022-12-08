@@ -3,7 +3,7 @@
 #SBATCH -o train_%j.out
 #SBATCH -e train_%j.out
 #SBATCH -J train
-#SBATCH -A CORE-WCHN-MELD-SL2-GPU
+#SBATCH -A CAMBRC-SL3-GPU
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH -p ampere
@@ -25,6 +25,6 @@ module load cuda/11.1
 source activate ~/.conda/envs/meld_graph
 
 # run script
-BASE=/home/co-spit1/software/
+BASE=/home/kw350/software/gdl
 echo $1
-python $BASE/meld_classifier_GDL/scripts/train.py --config_file $1
+~/.conda/envs/meld_graph/bin/python $BASE/meld_classifier_GDL/scripts/train.py --config_file $1
