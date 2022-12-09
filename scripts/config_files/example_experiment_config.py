@@ -187,7 +187,8 @@ data_parameters = {
         'contrast': {'p': 0.15},
         'low_res': {'p': 0.25},
         'gamma': {'p': 0.15},
-        'flipping': {'p': 0.5, 'file': 'data/flipping/flipping_ico7_3.npy'}
+        'flipping': {'p': 0.5, 'file': 'data/flipping/flipping_ico7_3.npy'},
+        'extend_lesion':{'p': 0.3},
         },
     # combine_hemis: how to combine hemisphere data, one of: None, stack
     # None: no combination of hemispheres. 
