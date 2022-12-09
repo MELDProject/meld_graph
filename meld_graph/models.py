@@ -118,7 +118,7 @@ class MoNet(nn.Module):
                 x = self.activation_function(x)
             # add final linear layer
             x = self.fc(x)
-            outputs['non_lesion_logits'].append(x[:,1])
+            outputs['non_lesion_logits'].append(x[:,0])
             x = nn.LogSoftmax(dim=1)(x)
             outputs['log_softmax'].append(x)
         
@@ -298,7 +298,7 @@ class MoNetUnet(nn.Module):
                     x = self.activation_function(x)
             # add final linear layer
             x = self.fc(x)
-            outputs['non_lesion_logits'].append(x[:,1])
+            outputs['non_lesion_logits'].append(x[:,0])
             x = nn.LogSoftmax(dim=1)(x)
             outputs['log_softmax'].append(x)
         
