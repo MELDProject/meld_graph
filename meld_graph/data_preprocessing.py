@@ -478,4 +478,5 @@ class Preprocess:
         device=self.device)
         full_upsampled = self.unpool7(upsampled1, device = self.device)
         full_upsampled = full_upsampled.detach().cpu().numpy().ravel()
+        print(full_upsampled.shape)
         return np.clip(full_upsampled, 0, 200)
