@@ -3,6 +3,8 @@ import os, datetime
 # model and training parameters, passed to model and Trainer, respectively
 network_parameters = {
     # network_type: model class, one of: MoNet, MoNetUnet (see models.py)
+    # model outputs are dict with possible keys (depending on defined loss functions): 
+    #    log_softmax, dsXX_log_softmax (deep supervision at level XX)
     'network_type': 'MoNetUnet',
     # model_parameters: passed to model class initialiser
     'model_parameters': {
