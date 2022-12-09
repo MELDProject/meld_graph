@@ -29,6 +29,7 @@ class GMMConv(nn.Module):
         
 # define model
 class MoNet(nn.Module):
+    # TODO change outputs of this model as well
     def __init__(self, num_features, layer_sizes = [], dim=2, kernel_size=3, icosphere_params={}, 
                 conv_type='GMMConv', spiral_len=10,
                 activation_fn='relu', norm=None, **kwargs):
@@ -110,19 +111,25 @@ class MoNet(nn.Module):
         original_shape = batch_x.shape
         batch_x = batch_x.view((batch_x.shape[0]//self.n_vertices, self.n_vertices,self.num_features))
 
-        outputs = []
+        outputs = {'log_softmax': [], 'non_lesion_logits': []}
         for x in batch_x:
             for cl in self.conv_layers:
                 x = cl(x, device=self.device)
                 x = self.activation_function(x)
             # add final linear layer
             x = self.fc(x)
+            outputs['non_lesion_logits'].append(x[:,0])
             x = nn.LogSoftmax(dim=1)(x)
-            outputs.append(x)
-        batch_x = torch.stack(outputs)
-        #reshape output to batch, n_vertices
-        x = batch_x.view((original_shape[0],-1))
-        return [x]  # return list, as other models return multiple outputs
+            outputs['log_softmax'].append(x)
+        
+        # stack and reshape outputs to (batch * n_vertices, -1)
+        for key, output in outputs.items():
+            shape = (-1, 2)
+            if 'non_lesion_logits' in key:
+                shape = (-1, 1)
+            outputs[key] = torch.stack(output).view(shape)
+            #print('output', key, outputs[key].shape)
+        return outputs
 
 
 class MoNetUnet(nn.Module):
@@ -259,8 +266,10 @@ class MoNetUnet(nn.Module):
         
         batch_x = batch_x.view((batch_x.shape[0]//self.n_vertices, self.n_vertices,self.num_features))
         skip_connections = []
-        outputs=[]
-        deep_output = {level: [] for level in self.deep_supervision}
+        outputs = {'log_softmax': [], 'non_lesion_logits': []}
+        for level in self.deep_supervision:
+            outputs[f'ds{level}_log_softmax'] = []
+            outputs[f'ds{level}_non_lesion_logits'] = []
         for x in batch_x:
             level = 7
             for i, block in enumerate(self.encoder_conv_layers):
@@ -277,8 +286,9 @@ class MoNetUnet(nn.Module):
                 # check if want deep supervision for this level
                 if level in self.deep_supervision:
                     x_out = self.deep_supervision_fcs[str(level)](x)
+                    outputs[f'ds{level}_non_lesion_logits'].append(x_out[:,1])
                     x_out = nn.LogSoftmax(dim=1)(x_out)
-                    deep_output[level].append(x_out)
+                    outputs[f'ds{level}_log_softmax'].append(x_out)
                 skip_i = len(self.decoder_conv_layers)-1-i
                 level += 1
                 x = self.unpool_layers[i](x, device=self.device)
@@ -288,16 +298,18 @@ class MoNetUnet(nn.Module):
                     x = self.activation_function(x)
             # add final linear layer
             x = self.fc(x)
+            outputs['non_lesion_logits'].append(x[:,0])
             x = nn.LogSoftmax(dim=1)(x)
-            outputs.append(x)
-        batch_x = torch.stack(outputs)
-        #reshape output to batch, n_vertices
-        x = batch_x.view((original_shape[0],-1))
-        #print([deep_output[level][0].shape for level in self.deep_supervision])
-        deep_output = [torch.stack(deep_output[level]) for level in self.deep_supervision]
-        #print([o.shape for o in deep_output])
-        deep_output = [out.view(-1, 2) for out in deep_output]
-        return [x] + deep_output
+            outputs['log_softmax'].append(x)
+        
+        # stack and reshape outputs to (batch * n_vertices, -1)
+        for key, output in outputs.items():
+            shape = (-1, 2)
+            if 'non_lesion_logits' in key:
+                shape = (-1, 1)
+            outputs[key] = torch.stack(output).view(shape)
+            #print('output', key, outputs[key].shape)
+        return outputs
 
 class HexPool(nn.Module):
     def __init__(self, neigh_indices):

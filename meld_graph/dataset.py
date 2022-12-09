@@ -105,19 +105,14 @@ class GraphDataset(torch_geometric.data.Dataset):
         )
         # if distance maps are required, load them in this list
         if distance_maps:
-            self.distance_map_list = []
             print('dataset using distance_maps')
-        else:
-            self.distance_map_list = None
+        
         self.log.info(f"Loading and preprocessing {mode} data")
         self.log.debug(f"Combine hemis {self.params['combine_hemis']}")
         
-        # switch for synthetic task here
         if self.params["synthetic_data"]["run_synthetic"]:
             if distance_maps:
-                self.prep.setup_distance_solver()
-                print('setting up')
-            
+                self.prep.setup_distance_solver()            
             self.n_subs_split_i = self.params['synthetic_data']['n_subs']//self.params['number_of_folds']
             if mode=='train':
                 self.n_subs_split = self.n_subs_split_i*(self.params['number_of_folds']-1)
@@ -131,9 +126,8 @@ class GraphDataset(torch_geometric.data.Dataset):
                 self.subject_ids = np.arange(self.n_subs_split)
                 self.log.info(f"WARNING: Simulating {len(self.subject_ids)} subjects")
                 for s in np.arange(self.n_subs_split):
-                    sfl, sfr, sll, slr = self.synthetic_lesion()
-                    self.data_list.append((sfl.T, sll))
-                    self.data_list.append((sfr.T, slr))
+                    synth_sub_data_list = self.synthetic_lesion()
+                    self.data_list.extend(synth_sub_data_list)
                 return
             #undersample subject ids to get controlled number
             n_subs_before = len(self.subject_ids)
@@ -150,83 +144,41 @@ class GraphDataset(torch_geometric.data.Dataset):
         for s_i,subj_id in enumerate(self.subject_ids):
             #load in (control) data
             # features are appended to list in order: left, right
-            features_left, features_right, lesion_left, lesion_right = self.prep.get_data_preprocessed(subject=subj_id, 
-                                                                     features=params['features'], 
-                                        lobes = params['lobes'], lesion_bias=False)
+            subject_data_list = self.prep.get_data_preprocessed(subject=subj_id, 
+                                        features=params['features'], 
+                                        lobes = params['lobes'], lesion_bias=False,
+                                        distance_maps=distance_maps,
+                                        combine_hemis = self.params['combine_hemis'])
             
             #add lesion
             if self.params['synthetic_data']['run_synthetic']:
                 for duplicate in np.arange(np.sum(self.subject_samples==s_i)):
-                    
-                        synth_sub_dict = self.synthetic_lesion(features_left.copy(),
-                                                               features_right.copy(),
-                                                              distance_maps = distance_maps)
-                        if self.params['combine_hemis'] is None:
-                            self.data_list.append((synth_sub_dict[0]['features'].T, 
-                                                synth_sub_dict[0]['lesion']))
-                            self.data_list.append((synth_sub_dict[1]['features'].T, 
-                                                synth_sub_dict[1]['lesion']))
-
-                        #TODO also insert distance map list here
-                        if distance_maps:
-                            self.distance_map_list.append(synth_sub_dict[0]['distances'] )
-                            self.distance_map_list.append(synth_sub_dict[1]['distances'] )
+                        synth_sub_data_list = self.synthetic_lesion(subject_data_list)
+                        self.data_list.extend(synth_sub_data_list)
             else:
-
-                if self.params["combine_hemis"] is None:
-                    self.data_list.append((features_left.T, lesion_left))
-                    self.data_list.append((features_right.T, lesion_right))
-                    
-                elif self.params["combine_hemis"] == "stack":
-                    # this code doesn't look correct. surely lesions also should be stacked?
-                    # NOTE: the stacking is just for features, this gives more context to the current hemi that should
-                    # be segmented. Currently might not be necessary, because we use normalisation by the other hemisphere
-                    features = np.vstack([features_left, features_right]).T
-                    self.data_list.append((features, lesion_left))
-                    features = np.vstack([features_right, features_left]).T
-                    self.data_list.append((features, lesion_right))
-                else:
-                    raise NotImplementedError
+                self.data_list.extend(subject_data_list)
 
             # load geodesic distance maps for regression task / lesion augmentation
-            if distance_maps and not self.params['synthetic_data']['run_synthetic']:
-                subj = MeldSubject(subj_id, cohort=self.prep.cohort)
-                # same hemisphere order
-                for hemi in ('lh', 'rh'):
-                    gdist = subj.load_feature_values('.on_lh.boundary_zone.mgh', hemi=hemi)
-                    # threshold to range 0,200
-                    gdist = np.clip(gdist, 0, 200)
-                    # no lesion on this hemi?
-                    # NOTE this will also put 200 in the medial wall - fine for our purposes
-                    if (not subj.is_patient) or (subj.get_lesion_hemisphere() != hemi):
-                        gdist[:] = 200
-                    self.distance_map_list.append(gdist)
-
         #dataset has weird properties. subject_ids needs to be the right length, matching the data length
         if self.params['synthetic_data']['run_synthetic']:
             if self.n_subs_split>len(self.subject_ids):
                 self.subject_ids = np.array(self.subject_ids)[self.subject_samples]
         return
 
-    def synthetic_lesion(self, features_left=None, features_right=None,
-                distance_maps=None):
+    def synthetic_lesion(self, subject_data_list=[{'features':None},
+                                                  {'features':None}]):
         """add synthetic lesion to input features for both hemis"""
         synth_dicts=[]
-        for f in [features_left,features_right]:
+        for sdl in subject_data_list:
             #controls the proportion of examples with lesions.
 
             subtype=np.random.choice(self.params['synthetic_data']['n_subtypes'])
             synth_dict = self.prep.generate_synthetic_data(self.icospheres.icospheres[7]['coords'],
                                                               len(self.params['features']),
-                                                              self.params['synthetic_data']['bias'],
-                                                             self.params['synthetic_data']['radius'],
                                                              histo_type_seed=subtype,
-                    proportion_features_abnormal=self.params['synthetic_data']['proportion_features_abnormal'],
-                    proportion_hemispheres_abnormal=self.params['synthetic_data']['proportion_hemispheres_lesional'],
-                                                 features=f,
-                                                    jitter_factor=self.params['synthetic_data']['jitter_factor'],
-                                                    smooth_lesion=self.params['synthetic_data'].get('smooth_lesion', False),
-                                                    distance_maps = distance_maps)
+                                                             synth_params = self.params['synthetic_data'],
+                                                    features=sdl['features'],
+                                                    distance_maps = 'distances' in sdl.keys())
             synth_dicts.append(synth_dict)
         return synth_dicts
 
@@ -258,36 +210,20 @@ class GraphDataset(torch_geometric.data.Dataset):
 
     def len(self):
         # every subject will be shown twice per epoch
-        return 2 * len(self.subject_ids)
+        return len(self.data_list)
 
     def get(self, idx):
         # print('dataset get idx ', idx)
-        features, labels = self.data_list[idx]
-
+        subject_data_dict = self.data_list[idx]
         # apply data augmentation
-        
-
         # set geodesic distance attr to data
-        if self.distance_map_list is not None:
-            distance_map = self.distance_map_list[idx]
-            if self.augment != None:
-                features, labels, distance_map = self.augment.apply(features, labels, distance_map)
-            data = torch_geometric.data.Data(
-            x=torch.tensor(features, dtype=torch.float),
-            y=torch.tensor(labels, dtype=torch.long),
-            num_nodes=len(features),
-        )
-            setattr(data, "distance_map", torch.tensor(distance_map, dtype=torch.float))
-
-        elif self.augment != None:
-            print('doing it again')
-            features, labels = self.augment.apply(features, labels)
-            data = torch_geometric.data.Data(
-            x=torch.tensor(features, dtype=torch.float),
-            y=torch.tensor(labels, dtype=torch.long),
-            num_nodes=len(features),
-        )
-
+        if self.augment != None:
+            subject_data_dict = self.augment.apply(subject_data_dict)
+        data = torch_geometric.data.Data(
+            x=torch.tensor(subject_data_dict['features'], dtype=torch.float),
+            y=torch.tensor(subject_data_dict['labels'], dtype=torch.long),
+            num_nodes=len(subject_data_dict['features']),)
+        
         # add extra output levels to data
         if len(self.output_levels) != 0:
             labels_pooled = {7: data.y}
@@ -295,14 +231,18 @@ class GraphDataset(torch_geometric.data.Dataset):
                 labels_pooled[level] = self.pool_layers[level](labels_pooled[level + 1])
             for level in self.output_levels:
                 setattr(data, f"output_level{level}", labels_pooled[level])
-            # add downsampled distance maps if required
-            if self.distance_map_list is not None:
-                dists_pooled = {7: data.y}
+
+            # add  distance maps if required
+        if 'distances' in subject_data_dict.keys():
+            #potentially here you could divide by 200
+            setattr(data, "distance_map", 
+            torch.tensor(subject_data_dict['distances'], dtype=torch.float))
+            if len(self.output_levels) != 0:
+                dists_pooled = {7: data.distance_map}
                 for level in range(min(self.output_levels), 7)[::-1]:
                     dists_pooled[level] = self.pool_layers[level](dists_pooled[level + 1], center_pool=True)
                 for level in self.output_levels:
                     setattr(data, f"output_level{level}_distance_map", dists_pooled[level])
-        
         return data
 
     @property
@@ -311,7 +251,7 @@ class GraphDataset(torch_geometric.data.Dataset):
         if self._lesional_idxs is None:
             lesional_idxs = []
             for i, d in enumerate(self.data_list):
-                if d[1].sum():
+                if d['labels'].sum():
                     lesional_idxs.append(i)
             self._lesional_idxs = np.array(lesional_idxs)
             # self.log.info(f'lesional idxs: {self._lesional_idxs}')

@@ -129,7 +129,7 @@ class Evaluator:
             data = data.to(device)
             estimates = self.experiment.model(data.x)
             labels = data.y.squeeze()
-            prediction = torch.exp(estimates[0])[:,1]
+            prediction = torch.exp(estimates['log_softmax'])[:,1]
             prediction_array.append(prediction.detach().numpy())
             labels_array.append(labels.numpy())
             features_array.append(data.x.numpy())

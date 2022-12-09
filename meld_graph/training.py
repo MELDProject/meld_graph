@@ -60,9 +60,8 @@ class DistanceRegressionLoss(torch.nn.Module):
             self.weigh_by_gt = False
     
     def forward(self, inputs, target, distance_map):
-        # get second dimension 
-        inputs = torch.exp(inputs.select(1,1))
-        # normalise distance map
+        inputs = torch.squeeze(inputs)
+        # normalise distance map TODO maybe do before to not repeat every time?
         distance_map = torch.div(distance_map, 200)
         #print(inputs[:10], distance_map[:10])
         # calculate mean squared error
@@ -121,32 +120,71 @@ def tp_fp_fn_tn(pred, target):
     tn = torch.sum(torch.logical_and((target==0), (pred==0)))
     return tp, fp, fn, tn
     
-def calculate_loss(loss_weight_dictionary,estimates,labels, device=None, distance_map=None):
+
+def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_supervision_level=None, device=None):
     """ 
-    calculate loss. Can combine losses with weights defined in loss_weight_dictionary
+    calculate loss. Can combine losses with weights defined in loss_dict
     loss_dictionary= {'dice':{'weight':1},
                     'cross_entropy':{'weight':1},
                     'focal_loss':{'weight':1, 'alpha':0.5, 'gamma':0},
                     'other_losses':weights}
+    estimates should contain the model outputs in a dictionary
 
     NOTE estimates are the logSoftmax output of the model. For some losses, applying torch.exp is necessary!
     """
-    # TODO could use class_weights for dice loss (but not using dice loss atm)
     loss_functions = {
-        'dice': partial(DiceLoss(loss_weight_dictionary=loss_weight_dictionary),
+        'dice': partial(DiceLoss(loss_weight_dictionary=loss_dict),
                          device=device),
         'cross_entropy': CrossEntropyLoss(),
-        'focal_loss': FocalLoss(loss_weight_dictionary),
-        'distance_regression': DistanceRegressionLoss(loss_weight_dictionary),
-                       }
+        'focal_loss': FocalLoss(loss_dict),
+        'distance_regression': DistanceRegressionLoss(loss_dict),
+    }
     if distance_map is not None:
         distance_map.to(device)
-    total_loss = 0
-    loss_list = []
-    for loss_def in loss_weight_dictionary.keys():
-        loss_list.append(loss_weight_dictionary[loss_def]['weight'] * loss_functions[loss_def](estimates,labels, distance_map=distance_map))
-        total_loss += loss_list[-1]
-    return total_loss, loss_list
+    losses = {}
+    for loss_def in loss_dict.keys():
+        # TODO if deep supverision level 
+        if deep_supervision_level is None:
+            prefix = ''
+        else:
+            prefix = f'ds{deep_supervision_level}_'
+
+        if loss_def in ['dice', 'cross_entropy', 'focal_loss']:
+            cur_estimates = estimates_dict[f'{prefix}log_softmax']
+        elif loss_def == 'distance_regression':
+            cur_estimates = estimates_dict[f'{prefix}non_lesion_logits']
+        else:
+            raise NotImplementedError(f'Unknown loss def {loss_def}')
+        # TODO can add more losses here - for classification only call when ds is not used
+
+        losses[loss_def] = loss_dict[loss_def]['weight'] * loss_functions[loss_def](cur_estimates, labels, distance_map=distance_map)
+    return losses
+
+#def calculate_loss(loss_weight_dictionary,estimates,labels, device=None, distance_map=None):
+#    """ 
+#    calculate loss. Can combine losses with weights defined in loss_weight_dictionary
+#    loss_dictionary= {'dice':{'weight':1},
+#                    'cross_entropy':{'weight':1},
+#                    'focal_loss':{'weight':1, 'alpha':0.5, 'gamma':0},
+#                    'other_losses':weights}
+
+#    NOTE estimates are the logSoftmax output of the model. For some losses, applying torch.exp is necessary!
+#    """
+#    loss_functions = {
+#        'dice': partial(DiceLoss(loss_weight_dictionary=loss_weight_dictionary),
+#                         device=device),
+#        'cross_entropy': CrossEntropyLoss(),
+#        'focal_loss': FocalLoss(loss_weight_dictionary),
+#        'distance_regression': DistanceRegressionLoss(loss_weight_dictionary),
+#                       }
+#    if distance_map is not None:
+#        distance_map.to(device)
+#    total_loss = 0
+#    loss_list = []
+#    for loss_def in loss_weight_dictionary.keys():
+#        loss_list.append(loss_weight_dictionary[loss_def]['weight'] * loss_functions[loss_def](estimates,labels, distance_map=distance_map))
+#        total_loss += loss_list[-1]
+#    return total_loss, loss_list
 
 class Metrics:
     def __init__(self, metrics):
@@ -227,25 +265,24 @@ class Trainer:
             optimiser.zero_grad()
             estimates = model(data.x)
             labels = data.y.squeeze()
-            #print('overall loss')
-            loss, loss_list = calculate_loss(self.params['loss_dictionary'],estimates[0], labels, distance_map=getattr(data, "distance_map", None), device=device)
+            losses = calculate_loss(self.params['loss_dictionary'], estimates, labels, distance_map=getattr(data, "distance_map", None), deep_supervision_level=None, device=device)
             # add deep supervision outputs
             for i,level in enumerate(sorted(self.deep_supervision['levels'])):
-                cur_estimates = estimates[i+1]
                 cur_labels = getattr(data, f"output_level{level}")
                 cur_distance_map = getattr(data, f"output_level{level}_distance_map", None)
-                #print('deepsup', i, cur_estimates.shape, cur_labels.shape, cur_distance_map)
-
-                loss += self.deep_supervision['weight'][i] * calculate_loss(self.params['loss_dictionary'], cur_estimates, cur_labels, distance_map=cur_distance_map, device=device)[0]
+                ds_losses = calculate_loss(self.params['loss_dictionary'], estimates, cur_labels, distance_map=cur_distance_map, deep_supervision_level=level, device=device)
+                losses.update({f'ds{level}_{key}': self.deep_supervision['weight'][i] * val for key, val in ds_losses.items()})
+            # calculate overall loss
+            loss = sum(losses.values())
             loss.backward()
             optimiser.step()
             for i, key in enumerate(self.params['loss_dictionary'].keys()):
-                running_losses[key].append(loss_list[i].item())
-                #print(key, loss_list[i].item())
+                # TODO could also append ds{level} losses here
+                running_losses[key].append(losses[key].item())
             running_losses['loss'].append(loss.item())
-                #print(key, loss_list[i].item())
+
             # metrics
-            pred = torch.argmax(estimates[0], axis=1)
+            pred = torch.argmax(estimates['log_softmax'], axis=1)
             # update running metrics
             metrics.update(pred, labels)
             # TODO add distance regression to metrics
@@ -264,25 +301,28 @@ class Trainer:
             running_losses['loss'] = []
             for i, data in enumerate(data_loader):
                 data = data.to(device)
-                #fake_x = torch.vstack([data.y for _ in range(22)]).t().type(torch.float)
                 estimates = model(data.x)
                 labels = data.y.squeeze()
-                loss, loss_list = calculate_loss(self.params['loss_dictionary'],estimates[0], labels, distance_map=getattr(data, "distance_map", None), device=device)
+
+                losses = calculate_loss(self.params['loss_dictionary'], estimates, labels, distance_map=getattr(data, "distance_map", None), deep_supervision_level=None, device=device)
                 # add deep supervision outputs
                 for i,level in enumerate(sorted(self.deep_supervision['levels'])):
-                    cur_estimates = estimates[i+1]
                     cur_labels = getattr(data, f"output_level{level}")
-                    #print(cur_estimates.shape, cur_labels.shape)
                     cur_distance_map = getattr(data, f"output_level{level}_distance_map", None)
-                    loss += self.deep_supervision['weight'][i] * calculate_loss(self.params['loss_dictionary'], cur_estimates, cur_labels, distance_map=cur_distance_map, device=device)[0]
-                
+                    ds_losses = calculate_loss(self.params['loss_dictionary'], estimates, cur_labels, distance_map=cur_distance_map, deep_supervision_level=level, device=device)
+                    losses.update({f'ds{level}_{key}': self.deep_supervision['weight'][i] * val for key, val in ds_losses.items()})
+                # calculate overall loss
+                loss = sum(losses.values())
+                # keep track of loss
                 for i, key in enumerate(self.params['loss_dictionary'].keys()):
-                    running_losses[key].append(loss_list[i].item())
+                    # TODO could also append ds{level} losses here
+                    running_losses[key].append(losses[key].item())
                 running_losses['loss'].append(loss.item())
-                    #print(key, loss_list[i].item())
+
                 # metrics
-                pred = torch.argmax(estimates[0], axis=1)
+                pred = torch.argmax(estimates['log_softmax'], axis=1)
                 # update running metrics
+                # TODO add distance regression metrics here?
                 metrics.update(pred, labels)
      
         scores = {key: np.mean(running_losses[key]) for key in running_losses.keys()}
@@ -291,7 +331,6 @@ class Trainer:
         model.train()
         return scores
         
-
     def train(self):
         """
         Train val loop with patience and best model saving

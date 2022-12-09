@@ -170,7 +170,7 @@ class Augment():
         return feat_tr
     
     def extend_lesion(self, lesions, distances):
-        if not (lesions==1).any():
+        if (not (lesions==1).any()) or ((distances==200).all()):
             return lesions, distances
         extension = np.random.choice(np.linspace(1, 20, 20))
         print(extension)
@@ -180,24 +180,22 @@ class Augment():
         lesions_extend = (distances_extend<=0)
         return lesions_extend, distances_extend
 
-    def apply_indices(self,indices, feats, lesions=None, distances=None):
+    def apply_indices(self,indices, tdd):
         # spin features
-        feats_transf = feats[indices] 
+        tdd['features'] = tdd['features'][indices] 
         # spin lesions if exist
-        if (lesions==1).any():            
-            lesions_transf = lesions[indices] 
-        if distances is not None:
-            distances_transf = distances[indices]
-            return feats_transf, lesions_transf, distances_transf
-        return feats_transf
+        if (tdd['labels']==1).any():            
+            tdd['labels'] = tdd['labels'][indices] 
+        if 'distances' in tdd.keys():
+            tdd['distances'] = tdd['distances'][indices]    
+        return tdd
        
-    def apply(self, features, lesions=None, distances=None):
-        feat_tr = features
-        lesions_tr = lesions
-        distances_tr = distances
+    def apply(self, subject_data_dict):
+        #create a transformed data dict
+        tdd = subject_data_dict.copy()
         #spinning   
         mesh_transform = False
-        indices = np.arange(feat_tr.shape[0],dtype=int)
+        indices = np.arange(tdd['features'].shape[0],dtype=int)
         #stack the transformations into a single indexing step
         if np.random.rand() < self.get_p_param('spinning'):
             mesh_transform = True
@@ -216,45 +214,42 @@ class Augment():
         
         #apply just once
         if mesh_transform:
-            feat_tr, lesions_tr, distances_tr = self.apply_indices(indices,
-            feat_tr,lesions_tr,distances_tr)
+            tdd = self.apply_indices(indices,
+            tdd)
         
         #Gaussian noise
         if np.random.rand() < self.get_p_param('noise'):
-            feat_tr= self.add_gaussian_noise(feat_tr)
+            tdd['features'] = self.add_gaussian_noise(tdd['features'])
             
         #Gaussian blur - not implemented
         if np.random.rand() < self.get_p_param('blur'):
-            feat_tr= self.add_gaussian_blur(feat_tr)
+            tdd['features']= self.add_gaussian_blur(tdd['features'])
         
         #Brightness scaling
         if np.random.rand() < self.get_p_param('brightness'):
-            feat_tr= self.add_brightness_scaling(feat_tr)
+            tdd['features']= self.add_brightness_scaling(tdd['features'])
         
         #adjust contrast
         if np.random.rand() < self.get_p_param('contrast'):
-            feat_tr= self.add_brightness_scaling(feat_tr)
+            tdd['features']= self.add_brightness_scaling(tdd['features'])
             
         #low res - not implemented
         if np.random.rand() < self.get_p_param('low_res'):
-            feat_tr= self.add_low_res(feat_tr)
+            tdd['features']= self.add_low_res(tdd['features'])
             
         #gamma intensity
         if np.random.rand() < self.get_p_param('gamma'):
-            feat_tr = self.add_gamma_scale(feat_tr)
+            tdd['features'] = self.add_gamma_scale(tdd['features'])
         
         #inverted gamma intensity
         if np.random.rand() < self.get_p_param('gamma'):
-            feat_tr = - self.add_gamma_scale( -feat_tr)
+            tdd['features'] = - self.add_gamma_scale( -tdd['features'])
 
         #extend lesion using distance
-        if (np.random.rand() < self.get_p_param('extend_lesion')) & (distances_tr.any()!=None):
-            lesions_tr, distances_tr=self.extend_lesion(lesions_tr, distances_tr)
-
-        if distances.any()!=None:
-            return feat_tr, lesions_tr, distances_tr
-            
-        return feat_tr, lesions_tr
+        if (np.random.rand() < self.get_p_param('extend_lesion')) & ('distances' in tdd.keys()):
+            tdd['labels'], tdd['distances']=self.extend_lesion(tdd['labels'], tdd['distances'])
+ 
+        return tdd
     
    
        

@@ -51,12 +51,12 @@ network_parameters = {
             #'cross_entropy':{'weight':1},
             'focal_loss':{'weight':1, 'alpha':0.4, 'gamma':4},
             #'dice':{'weight': 1, 'class_weights': [1.0, 0.0]},
-            'distance_regression': {'weight': 1, 'weigh_by_gt': True}
+            'distance_regression': {'weight': 1, 'weigh_by_gt': False}
         },
          # metrics: list of metrics that should be printed during training
          # possible values: dice_lesion, dice_nonlesion, precision, recall, tp, fp, fn, tn
         'metrics': ['dice_lesion', 'dice_nonlesion', 'precision', 'recall', 'tp', 'fp', 'fn'], 
-        "batch_size": 1,
+        "batch_size": 8,
         "shuffle_each_epoch": True,
         # deep_supervision: add loss at specified levels of the unet (for MoNetUnet).
         # Set to list of levels (eg [6,5,4]), for which to add output layers for additional supervision.
@@ -72,9 +72,8 @@ network_parameters = {
         'init_weights': None,
     },
     # name: experiment name. If none, experiment is not saved
-    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_losses/distance',
+    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_losses/distance_loss',
 }
-
 
 # data parameters, passed to GraphDataset and Preprocess
 data_parameters = {
@@ -102,12 +101,11 @@ data_parameters = {
         "H23",
         "H24",
         "H26",
-    
     ],
     'scanners': ['15T','3T'],
     'dataset': 'MELD_dataset_V6.csv',
     #THIS NEEDS TO BE CHANGED IF REAL TRAINING TO BOTH
-    'group': 'both',
+    'group': 'control',
     "features_to_exclude": [],
     "subject_features_to_exclude": [],
     # features: manually specify features (instead of features_to_exclude)
@@ -202,7 +200,7 @@ data_parameters = {
     # synthetic lesions on synthetic data or on controls.
     'synthetic_data': {
         # run_synthetic: master switch for whether to run the synthetic task. True means run it.
-        'run_synthetic':False,
+        'run_synthetic':True,
         # n_subs: controls the number of subjects. Randomly sampled from subject ids (i.e. duplicates will exist)
         'n_subs': 1000,
         # use_controls: superimpose lesions on controls, or on white noise features
