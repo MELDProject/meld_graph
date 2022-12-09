@@ -169,12 +169,22 @@ class Augment():
             feat_tr[:,c] = feat_tr[:,c] + mn
         return feat_tr
     
+    def extend_lesion(self, lesions, distances):
+        if not (lesions==1).any():
+            return lesions, distances
+        extension = np.random.choice(np.linspace(1, 20, 20))
+        print(extension)
+        #update distances
+        distances_extend = np.clip(distances-extension,a_min=0, a_max=None)
+        # extend lesions
+        lesions_extend = (distances_extend<=0)
+        return lesions_extend, distances_extend
+
     def apply_indices(self,indices, feats, lesions=None, distances=None):
-        
         # spin features
         feats_transf = feats[indices] 
         # spin lesions if exist
-        if lesions.any()!= None:            
+        if (lesions==1).any():            
             lesions_transf = lesions[indices] 
         if distances is not None:
             distances_transf = distances[indices]
@@ -236,7 +246,11 @@ class Augment():
         #inverted gamma intensity
         if np.random.rand() < self.get_p_param('gamma'):
             feat_tr = - self.add_gamma_scale( -feat_tr)
-            
+
+        #extend lesion using distance
+        if (np.random.rand() < self.get_p_param('extend_lesion')) & (distances_tr.any()!=None):
+            lesions_tr, distances_tr=self.extend_lesion(lesions_tr, distances_tr)
+
         if distances.any()!=None:
             return feat_tr, lesions_tr, distances_tr
             
