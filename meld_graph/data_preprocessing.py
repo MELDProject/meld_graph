@@ -295,7 +295,7 @@ class Preprocess:
         smooth_lesion - smooth edge of lesions"""
         #create a histological signature of -1,0,1 on which features are abnormal
         n_verts=len(coords)
-        lesion = np.zeros(n_verts,dtype=bool)
+        lesion = np.zeros(n_verts,dtype=int)
         if features is None:
             features = np.random.normal(0,1,
                                     (n_verts,n_features))
@@ -307,7 +307,9 @@ class Preprocess:
                                distance_maps=distance_maps)
         else: 
             synth_dict = {'features':features,'labels':lesion,
-            'distances':None}
+            }
+            if distance_maps:
+                synth_dict['distances']=np.ones(n_verts,dtype=np.float32)*200
         return synth_dict
     
     def clip_spherical_coords(self,coordinates):
@@ -461,6 +463,9 @@ class Preprocess:
         currently calculating on level 5, with two upsample steps"""
 
         #downsample lesion
+        #if no lesion, no distance
+        if lesion.sum()==0:
+            return np.ones(n_vert)*200
         n_vert = len(self.icospheres.icospheres[5]['coords'])
         indices = np.arange(n_vert,dtype=int)
         lesion_small = lesion[:n_vert]
