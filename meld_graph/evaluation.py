@@ -69,26 +69,39 @@ class Evaluator:
         if not os.path.isdir(os.path.join(save_dir,'results')):
             os.makedirs(os.path.join(save_dir,'results'),exist_ok = True)
         
-
-        # update dataset, cohort and subjects if provided
-        if dataset != None: 
-            self.dataset = dataset
-        if cohort != None:
-            self.cohort = cohort
-        else:
-            self.cohort = self.experiment.cohort
-        if subject_ids != None:
-            self.subject_ids = subject_ids
-        else:
-            self.subject_ids = self.dataset.subject_ids
-
         # if checkpoint load model
         if checkpoint_path:
             self.experiment.load_model(
                 checkpoint_path=os.path.join(checkpoint_path, "best_model.pt"),
                 force=True,
             )
+        
+        # update dataset, cohort and subjects if provided or take from experiment     
+        if cohort != None:
+            self.cohort = cohort
+        else:
+            self.cohort = self.experiment.cohort
 
+        if subject_ids!= None:
+            self.subject_id = subject_ids
+        else:
+            # set subject_ids
+            train_ids, val_ids, test_ids = self.experiment.get_train_val_test_ids()
+            if mode == "train":
+                self.subject_ids = train_ids
+            elif mode == "val":
+                self.subject_ids = val_ids
+            elif mode == "test":
+                self.subject_ids = test_ids
+
+        if dataset != None: 
+            self.dataset = dataset
+            self.subject_ids = self.dataset.subject_ids
+            self.cohort = self.dataset.cohort
+        else:
+            self.dataset = GraphDataset(self.subject_ids, self.cohort, self.experiment.data_parameters, mode=mode)
+            
+    
     def evaluate(self,):
         """
         Evaluate the model.
