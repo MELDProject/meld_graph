@@ -173,7 +173,6 @@ class Augment():
         if (not (lesions==1).any()) or ((distances==200).all()):
             return lesions, distances
         extension = np.random.choice(np.linspace(1, 20, 20))
-        print(extension)
         #update distances
         distances_extend = np.clip(distances-extension,a_min=0, a_max=None)
         # extend lesions
