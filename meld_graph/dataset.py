@@ -251,7 +251,7 @@ class GraphDataset(torch_geometric.data.Dataset):
         if self._lesional_idxs is None:
             lesional_idxs = []
             for i, d in enumerate(self.data_list):
-                if d[1].sum():
+                if d['labels'].sum():
                     lesional_idxs.append(i)
             self._lesional_idxs = np.array(lesional_idxs)
             # self.log.info(f'lesional idxs: {self._lesional_idxs}')
