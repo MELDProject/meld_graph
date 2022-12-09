@@ -112,7 +112,10 @@ class Preprocess:
             pass
         return vals
     
-    def get_data_preprocessed(self, subject, features, lobes=False, lesion_bias=False):
+    def get_data_preprocessed(self, subject, features, 
+    lobes=False, lesion_bias=False,
+    distance_maps = False,
+    combine_hemis=None):
         """
         Preprocess features data for a single subject depending on params.
 
@@ -124,51 +127,47 @@ class Preprocess:
         Returns:
             features_left, features_right, lesion_left, lesion_right
         """
-        subj = MeldSubject(subject, cohort=self.cohort)  
+        subj = MeldSubject(subject, cohort=self.cohort)
+        subject_data = []  
         # load data & lesion
-        vals_array_lh, lesion_lh = subj.load_feature_lesion_data(features, hemi='lh')
-        vals_array_rh, lesion_rh = subj.load_feature_lesion_data(features, hemi='rh')
+        for hemi in ('lh','rh'):
+            vals_array, lesion = subj.load_feature_lesion_data(features, hemi=hemi)
         # z-score data
-        if self.params['zscore']:
-            self.log.info(f"Z-scoring data for {subject}")
-            vals_array_lh = self.zscore_data(vals_array_lh.T,features).T
-            vals_array_rh = self.zscore_data(vals_array_rh.T,features).T
-            
-        if self.params['scaling'] is not None:
-            self.log.info(f"Scaling data for {subject}")
-            # all values excluding medial wall
-            vals_array = np.array(np.hstack([vals_array_lh[self.cohort.cortex_mask].T, vals_array_rh[self.cohort.cortex_mask].T]))
-        
-            # correct for sulc freesurfer TODO only when not combat
-    #         if '.on_lh.sulc.mgh' in features:
-    #             index_sulc = features.index('.on_lh.sulc.mgh')
-    #             vals_array[index_sulc] =  self.correct_sulc_freesurfer(vals_array[index_sulc])
-        
-            # scale data between 0 and 1  
+            if self.params['zscore']:
+                if hemi =='lh':
+                    self.log.info(f"Z-scoring data for {subject}")
+                vals_array = self.zscore_data(vals_array.T,features).T
+            if distance_maps:
+                gdist = self.load_distances(subj,hemi)
             if self.params['scaling'] is not None:
-                scaling_params_file = os.path.join(BASE_PATH, self.params['scaling'])
-                vals_array = self.scale_data(vals_array, features, scaling_params_file )
-            
-            # transform data if feature not gaussian
-            #TODO later
-            
-            # include medial wall back with 0 values
-            vals_array_lh = np.zeros((NVERT, len(features)))
-            vals_array_lh[self.cohort.cortex_mask] = vals_array[:, 0:sum(self.cohort.cortex_mask)].T
-            vals_array_rh = np.zeros((NVERT, len(features)))
-            vals_array_rh[self.cohort.cortex_mask] = vals_array[:, sum(self.cohort.cortex_mask) : sum(self.cohort.cortex_mask)*2].T
-    
-        # replace lesion data with lobes task if required
-        if lobes:
-            lesion_lh = self.lobes
-            lesion_rh = self.lobes
-        # add lesion bias
-        if lesion_bias:
-            self.log.info(f"WARNING: adding lesion bias of {lesion_bias} to {subject}")
-            vals_array_lh[lesion_lh==1] += lesion_bias
-            vals_array_rh[lesion_rh==1] += lesion_bias
+                self.log.info(f"Scaling data for has been removed. REIMPLEMENT")
+            if lobes:
+                # replace lesion data with lobes task if required
+                lesion = self.lobes
+            # add lesion bias
+            if lesion_bias:
+                self.log.info(f"WARNING: adding lesion bias of {lesion_bias} to {subject}")
+                vals_array[lesion==1] += lesion_bias
+            if combine_hemis is not None:
+                self.log.info(f"WARNING: combine_hemis is not implemented.")
 
-        return vals_array_lh.T, vals_array_rh.T, lesion_lh, lesion_rh
+            subj_data_dict={'features':vals_array,
+                             'labels':lesion,
+                             'distances':gdist}
+            subject_data.append(subj_data_dict)
+        return subject_data
+    
+    def load_distances(self,subj,hemi='lh'):
+        """load geodesic distance from lesion or 200s"""
+        if (not subj.is_patient) or (subj.get_lesion_hemisphere() != hemi):
+            gdist = np.ones(NVERT, dtype=np.float32)*200
+
+        else:
+            gdist = subj.load_feature_values('.on_lh.boundary_zone.mgh',
+                    hemi=hemi)
+                 # threshold to range 0,200
+            gdist = np.clip(gdist, 0, 200)
+        return gdist
     
     def load_z_params(self, file='../data/feature_means.json'):
         import json
@@ -281,13 +280,9 @@ class Preprocess:
         # but if two vectors have the same angle then the shorter distance should come first.
         return angle, lenvector
 
-    def generate_synthetic_data(self,coords,n_features,
-                                bias,radius=0.5,histo_type_seed=0,
-                               proportion_features_abnormal = 0.2,
-                                proportion_hemispheres_abnormal = 0.5,
-                               jitter_factor=2,
+    def generate_synthetic_data(self,coords,n_features,synth_params,
+                                histo_type_seed=0,
                                features=None,
-                               smooth_lesion=False,
                                distance_maps=False):
         """coords - spherical coordinates
         n_features - number of input features
@@ -301,15 +296,15 @@ class Preprocess:
         lesion = np.zeros(n_verts,dtype=bool)
         if features is None:
             features = np.random.normal(0,1,
-                                    (n_features,n_verts))
+                                    (n_verts,n_features))
         
-        if np.random.random()<proportion_hemispheres_abnormal:
+        if np.random.random()<synth_params['proportion_hemispheres_lesional']:
             synth_dict = self.add_lesion(features, coords,n_features,
-                                bias,radius,histo_type_seed,
-                               proportion_features_abnormal,jitter_factor,smooth_lesion=smooth_lesion,
+                                synth_params,histo_type_seed,
+                               
                                distance_maps=distance_maps)
         else: 
-            synth_dict = {'features':features,'lesion':lesion,
+            synth_dict = {'features':features,'labels':lesion,
             'distances':None}
         return synth_dict
     
@@ -422,31 +417,32 @@ class Preprocess:
                 sampled_fingerprint[fi] = np.random.normal(f,np.abs(f)/jitter_factor)
         return sampled_fingerprint
         
-    def add_lesion(self, features,coords,n_features, bias, radius, histo_type_seed, 
-                   proportion_features_abnormal,jitter_factor,smooth_lesion=False,
+    def add_lesion(self, features,coords,n_features, synth_params, histo_type_seed, 
                    distance_maps=False):
         """superimpose a synthetic lesion on input data 
        
        """
         #create lesion mask
-        if smooth_lesion:
-            lesion, smoothed_lesion = self.create_lesion_mask(radius,coords,return_smoothed=True)
+        if synth_params['smooth_lesion']:
+            lesion, smoothed_lesion = self.create_lesion_mask(synth_params['radius'],
+            return_smoothed=True)
         else:
-            lesion = smoothed_lesion = self.create_lesion_mask(radius, coords, return_smoothed=False)
+            lesion = smoothed_lesion = self.create_lesion_mask(synth_params['radius'], coords, return_smoothed=False)
         lesion[~self.cohort.cortex_mask]=0
         smoothed_lesion[~self.cohort.cortex_mask]=0
         #bias is sampled from a normal dist so that some subjects are easier than others.
-        sampled_bias = np.clip(np.random.normal(bias,bias/jitter_factor),0,100)
+        sampled_bias = np.clip(np.random.normal(synth_params['bias'],
+                    synth_params['bias']/synth_params['jitter_factor']),0,100)
         #histo_signature - controls which features, how important and what sign
-        fingerprint = self.create_fingerprint(n_features,histo_type_seed,proportion_features_abnormal)
-        
-        sampled_fingerprint = self.sample_fingerprint(fingerprint,jitter_factor)
+        fingerprint = self.create_fingerprint(n_features,histo_type_seed,synth_params['proportion_features_abnormal'])
+
+        sampled_fingerprint = self.sample_fingerprint(fingerprint,synth_params['jitter_factor'])
         lesion_tiled = np.tile(smoothed_lesion.reshape(-1,1),
                                      n_features)
-        synth_bias_features = (lesion_tiled*sampled_fingerprint*sampled_bias).T
+        synth_bias_features = (lesion_tiled*sampled_fingerprint*sampled_bias)
         features= features + synth_bias_features
         synth_dict = {'features' : features.astype('float32'),
-                      'lesion' : lesion.astype('int32')
+                      'labels' : lesion.astype('int32')
             }
         
         if distance_maps:

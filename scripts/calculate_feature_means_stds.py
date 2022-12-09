@@ -74,10 +74,11 @@ if __name__ == '__main__':
         if si%30==0:
             print(f'{100*si/len(subject_ids)}% complete')
 
-        features_left, features_right, lesion_left, lesion_right = prep.get_data_preprocessed(subject=subj_id, 
-                                                                             features=config.data_parameters['features'], 
+        subject_data_list = prep.get_data_preprocessed(subject=subj_id, 
+                                                  features=config.data_parameters['features'], 
                     lobes = config.data_parameters['lobes'], lesion_bias=False)
-        for feat_hem in [features_left,features_right]:
+        for hemisphere_data in subject_data_list:
+            feat_hem = hemisphere_data['features']
             feat_hem=feat_hem[:,cohort.cortex_mask]
             feat_hem_nf = feat_hem[~flair_mask]
             mean_std.update(feat_hem_nf.T)
