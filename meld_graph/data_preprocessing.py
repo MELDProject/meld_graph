@@ -472,5 +472,5 @@ class Preprocess:
         upsampled1 = self.unpool6(torch.from_numpy(boundary_distance.reshape(-1,1)),
         device=self.device)
         full_upsampled = self.unpool7(upsampled1, device = self.device)
-        full_upsampled = full_upsampled.detach().numpy().ravel()
+        full_upsampled = full_upsampled.detach().cpu().numpy().ravel()
         return np.clip(full_upsampled, 0, 200)
