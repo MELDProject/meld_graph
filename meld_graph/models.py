@@ -318,10 +318,10 @@ class HexPool(nn.Module):
         
     def forward(self, x, center_pool=False):
         # center_pool: default is max pool, set center_pool to true to do center pool
-        x = x[:len(self.neigh_indices)][self.neigh_indices]
         if center_pool:
-            x = x[:,0]
+            x = x[:len(self.neigh_indices)]
         else:
+            x = x[:len(self.neigh_indices)][self.neigh_indices]
             x = torch.max(x, dim=1)[0]
         #print('hexpool', x.shape)
         return x

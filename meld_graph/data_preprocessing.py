@@ -310,6 +310,7 @@ class Preprocess:
             }
             if distance_maps:
                 synth_dict['distances']=np.ones(n_verts,dtype=np.float32)*200
+        print(synth_dict['distances'].shape)
         return synth_dict
     
     def clip_spherical_coords(self,coordinates):
@@ -464,9 +465,10 @@ class Preprocess:
 
         #downsample lesion
         #if no lesion, no distance
+        n_vert = len(self.icospheres.icospheres[5]['coords'])
         if lesion.sum()==0:
             return np.ones(n_vert)*200
-        n_vert = len(self.icospheres.icospheres[5]['coords'])
+        
         indices = np.arange(n_vert,dtype=int)
         lesion_small = lesion[:n_vert]
         # non_lesion_and_neighbours = self.flatten(np.array(self.icospheres.icospheres[5]['neighbours'])[lesion_small == 0])
