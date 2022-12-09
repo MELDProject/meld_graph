@@ -132,6 +132,7 @@ class Preprocess:
         # load data & lesion
         for hemi in ('lh','rh'):
             vals_array, lesion = subj.load_feature_lesion_data(features, hemi=hemi)
+            subject_data_dict={}
         # z-score data
             if self.params['zscore']:
                 if hemi =='lh':
@@ -139,6 +140,7 @@ class Preprocess:
                 vals_array = self.zscore_data(vals_array.T,features).T
             if distance_maps:
                 gdist = self.load_distances(subj,hemi)
+                subject_data_dict['distances'] = gdist
             if self.params['scaling'] is not None:
                 self.log.info(f"Scaling data for has been removed. REIMPLEMENT")
             if lobes:
@@ -151,10 +153,10 @@ class Preprocess:
             if combine_hemis is not None:
                 self.log.info(f"WARNING: combine_hemis is not implemented.")
 
-            subj_data_dict={'features':vals_array,
-                             'labels':lesion,
-                             'distances':gdist}
-            subject_data.append(subj_data_dict)
+            subject_data_dict['features'] = vals_array
+            subject_data_dict['labels'] = lesion 
+                
+            subject_data.append(subject_data_dict)
         return subject_data
     
     def load_distances(self,subj,hemi='lh'):
