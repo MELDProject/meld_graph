@@ -14,7 +14,7 @@ import json
 import copy 
 from meld_classifier.meld_cohort import MeldCohort, MeldSubject
 import time
-from meld_graph.models import HexUnpool
+from meld_graph.models import HexUnpool, HexPool
 import torch
 import potpourri3d as pp3d
 
@@ -77,17 +77,25 @@ class Preprocess:
     
     def setup_distance_solver(self):
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.pool7 = self.pool(level=6)
+        self.pool6 = self.pool(level=5)
         self.unpool6 = self.unpool(level=6)
         self.unpool7 = self.unpool(level=7)
         self.solver = pp3d.MeshHeatMethodDistanceSolver(self.icospheres.icospheres[5]['coords'],
                        self.icospheres.icospheres[5]['faces'])
+
         return
+
+    def pool(self,level=7):
+        neigh_indices = self.icospheres.get_neighbours(level=level)
+        pooling = HexPool(neigh_indices=neigh_indices)
+        return pooling
 
     def unpool(self,level=7):
         num = len(self.icospheres.get_neighbours(level=level))
         upsample = self.icospheres.get_upsample(target_level=level)
-        unpool = HexUnpool(upsample_indices=upsample, target_size=num)
-        return unpool
+        unpooling = HexUnpool(upsample_indices=upsample, target_size=num)
+        return unpooling
         
     def load_lobar_parcellation(self, lobe = 1):
         parc=nb.freesurfer.io.read_annot(os.path.join(self.data_dir,'fsaverage_sym','label','lh.lobes.annot'))[0]
@@ -310,7 +318,6 @@ class Preprocess:
             }
             if distance_maps:
                 synth_dict['distances']=np.ones(n_verts,dtype=np.float32)*200
-        print(synth_dict['distances'].shape)
         return synth_dict
     
     def clip_spherical_coords(self,coordinates):
@@ -430,7 +437,7 @@ class Preprocess:
         #create lesion mask
         if synth_params['smooth_lesion']:
             lesion, smoothed_lesion = self.create_lesion_mask(synth_params['radius'],
-            return_smoothed=True)
+                  return_smoothed=True)
         else:
             lesion = smoothed_lesion = self.create_lesion_mask(synth_params['radius'], coords, return_smoothed=False)
         lesion[~self.cohort.cortex_mask]=0
@@ -449,7 +456,6 @@ class Preprocess:
         synth_dict = {'features' : features.astype('float32'),
                       'labels' : lesion.astype('int32')
             }
-        
         if distance_maps:
             geodesic_distances = self.fast_geodesics(lesion)
             synth_dict['distances'] = geodesic_distances.astype('float32') 
@@ -465,12 +471,15 @@ class Preprocess:
 
         #downsample lesion
         #if no lesion, no distance
-        n_vert = len(self.icospheres.icospheres[5]['coords'])
         if lesion.sum()==0:
+            n_vert = len(self.icospheres.icospheres[7]['coords'])
             return np.ones(n_vert)*200
-        
+        n_vert = len(self.icospheres.icospheres[5]['coords'])
+
         indices = np.arange(n_vert,dtype=int)
-        lesion_small = lesion[:n_vert]
+        downsampled1 = self.pool7(torch.from_numpy(lesion.reshape(-1,1)))
+        lesion_small = self.pool6(downsampled1).detach().cpu().numpy().ravel()
+        #lesion_small = lesion[:n_vert]
         # non_lesion_and_neighbours = self.flatten(np.array(self.icospheres.icospheres[5]['neighbours'])[lesion_small == 0])
         # lesion_boundary_vertices = np.setdiff1d(non_lesion_and_neighbours, np.where(lesion_small == 0)[0])
         boundary_distance = self.solver.compute_distance_multisource(indices[lesion_small>0])
@@ -480,4 +489,5 @@ class Preprocess:
         device=self.device)
         full_upsampled = self.unpool7(upsampled1, device = self.device)
         full_upsampled = full_upsampled.detach().cpu().numpy().ravel()
+
         return np.clip(full_upsampled, 0, 200)
