@@ -72,8 +72,9 @@ network_parameters = {
         'init_weights': None,
     },
     # name: experiment name. If none, experiment is not saved
-    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_distance_real',
+    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_losses/distance',
 }
+
 
 # data parameters, passed to GraphDataset and Preprocess
 data_parameters = {
@@ -208,7 +209,7 @@ data_parameters = {
         'use_controls':True,
         # radius: mean radii of lesions, in units of XX. 
         # For each lesion, actual radius is sampled from N(radius,radius/2)
-        'radius': 0.5,  # realisic: 0.5
+        'radius': 2,  # realisic: 0.5
         # n_subtypes: number of lesion "fingerprints" generated (number of histological subtypes)
         # A fingerprint determines which features (using proportion_features_abnormal) change, 
         # in which direction they change, and by how much (sampled from U(0,1)*bias).

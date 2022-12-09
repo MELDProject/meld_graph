@@ -77,6 +77,30 @@ cohort = MeldCohort(
         )
 dataset = GraphDataset(subjects, cohort, config.data_parameters )
 
+
+
+params['augment_data'] = {'spinning': {'p': 0.2, 'file': 'data/spinning/spinning_ico7_10_nearest.npy'},
+ 'warping': {'p': 0.2, 'file': 'data/warping/warping_ico7_10_nearest.npy'},
+ 'noise': {'p': 0.15},
+ 'blur': {'p': 0.2},
+ 'brightness': {'p': 0.15},
+ 'contrast': {'p': 0.15},
+ 'low_res': {'p': 0.25},
+ 'gamma': {'p': 0.15},
+ 'flipping': {'p': 0.5, 'file': 'data/flipping/flipping_ico7_3_nearest.npy'}}
+augment = Augment(params['augment_data'])
+
+features_subj, labels_subj = dataset.data_list[0]
+import time
+t1=time.time()
+for k in np.arange(1000):
+    if k%100==0:
+        t2=time.time()
+        print(t2-t1)
+    spinned_feature, spinned_lesion = augment.apply(features_subj, labels_subj)
+print('time with spins',t2-t1)
+
+
 params = config.data_parameters
 params['augment_data'] = {'spinning': {'p': 0.0, 'file': 'data/spinning/spinning_ico7_10.npy'},
  'warping': {'p': 0.0, 'file': 'data/warping/warping_ico7_10.npy'},
@@ -98,27 +122,3 @@ for k in np.arange(1000):
         print(t2-t1)
     spinned_feature, spinned_lesion = augment.apply(features_subj, labels_subj)
 print('time without spins',t2-t1)
-
-params['augment_data'] = {'spinning': {'p': 0.2, 'file': 'data/spinning/spinning_ico7_10.npy'},
- 'warping': {'p': 0.2, 'file': 'data/warping/warping_ico7_10.npy'},
- 'noise': {'p': 0.15},
- 'blur': {'p': 0.2},
- 'brightness': {'p': 0.15},
- 'contrast': {'p': 0.15},
- 'low_res': {'p': 0.25},
- 'gamma': {'p': 0.15},
- 'flipping': {'p': 0.5, 'file': 'data/flipping/flipping_ico7_3.npy'}}
-augment = Augment(params['augment_data'])
-
-features_subj, labels_subj = dataset.data_list[0]
-import time
-t1=time.time()
-for k in np.arange(1000):
-    if k%100==0:
-        t2=time.time()
-        print(t2-t1)
-    spinned_feature, spinned_lesion = augment.apply(features_subj, labels_subj)
-print('time with spins',t2-t1)
-
-
-

@@ -14,6 +14,10 @@ import json
 import copy 
 from meld_classifier.meld_cohort import MeldCohort, MeldSubject
 import time
+from meld_graph.models import HexUnpool
+import torch
+import potpourri3d as pp3d
+
 
 class Preprocess:
     params = {
@@ -43,9 +47,12 @@ class Preprocess:
         self._lobes = None
         self.initialise_distances()
         self.icospheres = icospheres
+
         if self.params['zscore'] != False:
             self.load_z_params(self.params['zscore'])
-         
+
+     
+
 
     @property
     def site_codes(self):
@@ -53,6 +60,8 @@ class Preprocess:
             self._site_codes = self.cohort.get_sites()
         return self._site_codes
     
+
+  
     @property
     def subject_ids(self):
         if self._subject_ids is None:
@@ -66,8 +75,19 @@ class Preprocess:
             self._lobes = self.load_lobar_parcellation()
         return self._lobes
     
+    def setup_distance_solver(self):
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.unpool6 = self.unpool(level=6)
+        self.unpool7 = self.unpool(level=7)
+        self.solver = pp3d.MeshHeatMethodDistanceSolver(self.icospheres.icospheres[5]['coords'],
+                       self.icospheres.icospheres[5]['faces'])
+        return
 
-        
+    def unpool(self,level=7):
+        num = len(self.icospheres.get_neighbours(level=level))
+        upsample = self.icospheres.get_upsample(target_level=level)
+        unpool = HexUnpool(upsample_indices=upsample, target_size=num)
+        return unpool
         
     def load_lobar_parcellation(self, lobe = 1):
         parc=nb.freesurfer.io.read_annot(os.path.join(self.data_dir,'fsaverage_sym','label','lh.lobes.annot'))[0]
@@ -267,7 +287,8 @@ class Preprocess:
                                 proportion_hemispheres_abnormal = 0.5,
                                jitter_factor=2,
                                features=None,
-                               smooth_lesion=False):
+                               smooth_lesion=False,
+                               distance_maps=False):
         """coords - spherical coordinates
         n_features - number of input features
         bias  - mean of the difference in biases
@@ -275,21 +296,22 @@ class Preprocess:
         histo_type_seed - randomly generate different histologies.
         proportion_features_abnormal - proportion of features abnormal
         smooth_lesion - smooth edge of lesions"""
-        
-        
         #create a histological signature of -1,0,1 on which features are abnormal
-        
         n_verts=len(coords)
         lesion = np.zeros(n_verts,dtype=bool)
         if features is None:
             features = np.random.normal(0,1,
                                     (n_features,n_verts))
-            
+        
         if np.random.random()<proportion_hemispheres_abnormal:
-            features,lesion = self.add_lesion(features, coords,n_features,
+            synth_dict = self.add_lesion(features, coords,n_features,
                                 bias,radius,histo_type_seed,
-                               proportion_features_abnormal,jitter_factor,smooth_lesion=smooth_lesion)
-        return features, lesion
+                               proportion_features_abnormal,jitter_factor,smooth_lesion=smooth_lesion,
+                               distance_maps=distance_maps)
+        else: 
+            synth_dict = {'features':features,'lesion':lesion,
+            'distances':None}
+        return synth_dict
     
     def clip_spherical_coords(self,coordinates):
         """make sure spherical coords in range"""
@@ -401,12 +423,12 @@ class Preprocess:
         return sampled_fingerprint
         
     def add_lesion(self, features,coords,n_features, bias, radius, histo_type_seed, 
-                   proportion_features_abnormal,jitter_factor,smooth_lesion=False):
+                   proportion_features_abnormal,jitter_factor,smooth_lesion=False,
+                   distance_maps=False):
         """superimpose a synthetic lesion on input data 
        
        """
         #create lesion mask
-        import time
         if smooth_lesion:
             lesion, smoothed_lesion = self.create_lesion_mask(radius,coords,return_smoothed=True)
         else:
@@ -423,7 +445,34 @@ class Preprocess:
                                      n_features)
         synth_bias_features = (lesion_tiled*sampled_fingerprint*sampled_bias).T
         features= features + synth_bias_features
+        synth_dict = {'features' : features.astype('float32'),
+                      'lesion' : lesion.astype('int32')
+            }
         
-        return features.astype('float32'),lesion.astype('int32')
+        if distance_maps:
+            geodesic_distances = self.fast_geodesics(lesion)
+            synth_dict['distances'] = geodesic_distances.astype('float32') 
+                
+        return synth_dict
     
-    
+    def flatten(self, t):
+            return [item for sublist in t for item in sublist]
+
+    def fast_geodesics(self,lesion):
+        """calculate geodesic distances on downsampled mesh then upsample
+        currently calculating on level 5, with two upsample steps"""
+
+        #downsample lesion
+        n_vert = len(self.icospheres.icospheres[5]['coords'])
+        indices = np.arange(n_vert,dtype=int)
+        lesion_small = lesion[:n_vert]
+        # non_lesion_and_neighbours = self.flatten(np.array(self.icospheres.icospheres[5]['neighbours'])[lesion_small == 0])
+        # lesion_boundary_vertices = np.setdiff1d(non_lesion_and_neighbours, np.where(lesion_small == 0)[0])
+        boundary_distance = self.solver.compute_distance_multisource(indices[lesion_small>0])
+        # include lesion
+        boundary_distance[lesion_small == 1] = 0
+        upsampled1 = self.unpool6(torch.from_numpy(boundary_distance.reshape(-1,1)),
+        device=self.device)
+        full_upsampled = self.unpool7(upsampled1, device = self.device)
+        full_upsampled = full_upsampled.detach().numpy().ravel()
+        return np.clip(full_upsampled, 0, 200)

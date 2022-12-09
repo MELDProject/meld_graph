@@ -169,17 +169,22 @@ class Augment():
             feat_tr[:,c] = feat_tr[:,c] + mn
         return feat_tr
     
-    def apply_indices(self,indices, feats, lesions=None):
+    def apply_indices(self,indices, feats, lesions=None, distances=None):
+        
+        # spin features
+        feats_transf = feats[indices] 
         # spin lesions if exist
         if lesions.any()!= None:            
             lesions_transf = lesions[indices] 
-        # spin features
-        feats_transf = feats[indices] 
-        return feats_transf, lesions_transf
+        if distances.any()!=None:
+            distances_transf = distances[indices]
+            return feats_transf, lesions_transf, distances_transf
+        return feats_transf
        
-    def apply(self, features, lesions=None):
+    def apply(self, features, lesions=None, distances=None):
         feat_tr = features
         lesions_tr = lesions
+        distances_tr = distances
         #spinning   
         mesh_transform = False
         indices = np.arange(feat_tr.shape[0],dtype=int)
@@ -201,7 +206,8 @@ class Augment():
         
         #apply just once
         if mesh_transform:
-            feat_tr, lesions_tr = self.apply_indices(indices,feat_tr,lesions_tr)
+            feat_tr, lesions_tr, distances_tr = self.apply_indices(indices,
+            feat_tr,lesions_tr,distances_tr)
         
         #Gaussian noise
         if np.random.rand() < self.get_p_param('noise'):
@@ -231,7 +237,8 @@ class Augment():
         if np.random.rand() < self.get_p_param('gamma'):
             feat_tr = - self.add_gamma_scale( -feat_tr)
             
-                
+        if distances.any()!=None:
+            return feat_tr, lesions_tr, distances_tr
             
         return feat_tr, lesions_tr
     
