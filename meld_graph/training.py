@@ -138,6 +138,7 @@ def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_su
         'cross_entropy': CrossEntropyLoss(),
         'focal_loss': FocalLoss(loss_dict),
         'distance_regression': DistanceRegressionLoss(loss_dict),
+        'lesion_classification': CrossEntropyLoss(),
     }
     if distance_map is not None:
         distance_map.to(device)
@@ -149,15 +150,22 @@ def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_su
         else:
             prefix = f'ds{deep_supervision_level}_'
 
+        cur_labels = labels
         if loss_def in ['dice', 'cross_entropy', 'focal_loss']:
             cur_estimates = estimates_dict[f'{prefix}log_softmax']
         elif loss_def == 'distance_regression':
             cur_estimates = estimates_dict[f'{prefix}non_lesion_logits']
+        elif loss_def == 'lesion_classification':
+            if deep_supervision_level is not None:
+                # for lesion classification we only want to add loss once when ds is not user
+                continue
+            else:
+                cur_estimates = estimates_dict[f'hemi_log_softmax']
+                cur_labels = torch.any(labels, 0).long().view(1,)
         else:
             raise NotImplementedError(f'Unknown loss def {loss_def}')
-        # TODO can add more losses here - for classification only call when ds is not used
 
-        losses[loss_def] = loss_dict[loss_def]['weight'] * loss_functions[loss_def](cur_estimates, labels, distance_map=distance_map)
+        losses[loss_def] = loss_dict[loss_def]['weight'] * loss_functions[loss_def](cur_estimates, cur_labels, distance_map=distance_map)
     return losses
 
 #def calculate_loss(loss_weight_dictionary,estimates,labels, device=None, distance_map=None):

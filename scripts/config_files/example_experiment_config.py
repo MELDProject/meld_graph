@@ -48,12 +48,15 @@ network_parameters = {
         #   "distance_regression": predict geodesic distance from lesion mask
         #       if present in this dict, model will have head with 
         #       layer_sizes - 1 (regression head) - 2 (classification head)
+        #   "lesion_classifiction": classify lesional / nonlesional hemisphere. Loss will be cross entropy. 
+        #        NOTE this will only work for model MoNetUnet
         # values: dict with keys: "weight" and loss arguments (alpha/gamma for focal_loss, class_weights for dice)
         'loss_dictionary': {  
             #'cross_entropy':{'weight':1},
             #'focal_loss':{'weight':1, 'alpha':0.4, 'gamma':4},
             'dice':{'weight': 1, 'class_weights': [1.0, 0.0]},
-            #'distance_regression': {'weight': 1, 'weigh_by_gt': True}
+            #'distance_regression': {'weight': 1, 'weigh_by_gt': True},
+            'lesion_classification': {'weight': 1},
         },
          # metrics: list of metrics that should be printed during training
          # possible values: dice_lesion, dice_nonlesion, precision, recall, tp, fp, fn, tn

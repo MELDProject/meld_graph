@@ -136,7 +136,8 @@ class MoNetUnet(nn.Module):
     def __init__(self, num_features, layer_sizes, dim=2, kernel_size=3, 
                  icosphere_params={}, conv_type='GMMConv', spiral_len=10,
                  deep_supervision=[],
-                 activation_fn='relu', norm=None
+                 activation_fn='relu', norm=None,
+                 classification_head=False,
                  ):
         """
         Unet model
@@ -149,6 +150,7 @@ class MoNetUnet(nn.Module):
         spiral_len: number of neighbors included in each convolution (for SpiralConv) TODO implement dilation as well
         deep_supervision: list of levels at which deep supervision should be added, adds linear "squeeze" layer to the end of the block, and outputs these levels.
         norm: "instance" or None
+        classification_head: should a subject classification head be created from the lowest level 
 
         Model outputs log softmax scores. Need to call torch.exp to get probabilities
         """
@@ -157,6 +159,7 @@ class MoNetUnet(nn.Module):
         self.num_features = num_features
         self.conv_type = conv_type
         self.deep_supervision = sorted(deep_supervision)
+        self.classification_head = classification_head
         if activation_fn == 'relu':
             self.activation_function = nn.ReLU()
         elif activation_fn == 'leaky_relu':
@@ -213,6 +216,9 @@ class MoNetUnet(nn.Module):
                 pool_layers.append(HexPool(neigh_indices=neigh_indices))
         self.encoder_conv_layers = nn.ModuleList(encoder_conv_layers)
         self.pool_layers = nn.ModuleList(pool_layers)
+        if self.classification_head:
+            # go from all vertices at lowest level * kernel size to 2 nodes
+            self.hemi_classification_layer = nn.Linear(len(self.icospheres.icospheres[level]['coords'])*in_size, 2)
 
         # - decoder going from lowest level up, but don't need to do the bottom block, is already in encoder
         # start with uppooling
@@ -270,6 +276,8 @@ class MoNetUnet(nn.Module):
         for level in self.deep_supervision:
             outputs[f'ds{level}_log_softmax'] = []
             outputs[f'ds{level}_non_lesion_logits'] = []
+        if self.classification_head:
+            outputs['hemi_log_softmax'] = []
         for x in batch_x:
             level = 7
             for i, block in enumerate(self.encoder_conv_layers):
@@ -281,6 +289,11 @@ class MoNetUnet(nn.Module):
                 if i < len(self.encoder_conv_layers)-1:
                     level -= 1
                     x = self.pool_layers[i](x)
+            
+            if self.classification_head:
+                hemi_classification = self.hemi_classification_layer(x.view(1,-1))
+                hemi_classification = nn.LogSoftmax(dim=1)(hemi_classification)
+                outputs['hemi_log_softmax'].append(hemi_classification)
 
             for i, block in enumerate(self.decoder_conv_layers):
                 # check if want deep supervision for this level
@@ -303,6 +316,7 @@ class MoNetUnet(nn.Module):
             outputs['log_softmax'].append(x)
         
         # stack and reshape outputs to (batch * n_vertices, -1)
+        # in case of hemi classification will be (batch, -1)
         for key, output in outputs.items():
             shape = (-1, 2)
             if 'non_lesion_logits' in key:
