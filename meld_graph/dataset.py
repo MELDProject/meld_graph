@@ -234,6 +234,7 @@ class GraphDataset(torch_geometric.data.Dataset):
 
             # add  distance maps if required
         if 'distances' in subject_data_dict.keys():
+            #potentially here you could divide by 200
             setattr(data, "distance_map", 
             torch.tensor(subject_data_dict['distances'], dtype=torch.float))
             if len(self.output_levels) != 0:
