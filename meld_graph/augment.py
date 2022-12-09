@@ -176,7 +176,7 @@ class Augment():
         # spin lesions if exist
         if lesions.any()!= None:            
             lesions_transf = lesions[indices] 
-        if distances.any()!=None:
+        if distances is not None:
             distances_transf = distances[indices]
             return feats_transf, lesions_transf, distances_transf
         return feats_transf
