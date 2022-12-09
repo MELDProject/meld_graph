@@ -177,6 +177,7 @@ class Augment():
         if tdd['labels'].any()!= None:            
             tdd['labels'] = tdd['labels'][indices] 
         if 'distances' in tdd.keys():
+            print(tdd['distances'].shape)
             tdd['distances'] = tdd['distances'][indices]
             
         return tdd
