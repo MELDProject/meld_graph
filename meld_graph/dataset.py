@@ -169,7 +169,7 @@ class GraphDataset(torch_geometric.data.Dataset):
                                                   {'features':None}]):
         """add synthetic lesion to input features for both hemis"""
         synth_dicts=[]
-        for sdl in subject_data_list:
+        for si,sdl in enumerate(subject_data_list):
             #controls the proportion of examples with lesions.
 
             subtype=np.random.choice(self.params['synthetic_data']['n_subtypes'])

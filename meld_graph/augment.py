@@ -169,16 +169,25 @@ class Augment():
             feat_tr[:,c] = feat_tr[:,c] + mn
         return feat_tr
     
+    def extend_lesion(self, lesions, distances):
+        if (not (lesions==1).any()) or ((distances==200).all()):
+            return lesions, distances
+        extension = np.random.choice(np.linspace(1, 20, 20))
+        print(extension)
+        #update distances
+        distances_extend = np.clip(distances-extension,a_min=0, a_max=None)
+        # extend lesions
+        lesions_extend = (distances_extend<=0)
+        return lesions_extend, distances_extend
+
     def apply_indices(self,indices, tdd):
-        
         # spin features
         tdd['features'] = tdd['features'][indices] 
         # spin lesions if exist
-        if tdd['labels'].any()!= None:            
+        if (tdd['labels']==1).any():            
             tdd['labels'] = tdd['labels'][indices] 
         if 'distances' in tdd.keys():
-            tdd['distances'] = tdd['distances'][indices]
-            
+            tdd['distances'] = tdd['distances'][indices]    
         return tdd
        
     def apply(self, subject_data_dict):
@@ -235,7 +244,11 @@ class Augment():
         #inverted gamma intensity
         if np.random.rand() < self.get_p_param('gamma'):
             tdd['features'] = - self.add_gamma_scale( -tdd['features'])
-            
+
+        #extend lesion using distance
+        if (np.random.rand() < self.get_p_param('extend_lesion')) & ('distances' in tdd.keys()):
+            tdd['labels'], tdd['distances']=self.extend_lesion(tdd['labels'], tdd['distances'])
+ 
         return tdd
     
    
