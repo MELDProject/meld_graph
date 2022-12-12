@@ -136,6 +136,7 @@ class Evaluator:
         )
         self.data_dictionary = {}
         prediction_array = []
+        distance_map_array = []
         labels_array = []
         features_array = []
         for i, data in enumerate(data_loader):
@@ -143,11 +144,17 @@ class Evaluator:
             estimates = self.experiment.model(data.x)
             labels = data.y.squeeze()
             prediction = torch.exp(estimates['log_softmax'])[:,1]
+            #get distance map if exist in loss, otherwise return array of NaN
+            if 'distance_regression' in self.experiment.network_parameters['training_parameters']['loss_dictionary'].keys():
+                distance_map = estimates['non_lesion_logits'][:,0]
+            else: 
+                distance_map = torch.full((len(prediction),1), torch.nan)[:,0]
             prediction_array.append(prediction.detach().numpy())
             labels_array.append(labels.numpy())
             features_array.append(data.x.numpy())
-
+            distance_map_array.append(distance_map.detach().numpy())
         prediction_array = np.array(prediction_array)
+        distance_map_array = np.array(distance_map_array)
         labels_array = np.array(labels_array)
         features_array = np.array(features_array)
 
@@ -155,6 +162,11 @@ class Evaluator:
         if self.experiment.data_parameters["combine_hemis"] is None:
             prediction_array = (
                 prediction_array[:, self.cohort.cortex_mask]
+                .flatten()
+                .reshape((len(self.subject_ids), self.cohort.cortex_mask.sum() * 2))
+            )
+            distance_map_array = (
+                distance_map_array[:, self.cohort.cortex_mask]
                 .flatten()
                 .reshape((len(self.subject_ids), self.cohort.cortex_mask.sum() * 2))
             )
@@ -179,12 +191,15 @@ class Evaluator:
             self.data_dictionary[subj_id] = {
                 "input_labels": labels_array[i],
                 "result": prediction_array[i],
+                "distance_map":distance_map_array[i],
             }
             #save prediction
             self.save_prediction(subj_id, prediction_array[i])
+            #save distance map
+            self.save_prediction(subj_id, distance_map_array[i],dataset_str='distance_map')
+            #save features if mode is training 
             if self.mode != "train":
                 self.data_dictionary[subj_id]["input_features"] = features_array[i]
-
 
     def stat_subjects(self, suffix="", fold=None):
         """calculate stats for each subjects
@@ -253,7 +268,6 @@ class Evaluator:
         plt.close("all")
 
         #create directory to save images
-        #save prediction
         if not os.path.isdir(os.path.join(self.save_dir,'results','images')):
             os.makedirs(os.path.join(self.save_dir,'results','images'),exist_ok = True)
 
@@ -267,13 +281,15 @@ class Evaluator:
                 os.makedirs(os.path.join(self.save_dir, "results", "images",), exist_ok=True)
 
             result = self.data_dictionary[subject]["result"]
+            distance_map = self.data_dictionary[subject]["distance_map"]
             # thresholded = self.data_dictionary[subject]["cluster_thresholded"]
             label = self.data_dictionary[subject]["input_labels"]
             result = np.reshape(result, len(result))
 
             result_hemis = self.experiment.cohort.split_hemispheres(result)
+            distance_map_hemis = self.experiment.cohort.split_hemispheres(distance_map)
             label_hemis = self.experiment.cohort.split_hemispheres(label)
-
+            
             # initialise the icosphere or flat map
             if flat_map != True:
                 from meld_graph.icospheres import IcoSpheres
@@ -295,13 +311,26 @@ class Evaluator:
             
            
              # round up to get the square grid size
-            fig= plt.figure(figsize=(8,8), constrained_layout=True)
-            gs1 = GridSpec(2, 2, width_ratios=[1, 1],  wspace=0.1, hspace=0.1)
-            data_to_plot= [result_hemis['left'], result_hemis['right'], label_hemis['left'], label_hemis['right']]
-            titles=['predictions left hemi', 'predictions right hemi', 'labels left hemi', 'labels right hemi']
+            fig= plt.figure(figsize=(11,8), constrained_layout=True)
+            gs1 = GridSpec(3, 2, width_ratios=[1, 1],  wspace=0.1, hspace=0.1)
+            if not np.isnan(distance_map_hemis['left']).any():
+                data_to_plot= [result_hemis['left'], result_hemis['right'], 
+                            distance_map_hemis['left'], distance_map_hemis['right'],
+                            label_hemis['left'], label_hemis['right']]
+                titles=['predictions left hemi', 'predictions right hemi', 
+                    'distance map left hemi', 'distance map right hemi', 
+                    'labels left hemi', 'labels right hemi']
+            else:
+                data_to_plot= [result_hemis['left'], result_hemis['right'], 
+                            label_hemis['left'], label_hemis['right']]
+                titles=['predictions left hemi', 'predictions right hemi', 
+                    'labels left hemi', 'labels right hemi']
             for i,overlay in enumerate(data_to_plot):
                 ax = fig.add_subplot(gs1[i])
-                im = create_surface_plots(coords,faces,overlay,flat_map=True)
+                if 'distance' in titles[i]:
+                    im = create_surface_plots(coords,faces,overlay,flat_map=True)
+                else:
+                    im = create_surface_plots(coords,faces,overlay,flat_map=True, limits=[0.4,0.6])
                 ax.imshow(im)
                 ax.axis('off')
                 ax.set_title(titles[i], loc='left', fontsize=20)  
@@ -347,7 +376,6 @@ class Evaluator:
             except OSError:
                 done = False
 
-    
 
 def save_json(json_filename, json_results):
     """
@@ -358,19 +386,25 @@ def save_json(json_filename, json_results):
     return
 
 
-def create_surface_plots(coords,faces,overlay,flat_map=True):
+def create_surface_plots(coords,faces,overlay,flat_map=True, limits=None):
     """plot and reload surface images"""
     from meld_classifier.meld_plotting import trim
     import matplotlib_surface_plotting.matplotlib_surface_plotting as msp
     from PIL import Image
-
+    
+    if limits==None:
+        vmin=np.min(overlay)
+        vmax=np.max(overlay)
+    else:
+        vmin=limits[0]
+        vmax=limits[1]
     msp.plot_surf(coords,faces, 
                 overlay,
                 flat_map=flat_map,
                 rotate=[90, 270],
                 filename='tmp.png',
-                vmin=0.4,
-                vmax=0.6,
+                vmin=vmin,
+                vmax=vmax,
              )
     im = Image.open('tmp.png')
     im = trim(im)

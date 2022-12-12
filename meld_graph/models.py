@@ -291,8 +291,8 @@ class MoNetUnet(nn.Module):
                     x = self.pool_layers[i](x)
             
             if self.classification_head:
-                hemi_classification = self.hemi_classification_layer(x.view(1,-1))
-                hemi_classification = nn.LogSoftmax(dim=1)(hemi_classification)
+                hemi_classification = self.hemi_classification_layer(x.view(-1))
+                hemi_classification = nn.LogSoftmax(dim=0)(hemi_classification)
                 outputs['hemi_log_softmax'].append(hemi_classification)
 
             for i, block in enumerate(self.decoder_conv_layers):
