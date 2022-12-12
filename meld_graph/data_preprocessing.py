@@ -373,23 +373,26 @@ class Preprocess:
         mask_shape=(x_mask.any(axis=1).sum(),y_mask.any(axis=0).sum())
         masked_grid_coords = np.vstack([self.grid_coords_grid[0][grid_mask],
                       self.grid_coords_grid[1][grid_mask]]).T
-        
-        poly_i = np.random.choice(len(subset),n_points)
-        polygon = subset[poly_i]
-        polygon = np.array(sorted(polygon, key=lambda point: self.clockwiseangle_and_distance(point,self.origin)))
-        path = mpltPath.Path(polygon)
-        lesion = path.contains_points(masked_grid_coords)
-        #lesion = path.contains_points(self.grid_coords)
-        arr_lesion = lesion.reshape(mask_shape).astype(float)
-        #arr_lesion = lesion.reshape(self.gridshape,order='f').astype(float)
-        #interpolate to coordinates
-        
-        full_lesion = np.zeros(self.gridshape,dtype=float)
-        full_lesion[grid_mask.T] = arr_lesion.T.ravel()
-        f_near=interpolate.RegularGridInterpolator((self.xnew,self.ynew),
-                                                   full_lesion.T,
-                                                  method='nearest')
-        interpolated_lesion=f_near(spherical_coords)
+        #make sure there are enough lesional vertices
+        lesional_verts = 0
+        while lesional_verts < 20:
+            poly_i = np.random.choice(len(subset),n_points)
+            polygon = subset[poly_i]
+            polygon = np.array(sorted(polygon, key=lambda point: self.clockwiseangle_and_distance(point,self.origin)))
+            path = mpltPath.Path(polygon)
+            lesion = path.contains_points(masked_grid_coords)
+            #lesion = path.contains_points(self.grid_coords)
+            arr_lesion = lesion.reshape(mask_shape).astype(float)
+            #arr_lesion = lesion.reshape(self.gridshape,order='f').astype(float)
+            #interpolate to coordinates
+            
+            full_lesion = np.zeros(self.gridshape,dtype=float)
+            full_lesion[grid_mask.T] = arr_lesion.T.ravel()
+            f_near=interpolate.RegularGridInterpolator((self.xnew,self.ynew),
+                                                    full_lesion.T,
+                                                    method='nearest')
+            interpolated_lesion=f_near(spherical_coords)
+            lesional_verts = interpolated_lesion.sum()
         #smoothed mask
         if return_smoothed:
             smoothed = ndimage.gaussian_filter(arr_lesion,10)
