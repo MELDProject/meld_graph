@@ -212,7 +212,7 @@ class MoNetUnet(nn.Module):
             if i < num_blocks-1:
                 #print('pool for block', i)
                 level -= 1
-                neigh_indices = self.icospheres.get_neighbours(level=level)
+                neigh_indices = self.icospheres.get_downsample(target_level=level)
                 pool_layers.append(HexPool(neigh_indices=neigh_indices))
         self.encoder_conv_layers = nn.ModuleList(encoder_conv_layers)
         self.pool_layers = nn.ModuleList(pool_layers)
@@ -291,8 +291,8 @@ class MoNetUnet(nn.Module):
                     x = self.pool_layers[i](x)
             
             if self.classification_head:
-                hemi_classification = self.hemi_classification_layer(x.view(1,-1))
-                hemi_classification = nn.LogSoftmax(dim=1)(hemi_classification)
+                hemi_classification = self.hemi_classification_layer(x.view(-1))
+                hemi_classification = nn.LogSoftmax(dim=0)(hemi_classification)
                 outputs['hemi_log_softmax'].append(hemi_classification)
 
             for i, block in enumerate(self.decoder_conv_layers):
@@ -335,7 +335,7 @@ class HexPool(nn.Module):
         if center_pool:
             x = x[:len(self.neigh_indices)]
         else:
-            x = x[:len(self.neigh_indices)][self.neigh_indices]
+            x = x[self.neigh_indices]
             x = torch.max(x, dim=1)[0]
         #print('hexpool', x.shape)
         return x
