@@ -440,7 +440,7 @@ class Preprocess:
        """
         #create lesion mask
         if synth_params['smooth_lesion']:
-            lesion, smoothed_lesion = self.create_lesion_mask(synth_params['radius'],
+            lesion, smoothed_lesion = self.create_lesion_mask(synth_params['radius'],coords,
                   return_smoothed=True)
         else:
             lesion = smoothed_lesion = self.create_lesion_mask(synth_params['radius'], coords, return_smoothed=False)
