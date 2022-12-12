@@ -8,6 +8,7 @@ from meld_graph.paths import EXPERIMENT_PATH
 from functools import partial
 import pandas as pd
 import time
+from meld_graph.icospheres import IcoSpheres
 
 def dice_coeff(pred, target):
     """This definition generalize to real valued pred and target vector.
@@ -132,6 +133,10 @@ def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_su
 
     NOTE estimates are the logSoftmax output of the model. For some losses, applying torch.exp is necessary!
     """
+    # get n vertices as len of highest level
+    icospheres = IcoSpheres()
+    n_vertices = len(icospheres.icospheres[7]['coords'])
+
     loss_functions = {
         'dice': partial(DiceLoss(loss_weight_dictionary=loss_dict),
                          device=device),
@@ -161,38 +166,13 @@ def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_su
                 continue
             else:
                 cur_estimates = estimates_dict[f'hemi_log_softmax']
-                cur_labels = torch.any(labels, 0).long().view(1,)
+                # reshape labels to be (batch, nvert, 1)
+                cur_labels = torch.any(labels.view(labels.shape[0]//n_vertices, -1), dim=1).long()
         else:
             raise NotImplementedError(f'Unknown loss def {loss_def}')
 
         losses[loss_def] = loss_dict[loss_def]['weight'] * loss_functions[loss_def](cur_estimates, cur_labels, distance_map=distance_map)
     return losses
-
-#def calculate_loss(loss_weight_dictionary,estimates,labels, device=None, distance_map=None):
-#    """ 
-#    calculate loss. Can combine losses with weights defined in loss_weight_dictionary
-#    loss_dictionary= {'dice':{'weight':1},
-#                    'cross_entropy':{'weight':1},
-#                    'focal_loss':{'weight':1, 'alpha':0.5, 'gamma':0},
-#                    'other_losses':weights}
-
-#    NOTE estimates are the logSoftmax output of the model. For some losses, applying torch.exp is necessary!
-#    """
-#    loss_functions = {
-#        'dice': partial(DiceLoss(loss_weight_dictionary=loss_weight_dictionary),
-#                         device=device),
-#        'cross_entropy': CrossEntropyLoss(),
-#        'focal_loss': FocalLoss(loss_weight_dictionary),
-#        'distance_regression': DistanceRegressionLoss(loss_weight_dictionary),
-#                       }
-#    if distance_map is not None:
-#        distance_map.to(device)
-#    total_loss = 0
-#    loss_list = []
-#    for loss_def in loss_weight_dictionary.keys():
-#        loss_list.append(loss_weight_dictionary[loss_def]['weight'] * loss_functions[loss_def](estimates,labels, distance_map=distance_map))
-#        total_loss += loss_list[-1]
-#    return total_loss, loss_list
 
 class Metrics:
     def __init__(self, metrics):
