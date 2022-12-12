@@ -48,10 +48,10 @@ network_parameters = {
         #       layer_sizes - 1 (regression head) - 2 (classification head)
         # values: dict with keys: "weight" and loss arguments (alpha/gamma for focal_loss, class_weights for dice)
         'loss_dictionary': {  
-            #'cross_entropy':{'weight':1},
+            'cross_entropy':{'weight':1},
             #'focal_loss':{'weight':1, 'alpha':0.4, 'gamma':4},
-            #'dice':{'weight': 1, 'class_weights': [1.0, 0.0]},
-            #'distance_regression': {'weight': 1, 'weigh_by_gt': False},
+            'dice':{'weight': 1, 'class_weights': [1.0, 0.0]},
+            'distance_regression': {'weight': 1, 'weigh_by_gt': False},
             'lesion_classification': {'weight': 1},
 
         },
