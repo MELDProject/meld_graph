@@ -92,7 +92,7 @@ class GraphDataset(torch_geometric.data.Dataset):
         self.icospheres = IcoSpheres()
         if len(self.output_levels) != 0:
             self.pool_layers = {
-                level: HexPool(self.icospheres.get_neighbours(level=level))
+                level: HexPool(self.icospheres.get_downsample(target_level=level))
                 for level in range(min(self.output_levels), 7)[::-1]
             }
         self._lesional_idxs = None
