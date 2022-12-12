@@ -21,6 +21,8 @@ network_parameters = {
         'spiral_len': 7,
         # normalisation: choices: None, "instance"
         'norm': None,
+        # distance_head: separate head for distance regression
+        'distance_head': True,
     },
     # training_parameters: used by Trainer to set up model training
     'training_parameters': {
@@ -52,7 +54,7 @@ network_parameters = {
             #'focal_loss':{'weight':1, 'alpha':0.4, 'gamma':4},
             'dice':{'weight': 1, 'class_weights': [1.0, 0.0]},
             'distance_regression': {'weight': 1, 'weigh_by_gt': False},
-            'lesion_classification': {'weight': 1},
+            #'lesion_classification': {'weight': 1},
 
         },
          # metrics: list of metrics that should be printed during training
@@ -74,7 +76,7 @@ network_parameters = {
         'init_weights': None,
     },
     # name: experiment name. If none, experiment is not saved
-    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_losses/classification_only',
+    'name': datetime.datetime.now().strftime("%y-%m-%d") + '_losses/ce_dice_distance_head',
 }
 
 # data parameters, passed to GraphDataset and Preprocess
