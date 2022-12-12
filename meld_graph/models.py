@@ -138,6 +138,7 @@ class MoNetUnet(nn.Module):
                  deep_supervision=[],
                  activation_fn='relu', norm=None,
                  classification_head=False,
+                 distance_head=False,
                  ):
         """
         Unet model
@@ -160,6 +161,7 @@ class MoNetUnet(nn.Module):
         self.conv_type = conv_type
         self.deep_supervision = sorted(deep_supervision)
         self.classification_head = classification_head
+        self.distance_head = distance_head
         if activation_fn == 'relu':
             self.activation_function = nn.ReLU()
         elif activation_fn == 'leaky_relu':
@@ -225,10 +227,14 @@ class MoNetUnet(nn.Module):
         decoder_conv_layers = []
         unpool_layers = []
         deep_supervision_fcs = {}
+        if self.distance_head:
+            distance_fcs = {}
         for i in range(num_blocks-1)[::-1]:
             # check if want deep supervision for this level
             if level in deep_supervision:
                 deep_supervision_fcs[str(level)] = nn.Linear(in_size, 2)
+                if self.distance_head:
+                    distance_fcs[str(level)] = nn.Linear(in_size, 1)
             level += 1
             #print('decoder block', i, 'at level', level)
             #print('adding unpool to level', level)
@@ -258,6 +264,9 @@ class MoNetUnet(nn.Module):
         self.decoder_conv_layers = nn.ModuleList(decoder_conv_layers)
         self.unpool_layers = nn.ModuleList(unpool_layers)
         self.deep_supervision_fcs = nn.ModuleDict(deep_supervision_fcs)
+        if self.distance_head:
+            self.distance_fcs = nn.ModuleDict(distance_fcs)
+            self.distance_fc = nn.Linear(in_size, 1)
         self.fc = nn.Linear(in_size, 2)
 
     def to(self, device, **kwargs):
@@ -299,7 +308,11 @@ class MoNetUnet(nn.Module):
                 # check if want deep supervision for this level
                 if level in self.deep_supervision:
                     x_out = self.deep_supervision_fcs[str(level)](x)
-                    outputs[f'ds{level}_non_lesion_logits'].append(x_out[:,1])
+                    if self.distance_head:
+                        x_dist = self.distance_fcs[str(level)](x)
+                        outputs[f'ds{level}_non_lesion_logits'].append(x_dist)
+                    else:
+                        outputs[f'ds{level}_non_lesion_logits'].append(x_out[:,0])
                     x_out = nn.LogSoftmax(dim=1)(x_out)
                     outputs[f'ds{level}_log_softmax'].append(x_out)
                 skip_i = len(self.decoder_conv_layers)-1-i
@@ -309,9 +322,15 @@ class MoNetUnet(nn.Module):
                 for cl in block:
                     x = cl(x, device=self.device)
                     x = self.activation_function(x)
+
+            # add distance head
+            if self.distance_head:
+                x_dist = self.distance_fc(x)
+                outputs['non_lesion_logits'].append(x_dist)
+            else:
+                outputs['non_lesion_logits'].append(x[:,0])
             # add final linear layer
             x = self.fc(x)
-            outputs['non_lesion_logits'].append(x[:,0])
             x = nn.LogSoftmax(dim=1)(x)
             outputs['log_softmax'].append(x)
         
