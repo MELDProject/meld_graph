@@ -122,7 +122,7 @@ def tp_fp_fn_tn(pred, target):
     return tp, fp, fn, tn
     
 
-def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_supervision_level=None, device=None):
+def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_supervision_level=None, device=None, n_vertices=None):
     """ 
     calculate loss. Can combine losses with weights defined in loss_dict
     loss_dictionary= {'dice':{'weight':1},
@@ -133,10 +133,6 @@ def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_su
 
     NOTE estimates are the logSoftmax output of the model. For some losses, applying torch.exp is necessary!
     """
-    # get n vertices as len of highest level
-    icospheres = IcoSpheres()
-    n_vertices = len(icospheres.icospheres[7]['coords'])
-
     loss_functions = {
         'dice': partial(DiceLoss(loss_weight_dictionary=loss_dict),
                          device=device),
@@ -253,12 +249,14 @@ class Trainer:
             optimiser.zero_grad()
             estimates = model(data.x)
             labels = data.y.squeeze()
-            losses = calculate_loss(self.params['loss_dictionary'], estimates, labels, distance_map=getattr(data, "distance_map", None), deep_supervision_level=None, device=device)
+            losses = calculate_loss(self.params['loss_dictionary'], estimates, labels, distance_map=getattr(data, "distance_map", None), deep_supervision_level=None, device=device, 
+                n_vertices=self.experiment.model.n_vertices)
             # add deep supervision outputs
             for i,level in enumerate(sorted(self.deep_supervision['levels'])):
                 cur_labels = getattr(data, f"output_level{level}")
                 cur_distance_map = getattr(data, f"output_level{level}_distance_map", None)
-                ds_losses = calculate_loss(self.params['loss_dictionary'], estimates, cur_labels, distance_map=cur_distance_map, deep_supervision_level=level, device=device)
+                ds_losses = calculate_loss(self.params['loss_dictionary'], estimates, cur_labels, distance_map=cur_distance_map, deep_supervision_level=level, device=device, 
+                    n_vertices=self.experiment.model.n_vertices)
                 losses.update({f'ds{level}_{key}': self.deep_supervision['weight'][i] * val for key, val in ds_losses.items()})
             # calculate overall loss
             loss = sum(losses.values())
@@ -292,12 +290,14 @@ class Trainer:
                 estimates = model(data.x)
                 labels = data.y.squeeze()
 
-                losses = calculate_loss(self.params['loss_dictionary'], estimates, labels, distance_map=getattr(data, "distance_map", None), deep_supervision_level=None, device=device)
+                losses = calculate_loss(self.params['loss_dictionary'], estimates, labels, distance_map=getattr(data, "distance_map", None), deep_supervision_level=None, device=device, 
+                    n_vertices=self.experiment.model.n_vertices)
                 # add deep supervision outputs
                 for i,level in enumerate(sorted(self.deep_supervision['levels'])):
                     cur_labels = getattr(data, f"output_level{level}")
                     cur_distance_map = getattr(data, f"output_level{level}_distance_map", None)
-                    ds_losses = calculate_loss(self.params['loss_dictionary'], estimates, cur_labels, distance_map=cur_distance_map, deep_supervision_level=level, device=device)
+                    ds_losses = calculate_loss(self.params['loss_dictionary'], estimates, cur_labels, distance_map=cur_distance_map, deep_supervision_level=level, device=device, 
+                        n_vertices=self.experiment.model.n_vertices)
                     losses.update({f'ds{level}_{key}': self.deep_supervision['weight'][i] * val for key, val in ds_losses.items()})
                 # calculate overall loss
                 loss = sum(losses.values())
