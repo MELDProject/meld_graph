@@ -225,6 +225,17 @@ class IcoSpheres():
                 self.icospheres[level]['t_neighbours'][ni,-len(n):]=n
             self.icospheres[level]['t_neighbours'] = torch.tensor(self.icospheres[level]['t_neighbours'],dtype=torch.long)
         return self.icospheres[level]['t_neighbours']
+
+    def get_downsample(self,target_level=6):
+        """return 7*n_vertex array of neighbours, with self neighbours 
+        and repeated self index if only 5 neighbours"""
+        #get neighbours from level above, but restrict to length of lower level mesh
+        #used for pooling operations
+        if 't_downsample'  not in self.icospheres[target_level].keys():
+            source_level = target_level+1
+            n_target_vertices = len(self.icospheres[target_level]['coords'])
+            self.icospheres[target_level]['t_downsample'] = self.get_neighbours(level=source_level)[:n_target_vertices]
+        return self.icospheres[target_level]['t_downsample']
     
     def get_upsample(self,target_level=7):
         """provide edges new vertices in mesh upsampled to the target level

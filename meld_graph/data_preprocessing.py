@@ -87,7 +87,8 @@ class Preprocess:
         return
 
     def pool(self,level=7):
-        neigh_indices = self.icospheres.get_neighbours(level=level)
+        neigh_indices = self.icospheres.get_downsample(target_level=level)
+
         pooling = HexPool(neigh_indices=neigh_indices)
         return pooling
 
@@ -374,8 +375,8 @@ class Preprocess:
         masked_grid_coords = np.vstack([self.grid_coords_grid[0][grid_mask],
                       self.grid_coords_grid[1][grid_mask]]).T
         #make sure there are enough lesional vertices
-        lesional_verts = 0
-        while lesional_verts < 20:
+        lesional_verts = -1
+        while lesional_verts < 1:
             poly_i = np.random.choice(len(subset),n_points)
             polygon = subset[poly_i]
             polygon = np.array(sorted(polygon, key=lambda point: self.clockwiseangle_and_distance(point,self.origin)))
@@ -482,6 +483,7 @@ class Preprocess:
         indices = np.arange(n_vert,dtype=int)
         downsampled1 = self.pool7(torch.from_numpy(lesion.reshape(-1,1)))
         lesion_small = self.pool6(downsampled1).detach().cpu().numpy().ravel()
+        
         #lesion_small = lesion[:n_vert]
         # non_lesion_and_neighbours = self.flatten(np.array(self.icospheres.icospheres[5]['neighbours'])[lesion_small == 0])
         # lesion_boundary_vertices = np.setdiff1d(non_lesion_and_neighbours, np.where(lesion_small == 0)[0])
@@ -492,5 +494,4 @@ class Preprocess:
         device=self.device)
         full_upsampled = self.unpool7(upsampled1, device = self.device)
         full_upsampled = full_upsampled.detach().cpu().numpy().ravel()
-
         return np.clip(full_upsampled, 0, 200)
