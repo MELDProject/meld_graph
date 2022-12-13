@@ -40,7 +40,8 @@ if __name__ == '__main__':
     config = load_config(args.config_file)
     variable_parameters = getattr(config, 'variable_parameters', {})
     # create and run experiments
-    for param, values in config.variable_parameters.items():
+    # TODO remove variable_parameters stuff
+    for param, values in variable_parameters.items():
         params = param.split('__')
         path = '__'.join(params[1:])
         for value in values:

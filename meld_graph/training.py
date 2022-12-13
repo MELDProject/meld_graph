@@ -55,18 +55,24 @@ class CrossEntropyLoss(torch.nn.Module):
 class DistanceRegressionLoss(torch.nn.Module):
     def __init__(self, params):
         super(DistanceRegressionLoss, self).__init__()
-        try:
-            self.weigh_by_gt = params['distance_regression']['weigh_by_gt']
-        except:
-            self.weigh_by_gt = False
+        self.weigh_by_gt = params['distance_regression'].get('weigh_by_gt', False)
+        self.loss = params['distance_regression'].get('loss', 'mse')
+        assert self.loss in ['mse', 'mae', 'mle']
+        
     
     def forward(self, inputs, target, distance_map):
         inputs = torch.squeeze(inputs)
         # normalise distance map TODO maybe do before to not repeat every time?
         distance_map = torch.div(distance_map, 200)
         #print(inputs[:10], distance_map[:10])
-        # calculate mean squared error
-        loss = torch.square(torch.subtract(inputs, distance_map))
+        # calculate loss
+        if self.loss == 'mse':
+            loss = torch.square(torch.subtract(inputs, distance_map))
+        elif self.loss == 'mae':
+            loss = torch.abs(torch.subtract(inputs, distance_map))
+        elif self.loss == 'mle':
+            loss = torch.log(torch.add(torch.abs(torch.subtract(inputs, distance_map)),1))
+        # weigh loss
         if self.weigh_by_gt:
             loss = torch.div(loss, torch.add(distance_map,1))
         loss = loss.mean()
@@ -359,7 +365,11 @@ class Trainer:
         self.optimiser = optimiser
 
         # set up learning rate scheduler
-        lambda1 = lambda epoch: (1 - epoch / self.params['num_epochs'])**self.params['lr_decay']
+        max_epochs_lr_decay = self.params.get('max_epochs_lr_decay', None)
+        if max_epochs_lr_decay is None:
+            max_epochs_lr_decay = self.params['num_epochs']
+        self.log.info(f'using max_epochs {max_epochs_lr_decay} for lr decay')
+        lambda1 = lambda epoch: (1 - epoch / max_epochs_lr_decay)**self.params['lr_decay']
         # NOTE: when resuming training, need to set last epoch to epoch-1
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimiser, lr_lambda=lambda1, last_epoch=-1)
         
