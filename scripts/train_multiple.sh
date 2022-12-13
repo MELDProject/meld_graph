@@ -9,11 +9,11 @@ for f in $(find $1 -name 'fold_*'); do
     for config_file in $config_files; do
         # start config and keep SID as dependency
         if [ $i -eq 0 ]; then
-            RES=$(sbatch train.sh $config_file --parsable)
+            RES=$(sbatch train.sh $config_file)
             SID=${RES##* }
             echo "started training for config" $config_file "with" $SID
         else
-            RES=$(sbatch train.sh $config_file --parsable --dependency afterany:$SID)
+            RES=$(sbatch --dependency afterany:$SID train.sh $config_file)
             SID=${RES##* }
             echo "started training for config" $config_file "with" $SID "depending on previously started job"
         fi
