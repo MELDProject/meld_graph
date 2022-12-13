@@ -101,7 +101,6 @@ if __name__ == '__main__':
             cur_config['network_parameters']['training_parameters']['init_weights'] = init_weights
             # update init weights to this experiment for finetuning next experiment
             init_weights = cur_config['network_parameters']['name'] + f'/fold_{cur_fold:02d}/best_model.pt'
-            cur_config['network_parameters']['init_weights'] = init_weights
             # add to configs list
             final_configs[config_name] = cur_config
 
@@ -112,7 +111,7 @@ if __name__ == '__main__':
     for n, config in final_configs.items():
         write_config(n, config, save_path = args.save_path)
 
-    print(f'Generated {len(final_configs)} configs in {var_config.base_name}')
+    print(f'Generated {len(final_configs)} configs in {var_config.base_name}*')
 
 
         
