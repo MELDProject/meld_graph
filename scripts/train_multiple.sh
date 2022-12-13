@@ -4,7 +4,7 @@ echo "starting experiments in" $1
 # find fold folders containing stuff to start sequentially
 for f in $(find $1 -name 'fold_*'); do
     # go over configs in order
-    config_files=$(echo $(find $f -name 's_*.py') | sort)
+    config_files=$(ls $f/*.py | sort -n -t _ -k 2)
     i=0
     for config_file in $config_files; do
         # start config and keep SID as dependency
