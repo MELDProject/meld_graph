@@ -23,6 +23,8 @@ network_parameters = {
         'spiral_len': 7,
         # normalisation: choices: None, "instance"
         'norm': None,
+        # distance_head: separate head for distance regression
+        'distance_head': False,
     },
     # training_parameters: used by Trainer to set up model training
     'training_parameters': {
@@ -40,6 +42,8 @@ network_parameters = {
         # lr_decay: exponent for exponential learning rate decay: lr*(1-epoch/max_epochs)**lr_decay
         # set to 0 to turn lr decay off
         'lr_decay': 0,  # default NNUnet param: 0.9
+        # max_epochs_lr_decay: number of epochs to use to calculate lr decay. If none, uses num_epochs
+        'max_epochs_lr_decay': None,
         # loss_dictionary: losses to be used for model training and parameters for losses
         # possible keys: 
         #   "cross_entropy"
@@ -48,6 +52,7 @@ network_parameters = {
         #   "distance_regression": predict geodesic distance from lesion mask
         #       if present in this dict, model will have head with 
         #       layer_sizes - 1 (regression head) - 2 (classification head)
+        #       losses for distance_regression: mse, mae, mle (mean log error)
         #   "lesion_classifiction": classify lesional / nonlesional hemisphere. Loss will be cross entropy. 
         #        NOTE this will only work for model MoNetUnet
         # values: dict with keys: "weight" and loss arguments (alpha/gamma for focal_loss, class_weights for dice)
