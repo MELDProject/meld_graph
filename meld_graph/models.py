@@ -318,7 +318,12 @@ class MoNetUnet(nn.Module):
                     outputs[f'ds{level}_log_softmax'].append(x_out)
                     x_out_max = torch.exp(torch.max(x_out[:,1]))
                     x_out_max = torch.stack((1-x_out_max, x_out_max))
-                    outputs[f'ds{level}_max_log_softmax'].append(torch.log(x_out_max+1e-5))
+                    #print('pre log softmax', x_out_max)
+                    #print('manual log', torch.log(x_out_max))
+                    x_out_max = nn.LogSoftmax()(x_out_max)
+                    #print('after log softmax', x_out_max)
+                    outputs[f'ds{level}_max_log_softmax'].append(x_out_max)
+                    #print(outputs[f'ds{level}_max_log_softmax'][-1])
                 skip_i = len(self.decoder_conv_layers)-1-i
                 level += 1
                 x = self.unpool_layers[i](x, device=self.device)
