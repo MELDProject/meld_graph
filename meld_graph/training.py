@@ -176,19 +176,24 @@ def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_su
         losses[loss_def] = loss_dict[loss_def]['weight'] * loss_functions[loss_def](cur_estimates, cur_labels, distance_map=distance_map)
     return losses
 
+
+
 class Metrics:
-    def __init__(self, metrics):
+    def __init__(self, metrics, n_vertices=None):
         self.metrics = metrics
         self.metrics_to_track = self.metrics
         if 'precision' in self.metrics or 'recall' in self.metrics:
             self.metrics_to_track = list(set(self.metrics_to_track + ['tp', 'fp', 'fn','tn']))
+        if 'cl_precision' in self.metrics or 'cl_recall' in self.metrics:
+            self.metrics_to_track = list(set(self.metrics_to_track + ['cl_tp', 'cl_fp', 'cl_fn','cl_tn']))
         self.running_scores = self.reset()
+        self.n_vertices = n_vertices
 
     def reset(self):
         self.running_scores = {metric: [] for metric in self.metrics_to_track}
         return self.running_scores
 
-    def update(self, pred, target):
+    def update(self, pred, target, pred_class):
         if len(set(['dice_lesion', 'dice_nonlesion']).intersection(self.metrics_to_track)) > 0:
             dice_coeffs = dice_coeff(torch.nn.functional.one_hot(pred, num_classes=2), target)
             if 'dice_lesion' in self.metrics_to_track:
@@ -204,12 +209,27 @@ class Metrics:
         if 'sensitivity' in self.metrics_to_track:
             self.running_scores['sensitivity'].append(get_sensitivity(pred, target))
 
+        # classification metrics
+        target_class = torch.any(target.view(target.shape[0]//self.n_vertices, -1), dim=1).long()
+        if 'cl_tp' in self.metrics_to_track:
+            tp, fp, fn, tn = tp_fp_fn_tn(pred_class, target_class)
+            #print('cl scores', target_class, pred_class, tp, fp, fn, tn)
+            self.running_scores['cl_tp'].append(tp.item())
+            self.running_scores['cl_fp'].append(fp.item())
+            self.running_scores['cl_fn'].append(fn.item())
+            self.running_scores['cl_tn'].append(tn.item())
+
+
     def get_aggregated_metrics(self):
         metrics = {}
         if 'tp' in self.metrics_to_track:
             tp = np.sum(self.running_scores['tp'])
             fp = np.sum(self.running_scores['fp'])
             fn = np.sum(self.running_scores['fn'])
+        if 'cl_tp' in self.metrics_to_track:
+            cl_tp = np.sum(self.running_scores['cl_tp'])
+            cl_fp = np.sum(self.running_scores['cl_fp'])
+            cl_fn = np.sum(self.running_scores['cl_fn'])
         for metric in self.metrics:
             if metric == 'precision':
                 metrics['precision'] = (tp/(tp+fp)).item()
@@ -220,6 +240,10 @@ class Metrics:
             elif 'sensitivity' in metric:
                 sensitivity = self.running_scores['sensitivity']
                 metrics['sensitivity'] = np.sum(sensitivity)/len(sensitivity)*100
+            elif metric == 'cl_precision':
+                metrics['cl_precision'] = (cl_tp/(cl_tp+cl_fp)).item()
+            elif metric == 'cl_recall':
+                metrics['cl_recall'] = (cl_tp/(cl_tp+cl_fn)).item()
             else:
                 metrics[metric] = np.sum(self.running_scores[metric])
         return metrics
@@ -246,7 +270,7 @@ class Trainer:
         model = self.experiment.model
         model.train()    
 
-        metrics = Metrics(self.params['metrics'])  # for keeping track of running metrics
+        metrics = Metrics(self.params['metrics'], n_vertices=self.experiment.model.n_vertices)  # for keeping track of running metrics
         running_losses = {key: [] for key in self.params['loss_dictionary'].keys()}
         for key in list(running_losses.keys()):
             for level in self.deep_supervision['levels']:
@@ -281,8 +305,9 @@ class Trainer:
 
             # metrics
             pred = torch.argmax(estimates['log_softmax'], axis=1)
+            pred_class = torch.argmax(estimates['max_log_softmax'], axis=1)
             # update running metrics
-            metrics.update(pred, labels)
+            metrics.update(pred, labels, pred_class=pred_class)
             # TODO add distance regression to metrics
             
         scores = {key: np.mean(running_losses[key]) for key in running_losses.keys()}
@@ -294,7 +319,7 @@ class Trainer:
         model = self.experiment.model
         model.eval()
         with torch.no_grad():
-            metrics = Metrics(self.params['metrics'])  # for keeping track of running metrics
+            metrics = Metrics(self.params['metrics'], n_vertices=self.experiment.model.n_vertices)  # for keeping track of running metrics
             running_losses = {key: [] for key in self.params['loss_dictionary'].keys()}
             for key in list(running_losses.keys()):
                 for level in self.deep_supervision['levels']:
@@ -326,9 +351,10 @@ class Trainer:
 
                 # metrics
                 pred = torch.argmax(estimates['log_softmax'], axis=1)
+                pred_class = torch.argmax(estimates['max_log_softmax'], axis=1)
                 # update running metrics
                 # TODO add distance regression metrics here?
-                metrics.update(pred, labels)
+                metrics.update(pred, labels, pred_class=pred_class)
      
         scores = {key: np.mean(running_losses[key]) for key in running_losses.keys()}
         scores.update(metrics.get_aggregated_metrics())
@@ -410,7 +436,7 @@ class Trainer:
 
             if epoch%1 ==0:
                 cur_scores = self.val_epoch(val_data_loader)
-                log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items())
+                log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items() if key in log_keys)
                 self.log.info(f'Epoch {epoch} :: Val   {log_str}')
                 scores['val'].append(cur_scores)
                 
