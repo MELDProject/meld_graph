@@ -167,13 +167,9 @@ def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_su
         elif loss_def == 'distance_regression':
             cur_estimates = estimates_dict[f'{prefix}non_lesion_logits']
         elif loss_def == 'lesion_classification':
-            if deep_supervision_level is not None:
-                # for lesion classification we only want to add loss once when ds is not user
-                continue
-            else:
-                cur_estimates = estimates_dict[f'hemi_log_softmax']
-                # reshape labels to be (batch, nvert, 1)
-                cur_labels = torch.any(labels.view(labels.shape[0]//n_vertices, -1), dim=1).long()
+            cur_labels = torch.any(labels.view(labels.shape[0]//n_vertices, -1), dim=1).long()
+            cur_estimates = estimates_dict[f'{prefix}max_log_softmax']
+            #print('classification', 'prefix', prefix, cur_labels, cur_estimates)
         else:
             raise NotImplementedError(f'Unknown loss def {loss_def}')
 
@@ -252,6 +248,9 @@ class Trainer:
 
         metrics = Metrics(self.params['metrics'])  # for keeping track of running metrics
         running_losses = {key: [] for key in self.params['loss_dictionary'].keys()}
+        for key in list(running_losses.keys()):
+            for level in self.deep_supervision['levels']:
+                running_losses[f'ds{level}_{key}'] = []
         running_losses['loss'] = []
         for i, data in enumerate(data_loader):  
             data = data.to(device)
@@ -259,22 +258,25 @@ class Trainer:
             optimiser.zero_grad()
             estimates = model(data.x)
             labels = data.y.squeeze()
+            
             losses = calculate_loss(self.params['loss_dictionary'], estimates, labels, distance_map=getattr(data, "distance_map", None), deep_supervision_level=None, device=device, 
                 n_vertices=self.experiment.model.n_vertices)
             # add deep supervision outputs
             for i,level in enumerate(sorted(self.deep_supervision['levels'])):
                 cur_labels = getattr(data, f"output_level{level}")
                 cur_distance_map = getattr(data, f"output_level{level}_distance_map", None)
+                n_vertices = len(self.experiment.model.icospheres.icospheres[level]['coords'])
                 ds_losses = calculate_loss(self.params['loss_dictionary'], estimates, cur_labels, distance_map=cur_distance_map, deep_supervision_level=level, device=device, 
-                    n_vertices=self.experiment.model.n_vertices)
+                    n_vertices=n_vertices)
                 losses.update({f'ds{level}_{key}': self.deep_supervision['weight'][i] * val for key, val in ds_losses.items()})
             # calculate overall loss
             loss = sum(losses.values())
             loss.backward()
             optimiser.step()
             for i, key in enumerate(self.params['loss_dictionary'].keys()):
-                # TODO could also append ds{level} losses here
                 running_losses[key].append(losses[key].item())
+                for level in self.deep_supervision['levels']:
+                    running_losses[f'ds{level}_{key}'].append(losses[f'ds{level}_{key}'].item())
             running_losses['loss'].append(loss.item())
 
             # metrics
@@ -294,6 +296,9 @@ class Trainer:
         with torch.no_grad():
             metrics = Metrics(self.params['metrics'])  # for keeping track of running metrics
             running_losses = {key: [] for key in self.params['loss_dictionary'].keys()}
+            for key in list(running_losses.keys()):
+                for level in self.deep_supervision['levels']:
+                    running_losses[f'ds{level}_{key}'] = []
             running_losses['loss'] = []
             for i, data in enumerate(data_loader):
                 data = data.to(device)
@@ -306,15 +311,17 @@ class Trainer:
                 for i,level in enumerate(sorted(self.deep_supervision['levels'])):
                     cur_labels = getattr(data, f"output_level{level}")
                     cur_distance_map = getattr(data, f"output_level{level}_distance_map", None)
+                    n_vertices = len(self.experiment.model.icospheres.icospheres[level]['coords'])
                     ds_losses = calculate_loss(self.params['loss_dictionary'], estimates, cur_labels, distance_map=cur_distance_map, deep_supervision_level=level, device=device, 
-                        n_vertices=self.experiment.model.n_vertices)
+                        n_vertices=n_vertices)
                     losses.update({f'ds{level}_{key}': self.deep_supervision['weight'][i] * val for key, val in ds_losses.items()})
                 # calculate overall loss
                 loss = sum(losses.values())
                 # keep track of loss
                 for i, key in enumerate(self.params['loss_dictionary'].keys()):
-                    # TODO could also append ds{level} losses here
                     running_losses[key].append(losses[key].item())
+                    for level in self.deep_supervision['levels']:
+                        running_losses[f'ds{level}_{key}'].append(losses[f'ds{level}_{key}'].item())
                 running_losses['loss'].append(loss.item())
 
                 # metrics
@@ -392,7 +399,12 @@ class Trainer:
                 f.write(f'Epoch {epoch} :: memory usage {process.memory_info().rss / 1024 ** 2}MB-  time {time.time()-start} \n ')
             self.log.info(f'Epoch {epoch} :: memory usage {process.memory_info().rss / 1024 ** 2}MB')  # in bytes
 
-            log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items())
+            # only log non-deep supervision losses
+            log_keys = list(cur_scores.keys())
+            for i, key in enumerate(self.params['loss_dictionary'].keys()):
+                for level in self.deep_supervision['levels']:
+                    log_keys.remove(f'ds{level}_{key}')
+            log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items() if key in log_keys)
             self.log.info(f'Epoch {epoch} :: Train {log_str}')
             scores['train'].append(cur_scores)
 
