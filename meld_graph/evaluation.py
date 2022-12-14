@@ -124,9 +124,6 @@ class Evaluator:
         """ """
         self.log.info("loading data and predicting model")
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        # load dataset
-        if self.dataset==None:
-            self.dataset = GraphDataset(self.subject_ids, self.cohort, self.experiment.data_parameters)
         # predict on data
         #TODO: enable batch_size > 1
         data_loader = torch_geometric.loader.DataLoader(
