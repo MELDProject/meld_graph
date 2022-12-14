@@ -31,7 +31,7 @@ def dice_coeff(pred, target):
 class DiceLoss(torch.nn.Module):
     def __init__(self, loss_weight_dictionary=None):
         super(DiceLoss, self).__init__()
-        self.class_weights = [1.0 ,0.0]
+        self.class_weights = [.0 ,1.0]
         if 'dice' in loss_weight_dictionary.keys():
             if 'class_weights' in loss_weight_dictionary['dice']:
                 self.class_weights = loss_weight_dictionary['dice']['class_weights']
@@ -55,9 +55,13 @@ class CrossEntropyLoss(torch.nn.Module):
 class DistanceRegressionLoss(torch.nn.Module):
     def __init__(self, params):
         super(DistanceRegressionLoss, self).__init__()
-        self.weigh_by_gt = params['distance_regression'].get('weigh_by_gt', False)
-        self.loss = params['distance_regression'].get('loss', 'mse')
-        assert self.loss in ['mse', 'mae', 'mle']
+        if 'distance_regression' in params.keys()   :  
+            self.weigh_by_gt = params['distance_regression'].get('weigh_by_gt', False)
+            self.loss = params['distance_regression'].get('loss', 'mse')
+            assert self.loss in ['mse', 'mae', 'mle']
+        else:
+            self.weigh_by_gt = False
+            self.loss='mse'
         
     
     def forward(self, inputs, target, distance_map):

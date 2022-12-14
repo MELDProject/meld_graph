@@ -38,36 +38,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     config = load_config(args.config_file)
-    variable_parameters = getattr(config, 'variable_parameters', {})
-    # create and run experiments
-    # TODO remove variable_parameters stuff
-    for param, values in variable_parameters.items():
-        params = param.split('__')
-        path = '__'.join(params[1:])
-        for value in values:
-            name = f'{path}_{value}'
-            print(f'Starting experiment {path}, {name}')
-            cur_data_parameters = deepcopy(config.data_parameters)
-            cur_network_parameters = deepcopy(config.network_parameters)
-
-            # set name
-            cur_network_parameters['name'] = f'{cur_network_parameters["name"]}_{path}/{name}'
-            # change variable params
-            if params[0] == 'network_parameters':
-                nested_set(cur_network_parameters, params[1:], value)
-            elif params[0] == 'data_parameters':
-                nested_set(cur_data_parameters, params[1:], value)
-                pass
-            else:
-                NotImplementedError(params[0])
-
-            # create experiment
-            exp = meld_graph.experiment.Experiment(cur_network_parameters, cur_data_parameters, verbose=logging.INFO)
-            # train the model
-            exp.train()
-    if len(variable_parameters) == 0:
-        # only one experiment to train
-        # create experiment
-        exp = meld_graph.experiment.Experiment(config.network_parameters, config.data_parameters, verbose=logging.INFO)
-        # train the model
-        exp.train()
+    
+    # create experiment
+    exp = meld_graph.experiment.Experiment(config.network_parameters, config.data_parameters, verbose=logging.INFO)
+    # train the model
+    exp.train()
