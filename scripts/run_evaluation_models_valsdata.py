@@ -5,7 +5,7 @@ from meld_graph.dataset import GraphDataset
 from meld_classifier.meld_cohort import MeldCohort
 from meld_graph.paths import EXPERIMENT_PATH
 from meld_graph.evaluation import Evaluator
-
+import numpy as np
 
 
 ### DEFINE MODELS TO RUN
@@ -13,23 +13,29 @@ from meld_graph.evaluation import Evaluator
 # initialise models you want to run
 EXPERIMENT_PATH='/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350'
 
-model_base_paths = {
-   'dcd': '/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/22-12-13_finetune/dcd/fold_00/',
-   # 'dc': '/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/22-12-13_finetune/dc/fold_00/',
-   # 'dcd_head': '/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/22-12-13_finetune/dcd_head/fold_00/',
-}
+#defining paths - change both fname and model_base_path
+fname='22-12-14_GXRU_dice_ce_fold'
+#fname = '22-12-14_GXRU_dcd_maew_fold'
+model_base_paths_roots =os.path.join(EXPERIMENT_PATH,fname,'s_2')
+model_base_paths={}
+for fold in np.arange(10):
+    model_base_paths[f'dc_{fold}'] = os.path.join(model_base_paths_roots,f'fold_0{fold}')
+
 
 ### initialise saving outputs
 use_preload_dataset = True 
-output_path = '/rds/project/kw350/rds-kw350-meld/experiments_graph/co-ripa1/22-12-13_evaluation_real_valsdata_test'
+#output_path = '/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/22-12-15_trainval'
+output_path = '/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/22-12-15_test'
 
-### Create dataset with vals data
+### Create dataset with vals and train data
 
-model_base_path=model_base_paths['dcd']
+model_base_path=model_base_paths[list(model_base_paths.keys())[0]]
 checkpoint_path=os.path.join(EXPERIMENT_PATH, model_base_path)
 exp = meld_graph.experiment.Experiment.from_folder(checkpoint_path)
 
-subjects = exp.data_parameters['val_ids']
+#
+#subjects = exp.data_parameters['train_ids']+ exp.data_parameters['val_ids']
+subjects = exp.data_parameters['test_ids']
 cohort= MeldCohort(hdf5_file_root='{site_code}_{group}_featurematrix_combat_6.hdf5', dataset='MELD_dataset_V6.csv')
 
 if use_preload_dataset:  
@@ -63,12 +69,12 @@ else:
 for model_name in model_base_paths.keys(): 
     
     #load experiment already trained using checkpoint path
-    model_base_path=model_base_paths[model_name]
-    checkpoint_path=os.path.join(EXPERIMENT_PATH, model_base_path)
+    model_base_path = model_base_paths[model_name]
+    checkpoint_path = os.path.join(EXPERIMENT_PATH, model_base_path)
     exp = meld_graph.experiment.Experiment.from_folder(checkpoint_path)
 
     # Run the evaluation on the test data and save into directory provided
-    save_dir=os.path.join(output_path, model_name)
+    save_dir = os.path.join(output_path, model_name)
 
     eva = Evaluator(experiment = exp,
                     checkpoint_path = checkpoint_path,
@@ -81,10 +87,11 @@ for model_name in model_base_paths.keys():
                 )
 
     # load data and predict
-    eva.load_predict_data()
+    print('loading predicting')
+    eva.load_predict_data(store_predictions=False)
     # calculate stats 
-    eva.stat_subjects()
+   # eva.stat_subjects()
     #  make images 
-    eva.plot_subjects_prediction()
+   # eva.plot_subjects_prediction()
 
     
