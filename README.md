@@ -84,6 +84,7 @@ TODO document evaluation process
 
 ## Training on folds or using multiple models for a finetuning chain
 Multiple models can be trained at once, using a special config listing all config elements that should change over the runs. An example of this variable config can be found in `config_files/experiment_config_hannah_var.py`.
+
 Structure of this file:
 - base_name: base name of the models. Used for experiment names and names of config files
 - parallel: list of configs that should be run in parallel. Each entry of a list should be a dictionary with keys 'network_parameters' and 'data_parameters'. NOTE that if you change an element of a dictionary, this does NOT delete the other elements of this dictionary. Eg, if the base config contains multiple losses, changing one loss in the var config does not delete the other losses.
