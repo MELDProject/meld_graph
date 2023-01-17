@@ -80,8 +80,20 @@ Patience is implemented, with the best model being saved in the experiment direc
 Training logs and train/val scores are also saved in the experiment directory.
 
 Evaluation is minimal at the moment. `notebooks/compare_experiments.ipynb` contains a function for plotting training curves from different experiments.
+TODO document evaluation process
 
-Multiple models can be trained at once, using the `variable_parameters` dict. This can set different parameters (keys in the dict) to different values. Hereby, nested dictionary levels are represented by `__`, e.g. `"network_parameters__training_parameters__loss_dictionary__focal_loss"` will set values for the focal loss.
+## Training on folds or using multiple models for a finetuning chain
+Multiple models can be trained at once, using a special config listing all config elements that should change over the runs. An example of this variable config can be found in `config_files/experiment_config_hannah_var.py`.
+
+Structure of this file:
+- base_name: base name of the models. Used for experiment names and names of config files
+- parallel: list of configs that should be run in parallel. Each entry of a list should be a dictionary with keys 'network_parameters' and 'data_parameters'. NOTE that if you change an element of a dictionary, this does NOT delete the other elements of this dictionary. Eg, if the base config contains multiple losses, changing one loss in the var config does not delete the other losses.
+- sequential: list of configs that should be run sequentially. These models will be finetuned from each the best model of the previous entry in the sequential list. For every parallel model, all sequential models will be run. 
+
+How to run multiple models:
+- define base config and var config as described above
+- run `create_config.py` to create all configs to run. These configs will be placed in `save_dir` (parameter for `create_config.py`). 
+- run `sbatch train_multiple.sh FOLDER` with FOLDER being that folder that contains all configs to start. This will automatically start sequential models in sequence and parallel models in parallel.
 
 # Usage
 - `create_scaling_parameters.py`: calculates scaling params file. Only needs to be run once.
