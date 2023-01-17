@@ -52,6 +52,16 @@ class CrossEntropyLoss(torch.nn.Module):
         # inputs are log softmax, pass directly to NLLLoss
         return self.loss(inputs, targets)
 
+
+class MAELoss(torch.nn.Module):
+    def __init__(self, weight=None, size_average=True):
+        super(CrossEntropyLoss, self).__init__()
+        self.loss = torch.nn.L1Loss()
+
+    def forward(self, inputs, targets, **kwargs):
+        # inputs are log softmax, pass directly to NLLLoss
+        return self.loss(inputs, targets)
+
 class DistanceRegressionLoss(torch.nn.Module):
     def __init__(self, params):
         super(DistanceRegressionLoss, self).__init__()
@@ -150,6 +160,7 @@ def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_su
         'focal_loss': FocalLoss(loss_dict),
         'distance_regression': DistanceRegressionLoss(loss_dict),
         'lesion_classification': CrossEntropyLoss(),
+        'mae_loss':MAELoss(),
     }
     if distance_map is not None:
         distance_map.to(device)
@@ -162,7 +173,7 @@ def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_su
             prefix = f'ds{deep_supervision_level}_'
 
         cur_labels = labels
-        if loss_def in ['dice', 'cross_entropy', 'focal_loss']:
+        if loss_def in ['dice', 'cross_entropy', 'focal_loss','mae_loss']:
             cur_estimates = estimates_dict[f'{prefix}log_softmax']
         elif loss_def == 'distance_regression':
             cur_estimates = estimates_dict[f'{prefix}non_lesion_logits']

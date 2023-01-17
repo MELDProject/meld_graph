@@ -119,7 +119,7 @@ class Evaluator:
 
 
     def load_predict_data(
-        self,
+        self,store_predictions=True
     ):
         """ """
         self.log.info("loading data and predicting model")
@@ -130,13 +130,19 @@ class Evaluator:
             self.dataset,
             shuffle=False,
             batch_size=1,
+            
         )
         self.data_dictionary = {}
-        prediction_array = []
-        distance_map_array = []
-        labels_array = []
-        features_array = []
+        
         for i, data in enumerate(data_loader):
+            subject_index =  i//2
+            hemi = ['lh','rh'][i%2]
+            if hemi=='lh':
+                prediction_array = []
+                distance_map_array = []
+                labels_array = []
+                features_array = []
+            subj_id = self.subject_ids[subject_index]
             data = data.to(device)
             estimates = self.experiment.model(data.x)
             labels = data.y.squeeze()
@@ -146,57 +152,28 @@ class Evaluator:
                 distance_map = estimates['non_lesion_logits'][:,0]
             else: 
                 distance_map = torch.full((len(prediction),1), torch.nan)[:,0]
-            prediction_array.append(prediction.detach().numpy())
-            labels_array.append(labels.numpy())
-            features_array.append(data.x.numpy())
-            distance_map_array.append(distance_map.detach().numpy())
-        prediction_array = np.array(prediction_array)
-        distance_map_array = np.array(distance_map_array)
-        labels_array = np.array(labels_array)
-        features_array = np.array(features_array)
-
-        # concatenate left and right predictions and labels
-        if self.experiment.data_parameters["combine_hemis"] is None:
-            prediction_array = (
-                prediction_array[:, self.cohort.cortex_mask]
-                .flatten()
-                .reshape((len(self.subject_ids), self.cohort.cortex_mask.sum() * 2))
-            )
-            distance_map_array = (
-                distance_map_array[:, self.cohort.cortex_mask]
-                .flatten()
-                .reshape((len(self.subject_ids), self.cohort.cortex_mask.sum() * 2))
-            )
-            labels_array = (
-                labels_array[:, self.cohort.cortex_mask]
-                .flatten()
-                .reshape((len(self.subject_ids), self.cohort.cortex_mask.sum() * 2))
-            )
-            features_array = (
-                features_array[:, self.cohort.cortex_mask, :]
-                .flatten()
-                .reshape(
-                    (
-                        len(self.subject_ids),
-                        self.cohort.cortex_mask.sum() * 2,
-                        features_array.shape[2],
-                    )
-                )
-            )
-
-        for i, subj_id in enumerate(self.subject_ids):
-            self.data_dictionary[subj_id] = {
-                "input_labels": labels_array[i],
-                "result": prediction_array[i],
-                "distance_map":distance_map_array[i],
-            }
-            #save prediction
-            self.save_prediction(subj_id, prediction_array[i])
-            #save distance map
-            self.save_prediction(subj_id, distance_map_array[i],dataset_str='distance_map')
-            #save features if mode is training 
-            if self.mode != "train":
-                self.data_dictionary[subj_id]["input_features"] = features_array[i]
+            prediction_array.append(prediction.detach().numpy()[self.cohort.cortex_mask])
+            labels_array.append(labels.numpy()[self.cohort.cortex_mask])
+            features_array.append(data.x.numpy()[self.cohort.cortex_mask])
+            distance_map_array.append(distance_map.detach().numpy()[self.cohort.cortex_mask])
+            #only save after right hemi has been run.
+            if hemi=='rh':
+                subject_dictionary =  {
+                    "input_labels": np.concatenate(labels_array),
+                    "result": np.concatenate(prediction_array),
+                    "distance_map": np.concatenate(distance_map_array),
+                }
+                print(np.concatenate(prediction_array).shape)
+                #save prediction
+                self.save_prediction(subj_id, subject_dictionary["result"])
+                #save distance map
+                self.save_prediction(subj_id, subject_dictionary["distance_map"],
+                        dataset_str='distance_map')
+                #save features if mode is training 
+                if self.mode != "train":
+                    subject_dictionary["input_features"] = np.concatenate(features_array)
+                if store_predictions:
+                    self.data_dictionary[subj_id] = subject_dictionary
 
     def stat_subjects(self, suffix="", fold=None):
         """calculate stats for each subjects
