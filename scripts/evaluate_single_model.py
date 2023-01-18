@@ -48,6 +48,6 @@ if __name__ == '__main__':
         roc_curves_thresholds=None
     else:
         save_prediction=False
-        roc_curves_threshold = np.linspace(0,1,21)
-    eva.load_predict_data(save_prediction=save_prediction,roc_curves_thresholds=roc_curves_threshold)
+        roc_curves_thresholds = np.linspace(0,1,21)
+    eva.load_predict_data(save_prediction=save_prediction,roc_curves_thresholds=roc_curves_thresholds)
 
