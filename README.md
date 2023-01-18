@@ -99,7 +99,7 @@ How to run multiple models:
 ### Cross validation experiments
 For establishing the best hyperparameters, we use cross-validation. 
 `python cross_val_aucs.py --experiment_path PATH_TO_EXPERIMENT_S2 --split val`
-This calculates and saves aucs for each fold in the experiment. The notebook cross_val_aucs.ipynb can be used to compare these aucs for multiple models.
+This calculates and saves aucs for each fold in the experiment. The notebook auc_comparisons.ipynb can be used to compare these aucs for multiple models.
 
 ### Testing experiments
 `python cross_val_aucs.py --experiment_path PATH_TO_EXPERIMENT_S2 --split test`
