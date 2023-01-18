@@ -95,6 +95,17 @@ How to run multiple models:
 - run `create_config.py` to create all configs to run. These configs will be placed in `save_dir` (parameter for `create_config.py`). 
 - run `sbatch train_multiple.sh FOLDER` with FOLDER being that folder that contains all configs to start. This will automatically start sequential models in sequence and parallel models in parallel.
 
+## Evaluation
+### Cross validation experiments
+For establishing the best hyperparameters, we use cross-validation. 
+`python cross_val_aucs.py --experiment_path PATH_TO_EXPERIMENT_S2 --split val`
+This calculates and saves aucs for each fold in the experiment. The notebook auc_comparisons.ipynb can be used to compare these aucs for multiple models.
+
+### Testing experiments
+`python cross_val_aucs.py --experiment_path PATH_TO_EXPERIMENT_S2 --split test`
+This runs on the test set and saves out the predictions for the test set for each of the folds. These then need to be aggregated and thresholded to compare experiments.
+
+
 # Usage
 - `create_scaling_parameters.py`: calculates scaling params file. Only needs to be run once.
 - `create_icospheres.py`: creates downsampled icospheres. Only needs to be run once.
