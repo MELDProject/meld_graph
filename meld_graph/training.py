@@ -55,7 +55,7 @@ class CrossEntropyLoss(torch.nn.Module):
 
 class MAELoss(torch.nn.Module):
     def __init__(self, weight=None, size_average=True):
-        super(CrossEntropyLoss, self).__init__()
+        super(MAELoss, self).__init__()
         self.loss = torch.nn.L1Loss()
 
     def forward(self, inputs, targets, **kwargs):
