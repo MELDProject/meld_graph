@@ -195,9 +195,9 @@ class Experiment:
             self.model.load_state_dict(torch.load(checkpoint_path, map_location=device), strict=False)
             self.model.eval()
 
-    def train(self):
+    def train(self, wandb_logging=False):
         trainer = Trainer(self)
-        trainer.train()
+        trainer.train(wandb_logging=wandb_logging)
 
     def get_train_val_test_ids(self):
         """

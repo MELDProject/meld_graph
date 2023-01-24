@@ -9,6 +9,7 @@ from functools import partial
 import pandas as pd
 import time
 from meld_graph.icospheres import IcoSpheres
+import torch.nn as nn
 
 def dice_coeff(pred, target):
     """This definition generalize to real valued pred and target vector.
@@ -373,7 +374,7 @@ class Trainer:
         model.train()
         return scores
         
-    def train(self):
+    def train(self, wandb_logging=False):
         """
         Train val loop with patience and best model saving
         """
@@ -381,7 +382,13 @@ class Trainer:
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.experiment.load_model(checkpoint_path=self.init_weights)
         self.experiment.model.to(device)
-
+        if wandb_logging:
+            import wandb
+            wandb.init(entity="meld", project="classification")
+            model = self.experiment.model
+          #  wandb.watch(model)
+            
+                
         # get dataset
         train_dset = GraphDataset.from_experiment(self.experiment, mode='train')
         sampler = None
@@ -444,7 +451,16 @@ class Trainer:
             log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items() if key in log_keys)
             self.log.info(f'Epoch {epoch} :: Train {log_str}')
             scores['train'].append(cur_scores)
-
+            
+            if wandb_logging:
+                parameters = model.state_dict()
+                wandb.log(parameters)
+                for name, param in parameters.items():
+                    wandb.log({name+"_grad": param.grad}, step=epoch)
+                wandb.log({'train_losses':cur_scores})
+            #    weights = self.experiment.model.get_weights()
+            #    biases = self.experiment.model.get_biases()
+            #    wandb.log({"weights": weights,'biases':biases})
             if epoch%1 ==0:
                 cur_scores = self.val_epoch(val_data_loader)
                 log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items() if key in log_keys)
