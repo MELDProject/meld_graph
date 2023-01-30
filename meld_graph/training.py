@@ -180,7 +180,7 @@ def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_su
             cur_estimates = estimates_dict[f'{prefix}non_lesion_logits']
         elif loss_def == 'lesion_classification':
             cur_labels = torch.any(labels.view(labels.shape[0]//n_vertices, -1), dim=1).long()
-            cur_estimates = estimates_dict[f'{prefix}max_log_softmax']
+            cur_estimates = estimates_dict[f'{prefix}log_sumexp']
             #print('classification', 'prefix', prefix, cur_labels, cur_estimates)
         else:
             raise NotImplementedError(f'Unknown loss def {loss_def}')
@@ -317,7 +317,7 @@ class Trainer:
 
             # metrics
             pred = torch.argmax(estimates['log_softmax'], axis=1)
-            pred_class = torch.argmax(estimates['max_log_softmax'], axis=1)
+            pred_class = torch.argmax(estimates['log_sumexp'], axis=1)
             # update running metrics
             metrics.update(pred, labels, pred_class=pred_class)
             # TODO add distance regression to metrics
@@ -363,7 +363,7 @@ class Trainer:
 
                 # metrics
                 pred = torch.argmax(estimates['log_softmax'], axis=1)
-                pred_class = torch.argmax(estimates['max_log_softmax'], axis=1)
+                pred_class = torch.argmax(estimates['log_sumexp'], axis=1)
                 # update running metrics
                 # TODO add distance regression metrics here?
                 metrics.update(pred, labels, pred_class=pred_class)
