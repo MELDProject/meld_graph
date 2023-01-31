@@ -316,18 +316,23 @@ class MoNetUnet(nn.Module):
                         outputs[f'ds{level}_non_lesion_logits'].append(x_out[:,0])
                     x_out = nn.LogSoftmax(dim=1)(x_out)
                     outputs[f'ds{level}_log_softmax'].append(x_out)
-                    x_out_max = torch.exp(torch.max(x_out[:,1]))
-                    x_out_max = torch.stack((1-x_out_max, x_out_max))
-                    x_out_max = nn.LogSoftmax()(x_out_max)
+                    #x_out_max = torch.exp(torch.max(x_out[:,1]))
+                    #x_out_max = torch.stack((1-x_out_max, x_out_max))
+                    #x_out_max = nn.LogSoftmax()(x_out_max)
 
-                    x_out_logsumexp = torch.logsumexp(x_out)
-                    #print('pre log softmax', x_out_max)
-                    #print('manual log', torch.log(x_out_max))
+                    print('x_out[:,1]', x_out[:,1])
                     
+                    print('exp of x_out', torch.exp(x_out[:,1]))
+                    x_out_logsumexp = torch.logsumexp(torch.exp(x_out[:,1]), dim=0)
+                    print('logsumexp', x_out_logsumexp)
+                    x_out_logsumexp = torch.stack((1-x_out_logsumexp, x_out_logsumexp))
+                    print('pre log softmax', x_out_logsumexp)
+                    # TODO do manual log or log softmax?
+                    print('manual log', torch.log(x_out_logsumexp))
+                    x_out_logsumexp = nn.LogSoftmax()(x_out_logsumexp)
 
-                    #print('after log softmax', x_out_max)
+                    print('after log softmax', x_out_logsumexp)
                     outputs[f'ds{level}_log_sumexp'].append(x_out_logsumexp)
-                    #print(outputs[f'ds{level}_max_log_softmax'][-1])
                 skip_i = len(self.decoder_conv_layers)-1-i
                 level += 1
                 x = self.unpool_layers[i](x, device=self.device)
@@ -348,7 +353,9 @@ class MoNetUnet(nn.Module):
             outputs['log_softmax'].append(x)
             #x_max = torch.exp(torch.max(x[:,1]))
             #x_max = torch.stack((1-x_max, x_max))
-            x_logsumexp = torch.logsumexp(x)
+            x_logsumexp = torch.logsumexp(torch.exp(x[:,1]), dim=0)
+            x_logsumexp = torch.stack((1-x_logsumexp, x_logsumexp))
+            x_logsumexp = nn.LogSoftmax()(x_logsumexp)
             outputs['log_sumexp'].append(x_logsumexp)
         
         # stack and reshape outputs to (batch * n_vertices, -1)
