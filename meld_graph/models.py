@@ -281,11 +281,11 @@ class MoNetUnet(nn.Module):
         
         batch_x = batch_x.view((batch_x.shape[0]//self.n_vertices, self.n_vertices,self.num_features))
         skip_connections = []
-        outputs = {'log_softmax': [], 'non_lesion_logits': [], 'max_log_softmax': []}
+        outputs = {'log_softmax': [], 'non_lesion_logits': [], 'log_sumexp': []}
         for level in self.deep_supervision:
             outputs[f'ds{level}_log_softmax'] = []
             outputs[f'ds{level}_non_lesion_logits'] = []
-            outputs[f'ds{level}_max_log_softmax'] = []
+            outputs[f'ds{level}_log_sumexp'] = []
         #if self.classification_head:
         #    outputs['hemi_log_softmax'] = []
         for x in batch_x:
@@ -316,14 +316,16 @@ class MoNetUnet(nn.Module):
                         outputs[f'ds{level}_non_lesion_logits'].append(x_out[:,0])
                     x_out = nn.LogSoftmax(dim=1)(x_out)
                     outputs[f'ds{level}_log_softmax'].append(x_out)
-                    x_out_max = torch.exp(torch.max(x_out[:,1]))
-                    x_out_max = torch.stack((1-x_out_max, x_out_max))
-                    #print('pre log softmax', x_out_max)
-                    #print('manual log', torch.log(x_out_max))
-                    x_out_max = nn.LogSoftmax()(x_out_max)
-                    #print('after log softmax', x_out_max)
-                    outputs[f'ds{level}_max_log_softmax'].append(x_out_max)
-                    #print(outputs[f'ds{level}_max_log_softmax'][-1])
+                    #x_out_max = torch.exp(torch.max(x_out[:,1]))
+                    #x_out_max = torch.stack((1-x_out_max, x_out_max))
+                    #x_out_max = nn.LogSoftmax()(x_out_max)
+                    
+                    x_out_logsumexp = torch.logsumexp(torch.exp(x_out[:,1]), dim=0)
+                    x_out_logsumexp = torch.stack((1-x_out_logsumexp, x_out_logsumexp))
+                    #print('pre log softmax', x_out_logsumexp)
+                    x_out_logsumexp = nn.LogSoftmax()(x_out_logsumexp)
+                    #print('after log softmax', x_out_logsumexp)
+                    outputs[f'ds{level}_log_sumexp'].append(x_out_logsumexp)
                 skip_i = len(self.decoder_conv_layers)-1-i
                 level += 1
                 x = self.unpool_layers[i](x, device=self.device)
@@ -342,9 +344,12 @@ class MoNetUnet(nn.Module):
             x = self.fc(x)
             x = nn.LogSoftmax(dim=1)(x)
             outputs['log_softmax'].append(x)
-            x_max = torch.exp(torch.max(x[:,1]))
-            x_max = torch.stack((1-x_max, x_max))
-            outputs['max_log_softmax'].append(torch.log(x_max))
+            #x_max = torch.exp(torch.max(x[:,1]))
+            #x_max = torch.stack((1-x_max, x_max))
+            x_logsumexp = torch.logsumexp(torch.exp(x[:,1]), dim=0)
+            x_logsumexp = torch.stack((1-x_logsumexp, x_logsumexp))
+            x_logsumexp = nn.LogSoftmax()(x_logsumexp)
+            outputs['log_sumexp'].append(x_logsumexp)
         
         # stack and reshape outputs to (batch * n_vertices, -1)
         # in case of hemi classification will be (batch, -1)

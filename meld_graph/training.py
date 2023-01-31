@@ -18,7 +18,8 @@ def dice_coeff(pred, target):
     target: tensor with first dimension as batch (not one-hot encoded)
     NOTE assumes that pred is softmax output of model, might need torch.exp before
     """
-    target_hot = torch.nn.functional.one_hot(target,num_classes=2)
+    # make target one-hot encoded (also works for soft targets)
+    target_hot = torch.transpose(torch.stack((1-target, target)), 0, 1)
     smooth = 1e-15 
     iflat = pred.contiguous()
     tflat = target_hot.contiguous()
@@ -39,8 +40,10 @@ class DiceLoss(torch.nn.Module):
 
     def forward(self, inputs, targets, device=None, **kwargs):
         dice = dice_coeff(torch.exp(inputs),targets)
+        class_weights = torch.tensor(self.class_weights,dtype=float)
         if device is not None:
-            class_weights = torch.tensor(self.class_weights,dtype=float).to(device)
+            class_weights = class_weights.to(device)
+
         dice = dice[0]*class_weights[0] + dice[1]*class_weights[1]
         return 1 - dice
 
@@ -53,6 +56,17 @@ class CrossEntropyLoss(torch.nn.Module):
         # inputs are log softmax, pass directly to NLLLoss
         return self.loss(inputs, targets)
 
+class SoftCrossEntropyLoss(torch.nn.Module):
+    # soft version of CE loss. Equivalent to CE if labels/targets are hard
+    def __init__(self):
+        super(SoftCrossEntropyLoss, self).__init__()
+        self.loss = torch.nn.NLLLoss()
+
+    def forward(self, inputs, targets, **kwargs):
+        # inputs are log softmax, do not need to log
+        # formula: non-lesional (inputs[:0]) + lesional (inputs[:1])
+        ce =  - (1 - targets) * inputs[:,0] - targets * inputs[:,1] 
+        return torch.mean(ce)
 
 class MAELoss(torch.nn.Module):
     def __init__(self, weight=None, size_average=True):
@@ -158,6 +172,7 @@ def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_su
         'dice': partial(DiceLoss(loss_weight_dictionary=loss_dict),
                          device=device),
         'cross_entropy': CrossEntropyLoss(),
+        'soft_cross_entropy': SoftCrossEntropyLoss(),
         'focal_loss': FocalLoss(loss_dict),
         'distance_regression': DistanceRegressionLoss(loss_dict),
         'lesion_classification': CrossEntropyLoss(),
@@ -180,7 +195,7 @@ def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_su
             cur_estimates = estimates_dict[f'{prefix}non_lesion_logits']
         elif loss_def == 'lesion_classification':
             cur_labels = torch.any(labels.view(labels.shape[0]//n_vertices, -1), dim=1).long()
-            cur_estimates = estimates_dict[f'{prefix}max_log_softmax']
+            cur_estimates = estimates_dict[f'{prefix}log_sumexp']
             #print('classification', 'prefix', prefix, cur_labels, cur_estimates)
         else:
             raise NotImplementedError(f'Unknown loss def {loss_def}')
@@ -317,7 +332,7 @@ class Trainer:
 
             # metrics
             pred = torch.argmax(estimates['log_softmax'], axis=1)
-            pred_class = torch.argmax(estimates['max_log_softmax'], axis=1)
+            pred_class = torch.argmax(estimates['log_sumexp'], axis=1)
             # update running metrics
             metrics.update(pred, labels, pred_class=pred_class)
             # TODO add distance regression to metrics
@@ -363,7 +378,7 @@ class Trainer:
 
                 # metrics
                 pred = torch.argmax(estimates['log_softmax'], axis=1)
-                pred_class = torch.argmax(estimates['max_log_softmax'], axis=1)
+                pred_class = torch.argmax(estimates['log_sumexp'], axis=1)
                 # update running metrics
                 # TODO add distance regression metrics here?
                 metrics.update(pred, labels, pred_class=pred_class)
