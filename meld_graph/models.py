@@ -320,18 +320,18 @@ class MoNetUnet(nn.Module):
                     #x_out_max = torch.stack((1-x_out_max, x_out_max))
                     #x_out_max = nn.LogSoftmax()(x_out_max)
 
-                    print('x_out[:,1]', x_out[:,1])
+                    #print('x_out[:,1]', x_out[:,1])
                     
-                    print('exp of x_out', torch.exp(x_out[:,1]))
+                    #print('exp of x_out', torch.exp(x_out[:,1]))
                     x_out_logsumexp = torch.logsumexp(torch.exp(x_out[:,1]), dim=0)
-                    print('logsumexp', x_out_logsumexp)
+                    #print('logsumexp', x_out_logsumexp)
                     x_out_logsumexp = torch.stack((1-x_out_logsumexp, x_out_logsumexp))
-                    print('pre log softmax', x_out_logsumexp)
+                    #print('pre log softmax', x_out_logsumexp)
                     # TODO do manual log or log softmax?
-                    print('manual log', torch.log(x_out_logsumexp))
+                    #print('manual log', torch.log(x_out_logsumexp))
                     x_out_logsumexp = nn.LogSoftmax()(x_out_logsumexp)
 
-                    print('after log softmax', x_out_logsumexp)
+                    #print('after log softmax', x_out_logsumexp)
                     outputs[f'ds{level}_log_sumexp'].append(x_out_logsumexp)
                 skip_i = len(self.decoder_conv_layers)-1-i
                 level += 1
