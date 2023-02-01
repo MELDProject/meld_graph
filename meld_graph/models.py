@@ -304,7 +304,7 @@ class MoNetUnet(nn.Module):
                     x = self.pool_layers[i](x)
             
             if self.classification_head:
-                hemi_classification = self.hemi_classification_head[0](x.unsqueeze(2))
+                hemi_classification = self.activation_function(self.hemi_classification_head[0](x.unsqueeze(2)))
                 #print('hemi cl after first', hemi_classification.shape)
                 hemi_classification = self.hemi_classification_head[1](hemi_classification.view(-1))
                 hemi_classification = nn.LogSoftmax(dim=0)(hemi_classification)
