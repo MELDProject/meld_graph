@@ -506,3 +506,24 @@ class Preprocess:
         full_upsampled[lesion>0]=-full_upsampled[lesion>0]
         
         return full_upsampled
+    
+    
+    def augment_lesion(self, mask, noise_std=0.5):
+        # modify lesion using low frequency noise
+       
+        # get geodesic distance (negative inside lesion, positive outside)
+        new_dist = self.fast_geodesics(mask)
+        # normalise by minimum values
+        new_dist_norm = new_dist / np.abs(new_dist.min())
+        # create low frequencies noise on low res icosphere 2
+        n_vert_low = len(self.icospheres.icospheres[2]['coords'])
+        noise = np.random.normal(0,noise_std,n_vert_low)
+        #upsample noise to high res
+        for level in range(2, 7):
+            unpool_ind = self.unpool(level=level+1)
+            noise_upsampled = unpool_ind(torch.from_numpy(noise.reshape(-1,1)), device = self.device)
+            noise_upsampled = noise_upsampled.detach().cpu().numpy().ravel()
+            noise = noise_upsampled.copy()
+        #add noise to distance normalised
+        new_mask = (new_dist_norm + noise_upsampled)<=0
+        return new_mask
