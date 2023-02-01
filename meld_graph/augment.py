@@ -12,6 +12,8 @@ import logging
 from meld_graph.paths import (
     SCRIPTS_DIR,)
 
+from meld_graph.models import  HexSmooth
+
 
 class Transform():
     """Class transform paramaters"""
@@ -84,7 +86,7 @@ class Transform():
 
 class Augment():
     """Class to augment data"""
-    def __init__(self, params):
+    def __init__(self, params,graph_tools):
         """Augment class
         params - dictionary containing augmentation method, file, and probability of apply transformation (p)
         following guidance from nnUNET
@@ -113,6 +115,10 @@ class Augment():
             self.flipping = Transform(self.params['flipping'])
         else:
             self.flipping = None
+
+        self.gt = graph_tools
+        #need to load neighbours
+        #self.smooth_step = HexSmooth(neighbours = neighbours)
             
     def get_p_param(self, param):
         """check pvalue, set to zero if not found"""
@@ -129,7 +135,12 @@ class Augment():
     
     def add_gaussian_blur(self,feat_tr):
         """add gaussian blur function"""
+        #n_iterations = np.random.choice(10)
+        #for iteration in np.arange(n_iterations):
+        #    feat_tr = self.smooth_step(feat_tr)
         return feat_tr
+
+    
     
     def add_brightness_scaling(self,feat_tr):
         """ scale brightness"""
@@ -170,6 +181,7 @@ class Augment():
         return feat_tr
     
     def extend_lesion(self, lesions, distances):
+        """ DEFUNCT not using this any more"""
         if (not (lesions==1).any()) or ((distances==200).all()):
             return lesions, distances
         extension = np.random.choice(np.linspace(1, 20, 20))
@@ -179,14 +191,46 @@ class Augment():
         lesions_extend = (distances_extend<=0)
         return lesions_extend, distances_extend
 
+    def augment_lesion(self, tdd, noise_std=0.5):
+        # modify lesion using low frequency noise
+       
+        # get geodesic distance (negative inside lesion, positive outside)
+        # normalise by minimum values
+        new_dist = tdd['distances']
+        new_dist_norm = new_dist / np.abs(new_dist.min())
+        # create low frequencies noise on low res icosphere 2
+        n_vert_low = len(self.icospheres.icospheres[2]['coords'])
+        noise = np.random.normal(0,noise_std,n_vert_low)
+        #upsample noise to high res
+        for level in range(2, 7):
+            unpool_ind = self.gt.unpool(level=level+1)
+            noise_upsampled = unpool_ind(torch.from_numpy(noise.reshape(-1,1)), device = self.device)
+            noise_upsampled = noise_upsampled.detach().cpu().numpy().ravel()
+            noise = noise_upsampled.copy()
+        #add noise to distance normalised
+        new_mask = (new_dist_norm + noise_upsampled)<=0
+        tdd['labels'] = new_mask
+        return tdd
+
+    def recompute_distance_and_smoothed(self,tdd):
+        """recompute distances from augmented lesion masks"""
+        tdd['distances'] = self.gt.fast_geodesics(tdd['labels'])
+        tdd['smooth_labels'] = self.gt.smoothing(tdd['labels'],iteration=10)
+        return
+
+
     def apply_indices(self,indices, tdd):
         # spin features
         tdd['features'] = tdd['features'][indices] 
         # spin lesions if exist
         if (tdd['labels']==1).any():            
             tdd['labels'] = tdd['labels'][indices] 
-        if 'distances' in tdd.keys():
-            tdd['distances'] = tdd['distances'][indices]    
+        for field in tdd.keys():
+            if field=='labels':
+                if (tdd['labels']==1).any():
+                    tdd['labels'] = tdd['labels'][indices] 
+            else:
+                tdd[field] = tdd[field]
         return tdd
        
     def apply(self, subject_data_dict):
@@ -220,7 +264,7 @@ class Augment():
         if np.random.rand() < self.get_p_param('noise'):
             tdd['features'] = self.add_gaussian_noise(tdd['features'])
             
-        #Gaussian blur - not implemented
+        #Gaussian blur 
         if np.random.rand() < self.get_p_param('blur'):
             tdd['features']= self.add_gaussian_blur(tdd['features'])
         
@@ -244,9 +288,14 @@ class Augment():
         if np.random.rand() < self.get_p_param('gamma'):
             tdd['features'] = - self.add_gamma_scale( -tdd['features'])
 
-        #extend lesion using distance
-        if (np.random.rand() < self.get_p_param('extend_lesion')) & ('distances' in tdd.keys()):
-            tdd['labels'], tdd['distances']=self.extend_lesion(tdd['labels'], tdd['distances'])
+        #randomly augment lesion using distances and noise
+        if (tdd['labels']==1).any():
+            if np.random.rand() < self.get_p_param('augment_lesion'):
+                tdd = self.augment_lesion(tdd)
+                self.recompute_distance_and_smoothed(tdd)
+
+       # if (np.random.rand() < self.get_p_param('extend_lesion')) & ('distances' in tdd.keys()):
+       #     tdd['labels'], tdd['distances']=self.extend_lesion(tdd['labels'], tdd['distances'])
  
         return tdd
     

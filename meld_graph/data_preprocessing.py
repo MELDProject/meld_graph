@@ -263,7 +263,7 @@ class Preprocess:
     def generate_synthetic_data(self,coords,n_features,synth_params,
                                 histo_type_seed=0,
                                features=None,
-                               distance_maps=False):
+                               ):
         """coords - spherical coordinates
         n_features - number of input features
         bias  - mean of the difference in biases
@@ -281,13 +281,11 @@ class Preprocess:
         if np.random.random()<synth_params['proportion_hemispheres_lesional']:
             synth_dict = self.add_lesion(features, coords,n_features,
                                 synth_params,histo_type_seed,
-                               
-                               distance_maps=distance_maps)
+                               )
         else: 
             synth_dict = {'features':features,'labels':lesion,
             }
-            if distance_maps:
-                synth_dict['distances']=np.ones(n_verts,dtype=np.float32)*200
+            
         return synth_dict
     
     def clip_spherical_coords(self,coordinates):

@@ -3,7 +3,7 @@ import torch
 import potpourri3d as pp3d
 from meld_graph.models import HexUnpool, HexPool, HexSmooth
 
-class Graph:
+class GraphTools:
     def __init__(self, icospheres):
         """
         Use graph tools
