@@ -395,3 +395,13 @@ class HexUnpool(nn.Module):
         new_x[limit:] = torch.mean(x[self.upsample_indices],dim=1)
         return new_x
 
+class HexSmooth(nn.Module):
+    def __init__(self, neighbours):
+        super(HexSmooth, self).__init__()
+        self.neighbours = neighbours
+        
+    def forward(self, x, device):
+        x = torch.from_numpy(x.astype(float)).to(device)
+        new_x = torch.mean(x[self.neighbours],dim=1)
+        return new_x
+

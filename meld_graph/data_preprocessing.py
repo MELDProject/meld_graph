@@ -14,7 +14,7 @@ import json
 import copy 
 from meld_classifier.meld_cohort import MeldCohort, MeldSubject
 import time
-from meld_graph.models import HexUnpool, HexPool
+from meld_graph.models import HexUnpool, HexPool, HexSmooth
 import torch
 import potpourri3d as pp3d
 
@@ -81,6 +81,7 @@ class Preprocess:
         self.pool6 = self.pool(level=5)
         self.unpool6 = self.unpool(level=6)
         self.unpool7 = self.unpool(level=7)
+        self.smooth5 = self.smooth(level=5)
         self.solver = pp3d.MeshHeatMethodDistanceSolver(self.icospheres.icospheres[5]['coords'],
                        self.icospheres.icospheres[5]['faces'])
 
@@ -88,7 +89,6 @@ class Preprocess:
 
     def pool(self,level=7):
         neigh_indices = self.icospheres.get_downsample(target_level=level)
-
         pooling = HexPool(neigh_indices=neigh_indices)
         return pooling
 
@@ -97,6 +97,11 @@ class Preprocess:
         upsample = self.icospheres.get_upsample(target_level=level)
         unpooling = HexUnpool(upsample_indices=upsample, target_size=num)
         return unpooling
+    
+    def smooth(self,level=7):
+        neighbours = self.icospheres.get_neighbours(level=level)
+        pooling = HexSmooth(neighbours=neighbours)
+        return pooling
         
     def load_lobar_parcellation(self, lobe = 1):
         parc=nb.freesurfer.io.read_annot(os.path.join(self.data_dir,'fsaverage_sym','label','lh.lobes.annot'))[0]
@@ -484,14 +489,20 @@ class Preprocess:
         downsampled1 = self.pool7(torch.from_numpy(lesion.reshape(-1,1)))
         lesion_small = self.pool6(downsampled1).detach().cpu().numpy().ravel()
         
-        #lesion_small = lesion[:n_vert]
-        # non_lesion_and_neighbours = self.flatten(np.array(self.icospheres.icospheres[5]['neighbours'])[lesion_small == 0])
-        # lesion_boundary_vertices = np.setdiff1d(non_lesion_and_neighbours, np.where(lesion_small == 0)[0])
-        boundary_distance = self.solver.compute_distance_multisource(indices[lesion_small>0])
-        # include lesion
-        boundary_distance[lesion_small == 1] = 0
+        #find boundaries of lesions
+        new_lesion = self.smooth5(lesion_small, self.device)
+        new_lesion = new_lesion.detach().cpu().numpy().ravel()
+        lesion_boundary_vertices = indices[(lesion_small - new_lesion)>0]
+        boundary_distance = self.solver.compute_distance_multisource(lesion_boundary_vertices)
+
+        # upsample distance
+        # boundary_distance[lesion_small == 1] = 0
         upsampled1 = self.unpool6(torch.from_numpy(boundary_distance.reshape(-1,1)),
         device=self.device)
         full_upsampled = self.unpool7(upsampled1, device = self.device)
         full_upsampled = full_upsampled.detach().cpu().numpy().ravel()
-        return np.clip(full_upsampled, 0, 200)
+        
+        #inverse values on the lesion
+        full_upsampled[lesion>0]=-full_upsampled[lesion>0]
+        
+        return full_upsampled
