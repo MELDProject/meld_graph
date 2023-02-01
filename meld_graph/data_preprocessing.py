@@ -2,21 +2,13 @@ from meld_classifier.paths import (
     BASE_PATH,
     NVERT,
 )
-import pandas as pd
 import numpy as np
 import nibabel as nb
 import os
-import h5py
-import glob
 import logging
-import random
 import json
 import copy 
-from meld_classifier.meld_cohort import MeldCohort, MeldSubject
-import time
-from meld_graph.models import HexUnpool, HexPool, HexSmooth
-import torch
-import potpourri3d as pp3d
+from meld_classifier.meld_cohort import MeldSubject
 
 
 class Preprocess:
@@ -75,34 +67,6 @@ class Preprocess:
             self._lobes = self.load_lobar_parcellation()
         return self._lobes
     
-    def setup_distance_solver(self):
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.pool7 = self.pool(level=6)
-        self.pool6 = self.pool(level=5)
-        self.unpool6 = self.unpool(level=6)
-        self.unpool7 = self.unpool(level=7)
-        self.smooth5 = self.smooth(level=5)
-        self.solver = pp3d.MeshHeatMethodDistanceSolver(self.icospheres.icospheres[5]['coords'],
-                       self.icospheres.icospheres[5]['faces'])
-
-        return
-
-    def pool(self,level=7):
-        neigh_indices = self.icospheres.get_downsample(target_level=level)
-        pooling = HexPool(neigh_indices=neigh_indices)
-        return pooling
-
-    def unpool(self,level=7):
-        num = len(self.icospheres.get_neighbours(level=level))
-        upsample = self.icospheres.get_upsample(target_level=level)
-        unpooling = HexUnpool(upsample_indices=upsample, target_size=num)
-        return unpooling
-    
-    def smooth(self,level=7):
-        neighbours = self.icospheres.get_neighbours(level=level)
-        pooling = HexSmooth(neighbours=neighbours)
-        return pooling
-        
     def load_lobar_parcellation(self, lobe = 1):
         parc=nb.freesurfer.io.read_annot(os.path.join(self.data_dir,'fsaverage_sym','label','lh.lobes.annot'))[0]
         lobes = (parc==lobe).astype(int)
@@ -465,65 +429,6 @@ class Preprocess:
         synth_dict = {'features' : features.astype('float32'),
                       'labels' : lesion.astype('int32')
             }
-        if distance_maps:
-            geodesic_distances = self.fast_geodesics(lesion)
-            synth_dict['distances'] = geodesic_distances.astype('float32') 
                 
         return synth_dict
     
-    def flatten(self, t):
-            return [item for sublist in t for item in sublist]
-
-    def fast_geodesics(self,lesion):
-        """calculate geodesic distances on downsampled mesh then upsample
-        currently calculating on level 5, with two upsample steps"""
-
-        #downsample lesion
-        #if no lesion, no distance
-        if lesion.sum()==0:
-            n_vert = len(self.icospheres.icospheres[7]['coords'])
-            return np.ones(n_vert)*200
-        n_vert = len(self.icospheres.icospheres[5]['coords'])
-
-        indices = np.arange(n_vert,dtype=int)
-        downsampled1 = self.pool7(torch.from_numpy(lesion.reshape(-1,1)))
-        lesion_small = self.pool6(downsampled1).detach().cpu().numpy().ravel()
-        
-        #find boundaries of lesions
-        new_lesion = self.smooth5(lesion_small, self.device)
-        new_lesion = new_lesion.detach().cpu().numpy().ravel()
-        lesion_boundary_vertices = indices[(lesion_small - new_lesion)>0]
-        boundary_distance = self.solver.compute_distance_multisource(lesion_boundary_vertices)
-
-        # upsample distance
-        # boundary_distance[lesion_small == 1] = 0
-        upsampled1 = self.unpool6(torch.from_numpy(boundary_distance.reshape(-1,1)),
-        device=self.device)
-        full_upsampled = self.unpool7(upsampled1, device = self.device)
-        full_upsampled = full_upsampled.detach().cpu().numpy().ravel()
-        
-        #inverse values on the lesion
-        full_upsampled[lesion>0]=-full_upsampled[lesion>0]
-        
-        return full_upsampled
-    
-    
-    def augment_lesion(self, mask, noise_std=0.5):
-        # modify lesion using low frequency noise
-       
-        # get geodesic distance (negative inside lesion, positive outside)
-        new_dist = self.fast_geodesics(mask)
-        # normalise by minimum values
-        new_dist_norm = new_dist / np.abs(new_dist.min())
-        # create low frequencies noise on low res icosphere 2
-        n_vert_low = len(self.icospheres.icospheres[2]['coords'])
-        noise = np.random.normal(0,noise_std,n_vert_low)
-        #upsample noise to high res
-        for level in range(2, 7):
-            unpool_ind = self.unpool(level=level+1)
-            noise_upsampled = unpool_ind(torch.from_numpy(noise.reshape(-1,1)), device = self.device)
-            noise_upsampled = noise_upsampled.detach().cpu().numpy().ravel()
-            noise = noise_upsampled.copy()
-        #add noise to distance normalised
-        new_mask = (new_dist_norm + noise_upsampled)<=0
-        return new_mask
