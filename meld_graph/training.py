@@ -176,7 +176,7 @@ def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_su
         'focal_loss': FocalLoss(loss_dict),
         'distance_regression': DistanceRegressionLoss(loss_dict),
         'lesion_classification': CrossEntropyLoss(),
-        'mae_loss':MAELoss(),
+        'mae_loss': MAELoss(),
     }
     if distance_map is not None:
         distance_map.to(device)
@@ -194,9 +194,16 @@ def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_su
         elif loss_def == 'distance_regression':
             cur_estimates = estimates_dict[f'{prefix}non_lesion_logits']
         elif loss_def == 'lesion_classification':
+            if loss_dict[loss_def].get('apply_to_bottleneck', False):
+                # if apply lc to bottleneck, do not apply it on deep supervision levels
+                if deep_supervision_level is not None:
+                    continue
+                else:
+                    # on highest level, can apply lc
+                    cur_estimates = estimates_dict['hemi_log_softmax']
+            else:
+                cur_estimates = estimates_dict[f'{prefix}log_sumexp']
             cur_labels = torch.any(labels.view(labels.shape[0]//n_vertices, -1), dim=1).long()
-            cur_estimates = estimates_dict[f'{prefix}log_sumexp']
-            #print('classification', 'prefix', prefix, cur_labels, cur_estimates)
         else:
             raise NotImplementedError(f'Unknown loss def {loss_def}')
 
@@ -326,13 +333,19 @@ class Trainer:
             optimiser.step()
             for i, key in enumerate(self.params['loss_dictionary'].keys()):
                 running_losses[key].append(losses[key].item())
+                if model.classification_head and key=='lesion_classification':
+                    # no ds for lesion classification in this case
+                    continue
                 for level in self.deep_supervision['levels']:
                     running_losses[f'ds{level}_{key}'].append(losses[f'ds{level}_{key}'].item())
             running_losses['loss'].append(loss.item())
 
             # metrics
             pred = torch.argmax(estimates['log_softmax'], axis=1)
-            pred_class = torch.argmax(estimates['log_sumexp'], axis=1)
+            if model.classification_head:
+                pred_class = torch.argmax(estimates['hemi_log_softmax'], axis=1)
+            else:
+                pred_class = torch.argmax(estimates['log_sumexp'], axis=1)
             # update running metrics
             metrics.update(pred, labels, pred_class=pred_class)
             # TODO add distance regression to metrics
@@ -372,6 +385,9 @@ class Trainer:
                 # keep track of loss
                 for i, key in enumerate(self.params['loss_dictionary'].keys()):
                     running_losses[key].append(losses[key].item())
+                    if model.classification_head and key=='lesion_classification':
+                        # no ds for lesion classification in this case
+                        continue
                     for level in self.deep_supervision['levels']:
                         running_losses[f'ds{level}_{key}'].append(losses[f'ds{level}_{key}'].item())
                 running_losses['loss'].append(loss.item())
