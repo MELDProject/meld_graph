@@ -19,7 +19,7 @@ class Graph:
         self.pool6 = self.pool(level=5)
         self.unpool6 = self.unpool(level=6)
         self.unpool7 = self.unpool(level=7)
-        self.smooth5 = self.smooth(level=5)
+        self.smooth5 = self.smoother(level=5)
         self.solver = pp3d.MeshHeatMethodDistanceSolver(self.icospheres.icospheres[5]['coords'],
                     self.icospheres.icospheres[5]['faces'])
 
@@ -34,10 +34,18 @@ class Graph:
         unpooling = HexUnpool(upsample_indices=upsample, target_size=num)
         return unpooling
     
-    def smooth(self,level=7):
+    def smoother(self,level=7):
         neighbours = self.icospheres.get_neighbours(level=level)
         pooling = HexSmooth(neighbours=neighbours)
         return pooling
+
+    def smoothing(self, data, iteration=1, level=7):
+        smoother = self.smoother(level=level)
+        data = torch.from_numpy(data.astype(float)).to(self.device)
+        for i in range(0, iteration):
+            data = smoother(data)
+        data = data.detach().cpu().numpy().ravel()
+        return data
     
     def fast_geodesics(self,lesion):
         """calculate geodesic distances on downsampled mesh then upsample
@@ -55,7 +63,7 @@ class Graph:
         lesion_small = self.pool6(downsampled1).detach().cpu().numpy().ravel()
         
         #find boundaries of lesions
-        new_lesion = self.smooth5(lesion_small, self.device)
+        new_lesion = self.smooth5(torch.from_numpy(lesion_small.astype(float)).to(self.device))
         new_lesion = new_lesion.detach().cpu().numpy().ravel()
         lesion_boundary_vertices = indices[(lesion_small - new_lesion)>0]
         boundary_distance = self.solver.compute_distance_multisource(lesion_boundary_vertices)

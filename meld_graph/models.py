@@ -400,8 +400,7 @@ class HexSmooth(nn.Module):
         super(HexSmooth, self).__init__()
         self.neighbours = neighbours
         
-    def forward(self, x, device):
-        x = torch.from_numpy(x.astype(float)).to(device)
+    def forward(self, x):
         new_x = torch.mean(x[self.neighbours],dim=1)
         return new_x
 
