@@ -2,21 +2,13 @@ from meld_classifier.paths import (
     BASE_PATH,
     NVERT,
 )
-import pandas as pd
 import numpy as np
 import nibabel as nb
 import os
-import h5py
-import glob
 import logging
-import random
 import json
 import copy 
-from meld_classifier.meld_cohort import MeldCohort, MeldSubject
-import time
-from meld_graph.models import HexUnpool, HexPool, HexSmooth
-import torch
-import potpourri3d as pp3d
+from meld_classifier.meld_cohort import MeldSubject
 
 
 class Preprocess:
@@ -75,35 +67,6 @@ class Preprocess:
             self._lobes = self.load_lobar_parcellation()
         return self._lobes
     
-    def setup_distance_solver(self):
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.pool7 = self.pool(level=6)
-        self.pool6 = self.pool(level=5)
-        self.unpool6 = self.unpool(level=6)
-        self.unpool7 = self.unpool(level=7)
-        self.smooth5 = self.smooth(level=5)
-        self.smooth7 = self.smooth(level=7)
-        self.solver = pp3d.MeshHeatMethodDistanceSolver(self.icospheres.icospheres[5]['coords'],
-                       self.icospheres.icospheres[5]['faces'])
-
-        return
-
-    def pool(self,level=7):
-        neigh_indices = self.icospheres.get_downsample(target_level=level)
-        pooling = HexPool(neigh_indices=neigh_indices)
-        return pooling
-
-    def unpool(self,level=7):
-        num = len(self.icospheres.get_neighbours(level=level))
-        upsample = self.icospheres.get_upsample(target_level=level)
-        unpooling = HexUnpool(upsample_indices=upsample, target_size=num)
-        return unpooling
-    
-    def smooth(self,level=7):
-        neighbours = self.icospheres.get_neighbours(level=level)
-        pooling = HexSmooth(neighbours=neighbours)
-        return pooling
-        
     def load_lobar_parcellation(self, lobe = 1):
         parc=nb.freesurfer.io.read_annot(os.path.join(self.data_dir,'fsaverage_sym','label','lh.lobes.annot'))[0]
         lobes = (parc==lobe).astype(int)
@@ -466,7 +429,6 @@ class Preprocess:
         synth_dict = {'features' : features.astype('float32'),
                       'labels' : lesion.astype('int32')
             }
-        
+                
         return synth_dict
-    
     
