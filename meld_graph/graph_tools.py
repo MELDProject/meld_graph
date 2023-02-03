@@ -22,6 +22,7 @@ class GraphTools:
         self.smooth5 = self.smoother(level=5)
         self.solver = pp3d.MeshHeatMethodDistanceSolver(self.icospheres.icospheres[5]['coords'],
                     self.icospheres.icospheres[5]['faces'])
+        self.smoother = self.smoother(level=7)
 
     def pool(self,level=7):
         neigh_indices = self.icospheres.get_downsample(target_level=level)
@@ -39,11 +40,10 @@ class GraphTools:
         pooling = HexSmooth(neighbours=neighbours)
         return pooling
 
-    def smoothing(self, data, iteration=1, level=7):
-        smoother = self.smoother(level=level)
+    def smoothing(self, data, iteration=1):
         data = torch.from_numpy(data.astype(float)).to(self.device)
         for i in range(0, iteration):
-            data = smoother(data)
+            data = self.smoother(data)
         data = data.detach().cpu().numpy().ravel()
         return data
     

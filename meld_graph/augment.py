@@ -117,6 +117,7 @@ class Augment():
             self.flipping = None
 
         self.gt = graph_tools
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         #need to load neighbours
         #self.smooth_step = HexSmooth(neighbours = neighbours)
             
@@ -199,7 +200,7 @@ class Augment():
         new_dist = tdd['distances']
         new_dist_norm = new_dist / np.abs(new_dist.min())
         # create low frequencies noise on low res icosphere 2
-        n_vert_low = len(self.icospheres.icospheres[2]['coords'])
+        n_vert_low = len(self.gt.icospheres.icospheres[2]['coords'])
         noise = np.random.normal(0,noise_std,n_vert_low)
         #upsample noise to high res
         for level in range(2, 7):
