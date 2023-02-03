@@ -9,6 +9,7 @@ import numpy as np
 import torch
 import logging
 import time
+from meld_graph.graph_tools import GraphTools
 
 
 class Oversampler(torch.utils.data.Sampler):
@@ -86,10 +87,13 @@ class GraphDataset(torch_geometric.data.Dataset):
         self.cohort = cohort
         self.mode = mode
         self.augment = None
-        if (self.mode == "train") & (self.params["augment_data"] != None):
-            self.augment = Augment(self.params["augment_data"])
+        
         self.output_levels = sorted(output_levels)
         self.icospheres = IcoSpheres()
+        self.gt = GraphTools(self.icospheres)
+        if (self.mode == "train") & (self.params["augment_data"] != None):
+            self.augment = Augment(self.params["augment_data"],
+            self.gt)
         if len(self.output_levels) != 0:
             self.pool_layers = {
                 level: HexPool(self.icospheres.get_downsample(target_level=level))
@@ -111,8 +115,7 @@ class GraphDataset(torch_geometric.data.Dataset):
         self.log.debug(f"Combine hemis {self.params['combine_hemis']}")
         
         if self.params["synthetic_data"]["run_synthetic"]:
-            if distance_maps:
-                self.prep.setup_distance_solver()            
+                     
             self.n_subs_split_i = self.params['synthetic_data']['n_subs']//self.params['number_of_folds']
             if mode=='train':
                 self.n_subs_split = self.n_subs_split_i*(self.params['number_of_folds']-1)
@@ -147,15 +150,18 @@ class GraphDataset(torch_geometric.data.Dataset):
             subject_data_list = self.prep.get_data_preprocessed(subject=subj_id, 
                                         features=params['features'], 
                                         lobes = params['lobes'], lesion_bias=False,
-                                        distance_maps=distance_maps,
+                                        distance_maps=False,
                                         combine_hemis = self.params['combine_hemis'])
             
             #add lesion
             if self.params['synthetic_data']['run_synthetic']:
                 for duplicate in np.arange(np.sum(self.subject_samples==s_i)):
                         synth_sub_data_list = self.synthetic_lesion(subject_data_list)
+                        #computing dists and smoothed labels
+                        synth_sub_data_list= self.add_smooth_label_and_dists(synth_sub_data_list)
                         self.data_list.extend(synth_sub_data_list)
             else:
+                subject_data_list = self.add_smooth_label_and_dists(subject_data_list)
                 self.data_list.extend(subject_data_list)
 
             # load geodesic distance maps for regression task / lesion augmentation
@@ -164,6 +170,16 @@ class GraphDataset(torch_geometric.data.Dataset):
             if self.n_subs_split>len(self.subject_ids):
                 self.subject_ids = np.array(self.subject_ids)[self.subject_samples]
         return
+    
+    def add_smooth_label_and_dists(self,subject_data_list):
+        """compute a smoothed label and distance map"""
+        for sdl in subject_data_list:
+            if (sdl['labels']==1).any():
+                if self.params['smooth_labels']:
+                    sdl['smooth_labels'] = self.gt.smoothing(sdl['labels'],iteration=10)
+                sdl['distances'] = self.gt.fast_geodesics(sdl['labels'])
+        return subject_data_list
+
 
     def synthetic_lesion(self, subject_data_list=[{'features':None},
                                                   {'features':None}]):
@@ -178,7 +194,7 @@ class GraphDataset(torch_geometric.data.Dataset):
                                                              histo_type_seed=subtype,
                                                              synth_params = self.params['synthetic_data'],
                                                     features=sdl['features'],
-                                                    distance_maps = 'distances' in sdl.keys())
+                                                    )
             synth_dicts.append(synth_dict)
         return synth_dicts
 
@@ -201,16 +217,15 @@ class GraphDataset(torch_geometric.data.Dataset):
             cohort=experiment.cohort,
             params=experiment.data_parameters,
             mode=mode,
-            output_levels=experiment.network_parameters["training_parameters"]
-            .get("deep_supervision", {})
-            .get("levels", []),
+            output_levels=experiment.network_parameters["training_parameters"].get("deep_supervision", {}).get("levels", []),
             distance_maps='distance_regression' in experiment.network_parameters['training_parameters']["loss_dictionary"].keys(),
-            # TODO also load distance maps when doing lesion augmentation
         )
 
     def len(self):
         # every subject will be shown twice per epoch
         return len(self.data_list)
+
+
 
     def get(self, idx):
         # print('dataset get idx ', idx)
@@ -219,11 +234,19 @@ class GraphDataset(torch_geometric.data.Dataset):
         # set geodesic distance attr to data
         if self.augment != None:
             subject_data_dict = self.augment.apply(subject_data_dict)
-        data = torch_geometric.data.Data(
-            x=torch.tensor(subject_data_dict['features'], dtype=torch.float),
-            y=torch.tensor(subject_data_dict['labels'], dtype=torch.long),
-            num_nodes=len(subject_data_dict['features']),)
+            
         
+        if self.params['smooth_labels'] and self.augment!=None:
+            data = torch_geometric.data.Data(
+        x=torch.tensor(subject_data_dict['features'], dtype=torch.float),
+        y=torch.tensor(subject_data_dict['smooth_labels'], dtype=torch.float),
+        num_nodes=len(subject_data_dict['features']),)
+        else:
+            data = torch_geometric.data.Data(
+        x=torch.tensor(subject_data_dict['features'], dtype=torch.float),
+        y=torch.tensor(subject_data_dict['labels'], dtype=torch.long),
+        num_nodes=len(subject_data_dict['features']),)
+
         # add extra output levels to data
         if len(self.output_levels) != 0:
             labels_pooled = {7: data.y}
@@ -235,8 +258,9 @@ class GraphDataset(torch_geometric.data.Dataset):
             # add  distance maps if required
         if 'distances' in subject_data_dict.keys():
             #potentially here you could divide by 200
+            
             setattr(data, "distance_map", 
-            torch.tensor(subject_data_dict['distances'], dtype=torch.float))
+            torch.tensor(np.clip(subject_data_dict['distances'],0,200), dtype=torch.float))
             if len(self.output_levels) != 0:
                 dists_pooled = {7: data.distance_map}
                 for level in range(min(self.output_levels), 7)[::-1]:
