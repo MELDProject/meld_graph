@@ -213,13 +213,17 @@ def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_su
 
 
 class Metrics:
-    def __init__(self, metrics, n_vertices=None):
+    def __init__(self, metrics, n_vertices=None, device=None):
+        self.device = device
         self.metrics = metrics
         self.metrics_to_track = self.metrics
         if 'precision' in self.metrics or 'recall' in self.metrics:
             self.metrics_to_track = list(set(self.metrics_to_track + ['tp', 'fp', 'fn','tn']))
         if 'cl_precision' in self.metrics or 'cl_recall' in self.metrics:
             self.metrics_to_track = list(set(self.metrics_to_track + ['cl_tp', 'cl_fp', 'cl_fn','cl_tn']))
+        if 'auroc' in self.metrics:
+            import torchmetrics
+            self.auroc = torchmetrics.AUROC(task="binary", thresholds=10).to(self.device)
         self.running_scores = self.reset()
         self.n_vertices = n_vertices
 
@@ -227,7 +231,7 @@ class Metrics:
         self.running_scores = {metric: [] for metric in self.metrics_to_track}
         return self.running_scores
 
-    def update(self, pred, target, pred_class):
+    def update(self, pred, target, pred_class, estimates):
         if len(set(['dice_lesion', 'dice_nonlesion']).intersection(self.metrics_to_track)) > 0:
             dice_coeffs = dice_coeff(torch.nn.functional.one_hot(pred, num_classes=2), target)
             if 'dice_lesion' in self.metrics_to_track:
@@ -242,6 +246,10 @@ class Metrics:
             self.running_scores['tn'].append(tn.item())
         if 'sensitivity' in self.metrics_to_track:
             self.running_scores['sensitivity'].append(get_sensitivity(pred, target))
+        if 'auroc' in self.metrics_to_track:
+            # binarise target because might be soft target
+            cur_auroc = self.auroc(torch.exp(estimates[:,1]), target > 0.5)
+            self.running_scores['auroc'].append(cur_auroc.item())
 
         # classification metrics
         target_class = torch.any(target.view(target.shape[0]//self.n_vertices, -1), dim=1).long()
@@ -269,7 +277,7 @@ class Metrics:
                 metrics['precision'] = (tp/(tp+fp)).item()
             elif metric == 'recall':
                 metrics['recall'] = (tp/(tp+fn)).item()
-            elif 'dice' in metric:
+            elif ('dice' in metric) or ('auroc' in metric):
                 metrics[metric] = np.mean(self.running_scores[metric])
             elif 'sensitivity' in metric:
                 sensitivity = self.running_scores['sensitivity']
@@ -304,7 +312,7 @@ class Trainer:
         model = self.experiment.model
         model.train()    
 
-        metrics = Metrics(self.params['metrics'], n_vertices=self.experiment.model.n_vertices)  # for keeping track of running metrics
+        metrics = Metrics(self.params['metrics'], n_vertices=self.experiment.model.n_vertices, device=device)  # for keeping track of running metrics
         running_losses = {key: [] for key in self.params['loss_dictionary'].keys()}
         for key in list(running_losses.keys()):
             for level in self.deep_supervision['levels']:
@@ -347,7 +355,7 @@ class Trainer:
             else:
                 pred_class = torch.argmax(estimates['log_sumexp'], axis=1)
             # update running metrics
-            metrics.update(pred, labels, pred_class=pred_class)
+            metrics.update(pred, labels, pred_class=pred_class, estimates=estimates['log_softmax'])
             # TODO add distance regression to metrics
             
         scores = {key: np.mean(running_losses[key]) for key in running_losses.keys()}
@@ -359,7 +367,7 @@ class Trainer:
         model = self.experiment.model
         model.eval()
         with torch.no_grad():
-            metrics = Metrics(self.params['metrics'], n_vertices=self.experiment.model.n_vertices)  # for keeping track of running metrics
+            metrics = Metrics(self.params['metrics'], n_vertices=self.experiment.model.n_vertices, device=device)  # for keeping track of running metrics
             running_losses = {key: [] for key in self.params['loss_dictionary'].keys()}
             for key in list(running_losses.keys()):
                 for level in self.deep_supervision['levels']:
@@ -397,7 +405,7 @@ class Trainer:
                 pred_class = torch.argmax(estimates['log_sumexp'], axis=1)
                 # update running metrics
                 # TODO add distance regression metrics here?
-                metrics.update(pred, labels, pred_class=pred_class)
+                metrics.update(pred, labels, pred_class=pred_class, estimates=estimates['log_softmax'])
      
         scores = {key: np.mean(running_losses[key]) for key in running_losses.keys()}
         scores.update(metrics.get_aggregated_metrics())
