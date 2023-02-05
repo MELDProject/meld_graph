@@ -175,7 +175,6 @@ class GraphDataset(torch_geometric.data.Dataset):
         """compute a smoothed label and distance map"""
         for sdl in subject_data_list:
             if (sdl['labels']==1).any():
-                print('smoothing')
                 if self.params['smooth_labels']:
                     sdl['smooth_labels'] = self.gt.smoothing(sdl['labels'],iteration=10)
                 sdl['distances'] = self.gt.fast_geodesics(sdl['labels'])
