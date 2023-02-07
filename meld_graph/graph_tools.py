@@ -1,8 +1,8 @@
 import numpy as np
 import torch
 import potpourri3d as pp3d
-from meld_graph.models import HexUnpool, HexPool, HexSmooth
-
+from meld_graph.models import HexUnpool, HexPool, HexSmooth, HexSmoothSparse
+import time
 class GraphTools:
     def __init__(self, icospheres):
         """
@@ -22,7 +22,7 @@ class GraphTools:
         self.smooth5 = self.smoother(level=5)
         self.solver = pp3d.MeshHeatMethodDistanceSolver(self.icospheres.icospheres[5]['coords'],
                     self.icospheres.icospheres[5]['faces'])
-        self.smoother = self.smoother(level=7)
+        self.smoother_op = self.smoother(level=7)
 
     def pool(self,level=7):
         neigh_indices = self.icospheres.get_downsample(target_level=level)
@@ -37,14 +37,14 @@ class GraphTools:
     
     def smoother(self,level=7):
         neighbours = self.icospheres.get_neighbours(level=level)
-        pooling = HexSmooth(neighbours=neighbours)
+        pooling = HexSmoothSparse(neighbours=neighbours)
         return pooling
 
     def smoothing(self, data, iteration=1):
-        data = torch.from_numpy(data.astype(float)).to(self.device)
+        
         for i in range(0, iteration):
-            data = self.smoother(data)
-        data = data.detach().cpu().numpy().ravel()
+            data = self.smoother_op(data)
+        data=data.astype(np.float16)
         return data
     
     def fast_geodesics(self,lesion):
@@ -57,15 +57,15 @@ class GraphTools:
             n_vert = len(self.icospheres.icospheres[7]['coords'])
             return np.ones(n_vert)*200
         n_vert = len(self.icospheres.icospheres[5]['coords'])
-
+    
         indices = np.arange(n_vert,dtype=int)
         downsampled1 = self.pool7(torch.from_numpy(lesion.reshape(-1,1)))
         lesion_small = self.pool6(downsampled1).detach().cpu().numpy().ravel()
         
         #find boundaries of lesions
-        new_lesion = self.smooth5(torch.from_numpy(lesion_small.astype(float)).to(self.device))
-        new_lesion = new_lesion.detach().cpu().numpy().ravel()
-        lesion_boundary_vertices = indices[(lesion_small - new_lesion)>0]
+        new_lesion = self.smooth5(lesion_small)
+        diff = (new_lesion - lesion_small) >0
+        lesion_boundary_vertices = indices[diff]
         boundary_distance = self.solver.compute_distance_multisource(lesion_boundary_vertices)
 
         # upsample distance
@@ -77,7 +77,6 @@ class GraphTools:
         
         #inverse values on the lesion
         full_upsampled[lesion>0]=-full_upsampled[lesion>0]
-        
         return full_upsampled
     
 

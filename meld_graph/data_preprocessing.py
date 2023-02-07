@@ -160,6 +160,7 @@ class Preprocess:
         for fi,f_value in enumerate(values):
             if np.std(f_value)!=0:
                 values[fi] = (f_value-self.z_params[features[fi]]['mean'])/self.z_params[features[fi]]['std']
+        
         return values
         #old zscoring code, was problematic with synthetic lesions
 #         std = values.std(axis=1, keepdims=True)

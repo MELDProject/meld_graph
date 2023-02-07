@@ -131,7 +131,9 @@ class Augment():
     def add_gaussian_noise(self,feat_tr):
         """ add a gaussian noise"""
         variance = np.random.uniform(0,0.1)
-        feat_tr = feat_tr + np.random.normal(0.0, variance, size=feat_tr.shape)
+        feat_tr = feat_tr + np.random.normal(0.0, variance, size=feat_tr.shape,
+                                             ).astype(np.float16)
+        #feat_tr = feat_tr + variance * np.random.randn(*feat_tr.shape)
         return feat_tr
     
     def add_gaussian_blur(self,feat_tr):
@@ -143,11 +145,11 @@ class Augment():
 
     
     
+    
+    
     def add_brightness_scaling(self,feat_tr):
-        """ scale brightness"""
-        for c in range(feat_tr.shape[1]):
-            multiplier = np.random.uniform(0.75, 1.25)
-            feat_tr[:,c] *= multiplier
+        multipliers = np.random.uniform(0.75, 1.25, size=feat_tr.shape[1])
+        feat_tr *= multipliers[None,:]
         return feat_tr
     
     def adjust_contrast(self,feat_tr):
@@ -169,16 +171,13 @@ class Augment():
     def add_gamma_scale(self,feat_tr):
         """ add gamma scaling"""
         epsilon=1e-7
-        for c in range(feat_tr.shape[1]):
-            mn = feat_tr[:,c].mean()
-            sd = feat_tr[:,c].std()
-            gamma = np.random.uniform(0.7, 1.5)
-            minm = feat_tr[:,c].min()
-            rnge = feat_tr[:,c].max() - minm
-            feat_tr[:,c] = np.power(((feat_tr[:,c] - minm) / float(rnge + epsilon)), gamma) * float(rnge + epsilon) + minm
-            feat_tr[:,c] = feat_tr[:,c] - feat_tr[:,c].mean()
-            feat_tr[:,c] = feat_tr[:,c] / (feat_tr[:,c].std() + 1e-8) * sd
-            feat_tr[:,c] = feat_tr[:,c] + mn
+        mn = feat_tr.mean(axis=0)
+        sd = feat_tr.std(axis=0)
+        minm = feat_tr.min(axis=0)
+        rnge = feat_tr.max(axis=0) - minm
+        gamma = np.random.uniform(0.7, 1.5, size=feat_tr.shape[1]).astype(np.float16)
+        feat_tr = np.power(((feat_tr - minm) / (rnge + epsilon)), gamma) * (rnge + epsilon) + minm
+        feat_tr = (feat_tr - mn) / (sd + epsilon)
         return feat_tr
     
     def extend_lesion(self, lesions, distances):
@@ -217,6 +216,7 @@ class Augment():
         """recompute distances from augmented lesion masks"""
         tdd['distances'] = self.gt.fast_geodesics(tdd['labels'])
         tdd['smooth_labels'] = self.gt.smoothing(tdd['labels'],iteration=10)
+        
         return
 
 
@@ -260,15 +260,13 @@ class Augment():
         if mesh_transform:
             tdd = self.apply_indices(indices,
             tdd)
-        
         #Gaussian noise
         if np.random.rand() < self.get_p_param('noise'):
             tdd['features'] = self.add_gaussian_noise(tdd['features'])
-            
+        
         #Gaussian blur 
         if np.random.rand() < self.get_p_param('blur'):
             tdd['features']= self.add_gaussian_blur(tdd['features'])
-        
         #Brightness scaling
         if np.random.rand() < self.get_p_param('brightness'):
             tdd['features']= self.add_brightness_scaling(tdd['features'])
@@ -276,25 +274,23 @@ class Augment():
         #adjust contrast
         if np.random.rand() < self.get_p_param('contrast'):
             tdd['features']= self.add_brightness_scaling(tdd['features'])
-            
         #low res - not implemented
         if np.random.rand() < self.get_p_param('low_res'):
             tdd['features']= self.add_low_res(tdd['features'])
-            
-        #gamma intensity
-        if np.random.rand() < self.get_p_param('gamma'):
-            tdd['features'] = self.add_gamma_scale(tdd['features'])
-        
-        #inverted gamma intensity
-        if np.random.rand() < self.get_p_param('gamma'):
-            tdd['features'] = - self.add_gamma_scale( -tdd['features'])
 
+        #gamma intensity
+        if np.random.rand() < self.get_p_param('gamma')/2:
+            tdd['features'] = self.add_gamma_scale(tdd['features'])
+        #inverted gamma intensity
+        if np.random.rand() < self.get_p_param('gamma')/2:
+            tdd['features'] = - self.add_gamma_scale( -tdd['features'])
+        
         #randomly augment lesion using distances and noise
         if (tdd['labels']==1).any():
             if np.random.rand() < self.get_p_param('augment_lesion'):
                 tdd = self.augment_lesion(tdd)
                 self.recompute_distance_and_smoothed(tdd)
-
+        
        # if (np.random.rand() < self.get_p_param('extend_lesion')) & ('distances' in tdd.keys()):
        #     tdd['labels'], tdd['distances']=self.extend_lesion(tdd['labels'], tdd['distances'])
  

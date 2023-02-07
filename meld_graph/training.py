@@ -11,7 +11,7 @@ import time
 from meld_graph.icospheres import IcoSpheres
 import torch.nn as nn
 
-def dice_coeff(pred, target):
+def dice_coeff(pred, target , smooth = 1e-15 ):
     """This definition generalize to real valued pred and target vector.
     This should be differentiable.
     pred: tensor with first dimension as batch
@@ -20,7 +20,7 @@ def dice_coeff(pred, target):
     """
     # make target one-hot encoded (also works for soft targets)
     target_hot = torch.transpose(torch.stack((1-target, target)), 0, 1)
-    smooth = 1e-15 
+    
     iflat = pred.contiguous()
     tflat = target_hot.contiguous()
     intersection = (iflat * tflat).sum(dim=0)
@@ -37,9 +37,13 @@ class DiceLoss(torch.nn.Module):
         if 'dice' in loss_weight_dictionary.keys():
             if 'class_weights' in loss_weight_dictionary['dice']:
                 self.class_weights = loss_weight_dictionary['dice']['class_weights']
+            if 'epsilon' in loss_weight_dictionary['dice']:
+                self.epsilon = loss_weight_dictionary['dice']['epsilon']
+            else:
+                self.epsilon = 1e-15
 
     def forward(self, inputs, targets, device=None, **kwargs):
-        dice = dice_coeff(torch.exp(inputs),targets)
+        dice = dice_coeff(torch.exp(inputs),targets, smooth = self.epsilon)
         class_weights = torch.tensor(self.class_weights,dtype=float)
         if device is not None:
             class_weights = class_weights.to(device)

@@ -396,11 +396,40 @@ class HexUnpool(nn.Module):
         return new_x
 
 class HexSmooth(nn.Module):
-    def __init__(self, neighbours):
+    def __init__(self, neighbours, num_iterations=10):
         super(HexSmooth, self).__init__()
         self.neighbours = neighbours
+        self.num_iterations = num_iterations
         
     def forward(self, x):
-        new_x = torch.mean(x[self.neighbours],dim=1)
+        indices = self.neighbours.view(-1)
+            
+        for _ in range(self.num_iterations):
+            x = torch.index_select(x, 0, indices)
+            x = x.mean(dim=0, keepdim=True)
+            #x = torch.mean(x[self.neighbours], dim=1)
+        return x
+    
+import scipy.sparse as sp
+import numpy as np
+class HexSmoothSparse(nn.Module):
+    def __init__(self, neighbours):
+        super(HexSmoothSparse, self).__init__()
+        self.neighbours = neighbours
+        self.sparse_weights = self._create_sparse_weights(neighbours)
+        
+    def _create_sparse_weights(self, neighbours):
+        """
+        Create sparse matrix with weights for the smoothing operation
+        """
+        num_points = len(neighbours)
+        num_neighbours = neighbours.shape[1]
+        row_indices = np.repeat(np.arange(num_points), num_neighbours)
+        col_indices = neighbours.reshape(-1)
+        values = np.ones(row_indices.shape) / num_neighbours
+        sparse_weights = sp.csr_matrix((values, (row_indices, col_indices)), shape=(num_points, num_points))
+        return sparse_weights
+        
+    def forward(self, x):
+        new_x = self.sparse_weights @ x
         return new_x
-

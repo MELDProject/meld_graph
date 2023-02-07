@@ -1,6 +1,4 @@
 import torch_geometric.data
-from meld_classifier.meld_cohort import MeldSubject
-from meld_classifier.dataset import load_combined_hemisphere_data
 from meld_graph.data_preprocessing import Preprocess
 from meld_graph.icospheres import IcoSpheres
 from meld_graph.models import HexPool
@@ -8,7 +6,6 @@ from meld_graph.augment import Augment
 import numpy as np
 import torch
 import logging
-import time
 from meld_graph.graph_tools import GraphTools
 
 
@@ -174,10 +171,11 @@ class GraphDataset(torch_geometric.data.Dataset):
     def add_smooth_label_and_dists(self,subject_data_list):
         """compute a smoothed label and distance map"""
         for sdl in subject_data_list:
+            #sdl['features'] = sdl['features'].astype(np.float16)
             if (sdl['labels']==1).any():
                 if self.params['smooth_labels']:
-                    sdl['smooth_labels'] = self.gt.smoothing(sdl['labels'],iteration=10)
-                sdl['distances'] = self.gt.fast_geodesics(sdl['labels'])
+                    sdl['smooth_labels'] = self.gt.smoothing(sdl['labels'].astype(np.float16),iteration=10).astype(np.float16)
+                sdl['distances'] = self.gt.fast_geodesics(sdl['labels']).astype(np.float16)
             else:
                 sdl['distances'] = np.zeros(len(sdl['labels']),dtype=np.float16)
                 if self.params['smooth_labels']:
@@ -263,7 +261,7 @@ class GraphDataset(torch_geometric.data.Dataset):
             # add  distance maps if required
         if 'distances' in subject_data_dict.keys():
             #potentially here you could divide by 200
-            
+            #clip distances here to make sure no negatives
             setattr(data, "distance_map", 
             torch.tensor(np.clip(subject_data_dict['distances'],0,200), dtype=torch.float))
             if len(self.output_levels) != 0:
