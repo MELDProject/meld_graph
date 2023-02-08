@@ -46,7 +46,7 @@ network_parameters = {
             "cl_precision",
             "cl_recall"
         ],
-        "num_epochs": 200,
+        "num_epochs": 500,
         "optimiser": "sgd",
         "optimiser_parameters": {"lr": 0.0001, "momentum": 0.99, "nesterov": True},
         "oversampling": False,
@@ -70,6 +70,7 @@ data_parameters = {
     "combine_hemis": None,
     "dataset": "MELD_dataset_V6.csv",
     "features": [
+
         ".combat.on_lh.pial.K_filtered.sm20.mgh",
         ".combat.on_lh.thickness.sm10.mgh",
         ".combat.on_lh.w-g.pct.sm10.mgh",
@@ -119,7 +120,7 @@ data_parameters = {
     },
     "scanners": ["15T", "3T"],
     "site_codes": [
-        "H1",
+         "H1",
         "H2",
         "H3",
         "H4",
@@ -147,9 +148,9 @@ data_parameters = {
         "bias": 1,
         "jitter_factor": 2,
         "n_subs": 1000,
-        "n_subtypes": 25,
-        "proportion_features_abnormal": 0.2,
-        "proportion_hemispheres_lesional": 0.9,
+        "n_subtypes": 1,
+        "proportion_features_abnormal": 0.9,
+        "proportion_hemispheres_lesional": 0.5,
         "radius": 2,
         "run_synthetic": True,
         "smooth_lesion": False,
