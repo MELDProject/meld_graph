@@ -63,20 +63,22 @@ class GraphTools:
         lesion_small = self.pool6(downsampled1).detach().cpu().numpy().ravel()
         
         #find boundaries of lesions
-        new_lesion = self.smooth5(lesion_small)
-        diff = (new_lesion - lesion_small) >0
+        non_lesion = (lesion_small==0).astype(float)
+        new_nonlesion = self.smooth5(non_lesion)
+        diff = (new_nonlesion - non_lesion) > 0
         lesion_boundary_vertices = indices[diff]
         boundary_distance = self.solver.compute_distance_multisource(lesion_boundary_vertices)
 
         # upsample distance
         # boundary_distance[lesion_small == 1] = 0
+        boundary_distance[lesion_small>0] = -np.abs(boundary_distance[lesion_small>0])
         upsampled1 = self.unpool6(torch.from_numpy(boundary_distance.reshape(-1,1)),
         device=self.device)
         full_upsampled = self.unpool7(upsampled1, device = self.device)
         full_upsampled = full_upsampled.detach().cpu().numpy().ravel()
         
         #inverse values on the lesion
-        full_upsampled[lesion>0]=-full_upsampled[lesion>0]
+        full_upsampled[lesion>0]=-np.abs(full_upsampled[lesion>0])
         return full_upsampled
     
 
