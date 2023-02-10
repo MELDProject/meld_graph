@@ -406,7 +406,10 @@ class Trainer:
 
                 # metrics
                 pred = torch.argmax(estimates['log_softmax'], axis=1)
-                pred_class = torch.argmax(estimates['log_sumexp'], axis=1)
+                if model.classification_head:
+                    pred_class = torch.argmax(estimates['hemi_log_softmax'], axis=1)
+                else:
+                    pred_class = torch.argmax(estimates['log_sumexp'], axis=1)
                 # update running metrics
                 # TODO add distance regression metrics here?
                 metrics.update(pred, labels, pred_class=pred_class, estimates=estimates['log_softmax'])

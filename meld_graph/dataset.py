@@ -263,7 +263,7 @@ class GraphDataset(torch_geometric.data.Dataset):
             #potentially here you could divide by 200
             #clip distances here to make sure no negatives
             setattr(data, "distance_map", 
-            torch.tensor(np.clip(subject_data_dict['distances'],0,200)/200, dtype=torch.float))
+            torch.tensor(np.clip(subject_data_dict['distances'],0,200), dtype=torch.float))
             if len(self.output_levels) != 0:
                 dists_pooled = {7: data.distance_map}
                 for level in range(min(self.output_levels), 7)[::-1]:
