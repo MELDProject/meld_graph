@@ -9,10 +9,8 @@ class GraphTools:
         Use graph tools
         """
         self.icospheres = icospheres
-        if cohort is not None:
-            self.coords = cohort.surf['coords'][:len(self.icospheres.icospheres[5]['coords'])]
-        else:
-            self.coords =self.icospheres.icospheres[5]['coords']
+        
+        self.coords = self.icospheres.icospheres[5]['coords']
         
         #initialise distance solver
         self.setup_distance_solver()
