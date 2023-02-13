@@ -11,10 +11,8 @@ class GraphTools:
         self.icospheres = icospheres
         if cohort is not None:
             self.coords = cohort.surf['coords'][:len(self.icospheres.icospheres[5]['coords'])]
-            self.mask = cohort.cortex_mask
         else:
             self.coords =self.icospheres.icospheres[5]['coords']
-            self.mask = np.ones(len(self.coords),dtype=bool)
         
         #initialise distance solver
         self.setup_distance_solver()
@@ -78,6 +76,7 @@ class GraphTools:
         # upsample distance
         # boundary_distance[lesion_small == 1] = 0
         boundary_distance[lesion_small>0] = -np.abs(boundary_distance[lesion_small>0])
+        boundary_distance[lesion_small==0] = np.abs(boundary_distance[lesion_small==0])
         upsampled1 = self.unpool6(torch.from_numpy(boundary_distance.reshape(-1,1)),
         device=self.device)
         full_upsampled = self.unpool7(upsampled1, device = self.device)
@@ -85,7 +84,9 @@ class GraphTools:
         
         #inverse values on the lesion
         full_upsampled[lesion>0]=-np.abs(full_upsampled[lesion>0])
-        full_upsampled[~self.mask] = 0
+        full_upsampled[lesion==0] = np.abs(full_upsampled[lesion==0])
+
+      
         return full_upsampled
     
 
