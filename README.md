@@ -107,7 +107,9 @@ The notebook compare_experiments.ipynb can be used for a quick check of model tr
 This runs on the test set and saves out the predictions for the test set for each of the folds. These then need to be aggregated and thresholded to compare experiments. The notebook ensemble.ipynb can be used to look at test-set performance stats and plot predictions for individual subjects. This also has code for plotting un-ensembled distance maps for debugging.
 
 
+To check distances: run cross_val_aucs.py in "test" mode on baseline_dcd then look at fold-level predictions on individual subjects using ensemble.ipynb (updated model paths).
 
+To compare experiments: run cross_val_aucs.py in "val" mode for all trained models and look at relative performance using compare_experimentts (updating model paths).
 
 # Usage
 - `create_scaling_parameters.py`: calculates scaling params file. Only needs to be run once.
