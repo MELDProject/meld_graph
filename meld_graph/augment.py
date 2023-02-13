@@ -237,6 +237,11 @@ class Augment():
     def apply(self, subject_data_dict):
         #create a transformed data dict
         tdd = subject_data_dict.copy()
+        #randomly augment lesion using distances and noise
+        if (tdd['labels']==1).any():
+            if np.random.rand() < self.get_p_param('augment_lesion'):
+                tdd = self.augment_lesion(tdd)
+                self.recompute_distance_and_smoothed(tdd)
         #spinning   
         mesh_transform = False
         indices = np.arange(tdd['features'].shape[0],dtype=int)
@@ -285,11 +290,7 @@ class Augment():
         if np.random.rand() < self.get_p_param('gamma')/2:
             tdd['features'] = - self.add_gamma_scale( -tdd['features'])
         
-        #randomly augment lesion using distances and noise
-        if (tdd['labels']==1).any():
-            if np.random.rand() < self.get_p_param('augment_lesion'):
-                tdd = self.augment_lesion(tdd)
-                self.recompute_distance_and_smoothed(tdd)
+        
         
        # if (np.random.rand() < self.get_p_param('extend_lesion')) & ('distances' in tdd.keys()):
        #     tdd['labels'], tdd['distances']=self.extend_lesion(tdd['labels'], tdd['distances'])

@@ -87,7 +87,7 @@ class GraphDataset(torch_geometric.data.Dataset):
         
         self.output_levels = sorted(output_levels)
         self.icospheres = IcoSpheres()
-        self.gt = GraphTools(self.icospheres)
+        self.gt = GraphTools(self.icospheres,self.cohort)
         if (self.mode == "train") & (self.params["augment_data"] != None):
             self.augment = Augment(self.params["augment_data"],
             self.gt)
@@ -241,13 +241,13 @@ class GraphDataset(torch_geometric.data.Dataset):
         
         if self.params['smooth_labels'] and self.augment!=None:
             data = torch_geometric.data.Data(
-        x=torch.tensor(subject_data_dict['features'], dtype=torch.float),
-        y=torch.tensor(subject_data_dict['smooth_labels'], dtype=torch.float),
+        x=torch.tensor(subject_data_dict['features'], dtype=torch.float16),
+        y=torch.tensor(subject_data_dict['smooth_labels'], dtype=torch.float16),
         num_nodes=len(subject_data_dict['features']),)
         else:
             data = torch_geometric.data.Data(
-        x=torch.tensor(subject_data_dict['features'], dtype=torch.float),
-        y=torch.tensor(subject_data_dict['labels'], dtype=torch.long),
+        x=torch.tensor(subject_data_dict['features'], dtype=torch.float16),
+        y=torch.tensor(subject_data_dict['labels'], dtype=torch.float16),
         num_nodes=len(subject_data_dict['features']),)
 
         # add extra output levels to data
@@ -263,7 +263,7 @@ class GraphDataset(torch_geometric.data.Dataset):
             #potentially here you could divide by 200
             #clip distances here to make sure no negatives
             setattr(data, "distance_map", 
-            torch.tensor(np.clip(subject_data_dict['distances'],0,200), dtype=torch.float))
+            torch.tensor(np.clip(subject_data_dict['distances'],0,200), dtype=torch.float16))
             if len(self.output_levels) != 0:
                 dists_pooled = {7: data.distance_map}
                 for level in range(min(self.output_levels), 7)[::-1]:

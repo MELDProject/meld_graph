@@ -4,11 +4,17 @@ import potpourri3d as pp3d
 from meld_graph.models import HexUnpool, HexPool, HexSmooth, HexSmoothSparse
 import time
 class GraphTools:
-    def __init__(self, icospheres):
+    def __init__(self, icospheres,cohort= None):
         """
         Use graph tools
         """
         self.icospheres = icospheres
+        if cohort is not None:
+            self.coords = cohort.surf['coords'][:len(self.icospheres.icospheres[5]['coords'])]
+            self.mask = cohort.cortex_mask
+        else:
+            self.coords =self.icospheres.icospheres[5]['coords']
+            self.mask = np.ones(len(self.coords),dtype=bool)
         
         #initialise distance solver
         self.setup_distance_solver()
@@ -20,7 +26,7 @@ class GraphTools:
         self.unpool6 = self.unpool(level=6)
         self.unpool7 = self.unpool(level=7)
         self.smooth5 = self.smoother(level=5)
-        self.solver = pp3d.MeshHeatMethodDistanceSolver(self.icospheres.icospheres[5]['coords'],
+        self.solver = pp3d.MeshHeatMethodDistanceSolver(self.coords,
                     self.icospheres.icospheres[5]['faces'])
         self.smoother_op = self.smoother(level=7)
 
@@ -79,6 +85,7 @@ class GraphTools:
         
         #inverse values on the lesion
         full_upsampled[lesion>0]=-np.abs(full_upsampled[lesion>0])
+        full_upsampled[~self.mask] = 0
         return full_upsampled
     
 
