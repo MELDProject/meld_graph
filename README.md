@@ -100,10 +100,13 @@ How to run multiple models:
 For establishing the best hyperparameters, we use cross-validation. 
 `python cross_val_aucs.py --experiment_path PATH_TO_EXPERIMENT_S2 --split val`
 This calculates and saves aucs for each fold in the experiment. The notebook auc_comparisons.ipynb can be used to compare these aucs for multiple models.
+The notebook compare_experiments.ipynb can be used for a quick check of model training curves for individual folds and per-vertex aucs (as opposed to subject-level sensitivity+specificity aucs) on the val sets.
 
 ### Testing experiments
 `python cross_val_aucs.py --experiment_path PATH_TO_EXPERIMENT_S2 --split test`
-This runs on the test set and saves out the predictions for the test set for each of the folds. These then need to be aggregated and thresholded to compare experiments.
+This runs on the test set and saves out the predictions for the test set for each of the folds. These then need to be aggregated and thresholded to compare experiments. The notebook ensemble.ipynb can be used to look at test-set performance stats and plot predictions for individual subjects. This also has code for plotting un-ensembled distance maps for debugging.
+
+
 
 
 # Usage
