@@ -222,16 +222,13 @@ class Augment():
 
     def apply_indices(self,indices, tdd):
         # spin features
-        tdd['features'] = tdd['features'][indices] 
-        # spin lesions if exist
-        if (tdd['labels']==1).any():            
-            tdd['labels'] = tdd['labels'][indices] 
         for field in tdd.keys():
-            if field=='labels':
-                if (tdd['labels']==1).any():
-                    tdd['labels'] = tdd['labels'][indices] 
+            #no point in spinning empty labels
+            if field=='labels' or field =='smooth_labels':
+                if (tdd[field]==1).any():
+                    tdd[field] = tdd[field][indices] 
             else:
-                tdd[field] = tdd[field]
+                tdd[field] = tdd[field][indices]
         return tdd
        
     def apply(self, subject_data_dict):
