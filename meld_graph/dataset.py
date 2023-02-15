@@ -174,12 +174,12 @@ class GraphDataset(torch_geometric.data.Dataset):
             #sdl['features'] = sdl['features'].astype(np.float16)
             if (sdl['labels']==1).any():
                 if self.params['smooth_labels']:
-                    sdl['smooth_labels'] = self.gt.smoothing(sdl['labels'].astype(np.float16),iteration=10).astype(np.float16)
-                sdl['distances'] = self.gt.fast_geodesics(sdl['labels']).astype(np.float16)
+                    sdl['smooth_labels'] = self.gt.smoothing(sdl['labels'].astype(np.float32),iteration=10).astype(np.float16)
+                sdl['distances'] = self.gt.fast_geodesics(sdl['labels']).astype(np.float32)
             else:
-                sdl['distances'] = np.zeros(len(sdl['labels']),dtype=np.float16)
+                sdl['distances'] = np.zeros(len(sdl['labels']),dtype=np.float32
                 if self.params['smooth_labels']:
-                    sdl['smooth_labels'] = np.zeros(len(sdl['labels']),dtype=np.float16)
+                    sdl['smooth_labels'] = np.zeros(len(sdl['labels']),dtype=np.float32)
         
         return subject_data_list
 
@@ -241,13 +241,13 @@ class GraphDataset(torch_geometric.data.Dataset):
         
         if self.params['smooth_labels'] and self.augment!=None:
             data = torch_geometric.data.Data(
-        x=torch.tensor(subject_data_dict['features'], dtype=torch.float16),
-        y=torch.tensor(subject_data_dict['smooth_labels'], dtype=torch.float16),
+        x=torch.tensor(subject_data_dict['features'], dtype=torch.float32),
+        y=torch.tensor(subject_data_dict['smooth_labels'], dtype=torch.float32),
         num_nodes=len(subject_data_dict['features']),)
         else:
             data = torch_geometric.data.Data(
-        x=torch.tensor(subject_data_dict['features'], dtype=torch.float16),
-        y=torch.tensor(subject_data_dict['labels'], dtype=torch.float16),
+        x=torch.tensor(subject_data_dict['features'], dtype=torch.float32),
+        y=torch.tensor(subject_data_dict['labels'], dtype=torch.float32),
         num_nodes=len(subject_data_dict['features']),)
 
         # add extra output levels to data
@@ -263,7 +263,7 @@ class GraphDataset(torch_geometric.data.Dataset):
             #potentially here you could divide by 300
             #clip distances here to make sure no negatives
             setattr(data, "distance_map", 
-            torch.tensor(np.clip(subject_data_dict['distances'],0,300), dtype=torch.float16))
+            torch.tensor(np.clip(subject_data_dict['distances'],0,300), dtype=torch.float32))
             if len(self.output_levels) != 0:
                 dists_pooled = {7: data.distance_map}
                 for level in range(min(self.output_levels), 7)[::-1]:
