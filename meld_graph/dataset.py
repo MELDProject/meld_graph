@@ -177,7 +177,7 @@ class GraphDataset(torch_geometric.data.Dataset):
                     sdl['smooth_labels'] = self.gt.smoothing(sdl['labels'].astype(np.float32),iteration=10).astype(np.float16)
                 sdl['distances'] = self.gt.fast_geodesics(sdl['labels']).astype(np.float32)
             else:
-                sdl['distances'] = np.zeros(len(sdl['labels']),dtype=np.float32
+                sdl['distances'] = np.zeros(len(sdl['labels']),dtype=np.float32)
                 if self.params['smooth_labels']:
                     sdl['smooth_labels'] = np.zeros(len(sdl['labels']),dtype=np.float32)
         
