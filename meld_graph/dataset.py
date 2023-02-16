@@ -180,8 +180,6 @@ class GraphDataset(torch_geometric.data.Dataset):
                 sdl['distances'] = np.ones(len(sdl['labels']),dtype=np.float32)*300
                 if self.params['smooth_labels']:
                     sdl['smooth_labels'] = np.ones(len(sdl['labels']),dtype=np.float32)*300
-            # clip distances
-            sdl['distances'] = np.clip(sdl['distances'], 0, 300)
         return subject_data_list
 
 
@@ -262,8 +260,9 @@ class GraphDataset(torch_geometric.data.Dataset):
             # add  distance maps if required
         if 'distances' in subject_data_dict.keys():
             #potentially here you could divide by 300
+            # clip distances
             setattr(data, "distance_map", 
-            torch.tensor(subject_data_dict['distances'], dtype=torch.float32))
+            torch.tensor(np.clip(subject_data_dict['distances'], 0, 300), dtype=torch.float32))
             if len(self.output_levels) != 0:
                 dists_pooled = {7: data.distance_map}
                 for level in range(min(self.output_levels), 7)[::-1]:

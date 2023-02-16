@@ -204,18 +204,19 @@ class Augment():
         #upsample noise to high res
         for level in range(2, 7):
             unpool_ind = self.gt.unpool(level=level+1)
-            noise_upsampled = unpool_ind(torch.from_numpy(noise.reshape(-1,1)), device = self.device)
+            noise_upsampled = unpool_ind(torch.from_numpy(noise.reshape(-1,1)), device = None)
             #TODO Q Hannah why do we pass nose_upsampled to the CPU?
             noise_upsampled = noise_upsampled.detach().cpu().numpy().ravel()
             noise = noise_upsampled.copy()
         #add noise to distance normalised
         new_mask = (new_dist_norm + noise_upsampled)<=0
+        #print(f'no lesion before: {sum(tdd["labels"])}, no lesion after {sum(new_mask)}')
         tdd['labels'] = new_mask
         return tdd
 
     def recompute_distance_and_smoothed(self,tdd):
         """recompute distances from augmented lesion masks"""
-        tdd['distances'] = np.clip(self.gt.fast_geodesics(tdd['labels']).astype(np.float32), 0, 300)
+        tdd['distances'] = self.gt.fast_geodesics(tdd['labels']).astype(np.float32)
         tdd['smooth_labels'] = self.gt.smoothing(tdd['labels'],iteration=10).astype(np.float32)
         
         return
