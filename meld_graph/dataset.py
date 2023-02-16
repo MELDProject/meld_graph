@@ -72,7 +72,7 @@ class GraphDataset(torch_geometric.data.Dataset):
             will be available as self.get().output_level<level>.
         distance_maps: 
             Flag to enable loading of geodesic distance maps. 
-            Values for controls will be maximum possible value (200).
+            Values for controls will be maximum possible value (300).
             Will be available as self.get().distance_map.
             If output_levels are defined as well, will additionally make downsampled distance maps 
             available as self.get().output_level<level>_distance_map.
@@ -174,12 +174,14 @@ class GraphDataset(torch_geometric.data.Dataset):
             #sdl['features'] = sdl['features'].astype(np.float16)
             if (sdl['labels']==1).any():
                 if self.params['smooth_labels']:
-                    sdl['smooth_labels'] = self.gt.smoothing(sdl['labels'].astype(np.float32),iteration=10).astype(np.float16)
+                    sdl['smooth_labels'] = self.gt.smoothing(sdl['labels'],iteration=10).astype(np.float32)
                 sdl['distances'] = self.gt.fast_geodesics(sdl['labels']).astype(np.float32)
             else:
-                sdl['distances'] = np.zeros(len(sdl['labels']),dtype=np.float32)
+                sdl['distances'] = np.ones(len(sdl['labels']),dtype=np.float32)*300
                 if self.params['smooth_labels']:
-                    sdl['smooth_labels'] = np.zeros(len(sdl['labels']),dtype=np.float32)
+                    sdl['smooth_labels'] = np.ones(len(sdl['labels']),dtype=np.float32)*300
+            # clip distances
+            sdl['distances'] = np.clip(sdl['distances'], 0, 300)
         return subject_data_list
 
 
@@ -260,9 +262,8 @@ class GraphDataset(torch_geometric.data.Dataset):
             # add  distance maps if required
         if 'distances' in subject_data_dict.keys():
             #potentially here you could divide by 300
-            #clip distances here to make sure no negatives
             setattr(data, "distance_map", 
-            torch.tensor(np.clip(subject_data_dict['distances'],0,300), dtype=torch.float32))
+            torch.tensor(subject_data_dict['distances'], dtype=torch.float32))
             if len(self.output_levels) != 0:
                 dists_pooled = {7: data.distance_map}
                 for level in range(min(self.output_levels), 7)[::-1]:

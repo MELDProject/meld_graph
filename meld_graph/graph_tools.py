@@ -46,7 +46,7 @@ class GraphTools:
         
         for i in range(0, iteration):
             data = self.smoother_op(data)
-        data=data.astype(np.float16)
+        #data=data.astype(np.float16)
         return data
     
     def fast_geodesics(self,lesion):
@@ -56,8 +56,9 @@ class GraphTools:
         #downsample lesion
         #if no lesion, no distance
         if lesion.sum()==0:
+            print('ERROR, called fast_geodesics, but have no lesion!')
             n_vert = len(self.icospheres.icospheres[7]['coords'])
-            return np.ones(n_vert)*200
+            return np.ones(n_vert)*300
         n_vert = len(self.icospheres.icospheres[5]['coords'])
     
         indices = np.arange(n_vert,dtype=int)
@@ -65,7 +66,7 @@ class GraphTools:
         lesion_small = self.pool6(downsampled1).detach().cpu().numpy().ravel()
         
         #find boundaries of lesions
-        non_lesion = (lesion_small==0).astype(float)
+        non_lesion = (lesion_small==0).astype(np.float32)
         new_nonlesion = self.smooth5(non_lesion)
         diff = (new_nonlesion - non_lesion) > 0
         lesion_boundary_vertices = indices[diff]

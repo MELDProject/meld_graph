@@ -131,8 +131,8 @@ class Augment():
     def add_gaussian_noise(self,feat_tr):
         """ add a gaussian noise"""
         variance = np.random.uniform(0,0.1)
-        feat_tr = feat_tr + np.random.normal(0.0, variance, size=feat_tr.shape,
-                                             ).astype(np.float16)
+        feat_tr = feat_tr + np.random.normal(0.0, variance, size=feat_tr.shape)
+                                            # ).astype(np.float16)
         #feat_tr = feat_tr + variance * np.random.randn(*feat_tr.shape)
         return feat_tr
     
@@ -175,14 +175,14 @@ class Augment():
         sd = feat_tr.std(axis=0)
         minm = feat_tr.min(axis=0)
         rnge = feat_tr.max(axis=0) - minm
-        gamma = np.random.uniform(0.7, 1.5, size=feat_tr.shape[1]).astype(np.float16)
+        gamma = np.random.uniform(0.7, 1.5, size=feat_tr.shape[1]) #.astype(np.float16)
         feat_tr = np.power(((feat_tr - minm) / (rnge + epsilon)), gamma) * (rnge + epsilon) + minm
         feat_tr = (feat_tr - mn) / (sd + epsilon)
         return feat_tr
     
     def extend_lesion(self, lesions, distances):
         """ DEFUNCT not using this any more"""
-        if (not (lesions==1).any()) or ((distances==200).all()):
+        if (not (lesions==1).any()) or ((distances==300).all()):
             return lesions, distances
         extension = np.random.choice(np.linspace(1, 20, 20))
         #update distances
@@ -205,6 +205,7 @@ class Augment():
         for level in range(2, 7):
             unpool_ind = self.gt.unpool(level=level+1)
             noise_upsampled = unpool_ind(torch.from_numpy(noise.reshape(-1,1)), device = self.device)
+            #TODO Q Hannah why do we pass nose_upsampled to the CPU?
             noise_upsampled = noise_upsampled.detach().cpu().numpy().ravel()
             noise = noise_upsampled.copy()
         #add noise to distance normalised
@@ -214,8 +215,8 @@ class Augment():
 
     def recompute_distance_and_smoothed(self,tdd):
         """recompute distances from augmented lesion masks"""
-        tdd['distances'] = self.gt.fast_geodesics(tdd['labels'])
-        tdd['smooth_labels'] = self.gt.smoothing(tdd['labels'],iteration=10)
+        tdd['distances'] = np.clip(self.gt.fast_geodesics(tdd['labels']).astype(np.float32), 0, 300)
+        tdd['smooth_labels'] = self.gt.smoothing(tdd['labels'],iteration=10).astype(np.float32)
         
         return
 
@@ -225,6 +226,7 @@ class Augment():
         for field in tdd.keys():
             #no point in spinning empty labels
             if field=='labels' or field =='smooth_labels':
+                # TODO Q Hannah: potential bug here: smooth_labels results in labels <1 everywhere. Better to do (tdd[field]==0).all()
                 if (tdd[field]==1).any():
                     tdd[field] = tdd[field][indices] 
             else:
@@ -281,6 +283,7 @@ class Augment():
             tdd['features']= self.add_low_res(tdd['features'])
 
         #gamma intensity
+        # TODO Q Hannah: why is gamma now divided by 2?
         if np.random.rand() < self.get_p_param('gamma')/2:
             tdd['features'] = self.add_gamma_scale(tdd['features'])
         #inverted gamma intensity

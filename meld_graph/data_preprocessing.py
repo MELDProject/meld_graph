@@ -138,15 +138,15 @@ class Preprocess:
         return subject_data
     
     def load_distances(self,subj,hemi='lh'):
-        """load geodesic distance from lesion or 200s"""
+        """load geodesic distance from lesion or 300s"""
         if (not subj.is_patient) or (subj.get_lesion_hemisphere() != hemi):
-            gdist = np.ones(NVERT, dtype=np.float32)*200
+            gdist = np.ones(NVERT, dtype=np.float32)*300
 
         else:
             gdist = subj.load_feature_values('.on_lh.boundary_zone.mgh',
                     hemi=hemi)
-                 # threshold to range 0,200
-            gdist = np.clip(gdist, 0, 200)
+                 # threshold to range 0,300
+            gdist = np.clip(gdist, 0, 300)
         return gdist
     
     def load_z_params(self, file='../data/feature_means.json'):
