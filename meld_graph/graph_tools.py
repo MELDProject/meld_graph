@@ -16,7 +16,8 @@ class GraphTools:
         self.setup_distance_solver()
     
     def setup_distance_solver(self):
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        #self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.device = 'cpu'
         self.pool7 = self.pool(level=6)
         self.pool6 = self.pool(level=5)
         self.unpool6 = self.unpool(level=6)
