@@ -179,7 +179,7 @@ class GraphDataset(torch_geometric.data.Dataset):
             else:
                 sdl['distances'] = np.ones(len(sdl['labels']),dtype=np.float32)*300
                 if self.params['smooth_labels']:
-                    sdl['smooth_labels'] = np.ones(len(sdl['labels']),dtype=np.float32)*300
+                    sdl['smooth_labels'] = np.zeros(len(sdl['labels']),dtype=np.float32)
         return subject_data_list
 
 
