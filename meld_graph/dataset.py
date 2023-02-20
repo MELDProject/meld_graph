@@ -65,17 +65,19 @@ class GraphDataset(torch_geometric.data.Dataset):
         pre_transform=None,
         pre_filter=None,
         output_levels=[],
-        distance_maps=True
+        distance_maps=True,
+        distance_mask_medial_wall=False,
     ):
         """
         output_levels: list of icosphere levels for which y should be returned as well. Used for deep supervision.
             will be available as self.get().output_level<level>.
-        distance_maps: 
+        distance_maps: TODO flag not used anymore, distance maps are always provided
             Flag to enable loading of geodesic distance maps. 
             Values for controls will be maximum possible value (300).
             Will be available as self.get().distance_map.
             If output_levels are defined as well, will additionally make downsampled distance maps 
             available as self.get().output_level<level>_distance_map.
+        distance_mask_medial_wall: flag to enable masking of medial wall in distance maps. If True, medial wall vertices in distance maps have value 300.
         """
         super().__init__(None, transform, pre_transform, pre_filter)
         self.log = logging.getLogger(__name__)
@@ -87,7 +89,7 @@ class GraphDataset(torch_geometric.data.Dataset):
         
         self.output_levels = sorted(output_levels)
         self.icospheres = IcoSpheres()
-        self.gt = GraphTools(self.icospheres,self.cohort)
+        self.gt = GraphTools(self.icospheres, cohort=self.cohort, distance_mask_medial_wall=distance_mask_medial_wall)
         if (self.mode == "train") & (self.params["augment_data"] != None):
             self.augment = Augment(self.params["augment_data"],
             self.gt)
@@ -221,13 +223,12 @@ class GraphDataset(torch_geometric.data.Dataset):
             mode=mode,
             output_levels=experiment.network_parameters["training_parameters"].get("deep_supervision", {}).get("levels", []),
             distance_maps='distance_regression' in experiment.network_parameters['training_parameters']["loss_dictionary"].keys(),
+            distance_mask_medial_wall=experiment.data_parameters.get('distance_mask_medial_wall', False),
         )
 
     def len(self):
         # every subject will be shown twice per epoch
         return len(self.data_list)
-
-
 
     def get(self, idx):
         # print('dataset get idx ', idx)
@@ -261,14 +262,13 @@ class GraphDataset(torch_geometric.data.Dataset):
         if 'distances' in subject_data_dict.keys():
             #potentially here you could divide by 300
             # clip distances
-            setattr(data, "distance_map", 
-            torch.tensor(np.clip(subject_data_dict['distances'], 0, 300), dtype=torch.float32))
+            setattr(data, "distance_map", torch.tensor(np.clip(subject_data_dict['distances'], 0, 300), dtype=torch.float32))
             if len(self.output_levels) != 0:
                 dists_pooled = {7: data.distance_map}
                 for level in range(min(self.output_levels), 7)[::-1]:
                     dists_pooled[level] = self.pool_layers[level](dists_pooled[level + 1], center_pool=True)
                 for level in self.output_levels:
-                    setattr(data, f"output_level{level}_distance_map", dists_pooled[level])
+                    setattr(data, f"output_level{level}_distance_map", torch.clip(dists_pooled[level],0,300))
         return data
 
     @property

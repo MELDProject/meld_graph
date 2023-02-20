@@ -2,15 +2,19 @@ import numpy as np
 import torch
 import potpourri3d as pp3d
 from meld_graph.models import HexUnpool, HexPool, HexSmooth, HexSmoothSparse
+from meld_classifier.meld_cohort import MeldCohort
 import time
 class GraphTools:
-    def __init__(self, icospheres,cohort= None):
+    def __init__(self, icospheres, cohort=None, distance_mask_medial_wall=False):
         """
         Use graph tools
         """
         self.icospheres = icospheres
-        
+        self.cohort = cohort
+        if self.cohort is None:
+            self.cohort = MeldCohort()
         self.coords = self.icospheres.icospheres[5]['coords']
+        self.distance_mask_medial_wall = distance_mask_medial_wall
         
         #initialise distance solver
         self.setup_distance_solver()
@@ -85,7 +89,10 @@ class GraphTools:
         full_upsampled[lesion>0]=-np.abs(full_upsampled[lesion>0])
         full_upsampled[lesion==0] = np.abs(full_upsampled[lesion==0])
 
-      
+        # mask medial wall
+        if self.distance_mask_medial_wall:
+            print('masking medial wall on newly calculated distances')
+            full_upsampled[~self.cohort.cortex_mask] = 300
         return full_upsampled
     
 
