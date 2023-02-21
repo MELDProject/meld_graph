@@ -23,4 +23,5 @@ if __name__ == '__main__':
 
     for fold in [0,1,2,3,4]: #np.arange(5):
         full_path = os.path.join(args.experiment_path,f'fold_0{fold}')
-        subprocess.call(f'sbatch evaluate.sh {full_path} {args.split}',shell=True)
+        if os.path.exists(full_path):
+            subprocess.call(f'sbatch evaluate.sh {full_path} {args.split}',shell=True)
