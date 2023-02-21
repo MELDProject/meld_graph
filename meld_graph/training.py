@@ -464,6 +464,11 @@ class Trainer:
         elif self.params['optimiser'] == 'sgd':
             optimiser = torch.optim.SGD(self.experiment.model.parameters(), **self.params['optimiser_parameters'])
         self.optimiser = optimiser
+        #option to choose stopping metric for patience
+        if self.params['stopping_metric'] is None:
+            self.params['stopping_metric'] = {'name':'loss','sign':1}
+        name = self.params['stopping_metric']['name']
+        self.log.info(f'Stopping metric set to {name} ')
 
         # set up learning rate scheduler
         max_epochs_lr_decay = self.params.get('max_epochs_lr_decay', None)
@@ -512,9 +517,10 @@ class Trainer:
                 log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items() if key in log_keys)
                 self.log.info(f'Epoch {epoch} :: Val   {log_str}')
                 scores['val'].append(cur_scores)
+                stopping_metric = cur_scores[self.params['stopping_metric']['name']] * self.params['stopping_metric']['sign']
                 
-                if cur_scores['loss'] < best_loss:
-                    best_loss = cur_scores['loss']
+                if stopping_metric < best_loss:
+                    best_loss = stopping_metric
                     if self.experiment.experiment_path is not None:
                         fname = os.path.join(self.experiment.experiment_path, 'best_model.pt')
                         torch.save(self.experiment.model.state_dict(), fname)
