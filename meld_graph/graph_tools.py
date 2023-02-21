@@ -91,7 +91,7 @@ class GraphTools:
 
         # mask medial wall
         if self.distance_mask_medial_wall:
-            print('masking medial wall on newly calculated distances')
+            #print('masking medial wall on newly calculated distances')
             full_upsampled[~self.cohort.cortex_mask] = 300
         return full_upsampled
     
