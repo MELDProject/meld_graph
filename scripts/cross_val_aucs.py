@@ -3,7 +3,7 @@
 import argparse
 import os
 import subprocess
-import numpy as np
+#import numpy as np
 
 #point to experiment config folder as argument
 
@@ -21,6 +21,6 @@ if __name__ == '__main__':
     parser.add_argument("--split", help="val or test to run on.")
     args = parser.parse_args()
 
-    for fold in np.arange(5):
+    for fold in [0,1,2,3,4]: #np.arange(5):
         full_path = os.path.join(args.experiment_path,f'fold_0{fold}')
         subprocess.call(f'sbatch evaluate.sh {full_path} {args.split}',shell=True)

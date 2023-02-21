@@ -109,7 +109,7 @@ This runs on the test set and saves out the predictions for the test set for eac
 
 To check distances: run cross_val_aucs.py in "test" mode on baseline_dcd then look at fold-level predictions on individual subjects using ensemble.ipynb (updated model paths).
 
-To compare experiments: run cross_val_aucs.py in "val" mode for all trained models and look at relative performance using compare_experimentts (updating model paths).
+To compare experiments: run cross_val_aucs.py in "val" mode for all trained models and look at relative performance using auc_comparisons.ipynb (updating model paths).
 
 # Usage
 - `create_scaling_parameters.py`: calculates scaling params file. Only needs to be run once.

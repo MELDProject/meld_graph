@@ -10,6 +10,7 @@ import pandas as pd
 import time
 from meld_graph.icospheres import IcoSpheres
 import torch.nn as nn
+from scipy.ndimage import gaussian_filter1d
 
 def dice_coeff(pred, target , smooth = 1e-15 ):
     """This definition generalize to real valued pred and target vector.
@@ -464,11 +465,18 @@ class Trainer:
         elif self.params['optimiser'] == 'sgd':
             optimiser = torch.optim.SGD(self.experiment.model.parameters(), **self.params['optimiser_parameters'])
         self.optimiser = optimiser
+        #option to choose stopping metric for patience
+        if self.params['stopping_metric'] is None:
+            self.params['stopping_metric'] = {'name':'loss','sign':1}
+        name = self.params['stopping_metric']['name']
+        self.log.info(f'Stopping metric set to {name} ')
 
         # set up learning rate scheduler
         max_epochs_lr_decay = self.params.get('max_epochs_lr_decay', None)
         if max_epochs_lr_decay is None:
             max_epochs_lr_decay = self.params['num_epochs']
+        if self.params['metric_smoothing'] is None:
+            self.params['metric_smoothing'] = False
         self.log.info(f'using max_epochs {max_epochs_lr_decay} for lr decay')
         lambda1 = lambda epoch: (1 - epoch / max_epochs_lr_decay)**self.params['lr_decay']
         # NOTE: when resuming training, need to set last epoch to epoch-1
@@ -477,6 +485,7 @@ class Trainer:
         scores = {'train':[], 'val':[]}
         best_loss = 100000
         patience = 0
+        running_metrics = []
         for epoch in range(self.params['num_epochs']):
             self.log.info(f'Epoch {epoch} :: learning rate {scheduler.get_last_lr()[0]}')
             start = time.time()
@@ -512,9 +521,15 @@ class Trainer:
                 log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items() if key in log_keys)
                 self.log.info(f'Epoch {epoch} :: Val   {log_str}')
                 scores['val'].append(cur_scores)
+                epoch_stopping_metric = cur_scores[self.params['stopping_metric']['name']] * self.params['stopping_metric']['sign']
+                running_metrics.append(epoch_stopping_metric)
+                if self.params['metric_smoothing']:
+                    #smooth metric to limit noise
+                    epoch_stopping_metric = gaussian_filter1d(running_metrics,2)[-1]
                 
-                if cur_scores['loss'] < best_loss:
-                    best_loss = cur_scores['loss']
+
+                if epoch_stopping_metric < best_loss:
+                    best_loss = epoch_stopping_metric
                     if self.experiment.experiment_path is not None:
                         fname = os.path.join(self.experiment.experiment_path, 'best_model.pt')
                         torch.save(self.experiment.model.state_dict(), fname)
