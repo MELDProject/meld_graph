@@ -424,7 +424,9 @@ class Preprocess:
         lesion_tiled = np.tile(smoothed_lesion.reshape(-1,1),
                                      n_features)
         synth_bias_features = (lesion_tiled*sampled_fingerprint*sampled_bias)
-        features= features + synth_bias_features
+        #apply synthetic lesion only on non-null feature
+        apply = np.array([1 if feature.any() != 0 else 0 for feature in features.T])
+        features= features + synth_bias_features*apply
         synth_dict = {'features' : features.astype('float32'),
                       'labels' : lesion.astype('int32')
             }
