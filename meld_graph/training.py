@@ -255,6 +255,30 @@ class Metrics:
             # binarise target because might be soft target
             cur_auroc = self.auroc(torch.exp(estimates[:,1]), target > 0.5)
             self.running_scores['auroc'].append(cur_auroc.item())
+        #
+       # if 'sub_auroc' in self.metrics_to_track:
+       #     n_thresh = 101
+       #     roc_curves_thresholds=np.linspace(0,1,n_thresh)
+       #     sensitivity = np.zeros(n_thresh)
+       #     specificity = np.ones(n_thresh)
+       #     for t_i, threshold in enumerate(roc_curves_thresholds):
+       #         thresholded = pred>=threshold
+       #         if target.sum()>0:
+       #             sensitivity[t_i] += np.logical_and(thresholded, borderzone).any()
+       #             if not np.logical_and(thresholded, borderzone).any():
+                        
+        #        else:
+        #            sp
+        # add some breaks to speed this up a lot.
+      #      if target.sum()>0:
+                 #sensitivity = np.zeros(n_thresh)
+                 #
+                #     sensitivity
+
+      #          self.running_scores['sub_auroc'][t_i] += borderzone overlap
+      #      else: 
+        #        self.running_scores['specificity'][t_i] += ~predicted.any()
+      #      pass
 
         # classification metrics
         target_class = torch.any(target.view(target.shape[0]//self.n_vertices, -1), dim=1).long()
@@ -523,10 +547,10 @@ class Trainer:
                 scores['val'].append(cur_scores)
                 epoch_stopping_metric = cur_scores[self.params['stopping_metric']['name']] * self.params['stopping_metric']['sign']
                 running_metrics.append(epoch_stopping_metric)
-                if self.params['metric_smoothing']:
+                #if self.params['metric_smoothing']:
                     #smooth metric to limit noise
-                    epoch_stopping_metric = gaussian_filter1d(running_metrics,2)[-1]
-                
+               #     epoch_stopping_metric = gaussian_filter1d(running_metrics,2)[-1]
+               # 
 
                 if epoch_stopping_metric < best_loss:
                     best_loss = epoch_stopping_metric

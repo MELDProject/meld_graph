@@ -217,9 +217,11 @@ class Evaluator:
             if subject_dictionary['input_labels'].sum()>0:
                 self.roc_dictionary['sensitivity'][t_i] += np.logical_and(predicted, subject_dictionary['input_labels']).any()
                 self.roc_dictionary['sensitivity_plus'][t_i] += np.logical_and(predicted, subject_dictionary['borderzone']).any()
+                #could break if no longer detecting
             #store specificity for controls (no label)
             else:
                 self.roc_dictionary['specificity'][t_i] += ~predicted.any()
+                #could break if no longer predicting
 
                 #initialise dictionary
     @property
