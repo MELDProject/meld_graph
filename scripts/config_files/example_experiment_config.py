@@ -43,6 +43,8 @@ network_parameters = {
         'lr_decay': 0,  # default NNUnet param: 0.9
         # max_epochs_lr_decay: number of epochs to use to calculate lr decay. If none, uses num_epochs
         'max_epochs_lr_decay': None,
+        # stopping_metric: choose stopping metric for patience #TODO document: what are the possible metrics?
+        "stopping_metric":{'name':'loss','sign':1},
         # loss_dictionary: losses to be used for model training and parameters for losses
         # possible keys: 
         #   "cross_entropy"
@@ -86,7 +88,6 @@ network_parameters = {
 
 # data parameters, passed to GraphDataset and Preprocess
 data_parameters = {
-    
     'hdf5_file_root': "{site_code}_{group}_featurematrix_combat_6.hdf5",
     'site_codes': [
        "H1",
@@ -195,6 +196,8 @@ data_parameters = {
     # None: no combination of hemispheres. 
     # "stack": stack features of both hemispheres.
     "combine_hemis": None,
+    # "smooth_labels": smooth lesion groundtruth labels to enable soft segmentation. Use this with SoftCrossEntropy.
+    "smooth_labels": False, 
     # WARNING: parameters below change the lesion prediction task
     # lobes: if True, train on predicting frontal lobe vs other instead of the lesion predicting task
     "lobes": False,
