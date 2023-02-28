@@ -219,17 +219,23 @@ class Experiment:
             self.model.load_state_dict(torch.load(checkpoint_path, map_location=device), strict=False)
             self.model.eval()
 
-    # TODO continue here
     def train(self, wandb_logging=False):
+        """
+        Train model.
+
+        Args:
+            wandb_logging (bool): Log to wandb, requires active login and setup of wandb.
+        """
         trainer = Trainer(self)
         trainer.train(wandb_logging=wandb_logging)
 
     def get_train_val_test_ids(self):
         """
-        return train val test ids.
+        Return train val test ids.
         Either read from data_parameters (if exist), or created using _train_val_test_split_folds.
 
-        returns train_ids, val_ids, test_ids
+        Returns:
+            train_ids, val_ids, test_ids
         """
         if "train_ids" not in self.data_parameters:
             self.log.info("Getting train val test split")
@@ -254,7 +260,9 @@ class Experiment:
         return self.data_parameters["train_ids"], self.data_parameters["val_ids"], self.data_parameters["test_ids"]
 
     def _train_val_test_split_folds(self, subject_ids, iteration=0, number_of_folds=10):
-        """split subject_ids into train val and test.
+        """
+        Split subject_ids into train val and test.
+        
         test_ids are defined in dataset_name.
         The remaining ids are split randomly (but with a fixed seed) in number_of_folds folds.
 
@@ -286,6 +294,9 @@ class Experiment:
         return train_ids, val_ids, test_ids
 
     def get_scores(self, split='val'):
+        """
+        Read scores from split_scores.csv and return dataframe.
+        """
         print(self.experiment_path)
         if is_experiment(self.experiment_path, trained=True):
             df = pd.read_csv(os.path.join(self.experiment_path, f'{split}_scores.csv'), index_col=0)

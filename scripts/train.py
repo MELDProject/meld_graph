@@ -16,19 +16,12 @@ def load_config(config_file):
     loader.exec_module(config)
     return config
 
-# TODO remove?
-#def nested_get(d, keys):
-#    return reduce(operator.getitem, keys, d)
-
-#def nested_set(d, keys, value):
-#    nested_get(d, keys[:-1])[keys[-1]] = value
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="""
         Train model using config in config_file
         """)
     parser.add_argument("--config_file", help="path to experiment_config.py", default="config_files/experiment_config.py")
+    parser.add_argument("--wandb_logging", action="store_true", help="enable wandb logging.")
     args = parser.parse_args()
 
     config = load_config(args.config_file)

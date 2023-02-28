@@ -14,6 +14,7 @@ import json
 import collections.abc
 
 def write_config(name, config_dict, save_path):
+    """write config.py file from config_dict to save_path"""
     pp = pprint.PrettyPrinter(indent=0)
     
     fname = os.path.join(save_path, name + '.py')
@@ -49,6 +50,10 @@ def load_config(config_file):
     return config
 
 def update(d, u):
+    """
+    Deep update dict d with u. 
+    NOTE if d contains a subdict that is updated with u, existing entries in d are not removed.
+    """
     for k, v in u.items():
         if isinstance(v, collections.abc.Mapping):
             d[k] = update(d.get(k, {}), v)
@@ -58,7 +63,8 @@ def update(d, u):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="""
-        Helper to create multiple experiment configs from base and var config files. """)
+        Helper to create multiple experiment configs from base and var config files.
+        """)
     parser.add_argument("base_config", help="path to base experiment_config.py")
     parser.add_argument("var_config", help="path to var experiment_config.py")
     parser.add_argument("--save_path", help='dir to place configs in', default='.')
