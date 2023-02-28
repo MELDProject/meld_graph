@@ -11,6 +11,7 @@ import time
 from meld_graph.icospheres import IcoSpheres
 import torch.nn as nn
 from scipy.ndimage import gaussian_filter1d
+import sklearn.metrics as skmetrics
 
 def dice_coeff(pred, target , smooth = 1e-15 ):
     """This definition generalize to real valued pred and target vector.
@@ -222,6 +223,7 @@ class Metrics:
         self.device = device
         self.metrics = metrics
         self.metrics_to_track = self.metrics
+        
         if 'precision' in self.metrics or 'recall' in self.metrics:
             self.metrics_to_track = list(set(self.metrics_to_track + ['tp', 'fp', 'fn','tn']))
         if 'cl_precision' in self.metrics or 'cl_recall' in self.metrics:
@@ -234,9 +236,13 @@ class Metrics:
 
     def reset(self):
         self.running_scores = {metric: [] for metric in self.metrics_to_track}
+        if 'sub_auroc' in self.metrics_to_track:
+            self.n_thresh=101
+            self.sensitivities = np.zeros(self.n_thresh)
+            self.specificities = np.zeros(self.n_thresh)
         return self.running_scores
 
-    def update(self, pred, target, pred_class, estimates):
+    def update(self, pred, target, pred_class, estimates, borderzone=None):
         if len(set(['dice_lesion', 'dice_nonlesion']).intersection(self.metrics_to_track)) > 0:
             dice_coeffs = dice_coeff(torch.nn.functional.one_hot(pred, num_classes=2), target)
             if 'dice_lesion' in self.metrics_to_track:
@@ -256,29 +262,35 @@ class Metrics:
             cur_auroc = self.auroc(torch.exp(estimates[:,1]), target > 0.5)
             self.running_scores['auroc'].append(cur_auroc.item())
         #
-       # if 'sub_auroc' in self.metrics_to_track:
-       #     n_thresh = 101
-       #     roc_curves_thresholds=np.linspace(0,1,n_thresh)
-       #     sensitivity = np.zeros(n_thresh)
-       #     specificity = np.ones(n_thresh)
-       #     for t_i, threshold in enumerate(roc_curves_thresholds):
-       #         thresholded = pred>=threshold
-       #         if target.sum()>0:
-       #             sensitivity[t_i] += np.logical_and(thresholded, borderzone).any()
-       #             if not np.logical_and(thresholded, borderzone).any():
-                        
-        #        else:
-        #            sp
-        # add some breaks to speed this up a lot.
-      #      if target.sum()>0:
-                 #sensitivity = np.zeros(n_thresh)
-                 #
-                #     sensitivity
+        
+        if 'sub_auroc' in self.metrics_to_track:
+            roc_curves_thresholds=np.linspace(0,1,self.n_thresh)
+            sensitivity = np.zeros(self.n_thresh)
+            specificity = np.zeros(self.n_thresh)
+            
+            continuous_predictions = torch.exp(estimates[:,1])
+            reshaped_preds = continuous_predictions.view(continuous_predictions.shape[0]//self.n_vertices, -1)
+            reshaped_borders = borderzone.view(borderzone.shape[0]//self.n_vertices, -1)
+            for example_index,rt in enumerate(reshaped_preds):
+                for t_i, threshold in enumerate(roc_curves_thresholds):
+                    rtt = rt >= threshold
+                    rb = reshaped_borders[example_index]
+                    any_lesion = rb.sum()
+                    if any_lesion:
+                        bordered = torch.logical_and(rtt, rb).any()
+                        if not bordered:
+                            break
+                        else:
+                            sensitivity[t_i] += 1
+                    else:
+                        no_fps = ~rtt.any()
+                        if no_fps:
+                            specificity[t_i:] += 1
+                            break
 
-      #          self.running_scores['sub_auroc'][t_i] += borderzone overlap
-      #      else: 
-        #        self.running_scores['specificity'][t_i] += ~predicted.any()
-      #      pass
+            self.sensitivities += sensitivity
+            self.specificities += specificity
+       
 
         # classification metrics
         target_class = torch.any(target.view(target.shape[0]//self.n_vertices, -1), dim=1).long()
@@ -289,6 +301,14 @@ class Metrics:
             self.running_scores['cl_fp'].append(fp.item())
             self.running_scores['cl_fn'].append(fn.item())
             self.running_scores['cl_tn'].append(tn.item())
+
+    def calculate_sub_auroc(self):
+        """calculate subject level auroc"""
+        #normalise to 0-1
+        sensitivity_curve = self.sensitivities/max(self.sensitivities)
+        specificity_curve = self.specificities/max(self.specificities)
+        auc = skmetrics.auc(1-specificity_curve,sensitivity_curve)
+        return auc
 
 
     def get_aggregated_metrics(self):
@@ -306,6 +326,8 @@ class Metrics:
                 metrics['precision'] = (tp/(tp+fp)).item()
             elif metric == 'recall':
                 metrics['recall'] = (tp/(tp+fn)).item()
+            elif metric =='sub_auroc':
+                metrics['sub_auroc'] = self.calculate_sub_auroc()
             elif ('dice' in metric) or ('auroc' in metric):
                 metrics[metric] = np.mean(self.running_scores[metric])
             elif 'sensitivity' in metric:
@@ -315,9 +337,13 @@ class Metrics:
                 metrics['cl_precision'] = (cl_tp/(cl_tp+cl_fp)).item()
             elif metric == 'cl_recall':
                 metrics['cl_recall'] = (cl_tp/(cl_tp+cl_fn)).item()
+            
             else:
                 metrics[metric] = np.sum(self.running_scores[metric])
+
         return metrics
+
+    
 
 
 class Trainer:
@@ -353,8 +379,8 @@ class Trainer:
             optimiser.zero_grad()
             estimates = model(data.x)
             labels = data.y.squeeze()
-            
-            losses = calculate_loss(self.params['loss_dictionary'], estimates, labels, distance_map=getattr(data, "distance_map", None), deep_supervision_level=None, device=device, 
+            distance_map = getattr(data, "distance_map", None)
+            losses = calculate_loss(self.params['loss_dictionary'], estimates, labels, distance_map=distance_map, deep_supervision_level=None, device=device, 
                 n_vertices=self.experiment.model.n_vertices)
             # add deep supervision outputs
             for i,level in enumerate(sorted(self.deep_supervision['levels'])):
@@ -384,7 +410,11 @@ class Trainer:
             else:
                 pred_class = torch.argmax(estimates['log_sumexp'], axis=1)
             # update running metrics
-            metrics.update(pred, labels, pred_class=pred_class, estimates=estimates['log_softmax'])
+            borderzone = None
+            if 'sub_auroc' in metrics.metrics_to_track:
+                borderzone = distance_map <= 20
+            metrics.update(pred, labels, pred_class=pred_class, estimates=estimates['log_softmax'],
+                           borderzone = borderzone)
             # TODO add distance regression to metrics
             
         scores = {key: np.mean(running_losses[key]) for key in running_losses.keys()}
@@ -406,8 +436,8 @@ class Trainer:
                 data = data.to(device)
                 estimates = model(data.x)
                 labels = data.y.squeeze()
-
-                losses = calculate_loss(self.params['loss_dictionary'], estimates, labels, distance_map=getattr(data, "distance_map", None), deep_supervision_level=None, device=device, 
+                distance_map = getattr(data, "distance_map", None)
+                losses = calculate_loss(self.params['loss_dictionary'], estimates, labels, distance_map=distance_map, deep_supervision_level=None, device=device, 
                     n_vertices=self.experiment.model.n_vertices)
                 # add deep supervision outputs
                 for i,level in enumerate(sorted(self.deep_supervision['levels'])):
@@ -437,7 +467,11 @@ class Trainer:
                     pred_class = torch.argmax(estimates['log_sumexp'], axis=1)
                 # update running metrics
                 # TODO add distance regression metrics here?
-                metrics.update(pred, labels, pred_class=pred_class, estimates=estimates['log_softmax'])
+                borderzone = None
+                if 'sub_auroc' in metrics.metrics_to_track:
+                    borderzone = distance_map <= 20
+                metrics.update(pred, labels, pred_class=pred_class, estimates=estimates['log_softmax'],
+                            borderzone = borderzone)
      
         scores = {key: np.mean(running_losses[key]) for key in running_losses.keys()}
         scores.update(metrics.get_aggregated_metrics())
