@@ -66,7 +66,7 @@ Example config files can be found in [`scripts/config_files/example_experiment_c
 
 Main class is the Experiment (`meld_graph/experiment.py`). It is initialised with data_parameters and network_parameters. Experiments are saved in folders in EXPERIMENT_PATH (defined in `meld_graph/paths.py`). Experiments are only saved when `network_parameters['name']` is not None.
 
-Data is loaded by GraphDataset in `meld_graph/dataset.py` using Preprocess in `meld_graph/data_preprocessing.py`. Preprocess returns per subject vertices and labels. In GraphDataset, each hemisphere is treated as a single datapoint, with optional stacking of hemisphere features (to eg allow the model to calculate assymetry) -- use `data_parameters['combine_hemis']` to modify this behaviour.
+Data is loaded by GraphDataset in `meld_graph/dataset.py` using Preprocess in `meld_graph/data_preprocessing.py`. Preprocess returns per subject vertices and labels. In GraphDataset, each hemisphere is treated as a single datapoint, with optional stacking of hemisphere features (to eg allow the model to calculate assymetry) -- use `data_parameters['combine_hemis']` to modify this behaviour. If desired, train samples are augmented using `Augmentation` in `meld_graph/augmentation.py`. Intensity, mesh and lesion augmentation are implemented.
 
 Models are defined in `meld_graph/models.py`. There is an implementation for a simple MoNet (just convolutions) and a MoNetUnet (convolutions and hex pooling). Model architecture can be modified using `network_parameters['model_parameters']`. As convolutions GMMConv and SpiralConv can be used (`conv_type` parameter).
 
@@ -116,7 +116,7 @@ To compare experiments: run cross_val_aucs.py in "val" mode for all trained mode
 - `create_icospheres.py`: creates downsampled icospheres. Only needs to be run once.
 - `train.py --config-file config_files/example_experiment_config.py` trains a model using the specified data and model architecture
 - on HPC: `sbatch train.sh <full-path-to-config-file>/example_experiment_config.py` to train model using scheduler
-
+TODO add evaluation
 
 ## Auxiliary tasks
 ### Lesion bias

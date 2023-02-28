@@ -201,8 +201,6 @@ data_parameters = {
     # WARNING: parameters below change the lesion prediction task
     # lobes: if True, train on predicting frontal lobe vs other instead of the lesion predicting task
     "lobes": False,
-    # lesion_bias: add this value to lesion values to make prediction task easier
-    "lesion_bias": 0,
     # synthetic lesions on synthetic data or on controls.
     'synthetic_data': {
         # run_synthetic: master switch for whether to run the synthetic task. True means run it.
