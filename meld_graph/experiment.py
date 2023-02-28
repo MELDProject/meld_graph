@@ -12,8 +12,13 @@ import glob
 
 def is_experiment(path, trained=False):
     """
-    convenience function to check that this is a valid experiment folder, containing network and data parameters.
-    If trained is set to True, also needs to contain best_model.pt and train/val scores
+    Convenience function to check that this is a valid experiment folder, containing network and data parameters.
+
+    Args:
+        trained (bool): experiments needs to contain best_model.pt and train/val scores
+
+    Returns:
+        True if path contained valid experiment
     """
     if os.path.isfile(os.path.join(path, 'data_parameters.json')) and os.path.isfile(os.path.join(path, 'network_parameters.json')):
         # is experiment folder
@@ -28,7 +33,10 @@ def is_experiment(path, trained=False):
 
 def discover_trained_experiments(path=None):
     """
-    recursively search for experiment folders starting from path
+    Recursively search for experiment folders starting from path.
+
+    Args:
+        path (optional, str): path containing experiment folders. Default: EXPERIMENT_PATH.
     """
     if path is None:
         path = EXPERIMENT_PATH
@@ -43,7 +51,16 @@ def discover_trained_experiments(path=None):
 
 
 class Experiment:
-    def __init__(self, network_parameters, data_parameters, save_params=True, verbose=logging.WARNING):
+    """
+    Experiment class for setting up experiments and loading models. 
+
+    Args:
+        network_parameters (dict): parameters for setting up model and training. See example_experiment_config.py for options.
+        data_parameters (dict): parameters for setting up dataset. See example_experiment_config.py for options.
+        save_params (bool): save network and data parameters as json files in experiment folder.
+        verbose (int): logging level.
+    """
+    def __init__(self, network_parameters, data_parameters, save_params=True, verbose=logging.INFO):
         self.network_parameters = network_parameters
         self.data_parameters = data_parameters
         self.model = None # loaded by self.load_model()
@@ -67,7 +84,12 @@ class Experiment:
 
     @classmethod
     def from_folder(cls, experiment_path):
-        """experiment_path: experiment_name/fold_00 """
+        """
+        Set up experiment for existing experiment_path.
+        
+        Args:
+            experiment_path (str): path to experiment. E.g. experiment_name/fold_00
+        """
         data_parameters = json.load(open(os.path.join(experiment_path, "data_parameters.json")))
         network_parameters = json.load(open(os.path.join(experiment_path, "network_parameters.json")))
         return cls(network_parameters, data_parameters, save_params=False)
@@ -75,7 +97,11 @@ class Experiment:
     def _init_logging(self, verbose, save_params=False):
         """
         Set up a logger for this experiment that logs to experiment_path and to stdout.
-        Should only be called once per experiment (overwrites existing log files of the same name)
+        Should only be called once per experiment (overwrites existing log files of the same name).
+
+        Args:
+            verbose (int): logging level.
+            save_params (bool): if true, also log to experiment_path.
         """
         # remove all previous logging handlers associated with the root logger
         for handler in logging.root.handlers[:]:
@@ -94,7 +120,7 @@ class Experiment:
             handlers=[logging.StreamHandler()
                 ]
         logging.basicConfig(
-            level=logging.INFO,
+            level=verbose,
             format="%(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
             handlers=handlers
@@ -108,7 +134,7 @@ class Experiment:
 
     def save_parameters(self):
         """
-        Save dictionaries to experiment_path using json
+        Save dictionaries to experiment_path using json.
         """
         if self.experiment_path is not None:
             self.log.info(f"Saving parameter files to {self.experiment_path}")
@@ -123,8 +149,11 @@ class Experiment:
 
     def get_features(self):
         """
-        get list of features that model should be trained on.
-        Either read from data_parameters, or calculated and written to data_parameters
+        Get list of features that model should be trained on.
+        Either read from data_parameters, or calculated and written to data_parameters.
+
+        Returns:
+            features, features_to_replace_with_0
         """
         if "features" not in self.data_parameters:
             self.log.info("get features to train on")
@@ -150,9 +179,11 @@ class Experiment:
 
     def load_model(self, checkpoint_path=None, force=False):
         """
-        build model and optionally load weights from checkpoint
+        Build model and optionally load weights from checkpoint.
 
-        checkpoint_path: absolute path to checkpoint
+        Args:
+            checkpoint_path (str): absolute path to model checkpoint.
+            force (bool): reload model if model is already loaded.
         """
         if self.model is not None and not force:
             self.log.info("Model already exists. Specify force=True to force reloading and initialisation")
@@ -178,17 +209,9 @@ class Experiment:
                 icosphere_params=icosphere_params, deep_supervision=self.network_parameters['training_parameters'].get('deep_supervision', {}).get('levels', []),
                 classification_head=self.network_parameters['training_parameters']['loss_dictionary'].get('lesion_classification', {}).get('apply_to_bottleneck', False),
             )
-                #distance_regression=self.network_parameters['training_parameters']['loss_dictionary'].get('distance_regression', None) != None,
-            
-        elif network_type == 'SimpleNet':
-            self.model = meld_graph.models.SimpleNet(**self.network_parameters['model_parameters'], num_features=num_features,
-                icosphere_params=icosphere_params)
-                #distance_regression=self.network_parameters['training_parameters']['loss_dictionary'].get('distance_regression', None) != None,
-            #)
         else:
             raise(NotImplementedError, network_type)
         
-        # TODO below code is unchecked
         if checkpoint_path is not None and os.path.isfile(checkpoint_path):
             # checkpoint contains both model architecture + weights
             device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -196,6 +219,7 @@ class Experiment:
             self.model.load_state_dict(torch.load(checkpoint_path, map_location=device), strict=False)
             self.model.eval()
 
+    # TODO continue here
     def train(self, wandb_logging=False):
         trainer = Trainer(self)
         trainer.train(wandb_logging=wandb_logging)
