@@ -47,7 +47,6 @@ class GraphTools:
         return pooling
 
     def smoothing(self, data, iteration=1):
-        
         for i in range(0, iteration):
             data = self.smoother_op(data)
         #data=data.astype(np.float16)

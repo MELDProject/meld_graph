@@ -1,33 +1,31 @@
-#ico class
 import os
 import numpy as np
 import nibabel as nb
-import copy
-import time
 from scipy import sparse 
 import meld_classifier.mesh_tools as mt
 import torch
 from math import pi 
 import logging
 
-
-#loads in all icosphere
 class IcoSpheres():
-    """Class to define cohort-level parameters such as subject ids, mesh"""
-    def __init__(self, icosphere_path='../data/icospheres/', distance_type='pseudo',conv_type='GMMConv', **kwargs):
-        """icosphere class
-        icospheres at each level are stored in self.icospheres[1:7]
-        distance_type = 'exact' or 'pseudo' 
-        exact - edge length and flattened relative angle
-        pseudo - relative polar coordinates
-        conv_type - GMMConv or SpiralConv
-        autoloads & calculates:
+    """
+    Icospheres representation, with functions for loading, downsampling, upsampling, etc.
+    
+    Icospheres at each level are stored in self.icospheres[1:7].
+    Autoloads & calculates:
         'coords': spherical coordinates
         'faces': triangle faces
         'polar_coords': theta & phi spherical coords
         'edges': all edges
         'adj_mat': sparse adjacency matrix
-        """
+
+    Args:
+        distance_type (str): 'exact' or 'pseudo' 
+            exact - edge length and flattened relative angle
+            pseudo - relative polar coordinates
+        conv_type (str): GMMConv or SpiralConv
+    """
+    def __init__(self, icosphere_path='../data/icospheres/', distance_type='pseudo',conv_type='GMMConv', **kwargs):
         # TODO already gets combine_hemis as input, can use that to choose edges file
         self.log = logging.getLogger(__name__)
         self.icosphere_path = icosphere_path
@@ -40,7 +38,6 @@ class IcoSpheres():
     def load_all_levels(self):
         for level in np.arange(7)+1:
             self.load_one_level(level=level)
-            
         return
     
     def load_one_level(self,level=7):
@@ -54,7 +51,6 @@ class IcoSpheres():
         elif self.conv_type =='GMMConv':
             if self.distance_type=='pseudo':
                 self.calculate_pseudo_edge_attrs(level = level)
-        
         return
         
     def load_icosphere(self,level=7):
@@ -135,8 +131,6 @@ class IcoSpheres():
             return self.icospheres[level]['t_pseudo_edge_attr']
         elif self.distance_type == 'exact':
             return self.icospheres[level]['t_exact_edge_attr']
-
-
     
     def get_neighbours_from_tris(self,tris):
         """Get surface neighbours from tris
@@ -163,7 +157,6 @@ class IcoSpheres():
             sorted_neighbours[e_i]=n0
         return sorted_neighbours
 
-    
     def findAnglesBetweenTwoVectors1(self,v1s, v2s):
         dot = np.einsum('ijk,ijk->ij',[v1s,v1s,v2s],[v2s,v1s,v2s])
         return np.arccos(dot[0,:]/(np.sqrt(dot[1,:])*np.sqrt(dot[2,:])))
@@ -214,7 +207,6 @@ class IcoSpheres():
             all_edge_attrs.append(edge_attrs)
         all_edge_attrs = np.vstack(all_edge_attrs)
         return all_edge_attrs
-
     
     def get_neighbours(self,level=7):
         """return 7*n_vertex array of neighbours, with self neighbours 

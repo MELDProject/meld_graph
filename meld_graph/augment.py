@@ -38,6 +38,7 @@ class Transform():
             feats_transf_clean[:,i]=np.clip(feats_transf[:,i], np.percentile(feats_transf[:,i], 0.01),np.percentile(feats_transf[:,i], 99.9))  
         return feats_transf_clean, lesions_transf
     
+    # TODO delete
     #fastest version
     def apply_transform(self, feats, lesions=None):
         #we don't need to use this, even though it's correct, nearest is much faster.
@@ -66,6 +67,7 @@ class Transform():
         feats_transf_clean=np.clip(feats_transf, np.percentile(feats_transf, 0.01),np.percentile(feats_transf, 99.9)) 
         return feats_transf_clean, lesions_transf
     
+    # TODO delete
     def apply_transform_nearest(self, feats, lesions=None):
         # select random transformation parameter
         transf = np.random.randint(0,len(self.indices))
@@ -129,7 +131,7 @@ class Augment():
             return self.params[param]['p']
     
     def add_gaussian_noise(self,feat_tr):
-        """ add a gaussian noise"""
+        """add a gaussian noise"""
         variance = np.random.uniform(0,0.1)
         feat_tr = feat_tr + np.random.normal(0.0, variance, size=feat_tr.shape)
                                             # ).astype(np.float16)
@@ -142,10 +144,6 @@ class Augment():
         #for iteration in np.arange(n_iterations):
         #    feat_tr = self.smooth_step(feat_tr)
         return feat_tr
-
-    
-    
-    
     
     def add_brightness_scaling(self,feat_tr):
         multipliers = np.random.uniform(0.75, 1.25, size=feat_tr.shape[1])
@@ -180,6 +178,7 @@ class Augment():
         feat_tr = (feat_tr - mn) / (sd + epsilon)
         return feat_tr
     
+    # TODO delete 
     def extend_lesion(self, lesions, distances):
         """ DEFUNCT not using this any more"""
         if (not (lesions==1).any()) or ((distances==300).all()):
@@ -192,7 +191,7 @@ class Augment():
         return lesions_extend, distances_extend
 
     def augment_lesion(self, tdd, noise_std=0.5):
-        # modify lesion using low frequency noise
+        """modify lesion using low frequency noise"""
        
         # get geodesic distance (negative inside lesion, positive outside)
         # normalise by minimum values
@@ -218,9 +217,7 @@ class Augment():
         """recompute distances from augmented lesion masks"""
         tdd['distances'] = self.gt.fast_geodesics(tdd['labels']).astype(np.float32)
         tdd['smooth_labels'] = self.gt.smoothing(tdd['labels'],iteration=10).astype(np.float32)
-        
         return
-
 
     def apply_indices(self,indices, tdd):
         # spin features
@@ -285,7 +282,6 @@ class Augment():
             tdd['features']= self.add_low_res(tdd['features'])
 
         #gamma intensity
-        # TODO Q Hannah: why is gamma now divided by 2?
         if np.random.rand() < self.get_p_param('gamma')/2:
             tdd['features'] = self.add_gamma_scale(tdd['features'])
         #inverted gamma intensity

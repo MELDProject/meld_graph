@@ -12,22 +12,22 @@ from meld_classifier.meld_cohort import MeldSubject
 
 
 class Preprocess:
+    """
+    Load and preprocess data. 
+
+    params:
+        scaling: scale data between 0 and 1 using precomputed scaling params (TODO currently not implemented)
+        zscore: z-score each feature for each subject (excluding medial wall)
+    
+    TODO : transform data if not gaussian 
+    TODO : if not using combat features, correct for sulc freesurfer
+    """
     params = {
         'scaling': None,
         'zscore': False
     }
     def __init__(self, cohort, site_codes=None, write_output_file=None,
     icospheres = None, data_dir=BASE_PATH, params={}):
-        """
-        Load and preprocess data. 
-
-        params:
-            scaling: scale data between 0 and 1 using precomputed scaling params (TODO currently not implemented)
-            zscore: z-score each feature for each subject (excluding medial wall)
-        
-        TODO : transform data if not gaussian 
-        TODO : if not using combat features, correct for sulc freesurfer
-        """
         self.cohort = cohort
         self.write_output_file = write_output_file
         self.data_dir = data_dir
@@ -43,17 +43,12 @@ class Preprocess:
         if self.params['zscore'] != False:
             self.load_z_params(self.params['zscore'])
 
-     
-
-
     @property
     def site_codes(self):
         if self._site_codes is None:
             self._site_codes = self.cohort.get_sites()
         return self._site_codes
     
-
-  
     @property
     def subject_ids(self):
         if self._subject_ids is None:
@@ -71,7 +66,6 @@ class Preprocess:
         parc=nb.freesurfer.io.read_annot(os.path.join(self.data_dir,'fsaverage_sym','label','lh.lobes.annot'))[0]
         lobes = (parc==lobe).astype(int)
         return lobes
-
 
     def flatten(self, t):
         return [item for sublist in t for item in sublist]
@@ -101,7 +95,12 @@ class Preprocess:
             lobes: if True, return lobes task as lesion values
             lesion_bias: if True, add lesion_bias value to lesional vertices. 
                 NOTE: should not be used for final models, only for testing
-        
+                NOTE: this is an old flag, not in use in the current model anymore.
+            distance_maps: read precalculated distance maps from subject.
+                NOTE: this is an old flag, not in use anymore. 
+                Distance are now calulated on the fly (because of lesion augmentation).
+            combine_hemis: combine hemispheres to one sample by stacking.
+            
         Returns:
             features_left, features_right, lesion_left, lesion_right
         """
@@ -145,7 +144,7 @@ class Preprocess:
         else:
             gdist = subj.load_feature_values('.on_lh.boundary_zone.mgh',
                     hemi=hemi)
-                 # threshold to range 0,300
+            # threshold to range 0,300
             gdist = np.clip(gdist, 0, 300)
         return gdist
     
@@ -153,22 +152,13 @@ class Preprocess:
         import json
         with open(file, 'r') as fp:
             self.z_params=json.load( fp)
-            
-            
+              
     def zscore_data(self, values,features):
         """zscore features using precalculated means and stds"""
         for fi,f_value in enumerate(values):
             if np.std(f_value)!=0:
                 values[fi] = (f_value-self.z_params[features[fi]]['mean'])/self.z_params[features[fi]]['std']
-        
         return values
-        #old zscoring code, was problematic with synthetic lesions
-#         std = values.std(axis=1, keepdims=True)
-#         # for features with 0 std, set std to 1 to keep mean value (resulting in zscore 0)
-#         std[std==0] = 1
-#         return (values - values.mean(axis=1, keepdims=True)) / std
-    
-    
 
     def scale_data(self, matrix, features, file_name):
         """scale data features between 0 and 1"""
@@ -236,7 +226,6 @@ class Preprocess:
             json.dump(x, outfile, indent=4)
         print(f"parameters saved in {file}")
 
-        
     def clockwiseangle_and_distance(self,point,origin):
         import math
 
@@ -295,7 +284,6 @@ class Preprocess:
         coordinates[:,1]= np.clip(coordinates[:,1],-np.pi,np.pi)
         return coordinates
 
-    
     def initialise_distances(self,res=1000):
         """function to precalculate pairwise differences
         res - resolution, higher resolutions lead to slower synthetic generation
@@ -315,7 +303,6 @@ class Preprocess:
                                        self.grid_coords, metric='haversine')[0]
         return
         
-
     def create_lesion_mask(self,radius,cartesian_coords,return_smoothed=True):
         """create irregular polygon lesion mask"""
         import matplotlib.path as mpltPath
@@ -375,7 +362,6 @@ class Preprocess:
             return interpolated_lesion, interpolated_smoothed 
         else:
             return interpolated_lesion
-    
     
     def sigmoid_dists(self,dists):
         m = dists==0

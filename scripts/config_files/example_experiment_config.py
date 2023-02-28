@@ -163,7 +163,7 @@ data_parameters = {
     # If True, distances inside medial wall are masked to maximum distance (300).
     "distance_mask_medial_wall": True,
     # preprocessing_parameters: params for data_preprocessing
-    "preprocessing_parameters": {
+    "preprocessing_parameters": { 
         "scaling": None, #"scaling_params_GDL.json"
         # zscore: normalise all values by overall mu std. ignores 0s. Either False or file_path
         "zscore":'../data/feature_means.json',
@@ -190,7 +190,7 @@ data_parameters = {
         'low_res': {'p': 0.25},
         'gamma': {'p': 0.15},
         'flipping': {'p': 0.5, 'file': 'data/flipping/flipping_ico7_3.npy'},
-        'extend_lesion':{'p': 0.3},
+        'augment_lesion':{'p': 0.3},
         },
     # combine_hemis: how to combine hemisphere data, one of: None, stack
     # None: no combination of hemispheres. 

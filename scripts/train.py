@@ -2,19 +2,10 @@ import meld_graph
 import meld_graph.models
 import meld_graph.experiment
 import meld_graph.dataset
+from meld_graph.paths import load_config
 
 import logging
 import argparse
-
-def load_config(config_file):
-    """load config.py file and return config object"""
-    import importlib.machinery, importlib.util
-
-    loader = importlib.machinery.SourceFileLoader("config", config_file)
-    spec = importlib.util.spec_from_loader(loader.name, loader)
-    config = importlib.util.module_from_spec(spec)
-    loader.exec_module(config)
-    return config
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="""

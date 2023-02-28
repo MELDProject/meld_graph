@@ -599,8 +599,9 @@ class Trainer:
             cur_scores = self.train_epoch(train_data_loader, optimiser)
             self.log.info(f'Epoch {epoch} :: time {time.time()-start}')
             scheduler.step()  # update lr
-            #get memory usage
+            # get memory usage
             process = psutil.Process(os.getpid())
+            # TODO remove?
             with open('memory_usage_gpu_parrallel.txt', 'a') as f:
                 f.write(f'Epoch {epoch} :: memory usage {process.memory_info().rss / 1024 ** 2}MB-  time {time.time()-start} \n ')
             self.log.info(f'Epoch {epoch} :: memory usage {process.memory_info().rss / 1024 ** 2}MB')  # in bytes
