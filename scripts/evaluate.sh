@@ -20,10 +20,18 @@ module load miniconda/3
 # load cuda
 module load cuda/11.1
 
-CONDA_PATH=~/.conda/envs/meld_graph
+#CONDA_PATH=~/.conda/envs/meld_graph
 
 # run script
-BASE=/home/kw350/software/gdl
+#BASE=/home/kw350/software/gdl
+#echo $1
+#echo $2
+#source activate $CONDA_PATH; $CONDA_PATH/bin/python3 $BASE/meld_classifier_GDL/scripts/evaluate_single_model.py --model_path $1 --split $2
+
+source activate ~/.conda/envs/meld_test
+
+# run script
+BASE=/home/co-spit1/software/
 echo $1
 echo $2
-source activate $CONDA_PATH; $CONDA_PATH/bin/python3 $BASE/meld_classifier_GDL/scripts/evaluate_single_model.py --model_path $1 --split $2
+python  $BASE/meld_classifier_GDL/scripts/evaluate_single_model.py --model_path $1 --split $2 

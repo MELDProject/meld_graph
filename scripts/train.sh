@@ -3,13 +3,14 @@
 #SBATCH -o train_%j.out
 #SBATCH -e train_%j.out
 #SBATCH -J train
-#SBATCH -A CAMBRC-SL3-GPU
+#SBATCH -A CORE-WCHN-MELD-SL2-GPU
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH -p ampere
 #SBATCH --gres=gpu:1
 #SBATCH --mem=48000
-#SBATCH -t 12:00:00
+#SBATCH -t 12:00:00 
+#SBATCH --mail-type=FAIL
 
 #! partitions: ampere, pascal
 # set up
@@ -22,9 +23,9 @@ module load miniconda/3
 # load cuda
 module load cuda/11.1
 
-source activate ~/.conda/envs/meld_graph
+source activate ~/.conda/envs/meld_test
 
 # run script
-BASE=/home/kw350/software/gdl
+BASE=/home/co-spit1/software/
 echo $1
-~/.conda/envs/meld_graph/bin/python $BASE/meld_classifier_GDL/scripts/train.py --config_file $1
+python $BASE/meld_classifier_GDL/scripts/train.py --config_file $1
