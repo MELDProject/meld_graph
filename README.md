@@ -111,6 +111,14 @@ To check distances: run cross_val_aucs.py in "test" mode on baseline_dcd then lo
 
 To compare experiments: run cross_val_aucs.py in "val" mode for all trained models and look at relative performance using auc_comparisons.ipynb (updating model paths).
 
+### Calculating summary statistics
+
+To test whether novelty improves performance, use cross validation. AUCs for two models on val performance can be compared with the notebook: `auc_comparisons.ipynb`.
+
+To compare final performance of ensemble models, update the model paths in ensemble.py script and run `python ensemble.py` . This will produce a table of ensembled results on the model and a bootstrapped ensemble model for statsitics. The data tables and figures can be found in data/ and imgs/
+
+
+
 # Usage
 - `create_scaling_parameters.py`: calculates scaling params file. Only needs to be run once.
 - `create_icospheres.py`: creates downsampled icospheres. Only needs to be run once.
