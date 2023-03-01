@@ -17,3 +17,13 @@ for EXPERIMENT_PATH in [
 if not os.path.exists(EXPERIMENT_PATH):
     print('WARNING: EXPERIMENT_PATH not found, setting to "", need to add it to paths.py')
     EXPERIMENT_PATH = ""
+
+def load_config(config_file):
+    """load config.py file and return config object"""
+    import importlib.machinery, importlib.util
+
+    loader = importlib.machinery.SourceFileLoader("config", config_file)
+    spec = importlib.util.spec_from_loader(loader.name, loader)
+    config = importlib.util.module_from_spec(spec)
+    loader.exec_module(config)
+    return config

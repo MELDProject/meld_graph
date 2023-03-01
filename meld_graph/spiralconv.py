@@ -1,17 +1,15 @@
-# From https://github.com/sw-gong/spiralnet_plus/blob/master/conv/spiralconv.py
 import torch
 import torch.nn as nn
 import logging
 from torch_geometric.nn import InstanceNorm
- 
-
-# TODO remove dim parameter
 
 class SpiralConv(nn.Module):
-    def __init__(self, in_channels, out_channels, indices, dim=1, norm=None):
+    """
+    Spiral convolution, adapted from https://github.com/sw-gong/spiralnet_plus/blob/master/conv/spiralconv.py
+    """
+    def __init__(self, in_channels, out_channels, indices, norm=None):
         super(SpiralConv, self).__init__()
         self.log = logging.getLogger(__name__)
-        self.dim = dim
         self.indices = indices
         self.in_channels = in_channels
         self.out_channels = out_channels

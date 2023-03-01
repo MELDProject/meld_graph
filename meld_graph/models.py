@@ -6,8 +6,13 @@ from meld_graph.icospheres import IcoSpheres
 import torch
 from meld_graph.spiralconv import SpiralConv
 from torch_geometric.nn import InstanceNorm
+import scipy.sparse as sp
+import numpy as np
 
 class GMMConv(nn.Module):
+    """
+    GMMConv implementation.
+    """
     def __init__(self, in_channels, out_channels, dim, kernel_size, edges, edge_vectors, norm=None):
         super(GMMConv, self).__init__()
         self.layer = torch_geometric.nn.GMMConv(in_channels, out_channels, dim=dim, kernel_size=kernel_size)
@@ -27,26 +32,30 @@ class GMMConv(nn.Module):
             x = self.norm(x)
         return x
         
-# define model
 class MoNet(nn.Module):
-    # TODO change outputs of this model as well
+    """
+    Graph CNN Model for lesion segmentation with only convolutional layers. 
+
+    Model outputs are a dictionary containing
+        'log_softmax' (log softmax lesion segmentation output), 
+        'non_lesion_logits' (non lesion output for distance regression)
+
+    NOTE this model does not support distance regression and hemisphere classification. Use MoNetUnet instead.
+    NOTE the model ouputs log softmax scores. Need to call torch.exp to get probabilities.
+
+    Args:
+        num_features (int): number of input features
+        layer_sizes (list): output size of each conv layer. a final linear layer for going to 2 (binary classification) is added.
+        dim (int): dim for GMMConv, dimension of coord representation - 2 or 3 (for GMMConv).
+        kernel_size (int): number of kernels (default 3) (for GMMConv).
+        icosphere_params (dict): params passed to IcoShperes for edges, coords, and neighbours.
+        conv_type (str): type of convolution. "GMMConv" or "SpiralConv".
+        spiral_len (int): number of neighbors included in each convolution (for SpiralConv).
+        activation_fn (str): activation function. "relu" or "leaky_relu".
+    """
     def __init__(self, num_features, layer_sizes = [], dim=2, kernel_size=3, icosphere_params={}, 
-                conv_type='GMMConv', spiral_len=10,
-                activation_fn='relu', norm=None, **kwargs):
-        """
-        Model with only conv layers.
-
-        dim: dim for GMMConv, dimension of coord representation - 2 or 3
-        kernel_size: number of kernels (default 3)
-        layer_sizes: (list) output size of each conv layer. a final linear layer for going to 2 (binary classification) is added
-        num_features: number of input features (input size)
-        icosphere_params: params passes to IcoShperes for edges, coords, and neighbours
-        conv_type: "GMMConv" or "SpiralConv"
-        spiral_len: number of neighbors included in each convolution (for SpiralConv) TODO implement dilation as well
-        norm: "instance" or None
-
-        Model outputs log softmax scores. Need to call torch.exp to get probabilities
-        """
+                conv_type='GMMConv', spiral_len=7,
+                activation_fn='relu', norm=None):
         super(MoNet, self).__init__()
         # set class parameters
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -64,15 +73,11 @@ class MoNet(nn.Module):
         else:
             raise NotImplementedErrror('activation_fn: '+activation_fn)
 
-        # TODO when changing aggregation of hemis, might need to use different graph here 
-        # TODO for different coord systems, pass arguments to IcoSpheres here
-        # TODO ideally passed as params to IcoSpheres that then returns the correct graphs at the right levels
-        self.icospheres = IcoSpheres(**icosphere_params)  # pseudo
-
-        # TODO to device call necessary here because icoshperes need to be on GPU during conv layer init
+        self.icospheres = IcoSpheres(**icosphere_params)
+        # NOTE to device call necessary here because icoshperes need to be on GPU during conv layer init
         self.icospheres.to(self.device)
 
-        #store n_vertices for batch rearrangement
+        # store n_vertices for batch rearrangement
         self.n_vertices = len(self.icospheres.icospheres[7]['coords'])
         # set up conv layers + final fcl
         conv_layers = []
@@ -84,8 +89,6 @@ class MoNet(nn.Module):
                 cl = GMMConv(in_size, out_size, dim=dim, kernel_size=kernel_size, edges=edges, edge_vectors=edge_vectors, norm=norm)
             elif self.conv_type == 'SpiralConv':
                 indices = self.icospheres.get_spirals(level=7)
-                # TODO several spiral_len? one per block? 
-                # TODO implement dilations
                 indices = indices[:,:spiral_len]
                 cl = SpiralConv(in_size, out_size, indices=indices, norm=norm)
             else:
@@ -95,7 +98,6 @@ class MoNet(nn.Module):
         self.conv_layers = nn.ModuleList(conv_layers)
         self.fc = nn.Linear(self.layer_sizes[-1], 2)
         
-
     def to(self, device, **kwargs):
         super(MoNet, self).to(device, **kwargs)
         #self.icospheres.to(device)
@@ -128,33 +130,46 @@ class MoNet(nn.Module):
             if 'non_lesion_logits' in key:
                 shape = (-1, 1)
             outputs[key] = torch.stack(output).view(shape)
-            #print('output', key, outputs[key].shape)
         return outputs
 
 
 class MoNetUnet(nn.Module):
+    """
+    Graph U-Net Model for lesion segmentation with additional distance regression and hemisphere classification. 
+
+    Model outputs are a dictionary containing
+        'log_softmax' (log softmax lesion segmentation output), 
+        'non_lesion_logits' (non lesion output for distance regression)
+        'hemi_log_softmax' (classification head output, if classification_head is True)
+    For every deep supervision layer, the output are: 'ds{level}_log_softmax', 'ds{level}_non_lesion_logits'
+
+    NOTE the model ouputs log softmax scores. Need to call torch.exp to get probabilities.
+
+    Args:
+        num_features (int): number of input features
+        layer_sizes (list): list of lists, defining the number of filters in every conv layer in every block of the U-Net. 
+            Only the downsampling branch and the bottom block needs to be defined. 
+            Upsampling will mirror layer_sizes[:-1:-1].
+            A final layer for log_softmax output and a classification head will be added. 
+        dim (int): dim for GMMConv, dimension of coord representation - 2 or 3 (for GMMConv).
+        kernel_size (int): number of kernels (default 3) (for GMMConv).
+        icosphere_params (dict): params passed to IcoShperes for edges, coords, and neighbours.
+        conv_type (str): type of convolution. "GMMConv" or "SpiralConv".
+        spiral_len (int): number of neighbors included in each convolution (for SpiralConv).
+        deep_supervision (list): list of levels at which deep supervision should be added, adds linear "squeeze" layer to the end of the block, and outputs these levels.
+        activation_fn (str): activation function. "relu" or "leaky_relu".
+        norm (str): "instance" or None
+        classification_head (bool): should a subject classification head be created from the lowest level. 
+            Classification head contains linear "squeeze" layers over features and over all vertices, resulting in one output per hemisphere. 
+
+    """
     def __init__(self, num_features, layer_sizes, dim=2, kernel_size=3, 
-                 icosphere_params={}, conv_type='GMMConv', spiral_len=10,
+                 icosphere_params={}, conv_type='SpiralConv', spiral_len=7,
                  deep_supervision=[],
                  activation_fn='relu', norm=None,
                  classification_head=False,
                  distance_head=False,
                  ):
-        """
-        Unet model
-        dim: dim for GMMConv, dimension of coord representation - 2 or 3 (for GMMConv)
-        kernel_size: number of kernels (default 3) (for GMMConv)
-        layer_sizes: (list of lists) per block, output size of each conv layer. This structure is mirrored in the decoder. a final linear layer for going to 2 (binary classification) is added
-        num_features: number of input features (input size)
-        icosphere_params: params passes to IcoShperes for edges, coords, and neighbours
-        conv_type: "GMMConv" or "SpiralConv"
-        spiral_len: number of neighbors included in each convolution (for SpiralConv) TODO implement dilation as well
-        deep_supervision: list of levels at which deep supervision should be added, adds linear "squeeze" layer to the end of the block, and outputs these levels.
-        norm: "instance" or None
-        classification_head: should a subject classification head be created from the lowest level 
-
-        Model outputs log softmax scores. Need to call torch.exp to get probabilities
-        """
         super(MoNetUnet, self).__init__()
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.num_features = num_features
@@ -168,12 +183,9 @@ class MoNetUnet(nn.Module):
             self.activation_function = nn.LeakyReLU()
         else:
             raise NotImplementedErrror('activation_fn: '+activation_fn)
-        # TODO when changing aggregation of hemis, might need to use different graph here 
-        # TODO for different coord systems, pass arguments to IcoSpheres here
-        # TODO ideally passed as params to IcoSpheres that then returns the correct graphs at the right levels
-        self.icospheres = IcoSpheres(**icosphere_params)  # pseudo
 
-        # TODO to device call necessary here because icoshperes need to be on GPU during conv layer init
+        self.icospheres = IcoSpheres(**icosphere_params)  # pseudo
+        # NOTE to device call necessary here because icoshperes need to be on GPU during conv layer init
         self.icospheres.to(self.device)
         
         # set up conv + pooling layers - encoder
@@ -189,30 +201,24 @@ class MoNetUnet(nn.Module):
         self.n_vertices = len(self.icospheres.icospheres[level]['coords'])
         for i in range(num_blocks):
             block = []
-            #print('encoder block', i, 'at level', level)
             for j,out_size in enumerate(layer_sizes[i]):
                 # create conv layers
-                #print('conv', in_size, out_size)
                 if self.conv_type == 'GMMConv':
                     edges = self.icospheres.get_edges(level=level)
                     edge_vectors = self.icospheres.get_edge_vectors(level=level)
                     cl = GMMConv(in_size, out_size, dim=dim, kernel_size=kernel_size, edges=edges, edge_vectors=edge_vectors, norm=norm)
                 elif self.conv_type == 'SpiralConv':
                     indices = self.icospheres.get_spirals(level=level)
-                    # TODO several spiral_len? one per block? 
-                    # TODO implement dilations
                     indices = indices[:,:spiral_len]
                     cl = SpiralConv(in_size, out_size, indices=indices, norm=norm)
                 else:
                     raise NotImplementedError()
                 block.append(cl)
                 in_size = out_size
-            #print('skip features for block', i, out_size)
             num_features_on_skip.append(out_size)
             encoder_conv_layers.append(nn.ModuleList(block))
             # only pool if not in last block
             if i < num_blocks-1:
-                #print('pool for block', i)
                 level -= 1
                 neigh_indices = self.icospheres.get_downsample(target_level=level)
                 pool_layers.append(HexPool(neigh_indices=neigh_indices))
@@ -239,8 +245,6 @@ class MoNetUnet(nn.Module):
                 if self.distance_head:
                     distance_fcs[str(level)] = nn.Linear(in_size, 1)
             level += 1
-            #print('decoder block', i, 'at level', level)
-            #print('adding unpool to level', level)
             num = len(self.icospheres.get_neighbours(level=level))
             upsample = self.icospheres.get_upsample(target_level=level)
             unpool_layers.append(HexUnpool(upsample_indices=upsample, target_size=num))
@@ -248,9 +252,7 @@ class MoNetUnet(nn.Module):
             for j,out_size in enumerate(layer_sizes[i][::-1]):
                 if j == 0:
                     in_size = in_size+num_features_on_skip[i]
-                    #print('skip features', num_features_on_skip[i])
                 
-                #print('adding conv ', in_size, out_size)
                 if self.conv_type == 'GMMConv':
                     edges = self.icospheres.get_edges(level=level)
                     edge_vectors = self.icospheres.get_edge_vectors(level=level)
@@ -284,11 +286,10 @@ class MoNetUnet(nn.Module):
         
         batch_x = batch_x.view((batch_x.shape[0]//self.n_vertices, self.n_vertices,self.num_features))
         skip_connections = []
-        outputs = {'log_softmax': [], 'non_lesion_logits': [], 'log_sumexp': []}
+        outputs = {'log_softmax': [], 'non_lesion_logits': []}
         for level in self.deep_supervision:
             outputs[f'ds{level}_log_softmax'] = []
             outputs[f'ds{level}_non_lesion_logits'] = []
-            outputs[f'ds{level}_log_sumexp'] = []
         if self.classification_head:
             outputs['hemi_log_softmax'] = []
         for x in batch_x:
@@ -305,10 +306,8 @@ class MoNetUnet(nn.Module):
             
             if self.classification_head:
                 hemi_classification = self.activation_function(self.hemi_classification_head[0](x.unsqueeze(2)))
-                #print('hemi cl after first', hemi_classification.shape)
                 hemi_classification = self.hemi_classification_head[1](hemi_classification.view(-1))
                 hemi_classification = nn.LogSoftmax(dim=0)(hemi_classification)
-                #print('hemi_log_softmax', hemi_classification)
                 outputs['hemi_log_softmax'].append(hemi_classification)
 
             for i, block in enumerate(self.decoder_conv_layers):
@@ -322,16 +321,7 @@ class MoNetUnet(nn.Module):
                         outputs[f'ds{level}_non_lesion_logits'].append(x_out[:,0])
                     x_out = nn.LogSoftmax(dim=1)(x_out)
                     outputs[f'ds{level}_log_softmax'].append(x_out)
-                    #x_out_max = torch.exp(torch.max(x_out[:,1]))
-                    #x_out_max = torch.stack((1-x_out_max, x_out_max))
-                    #x_out_max = nn.LogSoftmax()(x_out_max)
-                    
-                    x_out_logsumexp = torch.logsumexp(torch.exp(x_out[:,1]), dim=0)
-                    x_out_logsumexp = torch.stack((1-x_out_logsumexp, x_out_logsumexp))
-                    #print('pre log softmax', x_out_logsumexp)
-                    x_out_logsumexp = nn.LogSoftmax(dim=0)(x_out_logsumexp)
-                    #print('after log softmax', x_out_logsumexp)
-                    outputs[f'ds{level}_log_sumexp'].append(x_out_logsumexp)
+
                 skip_i = len(self.decoder_conv_layers)-1-i
                 level += 1
                 x = self.unpool_layers[i](x, device=self.device)
@@ -350,12 +340,6 @@ class MoNetUnet(nn.Module):
             x = self.fc(x)
             x = nn.LogSoftmax(dim=1)(x)
             outputs['log_softmax'].append(x)
-            #x_max = torch.exp(torch.max(x[:,1]))
-            #x_max = torch.stack((1-x_max, x_max))
-            x_logsumexp = torch.logsumexp(torch.exp(x[:,1]), dim=0)
-            x_logsumexp = torch.stack((1-x_logsumexp, x_logsumexp))
-            x_logsumexp = nn.LogSoftmax(dim=0)(x_logsumexp)
-            outputs['log_sumexp'].append(x_logsumexp)
         
         # stack and reshape outputs to (batch * n_vertices, -1)
         # in case of hemi classification will be (batch, -1)
@@ -364,25 +348,34 @@ class MoNetUnet(nn.Module):
             if 'non_lesion_logits' in key:
                 shape = (-1, 1)
             outputs[key] = torch.stack(output).view(shape)
-            #print('output', key, outputs[key].shape)
         return outputs
 
 class HexPool(nn.Module):
+    """
+    Max pooling for Icospheres.
+    """
     def __init__(self, neigh_indices):
         super(HexPool, self).__init__()
         self.neigh_indices = neigh_indices
         
     def forward(self, x, center_pool=False):
-        # center_pool: default is max pool, set center_pool to true to do center pool
+        """
+        Forward pass
+
+        Args:
+            center_pool (bool): default is max pool, set center_pool to true to do center pool
+        """
         if center_pool:
             x = x[:len(self.neigh_indices)]
         else:
             x = x[self.neigh_indices]
             x = torch.max(x, dim=1)[0]
-        #print('hexpool', x.shape)
         return x
 
 class HexUnpool(nn.Module):
+    """
+    Mean unpooling for Icospheres.
+    """
     def __init__(self, upsample_indices, target_size):
         super(HexUnpool, self).__init__()
         self.upsample_indices = upsample_indices
@@ -395,24 +388,10 @@ class HexUnpool(nn.Module):
         new_x[limit:] = torch.mean(x[self.upsample_indices],dim=1)
         return new_x
 
-class HexSmooth(nn.Module):
-    def __init__(self, neighbours, num_iterations=10):
-        super(HexSmooth, self).__init__()
-        self.neighbours = neighbours
-        self.num_iterations = num_iterations
-        
-    def forward(self, x):
-        indices = self.neighbours.view(-1)
-            
-        for _ in range(self.num_iterations):
-            x = torch.index_select(x, 0, indices)
-            x = x.mean(dim=0, keepdim=True)
-            #x = torch.mean(x[self.neighbours], dim=1)
-        return x
-    
-import scipy.sparse as sp
-import numpy as np
 class HexSmoothSparse(nn.Module):
+    """
+    Smoothing for Icospheres.
+    """
     def __init__(self, neighbours):
         super(HexSmoothSparse, self).__init__()
         self.neighbours = neighbours
@@ -420,7 +399,7 @@ class HexSmoothSparse(nn.Module):
         
     def _create_sparse_weights(self, neighbours):
         """
-        Create sparse matrix with weights for the smoothing operation
+        Create sparse matrix with weights for the smoothing operation.
         """
         num_points = len(neighbours)
         num_neighbours = neighbours.shape[1]

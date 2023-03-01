@@ -13,8 +13,6 @@ from meld_classifier.meld_cohort import MeldCohort
 from meld_graph.evaluation import Evaluator
 import numpy as np
 
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="""
         Script to evaluate one model on either val or test. Val as default does not save predictions""")

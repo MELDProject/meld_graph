@@ -1,4 +1,5 @@
 #! /bin/bash
+# Helper script to start training for multiple experiments created with create_config.py
 # ARGS: path to folder containing configs
 echo "starting experiments in" $1
 # find fold folders containing stuff to start sequentially
