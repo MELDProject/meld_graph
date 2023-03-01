@@ -5,3 +5,5 @@
 *.out
 *.npy
 meld_experiments_graph
+scripts/wandb
+scripts/config_files/reproducibility

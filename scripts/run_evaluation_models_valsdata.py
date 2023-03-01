@@ -24,8 +24,10 @@ for fold in np.arange(10):
 
 ### initialise saving outputs
 use_preload_dataset = True 
+# NOTE: if output path is None, will save results in each experiment folder
+output_path = None
 #output_path = '/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/22-12-15_trainval'
-output_path = '/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/22-12-15_test'
+#output_path = '/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/22-12-15_test'
 
 ### Create dataset with vals and train data
 
@@ -74,7 +76,10 @@ for model_name in model_base_paths.keys():
     exp = meld_graph.experiment.Experiment.from_folder(checkpoint_path)
 
     # Run the evaluation on the test data and save into directory provided
-    save_dir = os.path.join(output_path, model_name)
+    if output_path is None:
+        save_dir = None
+    else:
+        save_dir = os.path.join(output_path, model_name)
 
     eva = Evaluator(experiment = exp,
                     checkpoint_path = checkpoint_path,
