@@ -9,6 +9,7 @@ import pandas as pd
 import ptitprince as pt
 #script to ensemble predictions on test set of multiple models.
 #calculates bootstrapped predictions for statistical comparisons
+#saves these out as data tables
 
 model_paths = {'nnunet':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-22_DHAM_nnunet/s_0',
                               '+classification':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-23_QUCI_classification/s_0',

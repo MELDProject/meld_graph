@@ -5,9 +5,9 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --mem=64000
-#SBATCH --time=05:00:00 
+#SBATCH --time=00:40:00 
 #SBATCH --mail-type=FAIL
-#SBATCH -p skylake-himem
+#SBATCH -p skylake
 
 #! partitions: ampere, pascal
 # set up

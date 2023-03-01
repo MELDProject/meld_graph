@@ -98,7 +98,7 @@ class DistanceRegressionLoss(torch.nn.Module):
     def forward(self, inputs, target, distance_map):
         inputs = torch.squeeze(inputs)
         # normalise distance map TODO maybe do before to not repeat every time?
-        distance_map = torch.div(distance_map, 200)
+        distance_map = torch.div(distance_map, 300)
         #print(inputs[:10], distance_map[:10])
         # calculate loss
         if self.loss == 'mse':

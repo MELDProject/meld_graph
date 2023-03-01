@@ -22,63 +22,8 @@ class Transform():
         self.indices = np.load(os.path.join(SCRIPTS_DIR,params_transform['file']))
         self.indices = self.indices.astype('int') 
     
-    def apply_transform_old(self, feats, lesions=None):
-        # select random transformation parameter
-        transf = np.random.randint(0,len(self.lambdas))
-        # spin lesions if exist
-        if lesions.any()!= None:            
-            lesions_transf = self.lambdas[transf,:,0]*lesions[self.indices[transf,:,0]] + self.lambdas[transf,:,1]*lesions[self.indices[transf,:,1]] + self.lambdas[transf,:,2]*lesions[self.indices[transf,:,2]]   
-            lesions_transf = np.round(lesions_transf)
-        # spin features
-        n_feat = len(feats.T)
-        lambdas = np.tile(self.lambdas[:,:,:,np.newaxis], n_feat )
-        feats_transf = lambdas[transf,:,0]*feats[self.indices[transf,:,0]] + lambdas[transf,:,1]*feats[self.indices[transf,:,1]] + lambdas[transf,:,2]*feats[self.indices[transf,:,2]]        
-        feats_transf_clean=np.zeros(feats_transf.shape)
-        for i in range(0,n_feat):
-            feats_transf_clean[:,i]=np.clip(feats_transf[:,i], np.percentile(feats_transf[:,i], 0.01),np.percentile(feats_transf[:,i], 99.9))  
-        return feats_transf_clean, lesions_transf
-    
-    #fastest version
-    def apply_transform(self, feats, lesions=None):
-        #we don't need to use this, even though it's correct, nearest is much faster.
-        # select random transformation parameter
-        transf = np.random.randint(0,len(self.lambdas))
-        #initiate lambdas and indices to speed up
-        indices=copy.deepcopy(self.indices[transf])
-        i0=indices[:,0]
-        i1=indices[:,1]
-        i2=indices[:,2]
-        lambdas=copy.deepcopy(self.lambdas[transf])
-        l0=lambdas[:,0]
-        l1=lambdas[:,1]
-        l2=lambdas[:,2]
-        # spin lesions if exist
-        if lesions.any()!= None:            
-            lesions_transf = l0*lesions[i0] + l1*lesions[i1] + l2*lesions[i2]   
-            lesions_transf = np.round(lesions_transf)
-        # spin features
-        n_feat = len(feats.T)
-        l0 = np.tile(l0[:,np.newaxis], n_feat)
-        l1 = np.tile(l1[:,np.newaxis], n_feat)
-        l2 = np.tile(l2[:,np.newaxis], n_feat)
-        feats_transf = l0*feats[i0] + l1*feats[i1] + l2*feats[i2]        
-        feats_transf_clean=np.zeros(feats_transf.shape)
-        feats_transf_clean=np.clip(feats_transf, np.percentile(feats_transf, 0.01),np.percentile(feats_transf, 99.9)) 
-        return feats_transf_clean, lesions_transf
-    
-    def apply_transform_nearest(self, feats, lesions=None):
-        # select random transformation parameter
-        transf = np.random.randint(0,len(self.indices))
-        #initiate lambdas and indices to speed up
-        indices=copy.deepcopy(self.indices[transf])
-        # spin lesions if exist
-        if lesions.any()!= None:            
-            lesions_transf = lesions[indices] 
-        # spin features
-        feats_transf = feats[indices] 
-        return feats_transf, lesions_transf
-    
     def get_indices(self):
+        """Randomly choose a precalculated transformation"""
         transf = np.random.randint(0,len(self.indices))
         #initiate lambdas and indices to speed up
         indices = copy.deepcopy(self.indices[transf])
@@ -119,7 +64,6 @@ class Augment():
         self.gt = graph_tools
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         #need to load neighbours
-        #self.smooth_step = HexSmooth(neighbours = neighbours)
             
     def get_p_param(self, param):
         """check pvalue, set to zero if not found"""
@@ -132,8 +76,6 @@ class Augment():
         """ add a gaussian noise"""
         variance = np.random.uniform(0,0.1)
         feat_tr = feat_tr + np.random.normal(0.0, variance, size=feat_tr.shape)
-                                            # ).astype(np.float16)
-        #feat_tr = feat_tr + variance * np.random.randn(*feat_tr.shape)
         return feat_tr
     
     def add_gaussian_blur(self,feat_tr):
@@ -143,7 +85,6 @@ class Augment():
         #    feat_tr = self.smooth_step(feat_tr)
         return feat_tr
 
-    
     
     
     
@@ -193,7 +134,6 @@ class Augment():
 
     def augment_lesion(self, tdd, noise_std=0.5):
         # modify lesion using low frequency noise
-       
         # get geodesic distance (negative inside lesion, positive outside)
         # normalise by minimum values
         new_dist = tdd['distances']
@@ -205,7 +145,7 @@ class Augment():
         for level in range(2, 7):
             unpool_ind = self.gt.unpool(level=level+1)
             noise_upsampled = unpool_ind(torch.from_numpy(noise.reshape(-1,1)), device = None)
-            #TODO Q Hannah why do we pass nose_upsampled to the CPU?
+            #TODO Q Hannah why do we pass noise_upsampled to the CPU?
             noise_upsampled = noise_upsampled.detach().cpu().numpy().ravel()
             noise = noise_upsampled.copy()
         #add noise to distance normalised
@@ -285,7 +225,6 @@ class Augment():
             tdd['features']= self.add_low_res(tdd['features'])
 
         #gamma intensity
-        # TODO Q Hannah: why is gamma now divided by 2?
         if np.random.rand() < self.get_p_param('gamma')/2:
             tdd['features'] = self.add_gamma_scale(tdd['features'])
         #inverted gamma intensity
