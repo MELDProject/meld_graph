@@ -1,3 +1,6 @@
+### functions needed to create transformations on spherical mesh for augmentation.
+### These include a warp, spins and reindexing the coordinates.
+
 from meld_graph import icospheres
 from meld_graph.icospheres import IcoSpheres
 import numpy as np
@@ -7,6 +10,7 @@ from scipy.stats import special_ortho_group
 
 
 def warp_mesh(low_res_ico, warp_fraction = 2):
+    """adjust the locations of vertices in a low-res version of the mesh"""
     non_self = low_res_ico['edges'][:,0]!=low_res_ico['edges'][:,1]
     edge_shift=np.linalg.norm(low_res_ico['exact_edge_attr'],axis=1)[non_self]
     max_movement = np.min(edge_shift) / warp_fraction
@@ -19,6 +23,8 @@ def warp_mesh(low_res_ico, warp_fraction = 2):
     return surf
 
 def upsample_mesh(warped_coords, lower_res, higher_res):
+    """upsample the warped coordinates to make a high-res mesh that 
+    has large-scale deformations"""
     small_surf_size = len(lower_res['coords'])
     big_surf_size = len(higher_res['coords'])
     big_neighbours = higher_res['neighbours']
