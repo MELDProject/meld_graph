@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import potpourri3d as pp3d
-from meld_graph.models import HexUnpool, HexPool, HexSmooth, HexSmoothSparse
+from meld_graph.models import HexUnpool, HexPool, HexSmoothSparse
 from meld_classifier.meld_cohort import MeldCohort
 import time
 class GraphTools:
