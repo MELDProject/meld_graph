@@ -180,6 +180,7 @@ data_parameters = {
     # brightness, contrast
     # low res - I don't think this is implemented
     # gamma - intensity shifting
+    # augment_lesion
     "augment_data": {
         'spinning': {'p': 0.2, 'file': 'data/spinning/spinning_ico7_10.npy'},
         'warping': {'p': 0.2, 'file': 'data/warping/warping_ico7_10.npy'},
