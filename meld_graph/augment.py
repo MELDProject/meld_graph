@@ -11,8 +11,6 @@ import logging
 from meld_graph.paths import (
     SCRIPTS_DIR,)
 
-from meld_graph.models import  HexSmooth
-
 
 class Transform():
     """Class transform paramaters TODO update doctring with a few more details"""
