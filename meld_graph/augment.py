@@ -20,6 +20,7 @@ class Transform():
         self.indices = self.indices.astype('int') 
     
     def get_indices(self):
+        """Randomly choose a precalculated transformation"""
         transf = np.random.randint(0,len(self.indices))
         #initiate lambdas and indices to speed up
         indices = copy.deepcopy(self.indices[transf])
@@ -60,7 +61,6 @@ class Augment():
         self.gt = graph_tools
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         #need to load neighbours
-        #self.smooth_step = HexSmooth(neighbours = neighbours)
             
     def get_p_param(self, param):
         """check pvalue, set to zero if not found"""
@@ -73,8 +73,6 @@ class Augment():
         """add a gaussian noise"""
         variance = np.random.uniform(0,0.1)
         feat_tr = feat_tr + np.random.normal(0.0, variance, size=feat_tr.shape)
-                                            # ).astype(np.float16)
-        #feat_tr = feat_tr + variance * np.random.randn(*feat_tr.shape)
         return feat_tr
     
     # TODO this does not do anything! - also remove? Alternatively document that this does not have any effect
@@ -133,7 +131,7 @@ class Augment():
         for level in range(2, 7):
             unpool_ind = self.gt.unpool(level=level+1)
             noise_upsampled = unpool_ind(torch.from_numpy(noise.reshape(-1,1)), device = None)
-            #TODO Q Hannah why do we pass nose_upsampled to the CPU?
+            #TODO Q Hannah why do we pass noise_upsampled to the CPU?
             noise_upsampled = noise_upsampled.detach().cpu().numpy().ravel()
             noise = noise_upsampled.copy()
         #add noise to distance normalised

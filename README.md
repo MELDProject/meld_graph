@@ -83,6 +83,13 @@ python cross_val_aucs.py --experiment_path PATH_TO_EXPERIMENT --split test
 This runs on the test set and saves out the predictions for the test set for each of the folds. These then need to be aggregated and thresholded to compare experiments. The notebook [ensemble.ipynb](notebooks/ensemble.ipynb) can be used to look at test-set performance stats and plot predictions for individual subjects. This also has code for plotting un-ensembled distance maps for debugging.
 TODO this needs to be updated, apparently ensemble.ipynb -> ensemble.sh?
 
+**Ensemble final model**
+To compare final performance of ensemble models, update the model paths in `ensemble.py` script and run 
+```
+python ensemble.py
+```
+This will produce a table of ensembled results on the model and a bootstrapped ensemble model for statsitics. The data tables and figures can be found in data/ and imgs/ inside the experiment folder.
+
 ## Manuscript
 Please check out our [manuscript](TODO) to learn more. 
 An overview of the notebooks that we used to create the figures can be found [here](figure_notebooks.md).

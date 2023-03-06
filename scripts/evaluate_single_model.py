@@ -1,4 +1,7 @@
 
+### called by evaluate.sh which is launched by cross_val_aucs.py
+### Runs one model across a val /test cohort and will either save predictions
+### or calculate summary statistics
 import argparse
 import meld_graph
 import meld_graph.models
