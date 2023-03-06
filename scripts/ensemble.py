@@ -4,38 +4,31 @@ import h5py
 import matplotlib.pyplot as plt
 from meld_classifier.meld_cohort import MeldCohort,MeldSubject
 import sklearn.metrics as metrics
-from meld_graph.evaluation import load_prediction, sens_spec_curves, roc_curves
+from meld_graph.evaluation import load_prediction, sens_spec_curves, roc_curves, plot_roc_multiple
 import pandas as pd
 import ptitprince as pt
 #script to ensemble predictions on test set of multiple models.
 #calculates bootstrapped predictions for statistical comparisons
 #saves these out as data tables
 
-model_paths = {'nnunet':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-22_DHAM_nnunet/s_0',
-                              '+classification':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-23_QUCI_classification/s_0',
-               '+distance':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-22_DHAM_distance/s_0',
-               '+distance+finetuning':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-23_HKOJ_finetuning_distance/s_2',
-               'full_model:class+dist':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-22_DHAM_classification/s_0',
 
-}
+
 model_paths = {'nnunet':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-22_DHAM_nnunet/s_0',
-               'full_model:class+dist+finetuning':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-24_OGPR_finetuning_distance_classification/s_2',
-               '-finetuning':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-22_DHAM_classification/s_0',
+               'full_model:class+dist+finetuning':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-03-01_BAMH_classification_distance_finetuning/s_2',
+               '-finetuning':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-03-01_WRZI_classification_distance/s_0',
                '-classification':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-23_HKOJ_finetuning_distance/s_2',
-               '-distance':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-24_OSLA_finetuning_classification/s_2'
+               '-distance':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-24_OSLA_finetuning_classification/s_2',
   
 
 }
-
-
-
-model_paths = {#'nnunet':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-22_DHAM_nnunet/s_0',
-               'class+distance':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-22_DHAM_classification/s_0',
-               
-               'class+distance+subauroc':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-27_DHBO_classification_distance_subauroc/s_0',
- 
+model_paths = {'nnunet':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-22_DHAM_nnunet/s_0',
+               'distance':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-23_QUCI_classification/s_0',
+               'classification':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-03-01_WRZI_distance/s_0',
+               'distance+classification':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-03-01_WRZI_classification_distance/s_0',
 
 }
+
+
 
 cohort = MeldCohort(hdf5_file_root='{site_code}_{group}_featurematrix_combat_6.hdf5',
                dataset='MELD_dataset_V6.csv')
@@ -46,7 +39,7 @@ for model in model_paths.keys():
     save_dirs[model] = [os.path.join(model_paths[model],f'fold_0{fold}', 'results') for fold in np.arange(5)]
 
 n_vert = len(cohort.cortex_label)*2
-with h5py.File(os.path.join(save_dirs[model][0], 'predictions.hdf5'), "r") as f:
+with h5py.File(os.path.join(save_dirs['nnunet'][0], 'predictions.hdf5'), "r") as f:
     subjects = list(f.keys())
 
 
@@ -59,6 +52,7 @@ for model_name in save_dirs.keys():
     roc_dictionary[model_name]={'sensitivity':np.zeros(n_thresh),
 'sensitivity_plus':np.zeros(n_thresh),
 'specificity':np.zeros(n_thresh)}
+    roc_dictionary_bs[model_name]={}
     for fold in np.arange(5):
         roc_dictionary_bs[model_name][f'fold_0{fold}_bs']={'sensitivity':np.zeros(n_thresh),
 'sensitivity_plus':np.zeros(n_thresh),
@@ -151,12 +145,12 @@ df= []
 df2 = []
 for model_name in save_dirs.keys():
     for fold in np.arange(5):
-        sensitivity_curve,specificity_curve,optimal_thresh= optimal_threshold(roc_dictionary_bs[model_name][f'fold_0{fold}_bs'],
-        roc_curves_thresholds=roc_curves_thresholds)
+        sensitivity_curve,specificity_curve= sens_spec_curves(roc_dictionary_bs[model_name][f'fold_0{fold}_bs'],
+        )
         auc = metrics.auc(1-specificity_curve,sensitivity_curve)
         df.append([model_name,auc])
-        sensitivity_curve,specificity_curve,optimal_thresh= optimal_threshold(roc_dictionary_bs[model_name][f'fold_0{fold}'],
-        roc_curves_thresholds=roc_curves_thresholds)
+        sensitivity_curve,specificity_curve= sens_spec_curves(roc_dictionary_bs[model_name][f'fold_0{fold}'],
+        )
         auc = metrics.auc(1-specificity_curve,sensitivity_curve)
         df2.append([model_name,auc])
 
