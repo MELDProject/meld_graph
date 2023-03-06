@@ -92,4 +92,3 @@ This will produce a table of ensembled results on the model and a bootstrapped e
 ## Manuscript
 Please check out our [manuscript](TODO) to learn more. 
 An overview of the notebooks that we used to create the figures can be found [here](figure_notebooks.md).
-Config files that we used to create the results in the manuscript can be found in `scripts/config_files/reproducibility` (TODO).
