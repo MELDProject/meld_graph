@@ -1,4 +1,3 @@
-#augment class
 import os
 import numpy as np
 import nibabel as nb
@@ -12,11 +11,9 @@ import logging
 from meld_graph.paths import (
     SCRIPTS_DIR,)
 
-from meld_graph.models import  HexSmooth
-
 
 class Transform():
-    """Class transform paramaters"""
+    """Class transform paramaters TODO update doctring with a few more details"""
     def __init__(self, params_transform):
         self.p = params_transform['p']
         self.indices = np.load(os.path.join(SCRIPTS_DIR,params_transform['file']))
@@ -32,7 +29,7 @@ class Transform():
 class Augment():
     """Class to augment data"""
     def __init__(self, params,graph_tools):
-        """Augment class
+        """Augment class TODO update docstring
         params - dictionary containing augmentation method, file, and probability of apply transformation (p)
         following guidance from nnUNET
         transformations in the following order:
@@ -73,20 +70,18 @@ class Augment():
             return self.params[param]['p']
     
     def add_gaussian_noise(self,feat_tr):
-        """ add a gaussian noise"""
+        """add a gaussian noise"""
         variance = np.random.uniform(0,0.1)
         feat_tr = feat_tr + np.random.normal(0.0, variance, size=feat_tr.shape)
         return feat_tr
     
+    # TODO this does not do anything! - also remove? Alternatively document that this does not have any effect
     def add_gaussian_blur(self,feat_tr):
         """add gaussian blur function"""
         #n_iterations = np.random.choice(10)
         #for iteration in np.arange(n_iterations):
         #    feat_tr = self.smooth_step(feat_tr)
         return feat_tr
-
-    
-    
     
     def add_brightness_scaling(self,feat_tr):
         multipliers = np.random.uniform(0.75, 1.25, size=feat_tr.shape[1])
@@ -105,6 +100,7 @@ class Augment():
             feat_tr[:,c][feat_tr[:,c] > maxm] = maxm
         return feat_tr
     
+    # TODO delete? If yes -> delete low_res from example experiment config
     def add_low_res(self,feat_tr):
         """add low resolution version"""
         return feat_tr
@@ -120,20 +116,10 @@ class Augment():
         feat_tr = np.power(((feat_tr - minm) / (rnge + epsilon)), gamma) * (rnge + epsilon) + minm
         feat_tr = (feat_tr - mn) / (sd + epsilon)
         return feat_tr
-    
-    def extend_lesion(self, lesions, distances):
-        """ DEFUNCT not using this any more"""
-        if (not (lesions==1).any()) or ((distances==300).all()):
-            return lesions, distances
-        extension = np.random.choice(np.linspace(1, 20, 20))
-        #update distances
-        distances_extend = np.clip(distances-extension,a_min=0, a_max=None)
-        # extend lesions
-        lesions_extend = (distances_extend<=0)
-        return lesions_extend, distances_extend
 
     def augment_lesion(self, tdd, noise_std=0.5):
-        # modify lesion using low frequency noise
+        """Modify lesion using low frequency noise."""
+       
         # get geodesic distance (negative inside lesion, positive outside)
         # normalise by minimum values
         new_dist = tdd['distances']
@@ -158,16 +144,15 @@ class Augment():
         """recompute distances from augmented lesion masks"""
         tdd['distances'] = self.gt.fast_geodesics(tdd['labels']).astype(np.float32)
         tdd['smooth_labels'] = self.gt.smoothing(tdd['labels'],iteration=10).astype(np.float32)
-        
         return
 
-
     def apply_indices(self,indices, tdd):
+        """TODO"""
         # spin features
         for field in tdd.keys():
             #no point in spinning empty labels
             if field=='labels' or field =='smooth_labels':
-                # TODO Q Hannah: potential bug here: smooth_labels results in labels <1 everywhere. Better to do (tdd[field]==0).all()
+                # TODO Q Hannah: potential bug here: smooth_labels could result in labels <1 everywhere. Better to do (tdd[field]==0).all()
                 if (tdd[field]==1).any():
                     tdd[field] = tdd[field][indices] 
             else:
@@ -175,6 +160,7 @@ class Augment():
         return tdd
        
     def apply(self, subject_data_dict):
+        """TODO"""
         #create a transformed data dict
         tdd = subject_data_dict.copy()
         #randomly augment lesion using distances and noise
@@ -183,33 +169,31 @@ class Augment():
             if np.random.rand() < self.get_p_param('augment_lesion'):
                 tdd = self.augment_lesion(tdd)
                 self.recompute_distance_and_smoothed(tdd)
-        #spinning   
+
         mesh_transform = False
         indices = np.arange(tdd['features'].shape[0],dtype=int)
-        #stack the transformations into a single indexing step
+        # mesh augmentations 
+        # stack the transformations into a single indexing step
         if np.random.rand() < self.get_p_param('spinning'):
             mesh_transform = True
             indices = indices[self.spinning.get_indices()]
-            #feat_tr, lesions_tr= self.spinning.apply_transform(feat_tr, lesions_tr)
-        #warping
+
         if np.random.rand() < self.get_p_param('warping'):
             mesh_transform = True
             indices = indices[self.warping.get_indices()]
-            #feat_tr, lesions_tr= self.warping.apply_transform(feat_tr, lesions_tr)
             
         if np.random.rand() < self.get_p_param('flipping'):
             mesh_transform = True
             indices = indices[self.flipping.get_indices()]
-            #feat_tr, lesions_tr= self.flipping.apply_transform(feat_tr, lesions_tr)
         
         #apply just once
         if mesh_transform:
             tdd = self.apply_indices(indices,
             tdd)
+
         #Gaussian noise
         if np.random.rand() < self.get_p_param('noise'):
             tdd['features'] = self.add_gaussian_noise(tdd['features'])
-        
         #Gaussian blur 
         if np.random.rand() < self.get_p_param('blur'):
             tdd['features']= self.add_gaussian_blur(tdd['features'])
@@ -231,11 +215,6 @@ class Augment():
         if np.random.rand() < self.get_p_param('gamma')/2:
             tdd['features'] = - self.add_gamma_scale( -tdd['features'])
         
-        
-        
-       # if (np.random.rand() < self.get_p_param('extend_lesion')) & ('distances' in tdd.keys()):
-       #     tdd['labels'], tdd['distances']=self.extend_lesion(tdd['labels'], tdd['distances'])
- 
         return tdd
     
    

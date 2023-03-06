@@ -8,17 +8,19 @@ from meld_graph.paths import EXPERIMENT_PATH
 from functools import partial
 import pandas as pd
 import time
-from meld_graph.icospheres import IcoSpheres
-import torch.nn as nn
 from scipy.ndimage import gaussian_filter1d
 import sklearn.metrics as skmetrics
 
 def dice_coeff(pred, target , smooth = 1e-15 ):
-    """This definition generalize to real valued pred and target vector.
-    This should be differentiable.
-    pred: tensor with first dimension as batch
-    target: tensor with first dimension as batch (not one-hot encoded)
-    NOTE assumes that pred is softmax output of model, might need torch.exp before
+    """
+    Differentiable Dice coefficient implementation.
+    
+    This definition generalizes to real valued pred and target vector.
+    NOTE assumes that pred is softmax output of model, might need torch.exp on pred before.
+    
+    Args:
+        pred: tensor with first dimension as batch
+        target: tensor with first dimension as batch (not one-hot encoded)
     """
     # make target one-hot encoded (also works for soft targets)
     target_hot = torch.transpose(torch.stack((1-target, target)), 0, 1)
@@ -31,11 +33,16 @@ def dice_coeff(pred, target , smooth = 1e-15 ):
     dice = (2. * intersection + smooth) / (A_sum + B_sum + smooth)
     return  dice
 
-
 class DiceLoss(torch.nn.Module):
+    """
+    Dice loss.
+
+    Args:
+        loss_weight_dictionary (dict): loss dict from experiment_config.py
+    """
     def __init__(self, loss_weight_dictionary=None):
         super(DiceLoss, self).__init__()
-        self.class_weights = [.0 ,1.0]
+        self.class_weights = [0.0 ,1.0]
         if 'dice' in loss_weight_dictionary.keys():
             if 'class_weights' in loss_weight_dictionary['dice']:
                 self.class_weights = loss_weight_dictionary['dice']['class_weights']
@@ -54,6 +61,9 @@ class DiceLoss(torch.nn.Module):
         return 1 - dice
 
 class CrossEntropyLoss(torch.nn.Module):
+    """
+    Cross entropy loss (NLLLoss).
+    """
     def __init__(self, weight=None, size_average=True):
         super(CrossEntropyLoss, self).__init__()
         self.loss = torch.nn.NLLLoss()
@@ -63,7 +73,10 @@ class CrossEntropyLoss(torch.nn.Module):
         return self.loss(inputs, targets)
 
 class SoftCrossEntropyLoss(torch.nn.Module):
-    # soft version of CE loss. Equivalent to CE if labels/targets are hard
+    """
+    Soft version of cross entropy loss.
+    Equivalent to CE if labels/targets are hard.
+    """
     def __init__(self):
         super(SoftCrossEntropyLoss, self).__init__()
         self.loss = torch.nn.NLLLoss()
@@ -75,6 +88,9 @@ class SoftCrossEntropyLoss(torch.nn.Module):
         return torch.mean(ce)
 
 class MAELoss(torch.nn.Module):
+    """
+    L1 loss.
+    """
     def __init__(self, weight=None, size_average=True):
         super(MAELoss, self).__init__()
         self.loss = torch.nn.L1Loss()
@@ -84,6 +100,12 @@ class MAELoss(torch.nn.Module):
         return self.loss(inputs, targets)
 
 class DistanceRegressionLoss(torch.nn.Module):
+    """
+    Distance regression loss. Either MSE, MAE, MLE
+
+    Args:
+        params (dict): loss dict from experiment_config.py 
+    """
     def __init__(self, params):
         super(DistanceRegressionLoss, self).__init__()
         if 'distance_regression' in params.keys()   :  
@@ -93,13 +115,11 @@ class DistanceRegressionLoss(torch.nn.Module):
         else:
             self.weigh_by_gt = False
             self.loss='mse'
-        
     
     def forward(self, inputs, target, distance_map):
         inputs = torch.squeeze(inputs)
-        # normalise distance map TODO maybe do before to not repeat every time?
+        # normalise distance map
         distance_map = torch.div(distance_map, 300)
-        #print(inputs[:10], distance_map[:10])
         # calculate loss
         if self.loss == 'mse':
             loss = torch.square(torch.subtract(inputs, distance_map))
@@ -115,6 +135,9 @@ class DistanceRegressionLoss(torch.nn.Module):
         
 
 class FocalLoss(torch.nn.Module):
+    """
+    Focal loss.
+    """
     def __init__(self, params, size_average=True):
         super(FocalLoss, self).__init__()
         try:
@@ -129,9 +152,8 @@ class FocalLoss(torch.nn.Module):
             self.alpha = torch.Tensor([self.alpha,1-self.alpha])
         self.size_average = size_average
 
-    def forward(self, inputs, target, gamma=0, alpha=None, **kwargs):
+    def forward(self, inputs, target, **kwargs):
         target = target.view(-1,1)
-#         logpt = torch.nn.functional.log_softmax(inputs)
         logpt = inputs
         logpt = logpt.gather(1,target)
         logpt = logpt.view(-1)
@@ -150,12 +172,19 @@ class FocalLoss(torch.nn.Module):
             return loss.sum()
 
 def get_sensitivity(pred, target):
+    """
+    Sample-level sensitivity.
+    Returns 1 if any TP, 0 otherwise.
+    """
     if torch.sum(torch.logical_and((target==1), (pred==1))) > 0:
         return 1
     else:
         return 0
     
 def tp_fp_fn_tn(pred, target):
+    """
+    Returns TP, FP, FN, TN.
+    """
     tp = torch.sum(torch.logical_and((target==1), (pred==1)))
     fp = torch.sum(torch.logical_and((target==0), (pred==1)))
     fn = torch.sum(torch.logical_and((target==1), (pred==0)))
@@ -165,14 +194,29 @@ def tp_fp_fn_tn(pred, target):
 
 def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_supervision_level=None, device=None, n_vertices=None):
     """ 
-    calculate loss. Can combine losses with weights defined in loss_dict
-    loss_dictionary= {'dice':{'weight':1},
-                    'cross_entropy':{'weight':1},
-                    'focal_loss':{'weight':1, 'alpha':0.5, 'gamma':0},
-                    'other_losses':weights}
-    estimates should contain the model outputs in a dictionary
+    Calculate loss. Can combine losses with weights defined in loss_dict
 
-    NOTE estimates are the logSoftmax output of the model. For some losses, applying torch.exp is necessary!
+    Example loss_dict:
+    ```
+    loss_dict = {
+        'cross_entropy':{'weight':1},
+        'focal_loss':{'weight':1, 'alpha':0.4, 'gamma':4},
+        'dice':{'weight': 1, 'class_weights': [0.0, 1.0]},
+        'distance_regression': {'weight': 1, 'weigh_by_gt': True},
+        'lesion_classification': {'weight': 1, 'apply_to_bottleneck': True}
+        }
+    ```
+    NOTE Estimates are the logSoftmax output of the model. For some losses, applying torch.exp is necessary!
+
+    Args:
+        loss_dict (dict): define losses that should be caluclated.
+        estimates_dict (dict): model outputs dictionary. 
+        labels (tensor): groudtruth lesion labels.
+        distance_map (optional, tensor): groudtruth distance map. 
+        deep_supervision_level (optional, int): calculate_loss is called for every deep supervision level. 
+            This arg indicates which level we are currenly at.
+            Used to get the correct outputs from estimates_dict.
+        n_vertices: number of vertices at current level.
     """
     loss_functions = {
         'dice': partial(DiceLoss(loss_weight_dictionary=loss_dict),
@@ -216,9 +260,10 @@ def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_su
         losses[loss_def] = loss_dict[loss_def]['weight'] * loss_functions[loss_def](cur_estimates, cur_labels, distance_map=distance_map)
     return losses
 
-
-
 class Metrics:
+    """
+    Metrics tracked during training.
+    """
     def __init__(self, metrics, n_vertices=None, device=None):
         self.device = device
         self.metrics = metrics
@@ -231,13 +276,16 @@ class Metrics:
         if 'auroc' in self.metrics:
             import torchmetrics
             self.auroc = torchmetrics.AUROC(task="binary", thresholds=10).to(self.device)
+        if 'sub_auroc' in self.metrics_to_track:
+            self.n_thresh=101
+            self.sensitivities = np.zeros(self.n_thresh)
+            self.specificities = np.zeros(self.n_thresh)
         self.running_scores = self.reset()
         self.n_vertices = n_vertices
 
     def reset(self):
         self.running_scores = {metric: [] for metric in self.metrics_to_track}
         if 'sub_auroc' in self.metrics_to_track:
-            self.n_thresh=101
             self.sensitivities = np.zeros(self.n_thresh)
             self.specificities = np.zeros(self.n_thresh)
         return self.running_scores
@@ -261,8 +309,6 @@ class Metrics:
             # binarise target because might be soft target
             cur_auroc = self.auroc(torch.exp(estimates[:,1]), target > 0.5)
             self.running_scores['auroc'].append(cur_auroc.item())
-        #
-        
         if 'sub_auroc' in self.metrics_to_track:
             roc_curves_thresholds=np.linspace(0,1,self.n_thresh)
             sensitivity = np.zeros(self.n_thresh)
@@ -290,13 +336,11 @@ class Metrics:
 
             self.sensitivities += sensitivity
             self.specificities += specificity
-       
 
         # classification metrics
         target_class = torch.any(target.view(target.shape[0]//self.n_vertices, -1), dim=1).long()
         if 'cl_tp' in self.metrics_to_track:
             tp, fp, fn, tn = tp_fp_fn_tn(pred_class, target_class)
-            #print('cl scores', target_class, pred_class, tp, fp, fn, tn)
             self.running_scores['cl_tp'].append(tp.item())
             self.running_scores['cl_fp'].append(fp.item())
             self.running_scores['cl_fn'].append(fn.item())
@@ -309,7 +353,6 @@ class Metrics:
         specificity_curve = self.specificities/max(self.specificities)
         auc = skmetrics.auc(1-specificity_curve,sensitivity_curve)
         return auc
-
 
     def get_aggregated_metrics(self):
         metrics = {}
@@ -343,10 +386,11 @@ class Metrics:
 
         return metrics
 
-    
-
-
 class Trainer:
+    """Training class.
+    
+    Args:
+        experiment (Experiment): experiment to train."""
     def __init__(self, experiment):
         self.log = logging.getLogger(__name__)
         self.experiment = experiment
@@ -361,7 +405,10 @@ class Trainer:
 
     def train_epoch(self, data_loader, optimiser):
         """
-        train for one epoch. Return loss and metrics
+        Train for one epoch. 
+        
+        Returns:
+            scores (dict): loss and metrics
         """
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         model = self.experiment.model
@@ -422,6 +469,9 @@ class Trainer:
         return scores
 
     def val_epoch(self, data_loader):
+        """
+        Validate after one epoch.
+        """
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         model = self.experiment.model
         model.eval()
@@ -481,7 +531,7 @@ class Trainer:
         
     def train(self, wandb_logging=False):
         """
-        Train val loop with patience and best model saving
+        Train val loop with patience and best model saving.
         """
         # set up model & put on correct device
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -491,9 +541,8 @@ class Trainer:
             import wandb
             wandb.init(entity="meld", project="classification")
             model = self.experiment.model
-          #  wandb.watch(model)
+            #wandb.watch(model)
             
-                
         # get dataset
         train_dset = GraphDataset.from_experiment(self.experiment, mode='train')
         sampler = None
@@ -523,7 +572,7 @@ class Trainer:
         elif self.params['optimiser'] == 'sgd':
             optimiser = torch.optim.SGD(self.experiment.model.parameters(), **self.params['optimiser_parameters'])
         self.optimiser = optimiser
-        #option to choose stopping metric for patience
+        # option to choose stopping metric for patience
         if self.params['stopping_metric'] is None:
             self.params['stopping_metric'] = {'name':'loss','sign':1}
         name = self.params['stopping_metric']['name']
@@ -550,8 +599,9 @@ class Trainer:
             cur_scores = self.train_epoch(train_data_loader, optimiser)
             self.log.info(f'Epoch {epoch} :: time {time.time()-start}')
             scheduler.step()  # update lr
-            #get memory usage
+            # get memory usage
             process = psutil.Process(os.getpid())
+            # TODO remove?
             with open('memory_usage_gpu_parrallel.txt', 'a') as f:
                 f.write(f'Epoch {epoch} :: memory usage {process.memory_info().rss / 1024 ** 2}MB-  time {time.time()-start} \n ')
             self.log.info(f'Epoch {epoch} :: memory usage {process.memory_info().rss / 1024 ** 2}MB')  # in bytes
@@ -571,9 +621,9 @@ class Trainer:
                 for name, param in parameters.items():
                     wandb.log({name+"_grad": param.grad}, step=epoch)
                 wandb.log({'train_losses':cur_scores})
-            #    weights = self.experiment.model.get_weights()
-            #    biases = self.experiment.model.get_biases()
-            #    wandb.log({"weights": weights,'biases':biases})
+                #weights = self.experiment.model.get_weights()
+                #biases = self.experiment.model.get_biases()
+                #wandb.log({"weights": weights,'biases':biases})
             if epoch%1 ==0:
                 cur_scores = self.val_epoch(val_data_loader)
                 log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items() if key in log_keys)
@@ -581,10 +631,10 @@ class Trainer:
                 scores['val'].append(cur_scores)
                 epoch_stopping_metric = cur_scores[self.params['stopping_metric']['name']] * self.params['stopping_metric']['sign']
                 running_metrics.append(epoch_stopping_metric)
+                # TODO remove metric smoothing? If not, add to example_experiment_config!
                 #if self.params['metric_smoothing']:
                     #smooth metric to limit noise
-               #     epoch_stopping_metric = gaussian_filter1d(running_metrics,2)[-1]
-               # 
+                #    epoch_stopping_metric = gaussian_filter1d(running_metrics,2)[-1] 
 
                 if epoch_stopping_metric < best_loss:
                     best_loss = epoch_stopping_metric
