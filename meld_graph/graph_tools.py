@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import potpourri3d as pp3d
-from meld_graph.models import HexUnpool, HexPool, HexSmooth, HexSmoothSparse
+from meld_graph.models import HexUnpool, HexPool, HexSmoothSparse
 from meld_classifier.meld_cohort import MeldCohort
 import time
 class GraphTools:
@@ -47,7 +47,6 @@ class GraphTools:
         return pooling
 
     def smoothing(self, data, iteration=1):
-        
         for i in range(0, iteration):
             data = self.smoother_op(data)
         #data=data.astype(np.float16)

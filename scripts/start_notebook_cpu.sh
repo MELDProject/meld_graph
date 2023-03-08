@@ -1,5 +1,5 @@
 #! /bin/bash
-
+# Helper script to start jupyter notebook on CPU
 #SBATCH -o start_notebook_%j.out
 #SBATCH -e start_notebook_%j.out
 #SBATCH -J jupyterlab

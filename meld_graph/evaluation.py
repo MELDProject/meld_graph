@@ -15,18 +15,6 @@ import h5py
 import matplotlib.pyplot as plt
 import sklearn.metrics as metrics
 
-
-def load_config(config_file):
-    """load config.py file and return config object"""
-    import importlib.machinery, importlib.util
-
-    loader = importlib.machinery.SourceFileLoader("config", config_file)
-    spec = importlib.util.spec_from_loader(loader.name, loader)
-    config = importlib.util.module_from_spec(spec)
-    loader.exec_module(config)
-    return config
-
-
 class Evaluator:
     """ """
 
@@ -41,7 +29,6 @@ class Evaluator:
         subject_ids=None,
         save_dir=None,
     ):
-
         # set class params
         self.log = logging.getLogger(__name__)
         self.experiment = experiment
