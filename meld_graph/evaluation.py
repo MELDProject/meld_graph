@@ -222,7 +222,7 @@ class Evaluator:
                                      'specificity':np.zeros(len(self.thresholds))}
         return self._roc_dictionary
 
-    def stat_subjects(self, suffix="", fold=None):
+    def stat_subjects(self, suffix="", fold=None, threshold=0.5):
         """calculate stats for each subjects
         """
         
@@ -230,7 +230,6 @@ class Evaluator:
         # boundary_label = MeldSubject(subject, self.experiment.cohort).load_boundary_zone(max_distance=20)
         
         # calculate stats first
-        threshold=0.5
         for subject in self.data_dictionary.keys():
             prediction = self.data_dictionary[subject]["result"]
             labels = self.data_dictionary[subject]["input_labels"]
@@ -281,7 +280,7 @@ class Evaluator:
                 sub_df.to_csv(filename, index=False)
 
     
-    def plot_subjects_prediction(self, rootfile=None, flat_map=True):
+    def plot_subjects_prediction(self, rootfile=None, flat_map=True, threshold=0.5):
         """plot predicted subjects"""
         import matplotlib.pyplot as plt
         from matplotlib.gridspec import GridSpec
