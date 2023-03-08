@@ -573,7 +573,7 @@ class Trainer:
             optimiser = torch.optim.SGD(self.experiment.model.parameters(), **self.params['optimiser_parameters'])
         self.optimiser = optimiser
         # option to choose stopping metric for patience
-        if self.params['stopping_metric'] is None:
+        if self.params.get('stopping_metric', None) is None:
             self.params['stopping_metric'] = {'name':'loss','sign':1}
         name = self.params['stopping_metric']['name']
         self.log.info(f'Stopping metric set to {name} ')
