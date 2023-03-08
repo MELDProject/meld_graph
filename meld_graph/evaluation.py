@@ -1,16 +1,19 @@
-from itertools import combinations_with_replacement
 import logging
 import os
 import torch
 import torch_geometric.data
 from meld_graph.dataset import GraphDataset
-from meld_classifier.meld_cohort import MeldCohort, MeldSubject
 import numpy as np
 import h5py
 import scipy
 import json
 import pandas as pd
 from meld_graph.training import tp_fp_fn_tn, dice_coeff
+import os
+import numpy as np
+import h5py
+import matplotlib.pyplot as plt
+import sklearn.metrics as metrics
 
 class Evaluator:
     """ """
@@ -429,3 +432,43 @@ def create_surface_plots(coords,faces,overlay,flat_map=True, limits=None):
     im = im.convert("RGBA")
     im1 = np.array(im)
     return im1
+
+
+
+def sens_spec_curves(roc_dict):
+    """normalise sensitivity and specificity curves to 0-1"""
+    sensitivity_curve = roc_dict['sensitivity_plus']/max(roc_dict['sensitivity_plus'])
+    specificity_curve = roc_dict['specificity']/max(roc_dict['specificity'])
+    return sensitivity_curve,specificity_curve
+
+def plot_roc_multiple(roc_dictionary,roc_curves_thresholds):
+    fig, ax = plt.subplots(1,1)   
+    for mi,model in enumerate(roc_dictionary.keys()):
+        sensitivity_curve,specificity_curve = sens_spec_curves(roc_dictionary[model])
+        ax.plot(1-specificity_curve,sensitivity_curve,label=model)
+        auc = metrics.auc(1-specificity_curve,sensitivity_curve)
+        ax.text(0,1-mi/10,f'{model} AUC: {auc:.2f}')
+    fig.legend()
+    return fig
+
+
+def load_prediction(subject,hdf5,dset='prediction'):
+    """load network predictions"""
+    results={}
+    with h5py.File(hdf5, "r") as f:
+        for hemi in ['lh','rh']:
+            results[hemi] = f[subject][hemi][dset][:]
+    return results
+
+def roc_curves(subject_dictionary,roc_dictionary,roc_curves_thresholds):
+    """calculate performance at multiple thresholds"""
+    for t_i,threshold in enumerate(roc_curves_thresholds):
+        predicted = subject_dictionary['result']>= threshold
+        # if we want tpr vs fpr curve too
+        #store sensitivity and sensitivity_plus for each patient (has a label)
+        if subject_dictionary['input_labels'].sum()>0:
+            roc_dictionary['sensitivity'][t_i] += np.logical_and(predicted, subject_dictionary['input_labels']).any()
+            roc_dictionary['sensitivity_plus'][t_i] += np.logical_and(predicted, subject_dictionary['borderzone']).any()
+        #store specificity for controls (no label)
+        else:
+            roc_dictionary['specificity'][t_i] += ~predicted.any()

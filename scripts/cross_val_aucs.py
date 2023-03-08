@@ -1,17 +1,11 @@
-
+### Script to parallel evaluation on models across folds
+### If mode is val it doesn't save predictions, only stats
+### if mode is test, it saves individual subject-level predictions in an hdf5
+### so that they can then be ensembled using the ensemble.py script.
 
 import argparse
 import os
 import subprocess
-#import numpy as np
-
-#point to experiment config folder as argument
-
-
-#loop over folds within experiment folder
-
-#for each fold run evaluation steps on val set.
-#to be super quick this should be per fold sbatch
 
 
 if __name__ == '__main__':
