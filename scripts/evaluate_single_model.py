@@ -18,9 +18,9 @@ import numpy as np
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="""
-        Script to evaluate one model on either val or test. Val as default does not save predictions""")
+        Script to evaluate one model on either train, test or val. Val as default does not save predictions""")
     parser.add_argument("--model_path", help="path to trained model config")
-    parser.add_argument("--split", help="val or test")
+    parser.add_argument("--split", help="train, test or val")
 
     args = parser.parse_args()
     exp = meld_graph.experiment.Experiment.from_folder(args.model_path)
@@ -44,11 +44,18 @@ if __name__ == '__main__':
                     mode = 'test'
                 )
     #only save predictions on test, no need on vals but instead calculate ROCs
-    if args.split=='test':
+    if args.split == 'test':
         save_prediction=True
         roc_curves_thresholds=None
-    else:
+        suffix = ''
+    elif args.split == 'val':
         save_prediction=False
         roc_curves_thresholds = np.linspace(0,1,21)
-    eva.load_predict_data(save_prediction=save_prediction,roc_curves_thresholds=roc_curves_thresholds)
+        suffix = ''
+    elif args.split == 'train':
+        save_prediction=True
+        roc_curves_thresholds = None
+        suffix = '_train'
+
+    eva.load_predict_data(save_prediction=save_prediction,roc_curves_thresholds=roc_curves_thresholds,save_prediction_suffix=suffix)
 
