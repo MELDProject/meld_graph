@@ -378,7 +378,7 @@ class Evaluator:
         if dtype is None:
             dtype = prediction.dtype
 
-        filename = os.path.join(self.save_dir, "results", f"predictions{suffix}2.hdf5")
+        filename = os.path.join(self.save_dir, "results", f"predictions{suffix}.hdf5")
         if not os.path.isfile(filename):
             mode = "a"
         else:
