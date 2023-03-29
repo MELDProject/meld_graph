@@ -113,8 +113,13 @@ class Evaluator:
         self,store_predictions=True,
         roc_curves_thresholds=np.linspace(0,1,21),
         save_prediction=True,
+        save_prediction_suffix='',
     ):
-        """ """
+        """
+        Args:
+            save_prediction (bool): save predictions to EXPERIMENT_FOLDER/results/predictions{save_prediction_suffix}.hdf5
+            save_prediction_suffix (str): suffix for predictions file.
+        """
         self.log.info("loading data and predicting model")
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         # predict on data
@@ -162,10 +167,10 @@ class Evaluator:
                 }
                 #save prediction
                 if save_prediction:
-                    self.save_prediction(subj_id, subject_dictionary["result"])
+                    self.save_prediction(subj_id, subject_dictionary["result"], suffix=save_prediction_suffix)
                     #save distance map
                     self.save_prediction(subj_id, subject_dictionary["distance_map"],
-                            dataset_str='distance_map')
+                            dataset_str='distance_map', suffix=save_prediction_suffix)
                 #save features if mode is training 
                 if self.mode != "train":
                     subject_dictionary["input_features"] = np.concatenate(features_array)
@@ -357,14 +362,14 @@ class Evaluator:
             fig.savefig(filename, bbox_inches='tight')
             plt.close("all")
     
-    def save_prediction(self, subject, prediction, dataset_str="prediction", dtype=None):
+    def save_prediction(self, subject, prediction, dataset_str="prediction", dtype=None, suffix=''):
         """
-        saves prediction to {experiment_path}/results/predictions_{experiment_name}.hdf5.
+        saves prediction to {experiment_path}/results/predictions.hdf5.
         the hdf5 has the structure (subject_id/hemisphere/prediction).
         and contains predictions for all vertices inside the cortex mask
         dataset_str: name of the dataset to save prediction. If is 'prediction', also saves threshold
         dtype: dtype of the dataset. If none, use dtype of prediction.
-        suffix: suffix for the filename for the prediction: "predictions_<self.experiment.name><suffix>.hdf5" is used
+        suffix: suffix for the filename for the prediction: "predictions{suffix}.hdf5" is used
         """
         # make sure that give prediction has expected length
         nvert_hemi = len(self.experiment.cohort.cortex_label)
@@ -373,7 +378,7 @@ class Evaluator:
         if dtype is None:
             dtype = prediction.dtype
 
-        filename = os.path.join(self.save_dir, "results", f"predictions.hdf5")
+        filename = os.path.join(self.save_dir, "results", f"predictions{suffix}2.hdf5")
         if not os.path.isfile(filename):
             mode = "a"
         else:
