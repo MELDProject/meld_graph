@@ -21,7 +21,7 @@ Basic installation steps are:
     ```
     conda install pyg -c pyg
     ```
-- donwload and install `meld_classifier`: Follow instructions [here](https://github.com/MELDProject/meld_classifier)
+- download and install `meld_classifier`: Follow instructions [here](https://github.com/MELDProject/meld_classifier)
 - install `meld_graph`: 
     ```
     git clone https://github.com/mathrip/meld_classifier_GDL.git
