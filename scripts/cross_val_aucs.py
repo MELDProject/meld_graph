@@ -12,7 +12,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="""
         Function to run across all folds evaluation script in parallel """)
     parser.add_argument("--experiment_path", help="path to trained model config without fold, i.e. ending s_2")
-    parser.add_argument("--split", help="train, val or test.")
+    parser.add_argument("--split", help="train, val, test, or trainval.")
     args = parser.parse_args()
 
     for fold in [0,1,2,3,4]: #np.arange(5):
