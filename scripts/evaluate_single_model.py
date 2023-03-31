@@ -18,14 +18,17 @@ import numpy as np
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="""
-        Script to evaluate one model on either train, test or val. Val as default does not save predictions""")
+        Script to evaluate one model on either train, test, val, or trainval. Val as default does not save predictions""")
     parser.add_argument("--model_path", help="path to trained model config")
-    parser.add_argument("--split", help="train, test or val")
+    parser.add_argument("--split", help="train, test, val, or trainval")
 
     args = parser.parse_args()
     exp = meld_graph.experiment.Experiment.from_folder(args.model_path)
-    sub_split = args.split+'_ids'
-    subjects = exp.data_parameters[sub_split]
+    if args.split == 'trainval':
+        subjects = exp.data_parameters['train_ids'] + exp.data_parameters['val_ids']
+    else:
+        sub_split = args.split+'_ids'
+        subjects = exp.data_parameters[sub_split]
     cohort= MeldCohort(hdf5_file_root=exp.data_parameters['hdf5_file_root'], 
             dataset=exp.data_parameters['dataset']
 )
@@ -56,6 +59,12 @@ if __name__ == '__main__':
         save_prediction=True
         roc_curves_thresholds = None
         suffix = '_train'
+    elif args.split == 'trainval':
+        save_prediction=True
+        roc_curves_thresholds = None
+        suffix = '_trainval'
+    else:
+        raise NotImplementedError(args.split)
 
     eva.load_predict_data(save_prediction=save_prediction,roc_curves_thresholds=roc_curves_thresholds,save_prediction_suffix=suffix)
 
