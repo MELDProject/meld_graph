@@ -32,6 +32,7 @@ sequential = [
 
 # parallel: these experiments are run in parallel. For each parallel experiment, all experiments in sequential will be launched=
 parallel = []
+#losses 
 losses=[
    
        {
@@ -78,6 +79,7 @@ losses=[
         "spinning": {"file": "data/spinning/spinning_ico7_10.npy", "p": 0.2},
         "warping": {"file": "data/warping/warping_ico7_10.npy", "p": 0.2},
     },}},
+    #exp 2
     {
        'network_parameters': {
             'name': base_name + '_distance',
@@ -121,50 +123,6 @@ losses=[
         "warping": {"file": "data/warping/warping_ico7_10.npy", "p": 0.2},
     },}},
        
-       {
-       'network_parameters': {
-            'name': base_name + '_classification',
-            'training_parameters':{"deep_supervision": {
-            "levels": [6, 5, 4, 3,2,1],
-            "weight": [0.5, 0.25, 0.125, 0.0625,0.03125,0.0150765],
-        },
-        
-    "loss_dictionary": {
-            "cross_entropy": {"weight": 1},
-            "dice": {"class_weights": [0.0, 1.0], "weight": 1},
-            "lesion_classification": {"apply_to_bottleneck": True, "weight": 1},
-        },
-        "stopping_metric":{'name':'loss','sign':1},
-        'metric_smoothing':False,
-        "metrics": [
-            "dice_lesion",
-            "dice_nonlesion",
-            "precision",
-            "recall",
-            "tp",
-            "fp",
-            "fn",
-            "auroc",
-            "cl_precision",
-            "cl_recall",
-        ],
-        },
-            },
-        
-       'data_parameters': {"augment_data": {
-        "augment_lesion": {"p": 0.0},
-        "blur": {"p": 0.2},
-        "brightness": {"p": 0.15},
-        "contrast": {"p": 0.15},
-        "extend_lesion": {"p": 0.0},
-        "flipping": {"file": "data/flipping/flipping_ico7_3.npy", "p": 0.5},
-        "gamma": {"p": 0.15},
-        "low_res": {"p": 0.25},
-        "noise": {"p": 0.15},
-        "spinning": {"file": "data/spinning/spinning_ico7_10.npy", "p": 0.2},
-        "warping": {"file": "data/warping/warping_ico7_10.npy", "p": 0.2},
-    },}},
-
 {
        'network_parameters': {
             'name': base_name + '_classification',
