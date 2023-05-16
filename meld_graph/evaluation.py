@@ -63,7 +63,7 @@ class Evaluator:
         # if checkpoint load model
         if checkpoint_path:
             self.experiment.load_model(
-                checkpoint_path=os.path.join(checkpoint_path, "best_model.pt"),
+                checkpoint_path=self._find_checkpoint(checkpoint_path),
                 force=True,
             )
         
@@ -92,7 +92,16 @@ class Evaluator:
         else:
             self.dataset = GraphDataset(self.subject_ids, self.cohort, self.experiment.data_parameters, mode=mode)
             
-    
+    def _find_checkpoint(self, experiment_path):
+        """
+        Identify existing checkpoint file. Looks for best_model.pt and ensemble_model.pt
+        """
+        if os.path.isfile(os.path.join(experiment_path, 'best_model.pt')):
+            return os.path.join(experiment_path, 'best_model.pt')
+        if os.path.isfile(os.path.join(experiment_path, 'ensemble_model.pt')):
+            return os.path.join(experiment_path, 'ensemble_model.pt')
+        return None
+
     def evaluate(self,):
         """
         Evaluate the model.

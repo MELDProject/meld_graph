@@ -33,16 +33,11 @@ class SpiralConv(nn.Module):
     def forward(self, x, device):
         n_nodes, _ = self.indices.size()
         if x.dim() == 2:
-            # TODO figure out if this is correct
             x = torch.index_select(x, 0, self.indices.contiguous().to(device).view(-1))
             x = x.view(n_nodes, -1)
-        elif x.dim() == 3:
-            bs = x.size(0)
-            x = torch.index_select(x, self.dim, self.indices.view(-1))
-            x = x.view(bs, n_nodes, -1)
         else:
             raise RuntimeError(
-                'x.dim() is expected to be 2 or 3, but received {}'.format(
+                'x.dim() is expected to be 2, but received {}'.format(
                     x.dim()))
         x = self.layer(x)
         if self.norm is not None:

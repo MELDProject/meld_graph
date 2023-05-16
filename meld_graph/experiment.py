@@ -5,9 +5,11 @@ import os
 import torch
 import meld_graph.models
 from meld_classifier.meld_cohort import MeldCohort
+from meld_graph.ensemble import Ensemble
 from meld_graph.training import Trainer
 import numpy as np
 import pandas as pd
+import copy
 import glob
 
 def is_experiment(path, trained=False):
@@ -185,6 +187,10 @@ class Experiment:
             checkpoint_path (str): absolute path to model checkpoint.
             force (bool): reload model if model is already loaded.
         """
+        # check if need to use load_ensemble_model
+        if checkpoint_path is not None and 'fold_all/ensemble_model.pt' in checkpoint_path:
+            return self.load_ensemble_model(checkpoint_path=checkpoint_path, force=force)
+        
         if self.model is not None and not force:
             self.log.info("Model already exists. Specify force=True to force reloading and initialisation")
         self.log.info("Creating model")
@@ -218,6 +224,24 @@ class Experiment:
             self.log.info(f"Loading model weights from checkpoint {checkpoint_path}")
             self.model.load_state_dict(torch.load(checkpoint_path, map_location=device), strict=False)
             self.model.eval()
+
+    def load_ensemble_model(self, checkpoint_path=None, force=False):
+        if self.model is not None and not force:
+            self.log.info("Model already exists. Specify force=True to force reloading and initialisation")
+        # create model without checkpoint
+        self.load_model(checkpoint_path=None, force=force)
+        self.log.info('Creating ensemble model')
+        models = [copy.deepcopy(self.model) for _ in range(5)]  # TODO this assumes that we are always ensembling 5 models
+        ensemble_model = Ensemble(models)
+        self.model = ensemble_model
+        # load weights from checkpoint    
+        if checkpoint_path is not None and os.path.isfile(checkpoint_path):
+            # checkpoint contains both model architecture + weights
+            device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+            self.log.info(f"Loading ensemble model weights from checkpoint {checkpoint_path}")
+            self.model.load_state_dict(torch.load(checkpoint_path, map_location=device), strict=False)
+            self.model.eval()
+
 
     def train(self, wandb_logging=False):
         """
