@@ -74,16 +74,11 @@ def roc_curves(subject_dictionary,roc_dictionary,roc_curves_thresholds):
             if no_fps:
                 break
 
-model_paths = {'nnunet':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-22_DHAM_nnunet/s_0',
-                              '+classification':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-23_QUCI_classification/s_0',
-               '+distance':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-22_DHAM_distance/s_0',
-             #  '+finetuning':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-22_DEDL_finetuning/s_2',
-               '+distance+finetuning':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-23_HKOJ_finetuning_distance/s_2',
-             #  '+large_augmentation':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-22_DHAM_large_augmentation/s_0',
-              # '+mask_augmentation':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-23_TUYT_mask_augmentation/s_0',
-        #       'full_model':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-23_HKOJ_finetuning_distance_classification_mask/s_2',
-               'full_model:class+dist':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-22_DHAM_classification/s_0',
-
+model_paths = {'nnunet':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-03-06_FKKY_nnunet/s_0',
+               'distance':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-03-06_FKKY_distance/s_0',
+               'classification':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-23_QUCI_classification/s_0',
+               'distance+classification':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-03-01_WRZI_classification_distance/s_0',
+               'raw':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-03-31_WQVY_raw/s_0'
 }
          
 save_dirs = {}

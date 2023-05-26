@@ -78,7 +78,7 @@ if __name__ == '__main__':
                                                   features=config.data_parameters['features'], 
                     lobes = config.data_parameters['lobes'], lesion_bias=False)
         for hemisphere_data in subject_data_list:
-            feat_hem = hemisphere_data['features']
+            feat_hem = hemisphere_data['features'].T
             feat_hem=feat_hem[:,cohort.cortex_mask]
             feat_hem_nf = feat_hem[~flair_mask]
             mean_std.update(feat_hem_nf.T)
@@ -101,11 +101,5 @@ if __name__ == '__main__':
         mean_stds_dict[feature]['mean'] = means_stds[0,fi]
         mean_stds_dict[feature]['std'] = means_stds[1,fi]
 
-    with open('../data/feature_means.json', 'w') as fp:
+    with open('../data/feature_means_msm.json', 'w') as fp:
         json.dump(mean_stds_dict, fp)
-
-
-
-
-
-

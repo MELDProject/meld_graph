@@ -22,16 +22,29 @@ model_paths = {'nnunet':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw3
 
 }
 model_paths = {'nnunet':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-22_DHAM_nnunet/s_0',
-               'distance':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-23_QUCI_classification/s_0',
-               'classification':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-03-01_WRZI_distance/s_0',
+               'classification':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-23_QUCI_classification/s_0',
+               'distance':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-03-01_WRZI_distance/s_0',
                'distance+classification':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-03-01_WRZI_classification_distance/s_0',
 
 }
 
+model_paths = {'nnunet':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-03-06_FKKY_nnunet/s_0',
+               'distance':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-03-06_FKKY_distance/s_0',
+               'classification':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-02-23_QUCI_classification/s_0',
+               'distance+classification':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-03-01_WRZI_classification_distance/s_0',
+               'low_smooth':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-03-31_WQVY_raw/s_0',
+               'low_smooth_regress':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-04-18_WLMU_thick_regress/s_0',
+               'low_smooth_regress_thick_wpct':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-04-26_EEWS_wpct_regress/s_0/',
+}
+model_paths = {'low_smooth_regress':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-04-18_WLMU_thick_regress/s_0',
+               'low_smooth_regress_thick_wpct':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-04-26_EEWS_wpct_regress/s_0/',
+}
 
 
 cohort = MeldCohort(hdf5_file_root='{site_code}_{group}_featurematrix_combat_6.hdf5',
                dataset='MELD_dataset_V6.csv')
+
+
 
 
 save_dirs = {}
@@ -39,7 +52,7 @@ for model in model_paths.keys():
     save_dirs[model] = [os.path.join(model_paths[model],f'fold_0{fold}', 'results') for fold in np.arange(5)]
 
 n_vert = len(cohort.cortex_label)*2
-with h5py.File(os.path.join(save_dirs['nnunet'][0], 'predictions.hdf5'), "r") as f:
+with h5py.File(os.path.join(save_dirs[model][0], 'predictions.hdf5'), "r") as f:
     subjects = list(f.keys())
 
 
@@ -49,6 +62,7 @@ roc_curves_thresholds=np.linspace(0,1,n_thresh)
 roc_dictionary_bs={}
 roc_dictionary={}
 for model_name in save_dirs.keys():
+
     roc_dictionary[model_name]={'sensitivity':np.zeros(n_thresh),
 'sensitivity_plus':np.zeros(n_thresh),
 'specificity':np.zeros(n_thresh)}
@@ -134,8 +148,8 @@ for model in roc_dictionary.keys():
     #this fixed value is what we used for iec.
     auc = metrics.auc(1-specificity_curve,sensitivity_curve)
     optimal_thresh = np.argmin(np.abs(sensitivity_curve-0.67))
-    df.append([model,auc,sensitivity_curve[optimal_thresh],specificity_curve[optimal_thresh]])
-df = pd.DataFrame(df,columns=['Model',"AUC",'Sensitivity','Specificity'])
+    df.append([model,auc,sensitivity_curve[optimal_thresh],specificity_curve[optimal_thresh],roc_curves_thresholds[optimal_thresh]])
+df = pd.DataFrame(df,columns=['Model',"AUC",'Sensitivity','Specificity','Threshold'])
 
 
 df.to_csv('../data/test_stats.csv')

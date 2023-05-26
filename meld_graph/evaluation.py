@@ -131,7 +131,8 @@ class Evaluator:
             
         )
         self.data_dictionary = {}
-        
+        store_sub_aucs=True
+        self.subject_aucs = {}
         for i, data in enumerate(data_loader):
             subject_index =  i//2
             hemi = ['lh','rh'][i%2]
@@ -179,10 +180,31 @@ class Evaluator:
                 if roc_curves_thresholds is not None:
                     self.thresholds = roc_curves_thresholds
                     self.roc_curves(subject_dictionary)
+                
+                if store_sub_aucs and subject_dictionary['input_labels'].sum()>0:
+                    sub_auc = self.calc_sub_auc(subject_dictionary)
+                    self.subject_aucs[subj_id] = sub_auc
+        
         if roc_curves_thresholds is not None:
             self.calculate_aucs()
             self.save_roc_scores()
+        if store_sub_aucs:
+            self.save_sub_aucs()
 
+
+    def calc_sub_auc(self,subject_dictionary):
+        """calculate subject-level aucs"""
+        sub_auc = metrics.roc_auc_score(subject_dictionary['borderzone'],subject_dictionary['result'])
+        return sub_auc
+    
+
+    def save_sub_aucs(self):
+        """save out the dictionary"""
+        import pickle
+        filename = os.path.join(self.save_dir, "results", f"sub_aucs.pickle")
+        with open(filename, "wb") as write_file:
+            pickle.dump(self.subject_aucs, write_file, protocol=pickle.HIGHEST_PROTOCOL) 
+        return
 
     def calculate_aucs(self):
         import sklearn.metrics as metrics
@@ -200,10 +222,11 @@ class Evaluator:
         with open(filename, "wb") as write_file:
             pickle.dump(self.roc_dictionary, write_file, protocol=pickle.HIGHEST_PROTOCOL) 
         return
+    
+    
 
     def roc_curves(self,subject_dictionary):
         """calculate performance at multiple thresholds"""
-        
         for t_i,threshold in enumerate(self.thresholds):
             predicted = subject_dictionary['result']>= threshold
             # if we want tpr vs fpr curve too

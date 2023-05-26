@@ -1,8 +1,9 @@
-## script to set up the config files for the 4 main MICCAI experiments:
-## nnunet, +classification, +distance, +classification & distance.
+#script to set up the subsampling experiments for MICCAI
 
 import random, string, datetime
 import numpy as np
+
+
 def date_code():
     # return unique date code of form: YYYY-MM-DD_XXXX
     return datetime.datetime.now().strftime("%y-%m-%d") + '_' + \
@@ -40,7 +41,7 @@ losses=[
    
        {
        'network_parameters': {
-            'name': base_name + '_classification_distance',
+            'name': base_name + '_subsampling_0.1',
             'training_parameters':{"deep_supervision": {
             "levels": [6, 5, 4, 3,2,1],
             "weight": [0.5, 0.25, 0.125, 0.0625,0.03125,0.0150765],
@@ -69,7 +70,8 @@ losses=[
         },
             },
         
-       'data_parameters': {"augment_data": {
+       'data_parameters': {"subsample_cohort_fraction":0.1,
+           "augment_data": {
         "augment_lesion": {"p": 0.0},
         "blur": {"p": 0.2},
         "brightness": {"p": 0.15},
@@ -85,7 +87,7 @@ losses=[
     #exp 2
     {
        'network_parameters': {
-            'name': base_name + '_distance',
+            'name': base_name + '_subsampling_0.2',
             'training_parameters':{"deep_supervision": {
             "levels": [6, 5, 4, 3,2,1],
             "weight": [0.5, 0.25, 0.125, 0.0625,0.03125,0.0150765],
@@ -95,48 +97,6 @@ losses=[
             "cross_entropy": {"weight": 1},
             "dice": {"class_weights": [0.0, 1.0], "weight": 1},
             "distance_regression": {"loss": "mae", "weigh_by_gt": True, "weight": 1},
-        },
-        "stopping_metric":{'name':'loss','sign':1},
-        'metric_smoothing':False,
-        "metrics": [
-            "dice_lesion",
-            "dice_nonlesion",
-            "precision",
-            "recall",
-            "tp",
-            "fp",
-            "fn",
-            "auroc",
-    
-        ],
-        },
-            },
-        
-       'data_parameters': {"augment_data": {
-        "augment_lesion": {"p": 0.0},
-        "blur": {"p": 0.2},
-        "brightness": {"p": 0.15},
-        "contrast": {"p": 0.15},
-        "extend_lesion": {"p": 0.0},
-        "flipping": {"file": "data/flipping/flipping_ico7_3.npy", "p": 0.5},
-        "gamma": {"p": 0.15},
-        "low_res": {"p": 0.25},
-        "noise": {"p": 0.15},
-        "spinning": {"file": "data/spinning/spinning_ico7_10.npy", "p": 0.2},
-        "warping": {"file": "data/warping/warping_ico7_10.npy", "p": 0.2},
-    },}},
-       
-{
-       'network_parameters': {
-            'name': base_name + '_classification',
-            'training_parameters':{"deep_supervision": {
-           "levels": [6, 5, 4, 3,2,1],
-            "weight": [0.5, 0.25, 0.125, 0.0625,0.03125,0.0150765],
-        },
-        
-    "loss_dictionary": {
-            "cross_entropy": {"weight": 1},
-            "dice": {"class_weights": [0.0, 1.0], "weight": 1},
             "lesion_classification": {"apply_to_bottleneck": True, "weight": 1},
         },
         "stopping_metric":{'name':'loss','sign':1},
@@ -156,7 +116,8 @@ losses=[
         },
             },
         
-       'data_parameters': {"augment_data": {
+       'data_parameters': {"subsample_cohort_fraction":0.2,
+           "augment_data": {
         "augment_lesion": {"p": 0.0},
         "blur": {"p": 0.2},
         "brightness": {"p": 0.15},
@@ -169,10 +130,11 @@ losses=[
         "spinning": {"file": "data/spinning/spinning_ico7_10.npy", "p": 0.2},
         "warping": {"file": "data/warping/warping_ico7_10.npy", "p": 0.2},
     },}},
-    
-     {
+
+#
+{
        'network_parameters': {
-            'name': base_name + '_nnunet',
+            'name': base_name + '_subsampling_0.3',
             'training_parameters':{"deep_supervision": {
             "levels": [6, 5, 4, 3,2,1],
             "weight": [0.5, 0.25, 0.125, 0.0625,0.03125,0.0150765],
@@ -181,7 +143,9 @@ losses=[
     "loss_dictionary": {
             "cross_entropy": {"weight": 1},
             "dice": {"class_weights": [0.0, 1.0], "weight": 1},
-                   },
+            "distance_regression": {"loss": "mae", "weigh_by_gt": True, "weight": 1},
+            "lesion_classification": {"apply_to_bottleneck": True, "weight": 1},
+        },
         "stopping_metric":{'name':'loss','sign':1},
         'metric_smoothing':False,
         "metrics": [
@@ -199,7 +163,145 @@ losses=[
         },
             },
         
-       'data_parameters': {"augment_data": {
+       'data_parameters': {"subsample_cohort_fraction":0.3,
+           "augment_data": {
+        "augment_lesion": {"p": 0.0},
+        "blur": {"p": 0.2},
+        "brightness": {"p": 0.15},
+        "contrast": {"p": 0.15},
+        "extend_lesion": {"p": 0.0},
+        "flipping": {"file": "data/flipping/flipping_ico7_3.npy", "p": 0.5},
+        "gamma": {"p": 0.15},
+        "low_res": {"p": 0.25},
+        "noise": {"p": 0.15},
+        "spinning": {"file": "data/spinning/spinning_ico7_10.npy", "p": 0.2},
+        "warping": {"file": "data/warping/warping_ico7_10.npy", "p": 0.2},
+    },}},
+    {
+       'network_parameters': {
+            'name': base_name + '_subsampling_0.4',
+            'training_parameters':{"deep_supervision": {
+            "levels": [6, 5, 4, 3,2,1],
+            "weight": [0.5, 0.25, 0.125, 0.0625,0.03125,0.0150765],
+        },
+        
+    "loss_dictionary": {
+            "cross_entropy": {"weight": 1},
+            "dice": {"class_weights": [0.0, 1.0], "weight": 1},
+            "distance_regression": {"loss": "mae", "weigh_by_gt": True, "weight": 1},
+            "lesion_classification": {"apply_to_bottleneck": True, "weight": 1},
+        },
+        "stopping_metric":{'name':'loss','sign':1},
+        'metric_smoothing':False,
+        "metrics": [
+            "dice_lesion",
+            "dice_nonlesion",
+            "precision",
+            "recall",
+            "tp",
+            "fp",
+            "fn",
+            "auroc",
+            "cl_precision",
+            "cl_recall",
+        ],
+        },
+            },
+        
+       'data_parameters': {"subsample_cohort_fraction":0.4,
+           "augment_data": {
+        "augment_lesion": {"p": 0.0},
+        "blur": {"p": 0.2},
+        "brightness": {"p": 0.15},
+        "contrast": {"p": 0.15},
+        "extend_lesion": {"p": 0.0},
+        "flipping": {"file": "data/flipping/flipping_ico7_3.npy", "p": 0.5},
+        "gamma": {"p": 0.15},
+        "low_res": {"p": 0.25},
+        "noise": {"p": 0.15},
+        "spinning": {"file": "data/spinning/spinning_ico7_10.npy", "p": 0.2},
+        "warping": {"file": "data/warping/warping_ico7_10.npy", "p": 0.2},
+    },}},
+    #
+    {
+       'network_parameters': {
+            'name': base_name + '_subsampling_0.6',
+            'training_parameters':{"deep_supervision": {
+            "levels": [6, 5, 4, 3,2,1],
+            "weight": [0.5, 0.25, 0.125, 0.0625,0.03125,0.0150765],
+        },
+        
+    "loss_dictionary": {
+            "cross_entropy": {"weight": 1},
+            "dice": {"class_weights": [0.0, 1.0], "weight": 1},
+            "distance_regression": {"loss": "mae", "weigh_by_gt": True, "weight": 1},
+            "lesion_classification": {"apply_to_bottleneck": True, "weight": 1},
+        },
+        "stopping_metric":{'name':'loss','sign':1},
+        'metric_smoothing':False,
+        "metrics": [
+            "dice_lesion",
+            "dice_nonlesion",
+            "precision",
+            "recall",
+            "tp",
+            "fp",
+            "fn",
+            "auroc",
+            "cl_precision",
+            "cl_recall",
+        ],
+        },
+            },
+        
+       'data_parameters': {"subsample_cohort_fraction":0.6,
+           "augment_data": {
+        "augment_lesion": {"p": 0.0},
+        "blur": {"p": 0.2},
+        "brightness": {"p": 0.15},
+        "contrast": {"p": 0.15},
+        "extend_lesion": {"p": 0.0},
+        "flipping": {"file": "data/flipping/flipping_ico7_3.npy", "p": 0.5},
+        "gamma": {"p": 0.15},
+        "low_res": {"p": 0.25},
+        "noise": {"p": 0.15},
+        "spinning": {"file": "data/spinning/spinning_ico7_10.npy", "p": 0.2},
+        "warping": {"file": "data/warping/warping_ico7_10.npy", "p": 0.2},
+    },}},
+
+     {
+       'network_parameters': {
+            'name': base_name + '_subsampling_0.8',
+            'training_parameters':{"deep_supervision": {
+            "levels": [6, 5, 4, 3,2,1],
+            "weight": [0.5, 0.25, 0.125, 0.0625,0.03125,0.0150765],
+        },
+        
+    "loss_dictionary": {
+            "cross_entropy": {"weight": 1},
+            "dice": {"class_weights": [0.0, 1.0], "weight": 1},
+            "distance_regression": {"loss": "mae", "weigh_by_gt": True, "weight": 1},
+            "lesion_classification": {"apply_to_bottleneck": True, "weight": 1},
+        },
+        "stopping_metric":{'name':'loss','sign':1},
+        'metric_smoothing':False,
+        "metrics": [
+            "dice_lesion",
+            "dice_nonlesion",
+            "precision",
+            "recall",
+            "tp",
+            "fp",
+            "fn",
+            "auroc",
+            "cl_precision",
+            "cl_recall",
+        ],
+        },
+            },
+        
+       'data_parameters': {"subsample_cohort_fraction":0.8,
+           "augment_data": {
         "augment_lesion": {"p": 0.0},
         "blur": {"p": 0.2},
         "brightness": {"p": 0.15},
@@ -217,7 +319,7 @@ losses=[
 
 from copy import deepcopy
 for loss in losses:
-    for fold in np.arange(5):
+    for fold in np.arange(1):
         if 'data_parameters' in loss.keys():
             loss['data_parameters']['fold_n'] =fold
         else:
