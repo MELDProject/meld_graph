@@ -6,3 +6,5 @@
     - [panel b](notebooks/images_miccai_clusters_number.ipynb)
 - Table 1. 
     - [runtimes](notebooks/get_runtime.ipynb)
+
+- Supplementary Figure 1. [notebook](notebooks/compare_experiments.ipynb)
