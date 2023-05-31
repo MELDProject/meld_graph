@@ -1,3 +1,6 @@
+## script to set up the config files for the 4 main MICCAI experiments:
+## nnunet, +classification, +distance, +classification & distance.
+
 import random, string, datetime
 import numpy as np
 def date_code():
