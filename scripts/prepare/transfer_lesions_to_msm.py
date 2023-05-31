@@ -1,6 +1,3 @@
-
-
-
 from meld_classifier.meld_cohort import MeldCohort
 from meld_classifier.data_preprocessing import Preprocess
 from meld_classifier.paths import BASE_PATH
@@ -28,18 +25,18 @@ site_codes = [
     "H26",
 ]
 
-hdf5_file_root= "{site_code}_{group}_featurematrix_combat_6_kernels.hdf5"
+hdf5_file_root = "{site_code}_{group}_featurematrix_combat_6_kernels.hdf5"
 hdf5_file_root_out = "{site_code}_{group}_featurematrix_combat_msm.hdf5"
-dataset= 'MELD_dataset_V6.csv'
+dataset = "MELD_dataset_V6.csv"
 
 
 c_smooth = MeldCohort(hdf5_file_root=hdf5_file_root, dataset=dataset)
 # create object msm
 msm = Preprocess(
-   c_smooth,
-   site_codes=site_codes,
-   write_hdf5_file_root=hdf5_file_root_out,
-   data_dir=BASE_PATH,
+    c_smooth,
+    site_codes=site_codes,
+    write_hdf5_file_root=hdf5_file_root_out,
+    data_dir=BASE_PATH,
 )
 
 # Transfer lesions in the new hdf5
