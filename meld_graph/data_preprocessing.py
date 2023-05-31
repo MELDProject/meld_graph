@@ -59,9 +59,7 @@ class Preprocess:
     def subject_ids(self):
         if self._subject_ids is None:
             # filter subject ids based on site codes
-            self._subject_ids = self.cohort.get_subject_ids(
-                site_codes=self.site_codes, lesional_only=False
-            )
+            self._subject_ids = self.cohort.get_subject_ids(site_codes=self.site_codes, lesional_only=False)
         return self._subject_ids
 
     @property
@@ -71,18 +69,14 @@ class Preprocess:
         return self._lobes
 
     def load_lobar_parcellation(self, lobe=1):
-        parc = nb.freesurfer.io.read_annot(
-            os.path.join(self.data_dir, "fsaverage_sym", "label", "lh.lobes.annot")
-        )[0]
+        parc = nb.freesurfer.io.read_annot(os.path.join(self.data_dir, "fsaverage_sym", "label", "lh.lobes.annot"))[0]
         lobes = (parc == lobe).astype(int)
         return lobes
 
     def flatten(self, t):
         return [item for sublist in t for item in sublist]
 
-    def save_cohort_features(
-        self, feature_name, features, subject_ids, hemis=["lh", "rh"]
-    ):
+    def save_cohort_features(self, feature_name, features, subject_ids, hemis=["lh", "rh"]):
         assert len(features) == len(subject_ids)
         for s, subject in enumerate(subject_ids):
             subj = MeldSubject(subject, cohort=self.cohort)
@@ -147,9 +141,7 @@ class Preprocess:
                 lesion = self.lobes
             # add lesion bias
             if lesion_bias:
-                self.log.info(
-                    f"WARNING: adding lesion bias of {lesion_bias} to {subject}"
-                )
+                self.log.info(f"WARNING: adding lesion bias of {lesion_bias} to {subject}")
                 vals_array[lesion == 1] += lesion_bias
             if combine_hemis is not None:
                 self.log.info(f"WARNING: combine_hemis is not implemented.")
@@ -181,9 +173,7 @@ class Preprocess:
         """zscore features using precalculated means and stds"""
         for fi, f_value in enumerate(values):
             if np.std(f_value) != 0:
-                values[fi] = (
-                    f_value - self.z_params[features[fi]]["mean"]
-                ) / self.z_params[features[fi]]["std"]
+                values[fi] = (f_value - self.z_params[features[fi]]["mean"]) / self.z_params[features[fi]]["std"]
         return values
 
     def scale_data(self, matrix, features, file_name):
@@ -231,9 +221,7 @@ class Preprocess:
                 included_subj.append(id_sub)
             else:
                 pass
-        self.log.info(
-            "Compute min and max from {} subjects".format(len(included_subj), feature)
-        )
+        self.log.info("Compute min and max from {} subjects".format(len(included_subj), feature))
         # get min and max percentile
         vals_array = np.array(vals_array)
         min_val = np.percentile(vals_array.flatten(), 1, axis=0)
@@ -275,9 +263,7 @@ class Preprocess:
         # Normalize vector: v/||v||
         normalized = [vector[0] / lenvector, vector[1] / lenvector]
         dotprod = normalized[0] * refvec[0] + normalized[1] * refvec[1]  # x1*x2 + y1*y2
-        diffprod = (
-            refvec[1] * normalized[0] - refvec[0] * normalized[1]
-        )  # x1*y2 - y1*x2
+        diffprod = refvec[1] * normalized[0] - refvec[0] * normalized[1]  # x1*y2 - y1*x2
         angle = math.atan2(diffprod, dotprod)
         # Negative angles represent counter-clockwise angles so we need to subtract them
         # from 2*pi (360 degrees)
@@ -342,14 +328,10 @@ class Preprocess:
         self.gridshape = (2 * res, res)
         # meshgrid, weird indexing required for the interpolator function
         self.grid_coords_grid = np.meshgrid(self.xnew, self.ynew, indexing="ij")
-        self.grid_coords = np.vstack(
-            [self.grid_coords_grid[0].ravel(), self.grid_coords_grid[1].ravel()]
-        ).T
+        self.grid_coords = np.vstack([self.grid_coords_grid[0].ravel(), self.grid_coords_grid[1].ravel()]).T
 
         self.origin = np.array([0, 0])
-        self.distances = pairwise_distances(
-            self.origin.reshape(-1, 1).T, self.grid_coords, metric="haversine"
-        )[0]
+        self.distances = pairwise_distances(self.origin.reshape(-1, 1).T, self.grid_coords, metric="haversine")[0]
         return
 
     def create_lesion_mask(self, radius, cartesian_coords, return_smoothed=True):
@@ -372,17 +354,11 @@ class Preprocess:
         n_points = np.random.choice(6) + 4
         subset = self.grid_coords[self.distances < f_radius]
         # establish mask and mask coordinates
-        x_mask = np.logical_and(
-            self.grid_coords_grid[0] > -f_radius, self.grid_coords_grid[0] < f_radius
-        )
-        y_mask = np.logical_and(
-            self.grid_coords_grid[1] > -f_radius, self.grid_coords_grid[1] < f_radius
-        )
+        x_mask = np.logical_and(self.grid_coords_grid[0] > -f_radius, self.grid_coords_grid[0] < f_radius)
+        y_mask = np.logical_and(self.grid_coords_grid[1] > -f_radius, self.grid_coords_grid[1] < f_radius)
         grid_mask = np.logical_and(x_mask, y_mask)
         mask_shape = (x_mask.any(axis=1).sum(), y_mask.any(axis=0).sum())
-        masked_grid_coords = np.vstack(
-            [self.grid_coords_grid[0][grid_mask], self.grid_coords_grid[1][grid_mask]]
-        ).T
+        masked_grid_coords = np.vstack([self.grid_coords_grid[0][grid_mask], self.grid_coords_grid[1][grid_mask]]).T
         # make sure there are enough lesional vertices
         lesional_verts = -1
         while lesional_verts < 1:
@@ -391,9 +367,7 @@ class Preprocess:
             polygon = np.array(
                 sorted(
                     polygon,
-                    key=lambda point: self.clockwiseangle_and_distance(
-                        point, self.origin
-                    ),
+                    key=lambda point: self.clockwiseangle_and_distance(point, self.origin),
                 )
             )
             path = mpltPath.Path(polygon)
@@ -405,9 +379,7 @@ class Preprocess:
 
             full_lesion = np.zeros(self.gridshape, dtype=float)
             full_lesion[grid_mask.T] = arr_lesion.T.ravel()
-            f_near = interpolate.RegularGridInterpolator(
-                (self.xnew, self.ynew), full_lesion.T, method="nearest"
-            )
+            f_near = interpolate.RegularGridInterpolator((self.xnew, self.ynew), full_lesion.T, method="nearest")
             interpolated_lesion = f_near(spherical_coords)
             lesional_verts = interpolated_lesion.sum()
         # smoothed mask
@@ -415,9 +387,7 @@ class Preprocess:
             smoothed = ndimage.gaussian_filter(arr_lesion, 10)
             full_lesion[grid_mask.T] = smoothed.T.ravel()
 
-            f_lin = interpolate.RegularGridInterpolator(
-                (self.xnew, self.ynew), full_lesion.T, method="linear"
-            )
+            f_lin = interpolate.RegularGridInterpolator((self.xnew, self.ynew), full_lesion.T, method="linear")
             # return grid_coords,smoothed
             interpolated_smoothed = f_lin(spherical_coords)
             return interpolated_lesion, interpolated_smoothed
@@ -430,9 +400,7 @@ class Preprocess:
         z[m] = 0
         return z
 
-    def create_fingerprint(
-        self, n_features, histo_type_seed, proportion_features_abnormal
-    ):
+    def create_fingerprint(self, n_features, histo_type_seed, proportion_features_abnormal):
         """creates a vector of biases, seeded by the histological subtype integer.
         this is multiplied by the controlled bias term"""
         rng = np.random.default_rng(histo_type_seed)
@@ -461,13 +429,9 @@ class Preprocess:
         """superimpose a synthetic lesion on input data"""
         # create lesion mask
         if synth_params["smooth_lesion"]:
-            lesion, smoothed_lesion = self.create_lesion_mask(
-                synth_params["radius"], coords, return_smoothed=True
-            )
+            lesion, smoothed_lesion = self.create_lesion_mask(synth_params["radius"], coords, return_smoothed=True)
         else:
-            lesion = smoothed_lesion = self.create_lesion_mask(
-                synth_params["radius"], coords, return_smoothed=False
-            )
+            lesion = smoothed_lesion = self.create_lesion_mask(synth_params["radius"], coords, return_smoothed=False)
         lesion[~self.cohort.cortex_mask] = 0
         smoothed_lesion[~self.cohort.cortex_mask] = 0
         # bias is sampled from a normal dist so that some subjects are easier than others.
@@ -480,13 +444,9 @@ class Preprocess:
             100,
         )
         # histo_signature - controls which features, how important and what sign
-        fingerprint = self.create_fingerprint(
-            n_features, histo_type_seed, synth_params["proportion_features_abnormal"]
-        )
+        fingerprint = self.create_fingerprint(n_features, histo_type_seed, synth_params["proportion_features_abnormal"])
 
-        sampled_fingerprint = self.sample_fingerprint(
-            fingerprint, synth_params["jitter_factor"]
-        )
+        sampled_fingerprint = self.sample_fingerprint(fingerprint, synth_params["jitter_factor"])
         lesion_tiled = np.tile(smoothed_lesion.reshape(-1, 1), n_features)
         synth_bias_features = lesion_tiled * sampled_fingerprint * sampled_bias
         # apply synthetic lesion only on non-null feature

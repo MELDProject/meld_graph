@@ -22,9 +22,7 @@ def optimal_threshold(b, roc_curves_thresholds):
 import sklearn.metrics as metrics
 
 
-def plot_roc(
-    sensitivity_curve, specificity_curve, optimal_thresh, roc_curves_thresholds
-):
+def plot_roc(sensitivity_curve, specificity_curve, optimal_thresh, roc_curves_thresholds):
     fig, axes = plt.subplots(1, 2)
     axes = axes.ravel()
     axes[0].plot(
@@ -34,9 +32,7 @@ def plot_roc(
     # axes[0].scatter(1-specificity_curve[optimal_thresh],sensitivity_curve[optimal_thresh], c='r')
     axes[1].plot(roc_curves_thresholds, sensitivity_curve, label="sensitivity")
     axes[1].plot(roc_curves_thresholds, specificity_curve, label="specificity")
-    axes[1].plot(
-        roc_curves_thresholds, specificity_curve + sensitivity_curve - 1, label="Youden"
-    )
+    axes[1].plot(roc_curves_thresholds, specificity_curve + sensitivity_curve - 1, label="Youden")
     # axes[1].plot([roc_curves_thresholds[optimal_thresh],roc_curves_thresholds[optimal_thresh]],
     # [0,1],label='Optimal threshold')
     fig.legend()
@@ -74,9 +70,7 @@ def roc_curves(subject_dictionary, roc_dictionary, roc_curves_thresholds):
         # tp,fp,fn, tn = tp_fp_fn_tn(predicted, subject_dictionary['input_labels'])
         # store sensitivity and sensitivity_plus for each patient (has a label)
         if subject_dictionary["input_labels"].sum() > 0:
-            roc_dictionary["sensitivity"][t_i] += np.logical_and(
-                predicted, subject_dictionary["input_labels"]
-            ).any()
+            roc_dictionary["sensitivity"][t_i] += np.logical_and(predicted, subject_dictionary["input_labels"]).any()
             bordered = np.logical_and(predicted, subject_dictionary["borderzone"]).any()
             roc_dictionary["sensitivity_plus"][t_i] += bordered
             if not bordered:
@@ -99,10 +93,7 @@ model_paths = {
 
 save_dirs = {}
 for model in model_paths.keys():
-    save_dirs[model] = [
-        os.path.join(model_paths[model], f"fold_0{fold}", "results")
-        for fold in np.arange(5)
-    ]
+    save_dirs[model] = [os.path.join(model_paths[model], f"fold_0{fold}", "results") for fold in np.arange(5)]
 
 cohort = MeldCohort(
     hdf5_file_root="{site_code}_{group}_featurematrix_combat_6.hdf5",
@@ -158,12 +149,7 @@ for model_name in save_dirs.keys():
                 labels_hemis["rh"][cohort.cortex_mask],
             ]
         )
-        borderzones = (
-            np.vstack(
-                [dists["lh"][cohort.cortex_mask, :], dists["rh"][cohort.cortex_mask, :]]
-            ).ravel()
-            < 20
-        )
+        borderzones = np.vstack([dists["lh"][cohort.cortex_mask, :], dists["rh"][cohort.cortex_mask, :]]).ravel() < 20
         n_folds = len(save_dirs[model_name])
         for fold in np.arange(n_folds):
             save_dir = save_dirs[model_name][fold]

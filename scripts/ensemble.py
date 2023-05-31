@@ -55,10 +55,7 @@ cohort = MeldCohort(
 
 save_dirs = {}
 for model in model_paths.keys():
-    save_dirs[model] = [
-        os.path.join(model_paths[model], f"fold_0{fold}", "results")
-        for fold in np.arange(5)
-    ]
+    save_dirs[model] = [os.path.join(model_paths[model], f"fold_0{fold}", "results") for fold in np.arange(5)]
 
 n_vert = len(cohort.cortex_label) * 2
 with h5py.File(os.path.join(save_dirs[model][0], "predictions.hdf5"), "r") as f:
@@ -110,12 +107,7 @@ for model_name in save_dirs.keys():
                 labels_hemis["rh"][cohort.cortex_mask],
             ]
         )
-        borderzones = (
-            np.vstack(
-                [dists["lh"][cohort.cortex_mask, :], dists["rh"][cohort.cortex_mask, :]]
-            ).ravel()
-            < 20
-        )
+        borderzones = np.vstack([dists["lh"][cohort.cortex_mask, :], dists["rh"][cohort.cortex_mask, :]]).ravel() < 20
         n_folds = len(save_dirs[model_name])
         n_folds = len(save_dirs[model_name])
         for fold in np.arange(n_folds):
@@ -129,9 +121,7 @@ for model_name in save_dirs.keys():
             "borderzone": borderzones,
             "result": m_subject_results,
         }
-        roc_curves(
-            subject_dictionary, roc_dictionary[model_name], roc_curves_thresholds
-        )
+        roc_curves(subject_dictionary, roc_dictionary[model_name], roc_curves_thresholds)
         for fold in np.arange(n_folds):
             inds = np.random.choice(5, 5)
             m_subject_results = np.mean(subject_results[inds], axis=0)
@@ -158,9 +148,7 @@ for model_name in save_dirs.keys():
 
 
 model_path3 = "/rds/project/kw350/rds-kw350-meld/experiments/co-ripa1/iteration_21-09-15_nothresh/ensemble_21-09-15"
-file = os.path.join(
-    model_path3, f"fold_all", "results", "predictions_ensemble_iteration_0.hdf5"
-)
+file = os.path.join(model_path3, f"fold_all", "results", "predictions_ensemble_iteration_0.hdf5")
 roc_dictionary["per vertex"] = {
     "sensitivity": np.zeros(n_thresh),
     "sensitivity_plus": np.zeros(n_thresh),
@@ -180,15 +168,8 @@ for si, subj in enumerate(subjects):
         )
         if np.sum(dists[hemi]) == 0:
             dists[hemi] += 200
-    labels = np.hstack(
-        [labels_hemis["lh"][cohort.cortex_mask], labels_hemis["rh"][cohort.cortex_mask]]
-    )
-    borderzones = (
-        np.vstack(
-            [dists["lh"][cohort.cortex_mask, :], dists["rh"][cohort.cortex_mask, :]]
-        ).ravel()
-        < 20
-    )
+    labels = np.hstack([labels_hemis["lh"][cohort.cortex_mask], labels_hemis["rh"][cohort.cortex_mask]])
+    borderzones = np.vstack([dists["lh"][cohort.cortex_mask, :], dists["rh"][cohort.cortex_mask, :]]).ravel() < 20
     result_hemis = load_prediction(subj, file, dset="prediction_raw")
     subject_results = np.hstack([result_hemis["lh"], result_hemis["rh"]])
     subject_dictionary = {
@@ -218,9 +199,7 @@ for model in roc_dictionary.keys():
             roc_curves_thresholds[optimal_thresh],
         ]
     )
-df = pd.DataFrame(
-    df, columns=["Model", "AUC", "Sensitivity", "Specificity", "Threshold"]
-)
+df = pd.DataFrame(df, columns=["Model", "AUC", "Sensitivity", "Specificity", "Threshold"])
 
 
 df.to_csv("../data/test_stats.csv")

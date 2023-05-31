@@ -34,9 +34,7 @@ def save_numpy_array_as_func_gii(arr, filename):
 def fit_registration(sub_id, hemi):
     print(f"registering {sub_id}")
     msm_bin = "/home/kw350/software/msm_centos_v3"
-    inmesh = os.path.join(
-        p.MELD_DATA_PATH, "fsaverage_sym", "surf", "lh.sphere.surf.gii"
-    )
+    inmesh = os.path.join(p.MELD_DATA_PATH, "fsaverage_sym", "surf", "lh.sphere.surf.gii")
     refmesh = inmesh
     indata = os.path.join(p.MELD_DATA_PATH, "msm", "msm_regs", f"{hemi}.{sub_id}.txt")
     refdata = os.path.join(p.MELD_DATA_PATH, "msm", "msm_regs", f"{hemi}.template.txt")
@@ -77,9 +75,7 @@ def write_funci_gii(sub_id, hemi, subj):
     hemi_data = subj.load_features_values(features, hemi=hemi)
     save_numpy_array_as_func_gii(
         hemi_data,
-        os.path.join(
-            p.MELD_DATA_PATH, "msm", "msm_input_data", f"{hemi}.{sub_id}.func.gii"
-        ),
+        os.path.join(p.MELD_DATA_PATH, "msm", "msm_input_data", f"{hemi}.{sub_id}.func.gii"),
     )
     return features
 
@@ -89,27 +85,17 @@ def write_lesion_mask_gii(sub_id, hemi, subj):
     _, lesion_mask = subj.load_feature_lesion_data([""], hemi=hemi)
     save_numpy_array_as_func_gii(
         lesion_mask.astype(np.int32),
-        os.path.join(
-            p.MELD_DATA_PATH, "msm", "msm_input_data", f"{hemi}.{sub_id}.label.gii"
-        ),
+        os.path.join(p.MELD_DATA_PATH, "msm", "msm_input_data", f"{hemi}.{sub_id}.label.gii"),
     )
     return
 
 
 def register_surface_data_over(hemi, sub_id):
     wb_bin = "/home/kw350/software/workbench/bin_rh_linux64/wb_command"
-    current_sphere = os.path.join(
-        p.MELD_DATA_PATH, "msm", "msm_regs", f"{hemi}_{sub_id}sphere.reg.surf.gii"
-    )
-    template = os.path.join(
-        p.MELD_DATA_PATH, "fsaverage_sym", "surf", "lh.sphere.surf.gii"
-    )
-    metric_in = os.path.join(
-        p.MELD_DATA_PATH, "msm", "msm_input_data", f"{hemi}.{sub_id}.func.gii"
-    )
-    metric_out = os.path.join(
-        p.MELD_DATA_PATH, "msm", "msm_output_data", f"{hemi}.{sub_id}.func.gii"
-    )
+    current_sphere = os.path.join(p.MELD_DATA_PATH, "msm", "msm_regs", f"{hemi}_{sub_id}sphere.reg.surf.gii")
+    template = os.path.join(p.MELD_DATA_PATH, "fsaverage_sym", "surf", "lh.sphere.surf.gii")
+    metric_in = os.path.join(p.MELD_DATA_PATH, "msm", "msm_input_data", f"{hemi}.{sub_id}.func.gii")
+    metric_out = os.path.join(p.MELD_DATA_PATH, "msm", "msm_output_data", f"{hemi}.{sub_id}.func.gii")
     cmd = f"{wb_bin} -metric-resample {metric_in} {current_sphere} {template} BARYCENTRIC {metric_out}"
     subprocess.call(cmd, shell=True)
     return
@@ -117,27 +103,17 @@ def register_surface_data_over(hemi, sub_id):
 
 def register_label_data_over(hemi, sub_id):
     wb_bin = "/home/kw350/software/workbench/bin_rh_linux64/wb_command"
-    current_sphere = os.path.join(
-        p.MELD_DATA_PATH, "msm", "msm_regs", f"{hemi}_{sub_id}sphere.reg.surf.gii"
-    )
-    template = os.path.join(
-        p.MELD_DATA_PATH, "fsaverage_sym", "surf", "lh.sphere.surf.gii"
-    )
-    metric_in = os.path.join(
-        p.MELD_DATA_PATH, "msm", "msm_input_data", f"{hemi}.{sub_id}.label.gii"
-    )
-    metric_out = os.path.join(
-        p.MELD_DATA_PATH, "msm", "msm_output_data", f"{hemi}.{sub_id}.label.gii"
-    )
+    current_sphere = os.path.join(p.MELD_DATA_PATH, "msm", "msm_regs", f"{hemi}_{sub_id}sphere.reg.surf.gii")
+    template = os.path.join(p.MELD_DATA_PATH, "fsaverage_sym", "surf", "lh.sphere.surf.gii")
+    metric_in = os.path.join(p.MELD_DATA_PATH, "msm", "msm_input_data", f"{hemi}.{sub_id}.label.gii")
+    metric_out = os.path.join(p.MELD_DATA_PATH, "msm", "msm_output_data", f"{hemi}.{sub_id}.label.gii")
     cmd = f"{wb_bin} -label-resample {metric_in} {current_sphere} {template} BARYCENTRIC {metric_out}"
     subprocess.call(cmd, shell=True)
     return
 
 
 def read_and_write_to_hdf5(hemi, sub_id, subj, hdf5_file_out, features):
-    metric_out = os.path.join(
-        p.MELD_DATA_PATH, "msm", "msm_output_data", f"{hemi}.{sub_id}.func.gii"
-    )
+    metric_out = os.path.join(p.MELD_DATA_PATH, "msm", "msm_output_data", f"{hemi}.{sub_id}.func.gii")
     registered_files = nb.load(metric_out)
     stacked = np.vstack(registered_files.agg_data())
 
@@ -159,9 +135,7 @@ def read_and_write_to_hdf5(hemi, sub_id, subj, hdf5_file_out, features):
 
 
 def label_to_hdf5(hemi, sub_id, subj, hdf5_file_out):
-    metric_out = os.path.join(
-        p.MELD_DATA_PATH, "msm", "msm_output_data", f"{hemi}.{sub_id}.label.gii"
-    )
+    metric_out = os.path.join(p.MELD_DATA_PATH, "msm", "msm_output_data", f"{hemi}.{sub_id}.label.gii")
     registered_files = nb.load(metric_out)
     stacked = registered_files.agg_data()
     done = False
@@ -180,20 +154,14 @@ def label_to_hdf5(hemi, sub_id, subj, hdf5_file_out):
 
 
 def tidy_up(sub_id, hemi):
-    metric_in = os.path.join(
-        p.MELD_DATA_PATH, "msm", "msm_input_data", f"{hemi}.{sub_id}.func.gii"
-    )
-    metric_out = os.path.join(
-        p.MELD_DATA_PATH, "msm", "msm_output_data", f"{hemi}.{sub_id}.func.gii"
-    )
+    metric_in = os.path.join(p.MELD_DATA_PATH, "msm", "msm_input_data", f"{hemi}.{sub_id}.func.gii")
+    metric_out = os.path.join(p.MELD_DATA_PATH, "msm", "msm_output_data", f"{hemi}.{sub_id}.func.gii")
     os.remove(metric_in)
     os.remove(metric_out)
     return
 
 
-subjects = np.loadtxt(
-    os.path.join(p.MELD_DATA_PATH, "msm", "subject_ids.txt"), dtype=str
-)
+subjects = np.loadtxt(os.path.join(p.MELD_DATA_PATH, "msm", "subject_ids.txt"), dtype=str)
 for sub_id in subjects:
     dataset = "MELD_dataset_V6.csv"
     hdf5_file_root = "{site_code}_{group}_featurematrix_combat_6_kernels.hdf5"

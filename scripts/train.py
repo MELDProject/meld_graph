@@ -18,16 +18,12 @@ if __name__ == "__main__":
         help="path to experiment_config.py",
         default="config_files/experiment_config.py",
     )
-    parser.add_argument(
-        "--wandb_logging", action="store_true", help="enable wandb logging."
-    )
+    parser.add_argument("--wandb_logging", action="store_true", help="enable wandb logging.")
     args = parser.parse_args()
 
     config = load_config(args.config_file)
 
     # create experiment
-    exp = meld_graph.experiment.Experiment(
-        config.network_parameters, config.data_parameters, verbose=logging.INFO
-    )
+    exp = meld_graph.experiment.Experiment(config.network_parameters, config.data_parameters, verbose=logging.INFO)
     # train the model
     exp.train()

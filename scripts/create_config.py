@@ -101,22 +101,11 @@ if __name__ == "__main__":
             # upate name
             # set name of config to save first - need to put fold in front of the s_X folder
             cur_fold = cur_config["data_parameters"]["fold_n"]
-            config_name = (
-                cur_config["network_parameters"]["name"]
-                + f"/fold_{cur_fold:02d}"
-                + f"/s_{i}"
-            )
-            cur_config["network_parameters"]["name"] = (
-                cur_config["network_parameters"]["name"] + f"/s_{i}"
-            )
-            cur_config["network_parameters"]["training_parameters"][
-                "init_weights"
-            ] = init_weights
+            config_name = cur_config["network_parameters"]["name"] + f"/fold_{cur_fold:02d}" + f"/s_{i}"
+            cur_config["network_parameters"]["name"] = cur_config["network_parameters"]["name"] + f"/s_{i}"
+            cur_config["network_parameters"]["training_parameters"]["init_weights"] = init_weights
             # update init weights to this experiment for finetuning next experiment
-            init_weights = (
-                cur_config["network_parameters"]["name"]
-                + f"/fold_{cur_fold:02d}/best_model.pt"
-            )
+            init_weights = cur_config["network_parameters"]["name"] + f"/fold_{cur_fold:02d}/best_model.pt"
             # add to configs list
             final_configs[config_name] = cur_config
 

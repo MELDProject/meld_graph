@@ -28,9 +28,7 @@ class GraphTools:
         self.unpool6 = self.unpool(level=6)
         self.unpool7 = self.unpool(level=7)
         self.smooth5 = self.smoother(level=5)
-        self.solver = pp3d.MeshHeatMethodDistanceSolver(
-            self.coords, self.icospheres.icospheres[5]["faces"]
-        )
+        self.solver = pp3d.MeshHeatMethodDistanceSolver(self.coords, self.icospheres.icospheres[5]["faces"])
         self.smoother_op = self.smoother(level=7)
 
     def pool(self, level=7):
@@ -76,21 +74,13 @@ class GraphTools:
         new_nonlesion = self.smooth5(non_lesion)
         diff = (new_nonlesion - non_lesion) > 0
         lesion_boundary_vertices = indices[diff]
-        boundary_distance = self.solver.compute_distance_multisource(
-            lesion_boundary_vertices
-        )
+        boundary_distance = self.solver.compute_distance_multisource(lesion_boundary_vertices)
 
         # upsample distance
         # boundary_distance[lesion_small == 1] = 0
-        boundary_distance[lesion_small > 0] = -np.abs(
-            boundary_distance[lesion_small > 0]
-        )
-        boundary_distance[lesion_small == 0] = np.abs(
-            boundary_distance[lesion_small == 0]
-        )
-        upsampled1 = self.unpool6(
-            torch.from_numpy(boundary_distance.reshape(-1, 1)), device=self.device
-        )
+        boundary_distance[lesion_small > 0] = -np.abs(boundary_distance[lesion_small > 0])
+        boundary_distance[lesion_small == 0] = np.abs(boundary_distance[lesion_small == 0])
+        upsampled1 = self.unpool6(torch.from_numpy(boundary_distance.reshape(-1, 1)), device=self.device)
         full_upsampled = self.unpool7(upsampled1, device=self.device)
         full_upsampled = full_upsampled.detach().cpu().numpy().ravel()
 

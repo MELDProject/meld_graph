@@ -116,13 +116,8 @@ class Augment:
         sd = feat_tr.std(axis=0)
         minm = feat_tr.min(axis=0)
         rnge = feat_tr.max(axis=0) - minm
-        gamma = np.random.uniform(
-            0.7, 1.5, size=feat_tr.shape[1]
-        )  # .astype(np.float16)
-        feat_tr = (
-            np.power(((feat_tr - minm) / (rnge + epsilon)), gamma) * (rnge + epsilon)
-            + minm
-        )
+        gamma = np.random.uniform(0.7, 1.5, size=feat_tr.shape[1])  # .astype(np.float16)
+        feat_tr = np.power(((feat_tr - minm) / (rnge + epsilon)), gamma) * (rnge + epsilon) + minm
         feat_tr = (feat_tr - mn) / (sd + epsilon)
         return feat_tr
 
@@ -139,9 +134,7 @@ class Augment:
         # upsample noise to high res
         for level in range(2, 7):
             unpool_ind = self.gt.unpool(level=level + 1)
-            noise_upsampled = unpool_ind(
-                torch.from_numpy(noise.reshape(-1, 1)), device=None
-            )
+            noise_upsampled = unpool_ind(torch.from_numpy(noise.reshape(-1, 1)), device=None)
             # TODO Q Hannah why do we pass noise_upsampled to the CPU?
             noise_upsampled = noise_upsampled.detach().cpu().numpy().ravel()
             noise = noise_upsampled.copy()
@@ -154,9 +147,7 @@ class Augment:
     def recompute_distance_and_smoothed(self, tdd):
         """recompute distances from augmented lesion masks"""
         tdd["distances"] = self.gt.fast_geodesics(tdd["labels"]).astype(np.float32)
-        tdd["smooth_labels"] = self.gt.smoothing(tdd["labels"], iteration=10).astype(
-            np.float32
-        )
+        tdd["smooth_labels"] = self.gt.smoothing(tdd["labels"], iteration=10).astype(np.float32)
         return
 
     def apply_indices(self, indices, tdd):

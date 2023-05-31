@@ -38,14 +38,10 @@ if __name__ == "__main__":
         # Find nearest 3 neighbours vertices from spinned ico for each vertices in initial ico
         tree = cKDTree(flipped_coords)
         distance, indices = tree.query(icos.icospheres[7]["coords"], k=3)
-        lambdas = barycentric_coordinates_matrix(
-            icos.icospheres[7]["coords"], flipped_coords[indices]
-        )
+        lambdas = barycentric_coordinates_matrix(icos.icospheres[7]["coords"], flipped_coords[indices])
         redos = np.where(~np.logical_and(0 < lambdas, lambdas < 1).all(axis=1))[0]
         # fix the ones that aren't quite right
-        indices, lambdas = correct_triangles(
-            icos.icospheres[7], indices, redos, flipped_coords, lambdas
-        )
+        indices, lambdas = correct_triangles(icos.icospheres[7], indices, redos, flipped_coords, lambdas)
         # Add to multiple arrays
         flipped_lambdas.append(lambdas)
         flipped_indices.append(indices)

@@ -79,9 +79,7 @@ def downsample_mesh(surf):
 
 if __name__ == "__main__":
     data_dir = "../data/icospheres"
-    c = MeldCohort(
-        hdf5_file_root="{site_code}_{group}_featurematrix.hdf5", dataset=None
-    )
+    c = MeldCohort(hdf5_file_root="{site_code}_{group}_featurematrix.hdf5", dataset=None)
     sphere_surf = {"coords": c.coords, "faces": c.surf["faces"]}
     save_gifti(os.path.join(data_dir, "ico7.surf.gii"), sphere_surf)
     downsampled_surf = downsample_mesh(sphere_surf)

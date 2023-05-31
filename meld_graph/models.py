@@ -26,9 +26,7 @@ class GMMConv(nn.Module):
         norm=None,
     ):
         super(GMMConv, self).__init__()
-        self.layer = torch_geometric.nn.GMMConv(
-            in_channels, out_channels, dim=dim, kernel_size=kernel_size
-        )
+        self.layer = torch_geometric.nn.GMMConv(in_channels, out_channels, dim=dim, kernel_size=kernel_size)
         self.edges = edges
         self.edge_vectors = edge_vectors
         if norm is not None:
@@ -149,9 +147,7 @@ class MoNet(nn.Module):
         batch_x = data
         # reshape input to batch,n_vertices
         original_shape = batch_x.shape
-        batch_x = batch_x.view(
-            (batch_x.shape[0] // self.n_vertices, self.n_vertices, self.num_features)
-        )
+        batch_x = batch_x.view((batch_x.shape[0] // self.n_vertices, self.n_vertices, self.num_features))
 
         outputs = {"log_softmax": [], "non_lesion_logits": []}
         for x in batch_x:
@@ -350,9 +346,7 @@ class MoNetUnet(nn.Module):
         # reshape input to batch,n_vertices
         original_shape = batch_x.shape
 
-        batch_x = batch_x.view(
-            (batch_x.shape[0] // self.n_vertices, self.n_vertices, self.num_features)
-        )
+        batch_x = batch_x.view((batch_x.shape[0] // self.n_vertices, self.n_vertices, self.num_features))
         skip_connections = []
         outputs = {"log_softmax": [], "non_lesion_logits": [], "log_sumexp": []}
         for level in self.deep_supervision:
@@ -374,12 +368,8 @@ class MoNetUnet(nn.Module):
                     x = self.pool_layers[i](x)
 
             if self.classification_head:
-                hemi_classification = self.activation_function(
-                    self.hemi_classification_head[0](x.unsqueeze(2))
-                )
-                hemi_classification = self.hemi_classification_head[1](
-                    hemi_classification.view(-1)
-                )
+                hemi_classification = self.activation_function(self.hemi_classification_head[0](x.unsqueeze(2)))
+                hemi_classification = self.hemi_classification_head[1](hemi_classification.view(-1))
                 hemi_classification = nn.LogSoftmax(dim=0)(hemi_classification)
                 outputs["hemi_log_softmax"].append(hemi_classification)
 
@@ -396,9 +386,7 @@ class MoNetUnet(nn.Module):
                     outputs[f"ds{level}_log_softmax"].append(x_out)
 
                     x_out_logsumexp = torch.logsumexp(torch.exp(x_out[:, 1]), dim=0)
-                    x_out_logsumexp = torch.stack(
-                        (1 - x_out_logsumexp, x_out_logsumexp)
-                    )
+                    x_out_logsumexp = torch.stack((1 - x_out_logsumexp, x_out_logsumexp))
                     x_out_logsumexp = nn.LogSoftmax(dim=0)(x_out_logsumexp)
                     outputs[f"ds{level}_log_sumexp"].append(x_out_logsumexp)
 
@@ -497,9 +485,7 @@ class HexSmoothSparse(nn.Module):
         row_indices = np.repeat(np.arange(num_points), num_neighbours)
         col_indices = neighbours.reshape(-1)
         values = np.ones(row_indices.shape) / num_neighbours
-        sparse_weights = sp.csr_matrix(
-            (values, (row_indices, col_indices)), shape=(num_points, num_points)
-        )
+        sparse_weights = sp.csr_matrix((values, (row_indices, col_indices)), shape=(num_points, num_points))
         return sparse_weights
 
     def forward(self, x):

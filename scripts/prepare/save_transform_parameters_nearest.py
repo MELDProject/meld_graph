@@ -27,21 +27,11 @@ def transform_coords(icos, transform, ax=None):
         return trans_coords
     elif transform == "warping":
         warped_coords_2 = warp_mesh(icos.icospheres[2], warp_fraction=3)
-        warped_coords_3 = upsample_mesh(
-            warped_coords_2, icos.icospheres[2], icos.icospheres[3]
-        )
-        warped_coords_4 = upsample_mesh(
-            warped_coords_3, icos.icospheres[3], icos.icospheres[4]
-        )
-        warped_coords_5 = upsample_mesh(
-            warped_coords_4, icos.icospheres[4], icos.icospheres[5]
-        )
-        warped_coords_6 = upsample_mesh(
-            warped_coords_5, icos.icospheres[5], icos.icospheres[6]
-        )
-        warped_coords_7 = upsample_mesh(
-            warped_coords_6, icos.icospheres[6], icos.icospheres[7]
-        )
+        warped_coords_3 = upsample_mesh(warped_coords_2, icos.icospheres[2], icos.icospheres[3])
+        warped_coords_4 = upsample_mesh(warped_coords_3, icos.icospheres[3], icos.icospheres[4])
+        warped_coords_5 = upsample_mesh(warped_coords_4, icos.icospheres[4], icos.icospheres[5])
+        warped_coords_6 = upsample_mesh(warped_coords_5, icos.icospheres[5], icos.icospheres[6])
+        warped_coords_7 = upsample_mesh(warped_coords_6, icos.icospheres[6], icos.icospheres[7])
         return warped_coords_7
 
 
