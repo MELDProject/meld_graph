@@ -32,16 +32,10 @@ def curvature_regress(
 
         thickness_rh = subj.load_feature_values(source_feature, hemi="rh")
         curvature_rh = subj.load_feature_values(curv_feature, hemi="rh")
-        lh_reg = surface_regression(
-            thickness_lh[cohort.cortex_mask], curvature_lh[cohort.cortex_mask]
-        )
-        rh_reg = surface_regression(
-            thickness_rh[cohort.cortex_mask], curvature_rh[cohort.cortex_mask]
-        )
+        lh_reg = surface_regression(thickness_lh[cohort.cortex_mask], curvature_lh[cohort.cortex_mask])
+        rh_reg = surface_regression(thickness_rh[cohort.cortex_mask], curvature_rh[cohort.cortex_mask])
         vals_reg = np.concatenate([lh_reg, rh_reg])
-        subj.write_feature_values(
-            target_feature, vals_reg, hemis=["lh", "rh"], hdf5_file_root=hdf5_file_root
-        )
+        subj.write_feature_values(target_feature, vals_reg, hemis=["lh", "rh"], hdf5_file_root=hdf5_file_root)
     return
 
 

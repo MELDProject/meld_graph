@@ -19,9 +19,7 @@ fname = "22-12-14_GXRU_dice_ce_fold"
 model_base_paths_roots = os.path.join(EXPERIMENT_PATH, fname, "s_2")
 model_base_paths = {}
 for fold in np.arange(10):
-    model_base_paths[f"dc_{fold}"] = os.path.join(
-        model_base_paths_roots, f"fold_0{fold}"
-    )
+    model_base_paths[f"dc_{fold}"] = os.path.join(model_base_paths_roots, f"fold_0{fold}")
 
 
 ### initialise saving outputs

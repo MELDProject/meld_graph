@@ -7,11 +7,7 @@ import numpy as np
 
 def date_code():
     # return unique date code of form: YYYY-MM-DD_XXXX
-    return (
-        datetime.datetime.now().strftime("%y-%m-%d")
-        + "_"
-        + "".join(random.choices(string.ascii_uppercase, k=4))
-    )
+    return datetime.datetime.now().strftime("%y-%m-%d") + "_" + "".join(random.choices(string.ascii_uppercase, k=4))
 
 
 # set up multiple configs at the same time

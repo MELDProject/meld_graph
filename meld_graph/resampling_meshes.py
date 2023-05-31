@@ -17,9 +17,7 @@ def warp_mesh(low_res_ico, warp_fraction=2):
     surf = low_res_ico["coords"].copy()
     adjustment = np.random.uniform(-max_movement, max_movement, size=(len(surf), 3))
     over = np.linalg.norm(adjustment, axis=1) > max_movement
-    adjustment[over] = (
-        max_movement * (adjustment[over]).T / np.linalg.norm(adjustment[over], axis=1)
-    ).T
+    adjustment[over] = (max_movement * (adjustment[over]).T / np.linalg.norm(adjustment[over], axis=1)).T
     surf += adjustment
     surf = (surf.T / np.linalg.norm(surf, axis=1)).T
     return surf
@@ -106,9 +104,7 @@ def correct_triangles(icosphere, indices, redos, warped_coords, lambdas):
         trial = -1
         while sum(new_tri) == 0 and trial < 2:
             trial += 1
-            new_tri, triangles, n_lambdas = correct_triangle_one(
-                indices, icosphere, warped_coords, r, trial=trial
-            )
+            new_tri, triangles, n_lambdas = correct_triangle_one(indices, icosphere, warped_coords, r, trial=trial)
         if np.sum(new_tri) > 0:
             if np.sum(new_tri) > 1:
                 new_tri = np.where(new_tri)[0][0]

@@ -95,12 +95,8 @@ class IcoSpheres:
         return
 
     def spherical_coords(self, level=7):
-        self.icospheres[level]["spherical_coords"] = mt.spherical_np(
-            self.icospheres[level]["coords"]
-        )[:, 1:]
-        self.icospheres[level]["spherical_coords"][:, 0] = (
-            self.icospheres[level]["spherical_coords"][:, 0] - pi / 2
-        )
+        self.icospheres[level]["spherical_coords"] = mt.spherical_np(self.icospheres[level]["coords"])[:, 1:]
+        self.icospheres[level]["spherical_coords"][:, 0] = self.icospheres[level]["spherical_coords"][:, 0] - pi / 2
         return
 
     def calculate_pseudo_edge_attrs(self, level=7):
@@ -131,22 +127,16 @@ class IcoSpheres:
     def to(self, device):
         """loads edges, edge vectors and neighbors to device (eg GPU)"""
         for level in self.icospheres.keys():
-            self.icospheres[level]["t_edges"] = self.icospheres[level]["t_edges"].to(
-                device
-            )
+            self.icospheres[level]["t_edges"] = self.icospheres[level]["t_edges"].to(device)
             if self.conv_type == "SpiralConv":
-                self.icospheres[level]["spirals"] = self.icospheres[level][
-                    "spirals"
-                ].to(device)
+                self.icospheres[level]["spirals"] = self.icospheres[level]["spirals"].to(device)
             elif self.conv_type == "GMMConv":
                 if self.distance_type == "exact":
-                    self.icospheres[level]["t_exact_edge_attr"] = self.icospheres[
-                        level
-                    ]["t_exact_edge_attr"].to(device)
+                    self.icospheres[level]["t_exact_edge_attr"] = self.icospheres[level]["t_exact_edge_attr"].to(device)
                 elif self.distance_type == "pseudo":
-                    self.icospheres[level]["t_pseudo_edge_attr"] = self.icospheres[
-                        level
-                    ]["t_pseudo_edge_attr"].to(device)
+                    self.icospheres[level]["t_pseudo_edge_attr"] = self.icospheres[level]["t_pseudo_edge_attr"].to(
+                        device
+                    )
 
         return
 
@@ -202,9 +192,7 @@ class IcoSpheres:
     def vertex_attributes(self, surf, vertex):
         neighbours = surf["neighbours"][vertex]
         edges = self.neighbours_to_edges(vertex, neighbours)
-        angles, dists = self.calculate_angles_and_dists(
-            vertex, neighbours, surf["coords"]
-        )
+        angles, dists = self.calculate_angles_and_dists(vertex, neighbours, surf["coords"])
         # add self edge with almost zero vals
         edge_attrs = np.vstack([[1e-15, 1e-15], np.vstack([angles, dists]).T])
         combined = np.hstack([edges, edge_attrs])
@@ -231,9 +219,7 @@ class IcoSpheres:
         self.icospheres[level]["exact_edge_attr"] = edges_attrs[:, 2:]
         # add tensors needed for model
         self.icospheres[level]["t_edges"] = (
-            torch.tensor(self.icospheres[level]["edges"], dtype=torch.long)
-            .t()
-            .contiguous()
+            torch.tensor(self.icospheres[level]["edges"], dtype=torch.long).t().contiguous()
         )
         self.icospheres[level]["t_exact_edge_attr"] = torch.tensor(
             self.icospheres[level]["exact_edge_attr"], dtype=torch.float
@@ -254,9 +240,7 @@ class IcoSpheres:
         """return 7*n_vertex array of neighbours, with self neighbours
         and repeated self index if only 5 neighbours"""
         if "t_neighbours" not in self.icospheres[level].keys():
-            self.icospheres[level]["t_neighbours"] = np.tile(
-                np.arange(len(self.icospheres[level]["coords"])), (7, 1)
-            ).T
+            self.icospheres[level]["t_neighbours"] = np.tile(np.arange(len(self.icospheres[level]["coords"])), (7, 1)).T
             for ni, n in enumerate(self.icospheres[level]["neighbours"]):
                 self.icospheres[level]["t_neighbours"][ni, -len(n) :] = n
             self.icospheres[level]["t_neighbours"] = torch.tensor(
@@ -272,9 +256,7 @@ class IcoSpheres:
         if "t_downsample" not in self.icospheres[target_level].keys():
             source_level = target_level + 1
             n_target_vertices = len(self.icospheres[target_level]["coords"])
-            self.icospheres[target_level]["t_downsample"] = self.get_neighbours(
-                level=source_level
-            )[:n_target_vertices]
+            self.icospheres[target_level]["t_downsample"] = self.get_neighbours(level=source_level)[:n_target_vertices]
         return self.icospheres[target_level]["t_downsample"]
 
     def get_upsample(self, target_level=7):
@@ -293,15 +275,9 @@ class IcoSpheres:
         if "t_upsample" not in self.icospheres[target_level].keys():
             n_vert_down = len(self.icospheres[target_level - 1]["coords"])
             n_vert_up = len(self.icospheres[target_level]["coords"])
-            neighbours_to_explore = self.get_neighbours(level=target_level)[
-                n_vert_down:
-            ]
-            neighbours_to_explore = neighbours_to_explore[
-                neighbours_to_explore < n_vert_down
-            ]
-            self.icospheres[target_level]["t_upsample"] = neighbours_to_explore.reshape(
-                n_vert_up - n_vert_down, 2
-            )
+            neighbours_to_explore = self.get_neighbours(level=target_level)[n_vert_down:]
+            neighbours_to_explore = neighbours_to_explore[neighbours_to_explore < n_vert_down]
+            self.icospheres[target_level]["t_upsample"] = neighbours_to_explore.reshape(n_vert_up - n_vert_down, 2)
         return self.icospheres[target_level]["t_upsample"]
 
     def create_spirals(self, level=7):
@@ -342,15 +318,11 @@ class IcoSpheres:
         while len(spiral) < size:
             v_start = spiral[-1]
             index_for_rolling = np.where(old_neighbours == v_start)[0][0]
-            old_neighbours = np.roll(
-                old_neighbours, len(old_neighbours) - 1 - index_for_rolling
-            )
+            old_neighbours = np.roll(old_neighbours, len(old_neighbours) - 1 - index_for_rolling)
             new_center_v = old_neighbours[0]
             new_neighbours = neighbours[new_center_v]
             index_for_rolling = np.where(new_neighbours == v_start)[0][0]
-            new_neighbours = np.roll(
-                new_neighbours, len(new_neighbours) - 1 - index_for_rolling
-            )
+            new_neighbours = np.roll(new_neighbours, len(new_neighbours) - 1 - index_for_rolling)
             # stop vertex is next in spiral
             stop_vertex = spiral[np.where(spiral == new_center_v)[0][0] + 1]
             stop_index = np.where(new_neighbours == stop_vertex)[0][0]

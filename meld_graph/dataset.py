@@ -24,8 +24,7 @@ class Oversampler(torch.utils.data.Sampler):
 
         if not isinstance(self.num_samples, int) or self.num_samples <= 0:
             raise ValueError(
-                "num_samples should be a positive integer "
-                "value, but got num_samples={}".format(self.num_samples)
+                "num_samples should be a positive integer " "value, but got num_samples={}".format(self.num_samples)
             )
 
     @property
@@ -41,9 +40,7 @@ class Oversampler(torch.utils.data.Sampler):
         """
         n_non = len(self.data_source.lesional_idxs) * 2
         non_ids = torch.randperm(len(self.data_source), dtype=torch.int64)[:n_non]
-        ids_to_choose = torch.hstack(
-            [torch.from_numpy(self.data_source.lesional_idxs), non_ids]
-        )
+        ids_to_choose = torch.hstack([torch.from_numpy(self.data_source.lesional_idxs), non_ids])
         return ids_to_choose[torch.randperm(len(ids_to_choose), dtype=torch.int64)]
 
     def __iter__(self):
@@ -122,14 +119,9 @@ class GraphDataset(torch_geometric.data.Dataset):
         self.log.debug(f"Combine hemis {self.params['combine_hemis']}")
 
         if self.params["synthetic_data"]["run_synthetic"]:
-            self.n_subs_split_i = (
-                self.params["synthetic_data"]["n_subs"]
-                // self.params["number_of_folds"]
-            )
+            self.n_subs_split_i = self.params["synthetic_data"]["n_subs"] // self.params["number_of_folds"]
             if mode == "train":
-                self.n_subs_split = self.n_subs_split_i * (
-                    self.params["number_of_folds"] - 1
-                )
+                self.n_subs_split = self.n_subs_split_i * (self.params["number_of_folds"] - 1)
             elif mode == "val":
                 self.n_subs_split = self.n_subs_split_i
             else:
@@ -150,15 +142,9 @@ class GraphDataset(torch_geometric.data.Dataset):
                 self.subject_samples = np.arange(len(self.subject_ids))
             elif self.n_subs_split > len(self.subject_ids):
                 # if wanting multiple samples of same subjects
-                self.subject_samples = np.sort(
-                    np.random.choice(
-                        np.arange(len(self.subject_ids)), self.n_subs_split
-                    )
-                )
+                self.subject_samples = np.sort(np.random.choice(np.arange(len(self.subject_ids)), self.n_subs_split))
 
-            self.log.info(
-                f"WARNING: Simulating {len(self.subject_samples)} subjects using {n_subs_before} controls"
-            )
+            self.log.info(f"WARNING: Simulating {len(self.subject_samples)} subjects using {n_subs_before} controls")
 
         for s_i, subj_id in enumerate(self.subject_ids):
             # load in (control) data
@@ -177,9 +163,7 @@ class GraphDataset(torch_geometric.data.Dataset):
                 for duplicate in np.arange(np.sum(self.subject_samples == s_i)):
                     synth_sub_data_list = self.synthetic_lesion(subject_data_list)
                     # computing dists and smoothed labels
-                    synth_sub_data_list = self.add_smooth_label_and_dists(
-                        synth_sub_data_list
-                    )
+                    synth_sub_data_list = self.add_smooth_label_and_dists(synth_sub_data_list)
                     self.data_list.extend(synth_sub_data_list)
             else:
                 # add dists and smoothed labels
@@ -217,9 +201,7 @@ class GraphDataset(torch_geometric.data.Dataset):
             output_levels=experiment.network_parameters["training_parameters"]
             .get("deep_supervision", {})
             .get("levels", []),
-            distance_mask_medial_wall=experiment.data_parameters.get(
-                "distance_mask_medial_wall", False
-            ),
+            distance_mask_medial_wall=experiment.data_parameters.get("distance_mask_medial_wall", False),
         )
 
     def add_smooth_label_and_dists(self, subject_data_list):
@@ -230,23 +212,15 @@ class GraphDataset(torch_geometric.data.Dataset):
         for sdl in subject_data_list:
             if (sdl["labels"] == 1).any():
                 if self.params["smooth_labels"]:
-                    sdl["smooth_labels"] = self.gt.smoothing(
-                        sdl["labels"], iteration=10
-                    ).astype(np.float32)
-                sdl["distances"] = self.gt.fast_geodesics(sdl["labels"]).astype(
-                    np.float32
-                )
+                    sdl["smooth_labels"] = self.gt.smoothing(sdl["labels"], iteration=10).astype(np.float32)
+                sdl["distances"] = self.gt.fast_geodesics(sdl["labels"]).astype(np.float32)
             else:
                 sdl["distances"] = np.ones(len(sdl["labels"]), dtype=np.float32) * 300
                 if self.params["smooth_labels"]:
-                    sdl["smooth_labels"] = np.zeros(
-                        len(sdl["labels"]), dtype=np.float32
-                    )
+                    sdl["smooth_labels"] = np.zeros(len(sdl["labels"]), dtype=np.float32)
         return subject_data_list
 
-    def synthetic_lesion(
-        self, subject_data_list=[{"features": None}, {"features": None}]
-    ):
+    def synthetic_lesion(self, subject_data_list=[{"features": None}, {"features": None}]):
         """Add synthetic lesion to input features for both hemis"""
         synth_dicts = []
         for si, sdl in enumerate(subject_data_list):
@@ -303,16 +277,12 @@ class GraphDataset(torch_geometric.data.Dataset):
         setattr(
             data,
             "distance_map",
-            torch.tensor(
-                np.clip(subject_data_dict["distances"], 0, 300), dtype=torch.float32
-            ),
+            torch.tensor(np.clip(subject_data_dict["distances"], 0, 300), dtype=torch.float32),
         )
         if len(self.output_levels) != 0:
             dists_pooled = {7: data.distance_map}
             for level in range(min(self.output_levels), 7)[::-1]:
-                dists_pooled[level] = self.pool_layers[level](
-                    dists_pooled[level + 1], center_pool=True
-                )
+                dists_pooled[level] = self.pool_layers[level](dists_pooled[level + 1], center_pool=True)
             for level in self.output_levels:
                 setattr(
                     data,

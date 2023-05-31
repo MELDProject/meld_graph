@@ -50,9 +50,7 @@ class StatsRecorder:
 
             self.mean = m / (m + n) * tmp + n / (m + n) * newmean
             self.std = (
-                m / (m + n) * self.std**2
-                + n / (m + n) * newstd**2
-                + m * n / (m + n) ** 2 * (tmp - newmean) ** 2
+                m / (m + n) * self.std**2 + n / (m + n) * newstd**2 + m * n / (m + n) ** 2 * (tmp - newmean) ** 2
             )
             self.std = np.sqrt(self.std)
 

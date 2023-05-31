@@ -157,21 +157,15 @@ class Evaluator:
             # get distance map if exist in loss, otherwise return array of NaN
             if (
                 "distance_regression"
-                in self.experiment.network_parameters["training_parameters"][
-                    "loss_dictionary"
-                ].keys()
+                in self.experiment.network_parameters["training_parameters"]["loss_dictionary"].keys()
             ):
                 distance_map = estimates["non_lesion_logits"][:, 0]
             else:
                 distance_map = torch.full((len(prediction), 1), torch.nan)[:, 0]
-            prediction_array.append(
-                prediction.detach().numpy()[self.cohort.cortex_mask]
-            )
+            prediction_array.append(prediction.detach().numpy()[self.cohort.cortex_mask])
             labels_array.append(labels.numpy()[self.cohort.cortex_mask])
             features_array.append(data.x.numpy()[self.cohort.cortex_mask])
-            distance_map_array.append(
-                distance_map.detach().numpy()[self.cohort.cortex_mask]
-            )
+            distance_map_array.append(distance_map.detach().numpy()[self.cohort.cortex_mask])
             geodesic_array.append(geo_distance.numpy()[self.cohort.cortex_mask])
             # only save after right hemi has been run.
             if hemi == "rh":
@@ -197,9 +191,7 @@ class Evaluator:
                     )
                 # save features if mode is training
                 if self.mode != "train":
-                    subject_dictionary["input_features"] = np.concatenate(
-                        features_array
-                    )
+                    subject_dictionary["input_features"] = np.concatenate(features_array)
                 if store_predictions:
                     self.data_dictionary[subj_id] = subject_dictionary
                 if roc_curves_thresholds is not None:
@@ -218,9 +210,7 @@ class Evaluator:
 
     def calc_sub_auc(self, subject_dictionary):
         """calculate subject-level aucs"""
-        sub_auc = metrics.roc_auc_score(
-            subject_dictionary["borderzone"], subject_dictionary["result"]
-        )
+        sub_auc = metrics.roc_auc_score(subject_dictionary["borderzone"], subject_dictionary["result"])
         return sub_auc
 
     def save_sub_aucs(self):
@@ -235,16 +225,9 @@ class Evaluator:
     def calculate_aucs(self):
         import sklearn.metrics as metrics
 
-        x = (
-            1
-            - self.roc_dictionary["specificity"]
-            / self.roc_dictionary["specificity"][-1]
-        )
+        x = 1 - self.roc_dictionary["specificity"] / self.roc_dictionary["specificity"][-1]
         y1 = self.roc_dictionary["sensitivity"] / self.roc_dictionary["sensitivity"][0]
-        y2 = (
-            self.roc_dictionary["sensitivity_plus"]
-            / self.roc_dictionary["sensitivity_plus"][0]
-        )
+        y2 = self.roc_dictionary["sensitivity_plus"] / self.roc_dictionary["sensitivity_plus"][0]
         self.roc_dictionary["auc"] = metrics.auc(x, y1)
         self.roc_dictionary["auc_plus"] = metrics.auc(x, y2)
         self.roc_dictionary["thresholds"] = self.thresholds
@@ -255,9 +238,7 @@ class Evaluator:
 
         filename = os.path.join(self.save_dir, "results", f"roc_auc.pickle")
         with open(filename, "wb") as write_file:
-            pickle.dump(
-                self.roc_dictionary, write_file, protocol=pickle.HIGHEST_PROTOCOL
-            )
+            pickle.dump(self.roc_dictionary, write_file, protocol=pickle.HIGHEST_PROTOCOL)
         return
 
     def roc_curves(self, subject_dictionary):
@@ -305,9 +286,7 @@ class Evaluator:
             group = labels.sum() != 0
 
             detected = np.logical_and(prediction > threshold, labels).any()
-            difference = np.setdiff1d(
-                np.unique(prediction), np.unique(prediction[labels])
-            )
+            difference = np.setdiff1d(np.unique(prediction), np.unique(prediction[labels]))
             difference = difference[difference > 0]
             n_clusters = len(difference)
             # # if not detected, does a cluster overlap boundary zone and if so, how big is the cluster?
@@ -364,13 +343,9 @@ class Evaluator:
                 ],
             )
             # save results
-            filename = os.path.join(
-                self.save_dir, "results", f"test_results{suffix}.csv"
-            )
+            filename = os.path.join(self.save_dir, "results", f"test_results{suffix}.csv")
             if fold is not None:
-                filename = os.path.join(
-                    self.save_dir, "results", f"test_results_{fold}{suffix}.csv"
-                )
+                filename = os.path.join(self.save_dir, "results", f"test_results_{fold}{suffix}.csv")
 
             if os.path.isfile(filename):
                 done = False
@@ -401,9 +376,7 @@ class Evaluator:
             if rootfile is not None:
                 filename = os.path.join(rootfile.format(subject))
             else:
-                filename = os.path.join(
-                    self.save_dir, "results", "images", "{}.jpg".format(subject)
-                )
+                filename = os.path.join(self.save_dir, "results", "images", "{}.jpg".format(subject))
                 os.makedirs(
                     os.path.join(
                         self.save_dir,
@@ -435,11 +408,7 @@ class Evaluator:
                 import nibabel as nb
                 from meld_classifier.paths import BASE_PATH
 
-                flat = nb.load(
-                    os.path.join(
-                        BASE_PATH, "fsaverage_sym", "surf", "lh.full.patch.flat.gii"
-                    )
-                )
+                flat = nb.load(os.path.join(BASE_PATH, "fsaverage_sym", "surf", "lh.full.patch.flat.gii"))
                 coords, faces = flat.darrays[0].data, flat.darrays[1].data
 
             # round up to get the square grid size
@@ -480,18 +449,14 @@ class Evaluator:
                 if "distance" in titles[i]:
                     im = create_surface_plots(coords, faces, overlay, flat_map=True)
                 else:
-                    im = create_surface_plots(
-                        coords, faces, overlay, flat_map=True, limits=[0.4, 0.6]
-                    )
+                    im = create_surface_plots(coords, faces, overlay, flat_map=True, limits=[0.4, 0.6])
                 ax.imshow(im)
                 ax.axis("off")
                 ax.set_title(titles[i], loc="left", fontsize=20)
             fig.savefig(filename, bbox_inches="tight")
             plt.close("all")
 
-    def save_prediction(
-        self, subject, prediction, dataset_str="prediction", dtype=None, suffix=""
-    ):
+    def save_prediction(self, subject, prediction, dataset_str="prediction", dtype=None, suffix=""):
         """
         saves prediction to {experiment_path}/results/predictions.hdf5.
         the hdf5 has the structure (subject_id/hemisphere/prediction).
@@ -520,9 +485,7 @@ class Evaluator:
                     for i, hemi in enumerate(["lh", "rh"]):
                         shape = tuple([nvert_hemi] + list(prediction.shape[1:]))
                         # create dataset
-                        dset = f.require_dataset(
-                            f"{subject}/{hemi}/{dataset_str}", shape=shape, dtype=dtype
-                        )
+                        dset = f.require_dataset(f"{subject}/{hemi}/{dataset_str}", shape=shape, dtype=dtype)
                         # save prediction in dataset
                         dset[:] = prediction[i * nvert_hemi : (i + 1) * nvert_hemi]
                         # if dataset_str == "prediction":
@@ -605,12 +568,8 @@ def roc_curves(subject_dictionary, roc_dictionary, roc_curves_thresholds):
         # if we want tpr vs fpr curve too
         # store sensitivity and sensitivity_plus for each patient (has a label)
         if subject_dictionary["input_labels"].sum() > 0:
-            roc_dictionary["sensitivity"][t_i] += np.logical_and(
-                predicted, subject_dictionary["input_labels"]
-            ).any()
-            roc_dictionary["sensitivity_plus"][t_i] += np.logical_and(
-                predicted, subject_dictionary["borderzone"]
-            ).any()
+            roc_dictionary["sensitivity"][t_i] += np.logical_and(predicted, subject_dictionary["input_labels"]).any()
+            roc_dictionary["sensitivity_plus"][t_i] += np.logical_and(predicted, subject_dictionary["borderzone"]).any()
         # store specificity for controls (no label)
         else:
             roc_dictionary["specificity"][t_i] += ~predicted.any()

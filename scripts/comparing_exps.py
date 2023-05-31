@@ -263,12 +263,8 @@ for exp in exps.keys():
     train_controls = np.intersect1d(trainval, controls)
     prep = Prep(cohort=cohort, params=data_parameters)
     # update this for no FLAIR
-    non_flair_features_stacked, flair_features_stacked, lesions = patient_data(
-        train_patients, prep
-    )
-    control_non_flair_features_stacked, control_flair_features_stacked = control_data(
-        train_controls, prep
-    )
+    non_flair_features_stacked, flair_features_stacked, lesions = patient_data(train_patients, prep)
+    control_non_flair_features_stacked, control_flair_features_stacked = control_data(train_controls, prep)
     save_features[exp]["p"] = non_flair_features_stacked
     save_features[exp]["pf"] = flair_features_stacked
     save_features[exp]["c"] = control_non_flair_features_stacked
@@ -306,12 +302,8 @@ for t in tf:
             yv = np.ones(n_v)
             val_x = np.vstack(
                 [
-                    save_features[exp][f"p{t}"][
-                        fold_step_p * f : fold_step_p * (f + 1)
-                    ],
-                    save_features[exp][f"c{t}"][
-                        fold_step_c * f : fold_step_c * (f + 1)
-                    ],
+                    save_features[exp][f"p{t}"][fold_step_p * f : fold_step_p * (f + 1)],
+                    save_features[exp][f"c{t}"][fold_step_c * f : fold_step_c * (f + 1)],
                 ]
             )
             val_y = np.concatenate(

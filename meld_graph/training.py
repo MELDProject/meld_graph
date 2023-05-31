@@ -137,9 +137,7 @@ class DistanceRegressionLoss(torch.nn.Module):
         elif self.loss == "mae":
             loss = torch.abs(torch.subtract(inputs, distance_map))
         elif self.loss == "mle":
-            loss = torch.log(
-                torch.add(torch.abs(torch.subtract(inputs, distance_map)), 1)
-            )
+            loss = torch.log(torch.add(torch.abs(torch.subtract(inputs, distance_map)), 1))
         # weigh loss
         if self.weigh_by_gt:
             loss = torch.div(loss, torch.add(distance_map, 1))
@@ -282,9 +280,7 @@ def calculate_loss(
                     cur_estimates = estimates_dict["hemi_log_softmax"]
             else:
                 cur_estimates = estimates_dict[f"{prefix}log_sumexp"]
-            cur_labels = torch.any(
-                labels.view(labels.shape[0] // n_vertices, -1), dim=1
-            ).long()
+            cur_labels = torch.any(labels.view(labels.shape[0] // n_vertices, -1), dim=1).long()
         else:
             raise NotImplementedError(f"Unknown loss def {loss_def}")
 
@@ -305,19 +301,13 @@ class Metrics:
         self.metrics_to_track = self.metrics
 
         if "precision" in self.metrics or "recall" in self.metrics:
-            self.metrics_to_track = list(
-                set(self.metrics_to_track + ["tp", "fp", "fn", "tn"])
-            )
+            self.metrics_to_track = list(set(self.metrics_to_track + ["tp", "fp", "fn", "tn"]))
         if "cl_precision" in self.metrics or "cl_recall" in self.metrics:
-            self.metrics_to_track = list(
-                set(self.metrics_to_track + ["cl_tp", "cl_fp", "cl_fn", "cl_tn"])
-            )
+            self.metrics_to_track = list(set(self.metrics_to_track + ["cl_tp", "cl_fp", "cl_fn", "cl_tn"]))
         if "auroc" in self.metrics:
             import torchmetrics
 
-            self.auroc = torchmetrics.AUROC(task="binary", thresholds=10).to(
-                self.device
-            )
+            self.auroc = torchmetrics.AUROC(task="binary", thresholds=10).to(self.device)
         if "sub_auroc" in self.metrics_to_track:
             self.n_thresh = 101
             self.sensitivities = np.zeros(self.n_thresh)
@@ -333,17 +323,8 @@ class Metrics:
         return self.running_scores
 
     def update(self, pred, target, pred_class, estimates, borderzone=None):
-        if (
-            len(
-                set(["dice_lesion", "dice_nonlesion"]).intersection(
-                    self.metrics_to_track
-                )
-            )
-            > 0
-        ):
-            dice_coeffs = dice_coeff(
-                torch.nn.functional.one_hot(pred, num_classes=2), target
-            )
+        if len(set(["dice_lesion", "dice_nonlesion"]).intersection(self.metrics_to_track)) > 0:
+            dice_coeffs = dice_coeff(torch.nn.functional.one_hot(pred, num_classes=2), target)
             if "dice_lesion" in self.metrics_to_track:
                 self.running_scores["dice_lesion"].append(dice_coeffs[1].item())
             if "dice_nonlesion" in self.metrics_to_track:
@@ -366,12 +347,8 @@ class Metrics:
             specificity = np.zeros(self.n_thresh)
 
             continuous_predictions = torch.exp(estimates[:, 1])
-            reshaped_preds = continuous_predictions.view(
-                continuous_predictions.shape[0] // self.n_vertices, -1
-            )
-            reshaped_borders = borderzone.view(
-                borderzone.shape[0] // self.n_vertices, -1
-            )
+            reshaped_preds = continuous_predictions.view(continuous_predictions.shape[0] // self.n_vertices, -1)
+            reshaped_borders = borderzone.view(borderzone.shape[0] // self.n_vertices, -1)
             for example_index, rt in enumerate(reshaped_preds):
                 for t_i, threshold in enumerate(roc_curves_thresholds):
                     rtt = rt >= threshold
@@ -393,9 +370,7 @@ class Metrics:
             self.specificities += specificity
 
         # classification metrics
-        target_class = torch.any(
-            target.view(target.shape[0] // self.n_vertices, -1), dim=1
-        ).long()
+        target_class = torch.any(target.view(target.shape[0] // self.n_vertices, -1), dim=1).long()
         if "cl_tp" in self.metrics_to_track:
             tp, fp, fn, tn = tp_fp_fn_tn(pred_class, target_class)
             self.running_scores["cl_tp"].append(tp.item())
@@ -454,16 +429,12 @@ class Trainer:
         self.log = logging.getLogger(__name__)
         self.experiment = experiment
         self.params = self.experiment.network_parameters["training_parameters"]
-        self.deep_supervision = self.params.get(
-            "deep_supervision", {"levels": [], "weight": []}
-        )
+        self.deep_supervision = self.params.get("deep_supervision", {"levels": [], "weight": []})
 
         init_weights = self.params.get("init_weights", None)
         if init_weights is not None:
             init_weights = os.path.join(EXPERIMENT_PATH, init_weights)
-            assert os.path.isfile(
-                init_weights
-            ), f"Weights file {init_weights} does not exist"
+            assert os.path.isfile(init_weights), f"Weights file {init_weights} does not exist"
         self.init_weights = init_weights
 
     def train_epoch(self, data_loader, optimiser):
@@ -506,12 +477,8 @@ class Trainer:
             # add deep supervision outputs
             for i, level in enumerate(sorted(self.deep_supervision["levels"])):
                 cur_labels = getattr(data, f"output_level{level}")
-                cur_distance_map = getattr(
-                    data, f"output_level{level}_distance_map", None
-                )
-                n_vertices = len(
-                    self.experiment.model.icospheres.icospheres[level]["coords"]
-                )
+                cur_distance_map = getattr(data, f"output_level{level}_distance_map", None)
+                n_vertices = len(self.experiment.model.icospheres.icospheres[level]["coords"])
                 ds_losses = calculate_loss(
                     self.params["loss_dictionary"],
                     estimates,
@@ -522,10 +489,7 @@ class Trainer:
                     n_vertices=n_vertices,
                 )
                 losses.update(
-                    {
-                        f"ds{level}_{key}": self.deep_supervision["weight"][i] * val
-                        for key, val in ds_losses.items()
-                    }
+                    {f"ds{level}_{key}": self.deep_supervision["weight"][i] * val for key, val in ds_losses.items()}
                 )
             # calculate overall loss
             loss = sum(losses.values())
@@ -537,9 +501,7 @@ class Trainer:
                     # no ds for lesion classification in this case
                     continue
                 for level in self.deep_supervision["levels"]:
-                    running_losses[f"ds{level}_{key}"].append(
-                        losses[f"ds{level}_{key}"].item()
-                    )
+                    running_losses[f"ds{level}_{key}"].append(losses[f"ds{level}_{key}"].item())
             running_losses["loss"].append(loss.item())
 
             # metrics
@@ -600,12 +562,8 @@ class Trainer:
                 # add deep supervision outputs
                 for i, level in enumerate(sorted(self.deep_supervision["levels"])):
                     cur_labels = getattr(data, f"output_level{level}")
-                    cur_distance_map = getattr(
-                        data, f"output_level{level}_distance_map", None
-                    )
-                    n_vertices = len(
-                        self.experiment.model.icospheres.icospheres[level]["coords"]
-                    )
+                    cur_distance_map = getattr(data, f"output_level{level}_distance_map", None)
+                    n_vertices = len(self.experiment.model.icospheres.icospheres[level]["coords"])
                     ds_losses = calculate_loss(
                         self.params["loss_dictionary"],
                         estimates,
@@ -616,10 +574,7 @@ class Trainer:
                         n_vertices=n_vertices,
                     )
                     losses.update(
-                        {
-                            f"ds{level}_{key}": self.deep_supervision["weight"][i] * val
-                            for key, val in ds_losses.items()
-                        }
+                        {f"ds{level}_{key}": self.deep_supervision["weight"][i] * val for key, val in ds_losses.items()}
                     )
                 # calculate overall loss
                 loss = sum(losses.values())
@@ -630,9 +585,7 @@ class Trainer:
                         # no ds for lesion classification in this case
                         continue
                     for level in self.deep_supervision["levels"]:
-                        running_losses[f"ds{level}_{key}"].append(
-                            losses[f"ds{level}_{key}"].item()
-                        )
+                        running_losses[f"ds{level}_{key}"].append(losses[f"ds{level}_{key}"].item())
                 running_losses["loss"].append(loss.item())
 
                 # metrics
@@ -729,22 +682,16 @@ class Trainer:
         if self.params["metric_smoothing"] is None:
             self.params["metric_smoothing"] = False
         self.log.info(f"using max_epochs {max_epochs_lr_decay} for lr decay")
-        lambda1 = (
-            lambda epoch: (1 - epoch / max_epochs_lr_decay) ** self.params["lr_decay"]
-        )
+        lambda1 = lambda epoch: (1 - epoch / max_epochs_lr_decay) ** self.params["lr_decay"]
         # NOTE: when resuming training, need to set last epoch to epoch-1
-        scheduler = torch.optim.lr_scheduler.LambdaLR(
-            optimiser, lr_lambda=lambda1, last_epoch=-1
-        )
+        scheduler = torch.optim.lr_scheduler.LambdaLR(optimiser, lr_lambda=lambda1, last_epoch=-1)
 
         scores = {"train": [], "val": []}
         best_loss = 100000
         patience = 0
         running_metrics = []
         for epoch in range(self.params["num_epochs"]):
-            self.log.info(
-                f"Epoch {epoch} :: learning rate {scheduler.get_last_lr()[0]}"
-            )
+            self.log.info(f"Epoch {epoch} :: learning rate {scheduler.get_last_lr()[0]}")
             start = time.time()
             cur_scores = self.train_epoch(train_data_loader, optimiser)
             self.log.info(f"Epoch {epoch} :: time {time.time()-start}")
@@ -756,18 +703,14 @@ class Trainer:
                 f.write(
                     f"Epoch {epoch} :: memory usage {process.memory_info().rss / 1024 ** 2}MB-  time {time.time()-start} \n "
                 )
-            self.log.info(
-                f"Epoch {epoch} :: memory usage {process.memory_info().rss / 1024 ** 2}MB"
-            )  # in bytes
+            self.log.info(f"Epoch {epoch} :: memory usage {process.memory_info().rss / 1024 ** 2}MB")  # in bytes
 
             # only log non-deep supervision losses
             log_keys = list(cur_scores.keys())
             for i, key in enumerate(self.params["loss_dictionary"].keys()):
                 for level in self.deep_supervision["levels"]:
                     log_keys.remove(f"ds{level}_{key}")
-            log_str = ", ".join(
-                f"{key} {val:.3f}" for key, val in cur_scores.items() if key in log_keys
-            )
+            log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items() if key in log_keys)
             self.log.info(f"Epoch {epoch} :: Train {log_str}")
             scores["train"].append(cur_scores)
 
@@ -782,16 +725,11 @@ class Trainer:
                 # wandb.log({"weights": weights,'biases':biases})
             if epoch % 1 == 0:
                 cur_scores = self.val_epoch(val_data_loader)
-                log_str = ", ".join(
-                    f"{key} {val:.3f}"
-                    for key, val in cur_scores.items()
-                    if key in log_keys
-                )
+                log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items() if key in log_keys)
                 self.log.info(f"Epoch {epoch} :: Val   {log_str}")
                 scores["val"].append(cur_scores)
                 epoch_stopping_metric = (
-                    cur_scores[self.params["stopping_metric"]["name"]]
-                    * self.params["stopping_metric"]["sign"]
+                    cur_scores[self.params["stopping_metric"]["name"]] * self.params["stopping_metric"]["sign"]
                 )
                 running_metrics.append(epoch_stopping_metric)
                 # TODO remove metric smoothing? If not, add to example_experiment_config!
@@ -802,37 +740,25 @@ class Trainer:
                 if epoch_stopping_metric < best_loss:
                     best_loss = epoch_stopping_metric
                     if self.experiment.experiment_path is not None:
-                        fname = os.path.join(
-                            self.experiment.experiment_path, "best_model.pt"
-                        )
+                        fname = os.path.join(self.experiment.experiment_path, "best_model.pt")
                         torch.save(self.experiment.model.state_dict(), fname)
                         self.log.info(f"Saved new best model to {fname}")
                     patience = 0
                 else:
                     patience += 1
                 if patience >= self.params["max_patience"]:
-                    self.log.info(
-                        f"Stopping early at epoch {epoch}, with patience {patience}"
-                    )
+                    self.log.info(f"Stopping early at epoch {epoch}, with patience {patience}")
                     break
             if epoch % 5 == 0:
                 # save train/val scores
                 if self.experiment.experiment_path is not None:
                     pd.DataFrame(scores["train"]).to_csv(
-                        os.path.join(
-                            self.experiment.experiment_path, "train_scores.csv"
-                        )
+                        os.path.join(self.experiment.experiment_path, "train_scores.csv")
                     )
-                    pd.DataFrame(scores["val"]).to_csv(
-                        os.path.join(self.experiment.experiment_path, "val_scores.csv")
-                    )
+                    pd.DataFrame(scores["val"]).to_csv(os.path.join(self.experiment.experiment_path, "val_scores.csv"))
 
         self.log.info(f"Finished training")
         # save train/val scores
         if self.experiment.experiment_path is not None:
-            pd.DataFrame(scores["train"]).to_csv(
-                os.path.join(self.experiment.experiment_path, "train_scores.csv")
-            )
-            pd.DataFrame(scores["val"]).to_csv(
-                os.path.join(self.experiment.experiment_path, "val_scores.csv")
-            )
+            pd.DataFrame(scores["train"]).to_csv(os.path.join(self.experiment.experiment_path, "train_scores.csv"))
+            pd.DataFrame(scores["val"]).to_csv(os.path.join(self.experiment.experiment_path, "val_scores.csv"))

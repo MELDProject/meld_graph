@@ -81,9 +81,7 @@ class Experiment:
         self.fold = self.data_parameters["fold_n"]
         self.experiment_path = None
         if self.experiment_name is not None:
-            self.experiment_path = os.path.join(
-                EXPERIMENT_PATH, self.experiment_name, f"fold_{self.fold:02d}"
-            )
+            self.experiment_path = os.path.join(EXPERIMENT_PATH, self.experiment_name, f"fold_{self.fold:02d}")
             os.makedirs(self.experiment_path, exist_ok=True)
         # init logging now, path is created
         # if save_params, will overwrite/append to logs
@@ -106,12 +104,8 @@ class Experiment:
         Args:
             experiment_path (str): path to experiment. E.g. experiment_name/fold_00
         """
-        data_parameters = json.load(
-            open(os.path.join(experiment_path, "data_parameters.json"))
-        )
-        network_parameters = json.load(
-            open(os.path.join(experiment_path, "network_parameters.json"))
-        )
+        data_parameters = json.load(open(os.path.join(experiment_path, "data_parameters.json")))
+        network_parameters = json.load(open(os.path.join(experiment_path, "network_parameters.json")))
         return cls(network_parameters, data_parameters, save_params=False)
 
     def _init_logging(self, verbose, save_params=False):
@@ -174,14 +168,10 @@ class Experiment:
         if "features" not in self.data_parameters:
             self.log.info("get features to train on")
             # get features
-            features = self.cohort.get_features(
-                features_to_exclude=self.data_parameters["features_to_exclude"]
-            )
+            features = self.cohort.get_features(features_to_exclude=self.data_parameters["features_to_exclude"])
             # get features that should be ignored
             _, features_to_ignore = self.cohort._filter_features(
-                features_to_exclude=self.data_parameters.get(
-                    "features_to_replace_with_0", []
-                ),
+                features_to_exclude=self.data_parameters.get("features_to_replace_with_0", []),
                 return_excluded=True,
             )
             self.log.debug(f"features {features}")
@@ -210,9 +200,7 @@ class Experiment:
             force (bool): reload model if model is already loaded.
         """
         if self.model is not None and not force:
-            self.log.info(
-                "Model already exists. Specify force=True to force reloading and initialisation"
-            )
+            self.log.info("Model already exists. Specify force=True to force reloading and initialisation")
         self.log.info("Creating model")
         # get number of features - depends on how hemis are combined
         if self.data_parameters["combine_hemis"] is None:
@@ -226,9 +214,7 @@ class Experiment:
         # build icosphere_params dict
         icosphere_params = self.data_parameters["icosphere_parameters"]
         icosphere_params["combine_hemis"] = self.data_parameters["combine_hemis"]
-        icosphere_params["conv_type"] = self.network_parameters["model_parameters"][
-            "conv_type"
-        ]
+        icosphere_params["conv_type"] = self.network_parameters["model_parameters"]["conv_type"]
         if network_type == "MoNet":
             self.model = meld_graph.models.MoNet(
                 **self.network_parameters["model_parameters"],
@@ -243,9 +229,7 @@ class Experiment:
                 deep_supervision=self.network_parameters["training_parameters"]
                 .get("deep_supervision", {})
                 .get("levels", []),
-                classification_head=self.network_parameters["training_parameters"][
-                    "loss_dictionary"
-                ]
+                classification_head=self.network_parameters["training_parameters"]["loss_dictionary"]
                 .get("lesion_classification", {})
                 .get("apply_to_bottleneck", False),
             )
@@ -254,15 +238,9 @@ class Experiment:
 
         if checkpoint_path is not None and os.path.isfile(checkpoint_path):
             # checkpoint contains both model architecture + weights
-            device = (
-                torch.device("cuda")
-                if torch.cuda.is_available()
-                else torch.device("cpu")
-            )
+            device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
             self.log.info(f"Loading model weights from checkpoint {checkpoint_path}")
-            self.model.load_state_dict(
-                torch.load(checkpoint_path, map_location=device), strict=False
-            )
+            self.model.load_state_dict(torch.load(checkpoint_path, map_location=device), strict=False)
             self.model.eval()
 
     def train(self, wandb_logging=False):
@@ -353,9 +331,7 @@ class Experiment:
         """
         print(self.experiment_path)
         if is_experiment(self.experiment_path, trained=True):
-            df = pd.read_csv(
-                os.path.join(self.experiment_path, f"{split}_scores.csv"), index_col=0
-            )
+            df = pd.read_csv(os.path.join(self.experiment_path, f"{split}_scores.csv"), index_col=0)
             return df
         else:
             self.log.info("Experiment is not trained, no scores available")

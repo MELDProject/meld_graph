@@ -49,9 +49,7 @@ class SpiralConv(nn.Module):
             x = torch.index_select(x, self.dim, self.indices.view(-1))
             x = x.view(bs, n_nodes, -1)
         else:
-            raise RuntimeError(
-                "x.dim() is expected to be 2 or 3, but received {}".format(x.dim())
-            )
+            raise RuntimeError("x.dim() is expected to be 2 or 3, but received {}".format(x.dim()))
         x = self.layer(x)
         if self.norm is not None:
             x = self.norm(x)
