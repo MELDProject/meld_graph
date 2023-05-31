@@ -1,13 +1,16 @@
 import random, string, datetime
 import numpy as np
+
+
 def date_code():
     # return unique date code of form: YYYY-MM-DD_XXXX
-    return datetime.datetime.now().strftime("%y-%m-%d") + '_' + \
-        ''.join(random.choices(string.ascii_uppercase, k=4))
+    return datetime.datetime.now().strftime("%y-%m-%d") + "_" + "".join(random.choices(string.ascii_uppercase, k=4))
+
+
 # set up multiple configs at the same time
 
 # base name for all experiments
-base_name = date_code() 
+base_name = date_code()
 # structure of experiment folder:
 # parallel_name / s_X / fold_XX
 # this means that for all experiments in parallels, sequential experiments are run
@@ -18,110 +21,96 @@ base_name = date_code()
 sequential = [
     # large synthetic lesions
     {
-        'network_parameters': {
-            'training_parameters':{'num_epochs': 50,
-                    'oversampling': False,
+        "network_parameters": {
+            "training_parameters": {
+                "num_epochs": 50,
+                "oversampling": False,
             }
         },
-        'data_parameters': {
-            'synthetic_data': {'run_synthetic': True, 'radius': 2},
-        }
+        "data_parameters": {
+            "synthetic_data": {"run_synthetic": True, "radius": 2},
+        },
     },
     # small synthetic lesions
-     {
-        'network_parameters': {
-            'training_parameters':{'num_epochs': 30,
-                    'oversampling': False,
+    {
+        "network_parameters": {
+            "training_parameters": {
+                "num_epochs": 30,
+                "oversampling": False,
             }
         },
-        'data_parameters': {
-            'synthetic_data': {'run_synthetic': True, 'radius': 0.5},
-        }
+        "data_parameters": {
+            "synthetic_data": {"run_synthetic": True, "radius": 0.5},
+        },
     },
     # real data
     {
-        'network_parameters': {
-            'training_parameters':{'num_epochs': 1000,
-            'oversampling': True},
+        "network_parameters": {
+            "training_parameters": {"num_epochs": 1000, "oversampling": True},
         },
-        'data_parameters': {
-            'synthetic_data': {'run_synthetic': False},
-            'group':'both',
-        }
-    }
+        "data_parameters": {
+            "synthetic_data": {"run_synthetic": False},
+            "group": "both",
+        },
+    },
 ]
 
 # parallel: these experiments are run in parallel. For each parallel experiment, all experiments in sequential will be launched=
 parallel = []
-losses=[
-    
+losses = [
     {
-        'network_parameters': {
-            'name': base_name + '_finetuning_classification',
-            'training_parameters':{"deep_supervision": {
-            "levels": [6, 5, 4, 3,2,1],
-            "weight": [0.5, 0.25, 0.125, 0.0625,0.03125,0.0150765],
-        },
-        
-    "loss_dictionary": {
-            "cross_entropy": {"weight": 1},
-            "dice": {"class_weights": [0.0, 1.0], "weight": 1},
-            "lesion_classification": {"apply_to_bottleneck": True, "weight": 1},
-        },
-            
-            }
+        "network_parameters": {
+            "name": base_name + "_finetuning_classification",
+            "training_parameters": {
+                "deep_supervision": {
+                    "levels": [6, 5, 4, 3, 2, 1],
+                    "weight": [0.5, 0.25, 0.125, 0.0625, 0.03125, 0.0150765],
+                },
+                "loss_dictionary": {
+                    "cross_entropy": {"weight": 1},
+                    "dice": {"class_weights": [0.0, 1.0], "weight": 1},
+                    "lesion_classification": {"apply_to_bottleneck": True, "weight": 1},
+                },
             },
-        
-       'data_parameters': {"augment_data": {
-        "augment_lesion": {"p": 0.0},
-        "blur": {"p": 0.2},
-        "brightness": {"p": 0.15},
-        "contrast": {"p": 0.15},
-        "extend_lesion": {"p": 0.0},
-        "flipping": {"file": "data/flipping/flipping_ico7_3.npy", "p": 0.5},
-        "gamma": {"p": 0.15},
-        "low_res": {"p": 0.25},
-        "noise": {"p": 0.15},
-        "spinning": {"file": "data/spinning/spinning_ico7_10.npy", "p": 0.2},
-        "warping": {"file": "data/warping/warping_ico7_10.npy", "p": 0.2},
-    },}
+        },
+        "data_parameters": {
+            "augment_data": {
+                "augment_lesion": {"p": 0.0},
+                "blur": {"p": 0.2},
+                "brightness": {"p": 0.15},
+                "contrast": {"p": 0.15},
+                "extend_lesion": {"p": 0.0},
+                "flipping": {"file": "data/flipping/flipping_ico7_3.npy", "p": 0.5},
+                "gamma": {"p": 0.15},
+                "low_res": {"p": 0.25},
+                "noise": {"p": 0.15},
+                "spinning": {"file": "data/spinning/spinning_ico7_10.npy", "p": 0.2},
+                "warping": {"file": "data/warping/warping_ico7_10.npy", "p": 0.2},
+            },
+        },
     },
-#{
-#        'network_parameters': {
-#            'name': base_name + '_finetuning_distance',
-#            'training_parameters':{
-        
-#    "loss_dictionary": {
-#            "cross_entropy": {"weight": 1},
-#            "dice": {"class_weights": [0.0, 1.0], "weight": 1},
-#            "distance_regression": {"loss": "mae", "weigh_by_gt": True, "weight": 1},
-
- #       },
-            
- #           }
- #           },
-        
- #      'data_parameters': {}
- #   },
-
-    
-    
-    
-    
-    ]
+    # {
+    #        'network_parameters': {
+    #            'name': base_name + '_finetuning_distance',
+    #            'training_parameters':{
+    #    "loss_dictionary": {
+    #            "cross_entropy": {"weight": 1},
+    #            "dice": {"class_weights": [0.0, 1.0], "weight": 1},
+    #            "distance_regression": {"loss": "mae", "weigh_by_gt": True, "weight": 1},
+    #       },
+    #           }
+    #           },
+    #      'data_parameters': {}
+    #   },
+]
 
 
 from copy import deepcopy
+
 for loss in losses:
     for fold in np.arange(5):
-        if 'data_parameters' in loss.keys():
-            loss['data_parameters']['fold_n'] =fold
+        if "data_parameters" in loss.keys():
+            loss["data_parameters"]["fold_n"] = fold
         else:
-            loss['data_parameters']={'fold_n':fold}
+            loss["data_parameters"] = {"fold_n": fold}
         parallel.append(deepcopy(loss))
-
-
-
-
-
-

@@ -3,10 +3,12 @@ import torch.nn as nn
 import logging
 from torch_geometric.nn import InstanceNorm
 
+
 class SpiralConv(nn.Module):
     """
     Spiral convolution, adapted from https://github.com/sw-gong/spiralnet_plus/blob/master/conv/spiralconv.py
     """
+
     def __init__(self, in_channels, out_channels, indices, norm=None):
         super(SpiralConv, self).__init__()
         self.log = logging.getLogger(__name__)
@@ -17,9 +19,15 @@ class SpiralConv(nn.Module):
 
         self.layer = nn.Linear(in_channels * self.seq_length, out_channels)
         if norm is not None:
-            if norm == 'instance':
-                self.log.debug('Spiral Conv: Using instance norm')
-                self.norm = InstanceNorm(in_channels=out_channels, eps = 1e-05, momentum = 0.1, affine = False, track_running_stats = False)
+            if norm == "instance":
+                self.log.debug("Spiral Conv: Using instance norm")
+                self.norm = InstanceNorm(
+                    in_channels=out_channels,
+                    eps=1e-05,
+                    momentum=0.1,
+                    affine=False,
+                    track_running_stats=False,
+                )
             else:
                 raise NotImplementedError(norm)
         else:
@@ -41,16 +49,16 @@ class SpiralConv(nn.Module):
             x = torch.index_select(x, self.dim, self.indices.view(-1))
             x = x.view(bs, n_nodes, -1)
         else:
-            raise RuntimeError(
-                'x.dim() is expected to be 2 or 3, but received {}'.format(
-                    x.dim()))
+            raise RuntimeError("x.dim() is expected to be 2 or 3, but received {}".format(x.dim()))
         x = self.layer(x)
         if self.norm is not None:
             x = self.norm(x)
         return x
 
     def __repr__(self):
-        return '{}({}, {}, seq_length={})'.format(self.__class__.__name__,
-                                                  self.in_channels,
-                                                  self.out_channels,
-                                                  self.seq_length)
+        return "{}({}, {}, seq_length={})".format(
+            self.__class__.__name__,
+            self.in_channels,
+            self.out_channels,
+            self.seq_length,
+        )

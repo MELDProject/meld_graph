@@ -20,8 +20,8 @@ module load rhel7/default-gpu              # REQUIRED - loads the basic environm
 #! Insert additional module load commands after this line if needed:
 module load miniconda/3
 
-#source ~/activate_env.sh
-source activate ~/.conda/envs/meld_test
+source ~/activate_env.sh
+conda activate meld_test
 
 # run script
 BASE=/home/co-spit1/software/
