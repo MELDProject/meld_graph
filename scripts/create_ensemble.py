@@ -15,7 +15,7 @@ from meld_graph.ensemble import Ensemble
 def _update_subj_ids(data_param_file, ensemble_experiments):
     train_ids = []
     for exp in ensemble_experiments:
-        params = json.load(open(os.path.join(exp, f"data_parameters_{exp[1]}.json"), "r"))
+        params = json.load(open(os.path.join(exp, f"data_parameters.json"), "r"))
         train_ids.extend(params["train_ids"])
     train_ids = list(np.unique(train_ids))
 
@@ -35,16 +35,11 @@ def create_ensemble(experiment_path, ensemble_experiments):
         os.makedirs(experiment_path)
 
     # use parameters of first experiments for this
-    data_param_file = os.path.join(
-        ensemble_experiments[0][0], "data_parameters_{}.json".format(ensemble_experiments[0][1])
-    )
-    shutil.copyfile(data_param_file, os.path.join(experiment_path, "data_parameters_{}.json".format(experiment_name)))
-    network_param_file = os.path.join(
-        ensemble_experiments[0][0], "network_parameters_{}.json".format(ensemble_experiments[0][1])
-    )
-    shutil.copyfile(
-        network_param_file, os.path.join(experiment_path, "network_parameters_{}.json".format(experiment_name))
-    )
+    data_param_file = os.path.join(ensemble_experiments[0], "data_parameters.json")
+    
+    shutil.copyfile(data_param_file, os.path.join(experiment_path, "data_parameters.json"))
+    network_param_file = os.path.join(ensemble_experiments[0], "network_parameters.json")
+    shutil.copyfile(network_param_file, os.path.join(experiment_path, "network_parameters.json"))
     # merge all train ids
     _update_subj_ids(data_param_file, ensemble_experiments)
 
@@ -56,7 +51,7 @@ def create_ensemble(experiment_path, ensemble_experiments):
     models = []
     for exp_dir in ensemble_experiments:
         exp = Experiment.from_folder(exp_dir)
-        exp.load_model(os.path.join(exp.experiment_path, exp.experiment_name, f'fold_0{exp.fold}', 'best_model.pt'))
+        exp.load_model(os.path.join(exp.experiment_path, 'best_model.pt'))
         models.append(exp.model)
     ensemble = Ensemble(models)
     
@@ -70,7 +65,7 @@ if __name__ == "__main__":
         description="Ensemble trained experiments."
     )
     parser.add_argument(
-        "experiment-folder",
+        "experiment_folder",
         help="Experiments in one folder to ensemble",
     )
     parser.add_argument(

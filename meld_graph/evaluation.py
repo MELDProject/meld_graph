@@ -165,11 +165,11 @@ class Evaluator:
                 distance_map = estimates["non_lesion_logits"][:, 0]
             else:
                 distance_map = torch.full((len(prediction), 1), torch.nan)[:, 0]
-            prediction_array.append(prediction.detach().numpy()[self.cohort.cortex_mask])
-            labels_array.append(labels.numpy()[self.cohort.cortex_mask])
-            features_array.append(data.x.numpy()[self.cohort.cortex_mask])
-            distance_map_array.append(distance_map.detach().numpy()[self.cohort.cortex_mask])
-            geodesic_array.append(geo_distance.numpy()[self.cohort.cortex_mask])
+            prediction_array.append(prediction.detach().cpu().numpy()[self.cohort.cortex_mask])
+            labels_array.append(labels.cpu().numpy()[self.cohort.cortex_mask])
+            features_array.append(data.x.cpu().numpy()[self.cohort.cortex_mask])
+            distance_map_array.append(distance_map.detach().cpu().numpy()[self.cohort.cortex_mask])
+            geodesic_array.append(geo_distance.cpu().numpy()[self.cohort.cortex_mask])
             # only save after right hemi has been run.
             if hemi == "rh":
                 subject_dictionary = {

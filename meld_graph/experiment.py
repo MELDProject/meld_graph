@@ -242,12 +242,15 @@ class Experiment:
         else:
             raise (NotImplementedError, network_type)
 
+        device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         if checkpoint_path is not None and os.path.isfile(checkpoint_path):
             # checkpoint contains both model architecture + weights
-            device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
             self.log.info(f"Loading model weights from checkpoint {checkpoint_path}")
             self.model.load_state_dict(torch.load(checkpoint_path, map_location=device), strict=False)
             self.model.eval()
+        elif checkpoint_path is not None:
+            self.log.warn(f"Model checkpoing {checkpoint_path} does not exist!!!")
+        self.model.to(device)
 
     def load_ensemble_model(self, checkpoint_path=None, force=False):
         if self.model is not None and not force:
@@ -256,6 +259,9 @@ class Experiment:
         self.load_model(checkpoint_path=None, force=force)
         self.log.info('Creating ensemble model')
         models = [copy.deepcopy(self.model) for _ in range(5)]  # TODO this assumes that we are always ensembling 5 models
+        device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        for model in models:
+            model.to(device)
         ensemble_model = Ensemble(models)
         self.model = ensemble_model
         # load weights from checkpoint    
@@ -263,7 +269,8 @@ class Experiment:
             # checkpoint contains both model architecture + weights
             device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
             self.log.info(f"Loading ensemble model weights from checkpoint {checkpoint_path}")
-            self.model.load_state_dict(torch.load(checkpoint_path, map_location=device), strict=False)
+            res = self.model.load_state_dict(torch.load(checkpoint_path, map_location=device), strict=False)
+            self.log.debug(f'Loading returns: {res}')
             self.model.eval()
 
 

@@ -338,7 +338,7 @@ class MoNetUnet(nn.Module):
 
     def to(self, device, **kwargs):
         super(MoNetUnet, self).to(device, **kwargs)
-        # self.icospheres.to(device)
+        self.icospheres.to(device)
         self.device = device
 
     def forward(self, data):
