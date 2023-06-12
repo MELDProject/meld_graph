@@ -1,9 +1,11 @@
 # MELD Graph
 Graph based lesion segmentation for the MELD project.
 
-This package contains code for training and evaluating graph-based U-net lesion segmentation models operating on icosphere meshes. In addition to lesion segmentation, the models also contain auxiliary distance regression and hemisphere classification losses. For more information see our [manuscript](TODO).
+This package contains code for training and evaluating graph-based U-net lesion segmentation models operating on icosphere meshes. In addition to lesion segmentation, the models also contain auxiliary distance regression and hemisphere classification losses. For more information see our [manuscript](https://arxiv.org/abs/2306.01375).
 
-*Authors (alphabetical): Sophie Adler, Mathilde Ripart, Hannah Spitzer, Konrad Wagstyl*
+Please note that this code is not yet ready to be used with new subjects that are not a part of the MELD cohort. For this, please use [meld_classifier](https://github.com/MELDProject/meld_classifier). 
+
+*Code authors (alphabetical): Sophie Adler, Mathilde Ripart, Hannah Spitzer, Konrad Wagstyl*
 
 ![overview](overview.png)
 
@@ -93,7 +95,7 @@ This will produce a table of ensembled results on the model and a bootstrapped e
 If you'd like to contribute to this code base, have a look at our [contribution guide](CONTRIBUTING.md)
 
 ## Manuscript & Reproducibility
-Please check out our [manuscript](TODO) to learn more (accepted at MICCAI 2023). 
+Please check out our [manuscript](https://arxiv.org/abs/2306.01375) to learn more (accepted at MICCAI 2023). 
 
 ## Reproducibility
 We ran all experiments and evaluations using version v1.0.0 of meld_graph.
