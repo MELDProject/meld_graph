@@ -176,7 +176,7 @@ class Experiment:
             )
             self.log.debug(f"features {features}")
             self.log.debug(f"features_to_ignore {features_to_ignore}")
-
+            
             # put train_ids, val_ids, test_ids, features in data_parameters
             self.data_parameters.update(
                 {
@@ -271,6 +271,18 @@ class Experiment:
                 iteration=self.data_parameters["fold_n"],
                 number_of_folds=self.data_parameters["number_of_folds"],
             )
+            self.data_parameters.get('subsample_cohort_fraction',False)
+            print('orig:',len(train_ids))
+            if self.data_parameters["subsample_cohort_fraction"]:
+                n_total = len(train_ids)
+                n_subs = np.round(self.data_parameters["subsample_cohort_fraction"] *n_total).astype(int)
+                #shuffle array to keep consistent over fractions
+                rng = np.random.default_rng(0)
+                all_ids = np.arange(n_total)
+                rng.shuffle(all_ids)
+                sub_indices = all_ids[:n_subs]
+                train_ids = train_ids[sub_indices]
+            print('filtered:',len(train_ids))
             # put in data_parameters
             self.data_parameters.update(
                 {
