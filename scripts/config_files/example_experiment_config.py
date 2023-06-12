@@ -127,6 +127,8 @@ data_parameters = {
     ],
     "scanners": ["15T", "3T"],
     "dataset": "MELD_dataset_V6.csv",
+    #subsamples train cohort to a fixed fraction between 0-1 for experiments on cohort sample size
+    "subsample_cohort_fraction": False,
     # WARNING: THIS NEEDS TO BE CHANGED IF REAL TRAINING TO BOTH
     "group": "both",
     "features_to_exclude": [],
