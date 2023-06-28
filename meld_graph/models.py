@@ -196,43 +196,27 @@ class MoNetUnet(nn.Module):
         deep_supervision (list): list of levels at which deep supervision should be added, adds linear "squeeze" layer to the end of the block, and outputs these levels.
         activation_fn (str): activation function. "relu" or "leaky_relu".
         norm (str): "instance" or None
-<<<<<<< HEAD
         classification_head (bool): should a subject classification head be created from the lowest level. 
             Classification head contains linear "squeeze" layers over features and over all vertices, resulting in one output per hemisphere. 
         object_detection_head (bool): should an object detection head be created from the lowest level.
             Object detection head contains linear "squeeze" layers over features and over all vertices, resulting in 4 outputs per hemisphere.
 
     """
-    def __init__(self, num_features, layer_sizes, dim=2, kernel_size=3, 
-                 icosphere_params={}, conv_type='SpiralConv', spiral_len=7,
+    def __init__(self, 
+                 num_features, 
+                 layer_sizes, 
+                 dim=2, 
+                 kernel_size=3, 
+                 icosphere_params={}, 
+                 conv_type='SpiralConv', 
+                 spiral_len=7,
                  deep_supervision=[],
-                 activation_fn='relu', norm=None,
+                 activation_fn='relu', 
+                 norm=None,
                  classification_head=False,
                  distance_head=False,
                  object_detection_head=False
                  ):
-=======
-        classification_head (bool): should a subject classification head be created from the lowest level.
-            Classification head contains linear "squeeze" layers over features and over all vertices, resulting in one output per hemisphere.
-
-    """
-
-    def __init__(
-        self,
-        num_features,
-        layer_sizes,
-        dim=2,
-        kernel_size=3,
-        icosphere_params={},
-        conv_type="SpiralConv",
-        spiral_len=7,
-        deep_supervision=[],
-        activation_fn="relu",
-        norm=None,
-        classification_head=False,
-        distance_head=False,
-    ):
->>>>>>> de2692f1a214d48b8bacdf071f922206f1229de1
         super(MoNetUnet, self).__init__()
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.num_features = num_features
@@ -240,12 +224,8 @@ class MoNetUnet(nn.Module):
         self.deep_supervision = sorted(deep_supervision)
         self.classification_head = classification_head
         self.distance_head = distance_head
-<<<<<<< HEAD
         self.object_detection_head = object_detection_head
         if activation_fn == 'relu':
-=======
-        if activation_fn == "relu":
->>>>>>> de2692f1a214d48b8bacdf071f922206f1229de1
             self.activation_function = nn.ReLU()
         elif activation_fn == "leaky_relu":
             self.activation_function = nn.LeakyReLU()
@@ -302,7 +282,6 @@ class MoNetUnet(nn.Module):
         self.pool_layers = nn.ModuleList(pool_layers)
         if self.classification_head:
             # go from all vertices at lowest level to 2 nodes. First aggregated over kernel size, then over vertices
-<<<<<<< HEAD
             self.hemi_classification_head = nn.ModuleList([
                 nn.Conv1d(in_size, 1, kernel_size=1),
                 nn.Linear(len(self.icospheres.icospheres[level]['coords']), 2)
@@ -315,14 +294,6 @@ class MoNetUnet(nn.Module):
                 nn.Linear(len(self.icospheres.icospheres[level]['coords']), 4)
             ])
                 
-=======
-            self.hemi_classification_head = nn.ModuleList(
-                [
-                    nn.Conv1d(in_size, 1, kernel_size=1),
-                    nn.Linear(len(self.icospheres.icospheres[level]["coords"]), 2),
-                ]
-            )
->>>>>>> de2692f1a214d48b8bacdf071f922206f1229de1
 
         # - decoder going from lowest level up, but don't need to do the bottom block, is already in encoder
         # start with uppooling
@@ -392,13 +363,9 @@ class MoNetUnet(nn.Module):
             outputs[f"ds{level}_non_lesion_logits"] = []
             outputs[f"ds{level}_log_sumexp"] = []
         if self.classification_head:
-<<<<<<< HEAD
             outputs['hemi_log_softmax'] = []
         if self.object_detection_head:
             outputs['object_detection_linear'] = []
-=======
-            outputs["hemi_log_softmax"] = []
->>>>>>> de2692f1a214d48b8bacdf071f922206f1229de1
         for x in batch_x:
             level = 7
             for i, block in enumerate(self.encoder_conv_layers):
