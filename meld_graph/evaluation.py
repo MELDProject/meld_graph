@@ -3,6 +3,7 @@ import os
 import torch
 import torch_geometric.data
 from meld_graph.dataset import GraphDataset
+from meld_graph.models import PredictionForSaliency
 import numpy as np
 import h5py
 import scipy
@@ -14,6 +15,10 @@ import numpy as np
 import h5py
 import matplotlib.pyplot as plt
 import sklearn.metrics as metrics
+
+# for saliency
+import captum
+from captum.attr import IntegratedGradients
 
 
 class Evaluator:
@@ -124,11 +129,16 @@ class Evaluator:
         roc_curves_thresholds=np.linspace(0, 1, 21),
         save_prediction=True,
         save_prediction_suffix="",
+        saliency=False,
+        saliency_threshold=0.5,
     ):
         """
         Args:
             save_prediction (bool): save predictions to EXPERIMENT_FOLDER/results/predictions{save_prediction_suffix}.hdf5
             save_prediction_suffix (str): suffix for predictions file.
+            saliency (bool): calculate integrated gradients saliency.
+            saliency_theshold (float): prediction threshold for saliency calculation. 
+                Predictions > threshold will be included in saliency estimates.
         """
         self.log.info("loading data and predicting model")
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -142,6 +152,10 @@ class Evaluator:
         self.data_dictionary = {}
         store_sub_aucs = True
         self.subject_aucs = {}
+        if saliency:
+            # prepare model for saliency
+            saliency_model = IntegratedGradients(
+                PredictionForSaliency(self.experiment.model, threshold=saliency_threshold))
         for i, data in enumerate(data_loader):
             subject_index = i // 2
             hemi = ["lh", "rh"][i % 2]
@@ -151,12 +165,23 @@ class Evaluator:
                 labels_array = []
                 features_array = []
                 geodesic_array = []
+                saliency_array = []
             subj_id = self.subject_ids[subject_index]
             data = data.to(device)
             estimates = self.experiment.model(data.x)
             labels = data.y.squeeze()
             geo_distance = data.distance_map
             prediction = torch.exp(estimates["log_softmax"])[:, 1]
+            if saliency:
+                # calculate saliency
+                # are there lesional predictions?
+                if (prediction > saliency_threshold).max():
+                    # if yes, calculate saliency
+                    self.log.info(f'calculating saliency for {subj_id} {hemi}')
+                    cur_saliency = saliency_model.attribute(data.x, target=1, n_steps=25, 
+                                                        method='gausslegendre', internal_batch_size=100).cpu().numpy()
+                else:
+                    cur_saliency = np.zeros((len(prediction), len(self.experiment.data_parameters['features'])))
             # get distance map if exist in loss, otherwise return array of NaN
             if (
                 "distance_regression"
@@ -170,6 +195,8 @@ class Evaluator:
             features_array.append(data.x.cpu().numpy()[self.cohort.cortex_mask])
             distance_map_array.append(distance_map.detach().cpu().numpy()[self.cohort.cortex_mask])
             geodesic_array.append(geo_distance.cpu().numpy()[self.cohort.cortex_mask])
+            if saliency:
+                saliency_array.append(cur_saliency[self.cohort.cortex_mask])
             # only save after right hemi has been run.
             if hemi == "rh":
                 subject_dictionary = {
@@ -177,6 +204,7 @@ class Evaluator:
                     "result": np.concatenate(prediction_array),
                     "distance_map": np.concatenate(distance_map_array),
                     "borderzone": np.concatenate(geodesic_array) < 20,
+                    "saliency": np.concatenate(saliency_array),
                 }
                 # save prediction
                 if save_prediction:
@@ -192,6 +220,13 @@ class Evaluator:
                         dataset_str="distance_map",
                         suffix=save_prediction_suffix,
                     )
+                    if saliency:
+                        self.save_prediction(
+                            subj_id,
+                            subject_dictionary["saliency"],
+                            dataset_str="saliency",
+                            suffix=save_prediction_suffix,
+                        )
                 # save features if mode is training
                 if self.mode != "train":
                     subject_dictionary["input_features"] = np.concatenate(features_array)

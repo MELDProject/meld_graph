@@ -22,6 +22,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--model_path", help="path to trained model config")
     parser.add_argument("--split", help="train, test, val, or trainval")
+    parser.add_argument("--saliency", action='store_true', default=False, help="calculate integrated gradients saliency")
 
     args = parser.parse_args()
     exp = meld_graph.experiment.Experiment.from_folder(args.model_path)
@@ -36,7 +37,7 @@ if __name__ == "__main__":
     )
     features = exp.data_parameters["features"]
     exp.data_parameters["augment_data"] = {}
-    dataset = GraphDataset(subjects[:10], cohort, exp.data_parameters, mode="test")
+    dataset = GraphDataset(subjects, cohort, exp.data_parameters, mode="test")
 
     eva = Evaluator(
         experiment=exp,
@@ -72,6 +73,7 @@ if __name__ == "__main__":
         save_prediction=save_prediction,
         roc_curves_thresholds=roc_curves_thresholds,
         save_prediction_suffix=suffix,
+        saliency=args.saliency,
     )
 
     # # calculate stats
