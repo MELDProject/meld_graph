@@ -309,7 +309,6 @@ class Metrics:
         self.device = device
         self.metrics = metrics
         self.metrics_to_track = self.metrics
-
         if "precision" in self.metrics or "recall" in self.metrics:
             self.metrics_to_track = list(set(self.metrics_to_track + ["tp", "fp", "fn", "tn"]))
         if "cl_precision" in self.metrics or "cl_recall" in self.metrics:
@@ -319,17 +318,17 @@ class Metrics:
 
             self.auroc = torchmetrics.AUROC(task="binary", thresholds=10).to(self.device)
         if 'sub_auroc' in self.metrics_to_track:
-            self.n_thresh=51
-            self.sensitivities = np.zeros(self.n_thresh)
-            self.specificities = np.zeros(self.n_thresh)
+            self.n_thresh=21
+            self.roc_dictionary = {"sensitivity_plus": np.zeros(self.n_thresh),
+                                   "specificity":np.zeros(self.n_thresh)}
         self.running_scores = self.reset()
         self.n_vertices = n_vertices
 
     def reset(self):
         self.running_scores = {metric: [] for metric in self.metrics_to_track}
         if "sub_auroc" in self.metrics_to_track:
-            self.sensitivities = np.zeros(self.n_thresh)
-            self.specificities = np.zeros(self.n_thresh)
+            self.roc_dictionary = {"sensitivity_plus": np.zeros(self.n_thresh),
+                                   "specificity":np.zeros(self.n_thresh)}
         return self.running_scores
 
     def update(self, pred, target, pred_class, estimates, borderzone=None):
@@ -353,32 +352,13 @@ class Metrics:
             self.running_scores["auroc"].append(cur_auroc.item())
         if "sub_auroc" in self.metrics_to_track:
             roc_curves_thresholds = np.linspace(0, 1, self.n_thresh)
-            sensitivity = np.zeros(self.n_thresh)
-            specificity = np.zeros(self.n_thresh)
-
             continuous_predictions = torch.exp(estimates[:, 1])
-            reshaped_preds = continuous_predictions.view(continuous_predictions.shape[0] // self.n_vertices, -1)
-            reshaped_borders = borderzone.view(borderzone.shape[0] // self.n_vertices, -1)
-            for example_index, rt in enumerate(reshaped_preds):
-                for t_i, threshold in enumerate(roc_curves_thresholds):
-                    rtt = rt >= threshold
-                    rb = reshaped_borders[example_index]
-                    any_lesion = rb.sum()
-                    if any_lesion:
-                        bordered = torch.logical_and(rtt, rb).any()
-                        if not bordered:
-                            break
-                        else:
-                            sensitivity[t_i] += 1
-                    else:
-                        no_fps = ~rtt.any()
-                        if no_fps:
-                            specificity[t_i:] += 1
-                            break
-
-            self.sensitivities += sensitivity
-            self.specificities += specificity
-
+            #paired hemispheres into subjects
+            reshaped_preds = continuous_predictions.view(continuous_predictions.shape[0] // (2 * self.n_vertices), -1)
+            reshaped_borders = borderzone.view(borderzone.shape[0] // (2 * self.n_vertices), -1)
+            for example_index, prediction in enumerate(reshaped_preds):
+                sub_borderzone = reshaped_borders[example_index]
+                self.roc_curves(prediction,sub_borderzone,roc_curves_thresholds)
         # classification metrics
         target_class = torch.any(target.view(target.shape[0] // self.n_vertices, -1), dim=1).long()
         if "cl_tp" in self.metrics_to_track:
@@ -388,12 +368,40 @@ class Metrics:
             self.running_scores["cl_fn"].append(fn.item())
             self.running_scores["cl_tn"].append(tn.item())
 
+
+    def roc_curves(self, prediction, 
+                   borderzone, 
+                   thresholds):
+        """calculate performance at multiple thresholds"""
+        for t_i, threshold in enumerate(thresholds):
+            predicted = prediction >= threshold
+            # if we want tpr vs fpr curve too
+            # tp,fp,fn, tn = tp_fp_fn_tn(predicted, subject_dictionary['input_labels'])
+            # store sensitivity and sensitivity_plus for each patient (has a label)
+            if borderzone.sum() > 0:
+                if torch.sum(torch.logical_and((borderzone == 1),
+                                                (predicted == 1))) > 0:
+                    self.roc_dictionary["sensitivity_plus"][t_i] += 1
+                #if no overlaps exists then exit
+                else :
+                    break
+            # store specificity for controls (no label)
+            else:
+                #if any false positives, specificity not added to
+                if  predicted.any():
+                    pass
+                else:
+                    # if not false positives, add 1 to all and then break
+                    self.roc_dictionary["specificity"][t_i:] += 1
+                    break
+        return
+                
     def calculate_sub_auroc(self):
         """calculate subject level auroc"""
         # normalise to 0-1
-        sensitivity_curve = self.sensitivities / max(self.sensitivities)
-        specificity_curve = self.specificities / max(self.specificities)
-        auc = skmetrics.auc(1 - specificity_curve, sensitivity_curve)
+        x = 1 - self.roc_dictionary["specificity"] / self.roc_dictionary["specificity"][-1]
+        y2 = self.roc_dictionary["sensitivity_plus"] / self.roc_dictionary["sensitivity_plus"][0]
+        auc = skmetrics.auc(x, y2)
         return auc
 
     def get_aggregated_metrics(self):
@@ -457,9 +465,12 @@ class Trainer:
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         model = self.experiment.model
         model.train()
-
+        train_metrics = self.params["metrics"].copy()
+        #remove sub_auroc from train as it makes no sense to track.
+        if 'sub_auroc' in train_metrics:
+            train_metrics.remove('sub_auroc')
         metrics = Metrics(
-            self.params["metrics"],
+            train_metrics,
             n_vertices=self.experiment.model.n_vertices,
             device=device,
         )  # for keeping track of running metrics
