@@ -15,7 +15,7 @@ if __name__ == '__main__':
     parser.add_argument("--split", help="train, val, test, or trainval.")
     args = parser.parse_args()
 
-    for fold in [0,1,2,3,4]: #np.arange(5):
+    for fold in [0,1,2,3,4]: 
         full_path = os.path.join(args.experiment_path,f'fold_0{fold}')
         if os.path.exists(full_path):
             subprocess.call(f'sbatch evaluate.sh {full_path} {args.split}',shell=True)

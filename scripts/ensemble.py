@@ -36,8 +36,10 @@ model_paths = {'nnunet':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw3
                'low_smooth_regress':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-04-18_WLMU_thick_regress/s_0',
                'low_smooth_regress_thick_wpct':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-04-26_EEWS_wpct_regress/s_0/',
 }
-model_paths = {'low_smooth_regress':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-04-18_WLMU_thick_regress/s_0',
-               'low_smooth_regress_thick_wpct':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-04-26_EEWS_wpct_regress/s_0/',
+model_paths = {'miccai':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-03-01_WRZI_classification_distance/s_0',
+               'low_smooth_regress_thick_RC':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-06-05_RMRC_low_smooth_regress_RC/s_0',
+               'no_combat':'/rds/project/kw350/rds-kw350-meld/experiments_graph/kw350/23-06-16_YRWZ_no_combat/s_0'
+
 }
 
 

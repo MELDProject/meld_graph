@@ -319,7 +319,7 @@ losses=[
 
 from copy import deepcopy
 for loss in losses:
-    for fold in np.arange(1):
+    for fold in np.arange(5):
         if 'data_parameters' in loss.keys():
             loss['data_parameters']['fold_n'] =fold
         else:

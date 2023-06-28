@@ -156,4 +156,6 @@ data_parameters = {
         "smooth_lesion": False,
         "use_controls": True,
     },
+    'synth_on_the_fly':False,
+    'subsample_cohort_fraction':False, #0-1 subsample train cohort
 }

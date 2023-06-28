@@ -88,7 +88,7 @@ network_parameters = {
 
 # data parameters, passed to GraphDataset and Preprocess
 data_parameters = {
-    'hdf5_file_root': "{site_code}_{group}_featurematrix_combat_msm.hdf5",
+    'hdf5_file_root': "{site_code}_{group}_featurematrix_combat_6_kernels_noCombat.hdf5",
     'site_codes': [
        "H1",
         "H2",
@@ -122,11 +122,9 @@ data_parameters = {
     # features: manually specify features (instead of features_to_exclude)
     "features": [
        '.combat.on_lh.pial.K_filtered.sm20.mgh',
-
         '.combat.on_lh.thickness.sm3.mgh',
         '.combat.on_lh.thickness_regression.sm3.mgh',
         '.combat.on_lh.w-g.pct.sm3.mgh',
-
         '.combat.on_lh.sulc.sm3.mgh',
         '.combat.on_lh.curv.sm3.mgh',
         '.combat.on_lh.gm_FLAIR_0.75.sm3.mgh',
@@ -136,7 +134,6 @@ data_parameters = {
         '.combat.on_lh.wm_FLAIR_0.5.sm3.mgh',
         '.combat.on_lh.wm_FLAIR_1.sm3.mgh',
         '.inter_z.intra_z.combat.on_lh.pial.K_filtered.sm20.mgh',
-
         '.inter_z.intra_z.combat.on_lh.thickness.sm3.mgh',
         '.inter_z.intra_z.combat.on_lh.thickness_regression.sm3.mgh',
         '.inter_z.intra_z.combat.on_lh.w-g.pct.sm3.mgh',
@@ -149,9 +146,7 @@ data_parameters = {
         '.inter_z.intra_z.combat.on_lh.wm_FLAIR_0.5.sm3.mgh',
         '.inter_z.intra_z.combat.on_lh.wm_FLAIR_1.sm3.mgh',
         '.inter_z.asym.intra_z.combat.on_lh.pial.K_filtered.sm20.mgh',
-
         '.inter_z.asym.intra_z.combat.on_lh.thickness_regression.sm3.mgh',
-        
         '.inter_z.asym.intra_z.combat.on_lh.thickness.sm3.mgh',
         '.inter_z.asym.intra_z.combat.on_lh.w-g.pct.sm3.mgh',
         '.inter_z.asym.intra_z.combat.on_lh.sulc.sm3.mgh',

@@ -101,5 +101,5 @@ if __name__ == '__main__':
         mean_stds_dict[feature]['mean'] = means_stds[0,fi]
         mean_stds_dict[feature]['std'] = means_stds[1,fi]
 
-    with open('../data/feature_means_msm.json', 'w') as fp:
+    with open('../data/feature_means_no_combat.json', 'w') as fp:
         json.dump(mean_stds_dict, fp)

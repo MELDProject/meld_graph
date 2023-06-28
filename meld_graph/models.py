@@ -141,6 +141,7 @@ class MoNetUnet(nn.Module):
         'log_softmax' (log softmax lesion segmentation output), 
         'non_lesion_logits' (non lesion output for distance regression)
         'hemi_log_softmax' (classification head output, if classification_head is True)
+        'object_detection_linear' (object detection head output, if object_detection_head is True)
     For every deep supervision layer, the output are: 'ds{level}_log_softmax', 'ds{level}_non_lesion_logits'
 
     NOTE the model ouputs log softmax scores. Need to call torch.exp to get probabilities.
@@ -161,6 +162,8 @@ class MoNetUnet(nn.Module):
         norm (str): "instance" or None
         classification_head (bool): should a subject classification head be created from the lowest level. 
             Classification head contains linear "squeeze" layers over features and over all vertices, resulting in one output per hemisphere. 
+        object_detection_head (bool): should an object detection head be created from the lowest level.
+            Object detection head contains linear "squeeze" layers over features and over all vertices, resulting in 4 outputs per hemisphere.
 
     """
     def __init__(self, num_features, layer_sizes, dim=2, kernel_size=3, 
@@ -169,6 +172,7 @@ class MoNetUnet(nn.Module):
                  activation_fn='relu', norm=None,
                  classification_head=False,
                  distance_head=False,
+                 object_detection_head=False
                  ):
         super(MoNetUnet, self).__init__()
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -177,6 +181,7 @@ class MoNetUnet(nn.Module):
         self.deep_supervision = sorted(deep_supervision)
         self.classification_head = classification_head
         self.distance_head = distance_head
+        self.object_detection_head = object_detection_head
         if activation_fn == 'relu':
             self.activation_function = nn.ReLU()
         elif activation_fn == 'leaky_relu':
@@ -230,6 +235,14 @@ class MoNetUnet(nn.Module):
                 nn.Conv1d(in_size, 1, kernel_size=1),
                 nn.Linear(len(self.icospheres.icospheres[level]['coords']), 2)
                 ])
+            
+        if self.object_detection_head:
+            #object detection head
+            self.object_detection_head = nn.ModuleList([
+                nn.Conv1d(in_size, 1, kernel_size=1),
+                nn.Linear(len(self.icospheres.icospheres[level]['coords']), 4)
+            ])
+                
 
         # - decoder going from lowest level up, but don't need to do the bottom block, is already in encoder
         # start with uppooling
@@ -293,6 +306,8 @@ class MoNetUnet(nn.Module):
             outputs[f'ds{level}_log_sumexp'] = []
         if self.classification_head:
             outputs['hemi_log_softmax'] = []
+        if self.object_detection_head:
+            outputs['object_detection_linear'] = []
         for x in batch_x:
             level = 7
             for i, block in enumerate(self.encoder_conv_layers):
@@ -310,6 +325,16 @@ class MoNetUnet(nn.Module):
                 hemi_classification = self.hemi_classification_head[1](hemi_classification.view(-1))
                 hemi_classification = nn.LogSoftmax(dim=0)(hemi_classification)
                 outputs['hemi_log_softmax'].append(hemi_classification)
+
+            if self.object_detection_head:
+                # Object detection head
+                xyzr = self.object_detection_head[0](x.unsqueeze(2))
+                xyz = xyzr[:, :3, :].contiguous()
+                r = xyzr[:, 3:, :].contiguous()
+                xyz = xyz.view(xyz.size(0), -1)
+                xyz_norm = nn.functional.normalize(xyz, p=2, dim=1)
+                xyzr_norm = torch.cat([xyz_norm, r.view(r.size(0), -1)], dim=1)
+                outputs['object_detection_linear'].append(xyzr_norm)
 
             for i, block in enumerate(self.decoder_conv_layers):
                 # check if want deep supervision for this level
@@ -353,6 +378,7 @@ class MoNetUnet(nn.Module):
             outputs['log_sumexp'].append(x_logsumexp)
         
         # stack and reshape outputs to (batch * n_vertices, -1)
+        #object detection is (batch * 4,-1)
         # in case of hemi classification will be (batch, -1)
         for key, output in outputs.items():
             shape = (-1, 2)

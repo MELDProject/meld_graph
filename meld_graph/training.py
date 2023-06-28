@@ -99,6 +99,20 @@ class MAELoss(torch.nn.Module):
         # inputs are log softmax, pass directly to NLLLoss
         return self.loss(inputs, targets)
 
+class SmoothL1Loss(torch.nn.Module):
+    """
+    Smooth L1 loss for object detection. includes mask
+    """
+    def __init__(self, weight=None, size_average=True):
+        super(SmoothL1Loss, self).__init__()
+        self.loss = torch.nn.SmoothL1Loss()
+
+    def forward(self, inputs, targets,xyzr, **kwargs):
+        # inputs are log softmax, pass directly to NLLLoss
+        # mask out non-lesional examples from the loss
+        print(inputs.shape)
+        return self.loss(inputs, xyzr) * targets
+
 class DistanceRegressionLoss(torch.nn.Module):
     """
     Distance regression loss. Either MSE, MAE, MLE
@@ -116,7 +130,7 @@ class DistanceRegressionLoss(torch.nn.Module):
             self.weigh_by_gt = False
             self.loss='mse'
     
-    def forward(self, inputs, target, distance_map):
+    def forward(self, inputs, target, distance_map, **kwargs):
         inputs = torch.squeeze(inputs)
         # normalise distance map
         distance_map = torch.div(distance_map, 300)
@@ -192,7 +206,9 @@ def tp_fp_fn_tn(pred, target):
     return tp, fp, fn, tn
     
 
-def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_supervision_level=None, device=None, n_vertices=None):
+def calculate_loss(loss_dict, estimates_dict, labels,
+                    distance_map=None, xyzr=None,
+                    deep_supervision_level=None, device=None, n_vertices=None):
     """ 
     Calculate loss. Can combine losses with weights defined in loss_dict
 
@@ -211,8 +227,9 @@ def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_su
     Args:
         loss_dict (dict): define losses that should be caluclated.
         estimates_dict (dict): model outputs dictionary. 
-        labels (tensor): groudtruth lesion labels.
-        distance_map (optional, tensor): groudtruth distance map. 
+        labels (tensor): groundtruth lesion labels.
+        distance_map (optional, tensor): groundtruth distance map. 
+        xyzr (optional, tensor): groundtruth xyzr coordinates for object detection
         deep_supervision_level (optional, int): calculate_loss is called for every deep supervision level. 
             This arg indicates which level we are currenly at.
             Used to get the correct outputs from estimates_dict.
@@ -227,6 +244,7 @@ def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_su
         'distance_regression': DistanceRegressionLoss(loss_dict),
         'lesion_classification': CrossEntropyLoss(),
         'mae_loss': MAELoss(),
+        'object_detection': SmoothL1Loss()
     }
     if distance_map is not None:
         distance_map.to(device)
@@ -243,6 +261,13 @@ def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_su
             cur_estimates = estimates_dict[f'{prefix}log_softmax']
         elif loss_def == 'distance_regression':
             cur_estimates = estimates_dict[f'{prefix}non_lesion_logits']
+        elif loss_def == 'object_detection':
+            #object detection only on bottleneck. pass current labels for classification mask
+            if deep_supervision_level is not None:
+                continue
+            else:
+                cur_estimates = estimates_dict['object_detection_linear']
+                cur_labels = torch.any(labels.view(labels.shape[0]//n_vertices, -1), dim=1).long()
         elif loss_def == 'lesion_classification':
             if loss_dict[loss_def].get('apply_to_bottleneck', False):
                 # if apply lc to bottleneck, do not apply it on deep supervision levels
@@ -257,7 +282,8 @@ def calculate_loss(loss_dict, estimates_dict, labels, distance_map=None, deep_su
         else:
             raise NotImplementedError(f'Unknown loss def {loss_def}')
 
-        losses[loss_def] = loss_dict[loss_def]['weight'] * loss_functions[loss_def](cur_estimates, cur_labels, distance_map=distance_map)
+        losses[loss_def] = loss_dict[loss_def]['weight'] * loss_functions[loss_def](cur_estimates, cur_labels, 
+                                                                                    distance_map=distance_map,xyzr=xyzr)
     return losses
 
 class Metrics:
@@ -277,7 +303,7 @@ class Metrics:
             import torchmetrics
             self.auroc = torchmetrics.AUROC(task="binary", thresholds=10).to(self.device)
         if 'sub_auroc' in self.metrics_to_track:
-            self.n_thresh=101
+            self.n_thresh=51
             self.sensitivities = np.zeros(self.n_thresh)
             self.specificities = np.zeros(self.n_thresh)
         self.running_scores = self.reset()
@@ -427,7 +453,10 @@ class Trainer:
             estimates = model(data.x)
             labels = data.y.squeeze()
             distance_map = getattr(data, "distance_map", None)
-            losses = calculate_loss(self.params['loss_dictionary'], estimates, labels, distance_map=distance_map, deep_supervision_level=None, device=device, 
+            xyzr = getattr(data, "xyzr", None)
+            losses = calculate_loss(self.params['loss_dictionary'], estimates, labels,
+                                     distance_map=distance_map,xyzr=xyzr,
+                                       deep_supervision_level=None, device=device, 
                 n_vertices=self.experiment.model.n_vertices)
             # add deep supervision outputs
             for i,level in enumerate(sorted(self.deep_supervision['levels'])):
@@ -446,6 +475,9 @@ class Trainer:
                 if model.classification_head and key=='lesion_classification':
                     # no ds for lesion classification in this case
                     continue
+                if model.object_detection_head and key=='object_detection':
+                    # no ds for object detection in this case
+                    continue
                 for level in self.deep_supervision['levels']:
                     running_losses[f'ds{level}_{key}'].append(losses[f'ds{level}_{key}'].item())
             running_losses['loss'].append(loss.item())
@@ -454,13 +486,16 @@ class Trainer:
             pred = torch.argmax(estimates['log_softmax'], axis=1)
             if model.classification_head:
                 pred_class = torch.argmax(estimates['hemi_log_softmax'], axis=1)
+           # elif model.object_detection_head:
+          #      pred_obj = estimates['object_detection_linear']
             else:
                 pred_class = torch.argmax(estimates['log_sumexp'], axis=1)
             # update running metrics
             borderzone = None
             if 'sub_auroc' in metrics.metrics_to_track:
                 borderzone = distance_map <= 20
-            metrics.update(pred, labels, pred_class=pred_class, estimates=estimates['log_softmax'],
+            metrics.update(pred, labels, pred_class=pred_class, #pred_obj=pred_obj,
+                           estimates=estimates['log_softmax'],
                            borderzone = borderzone)
             # TODO add distance regression to metrics
             
@@ -487,7 +522,10 @@ class Trainer:
                 estimates = model(data.x)
                 labels = data.y.squeeze()
                 distance_map = getattr(data, "distance_map", None)
-                losses = calculate_loss(self.params['loss_dictionary'], estimates, labels, distance_map=distance_map, deep_supervision_level=None, device=device, 
+                xyzr = getattr(data, "xyzr", None)
+                losses = calculate_loss(self.params['loss_dictionary'], estimates, labels, 
+                                        distance_map=distance_map, xyzr=xyzr,
+                                        deep_supervision_level=None, device=device, 
                     n_vertices=self.experiment.model.n_vertices)
                 # add deep supervision outputs
                 for i,level in enumerate(sorted(self.deep_supervision['levels'])):
@@ -503,7 +541,10 @@ class Trainer:
                 for i, key in enumerate(self.params['loss_dictionary'].keys()):
                     running_losses[key].append(losses[key].item())
                     if model.classification_head and key=='lesion_classification':
-                        # no ds for lesion classification in this case
+                    # no ds for lesion classification in this case
+                        continue
+                    if model.object_detection_head and key=='object_detection':
+                        # no ds for object detection in this case
                         continue
                     for level in self.deep_supervision['levels']:
                         running_losses[f'ds{level}_{key}'].append(losses[f'ds{level}_{key}'].item())
@@ -513,6 +554,8 @@ class Trainer:
                 pred = torch.argmax(estimates['log_softmax'], axis=1)
                 if model.classification_head:
                     pred_class = torch.argmax(estimates['hemi_log_softmax'], axis=1)
+            #    elif model.object_detection_head:
+            #        pred_obj = estimates['object_detection_linear']
                 else:
                     pred_class = torch.argmax(estimates['log_sumexp'], axis=1)
                 # update running metrics
@@ -520,7 +563,8 @@ class Trainer:
                 borderzone = None
                 if 'sub_auroc' in metrics.metrics_to_track:
                     borderzone = distance_map <= 20
-                metrics.update(pred, labels, pred_class=pred_class, estimates=estimates['log_softmax'],
+                metrics.update(pred, labels, pred_class=pred_class, #pred_obj=pred_obj,
+                                estimates=estimates['log_softmax'],
                             borderzone = borderzone)
      
         scores = {key: np.mean(running_losses[key]) for key in running_losses.keys()}
