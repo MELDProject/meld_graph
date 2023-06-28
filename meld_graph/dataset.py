@@ -210,15 +210,20 @@ class GraphDataset(torch_geometric.data.Dataset):
         Updates subject_data_list with "smooth_labels" and "distances".
         """
         for sdl in subject_data_list:
-            if (sdl["labels"] == 1).any():
-                if self.params["smooth_labels"]:
-                    sdl["smooth_labels"] = self.gt.smoothing(sdl["labels"], iteration=10).astype(np.float32)
-                sdl["distances"] = self.gt.fast_geodesics(sdl["labels"]).astype(np.float32)
-            else:
-                sdl["distances"] = np.ones(len(sdl["labels"]), dtype=np.float32) * 300
-                if self.params["smooth_labels"]:
-                    sdl["smooth_labels"] = np.zeros(len(sdl["labels"]), dtype=np.float32)
+            sdl = self.add_smooth_label_single(sdl)
         return subject_data_list
+    
+    def add_smooth_label_single(self,sdl):
+        """ Updates subject_data_list with "smooth_labels" and "distances"."""
+        if (sdl['labels']==1).any():
+            if self.params['smooth_labels']:
+                sdl['smooth_labels'] = self.gt.smoothing(sdl['labels'],iteration=10).astype(np.float32)
+            sdl['distances'] = self.gt.fast_geodesics(sdl['labels']).astype(np.float32)
+        else:
+            sdl['distances'] = np.ones(len(sdl['labels']),dtype=np.float32)*300
+            if self.params['smooth_labels']:
+                sdl['smooth_labels'] = np.zeros(len(sdl['labels']),dtype=np.float32)
+        return sdl
 
     def synthetic_lesion(self, subject_data_list=[{"features": None}, {"features": None}]):
         """Add synthetic lesion to input features for both hemis"""
@@ -247,11 +252,27 @@ class GraphDataset(torch_geometric.data.Dataset):
         Returns data will have attributes x, y, distance_map, output_level<level>, output_level<level>_distance_map.
         """
         subject_data_dict = self.data_list[idx]
+
+        #could consider adding synthetic lesions to control data here
+        
+        if self.params.get('synth_on_the_fly',False):
+            if subject_data_dict['labels'].sum()==0 and np.random.random()<0.2:
+                #adds synthetic lesion with probability 0.2
+                subject_data_dict = self.prep.generate_synthetic_data(self.icospheres.icospheres[7]['coords'],
+                                                              len(self.params['features']),
+                                                             histo_type_seed=np.random.choice(2000),
+                                                             synth_params = self.params['synthetic_data'],
+                                                    features=subject_data_dict['features'],
+                                                    )
+                subject_data_dict = self.add_smooth_label_single(subject_data_dict)
+
         # apply data augmentation
         if self.augment != None:
             subject_data_dict = self.augment.apply(subject_data_dict)
 
-        if self.params["smooth_labels"] and self.augment != None:
+        
+        
+        if self.params['smooth_labels'] and self.augment!=None:
             data = torch_geometric.data.Data(
                 x=torch.tensor(subject_data_dict["features"], dtype=torch.float32),
                 y=torch.tensor(subject_data_dict["smooth_labels"], dtype=torch.float32),
@@ -274,11 +295,14 @@ class GraphDataset(torch_geometric.data.Dataset):
 
         # add  distance maps
         # clip distances
-        setattr(
-            data,
-            "distance_map",
-            torch.tensor(np.clip(subject_data_dict["distances"], 0, 300), dtype=torch.float32),
-        )
+        setattr(data, "distance_map", torch.tensor(np.clip(subject_data_dict['distances'], 0, 300), dtype=torch.float32))
+
+        #add object detection labels here
+        if self.params.get('object_detection',False):
+            self.add_object_detection(subject_data_dict)
+            setattr(data, "xyzr", torch.tensor(subject_data_dict['xyzr'], dtype=torch.float32))
+        
+
         if len(self.output_levels) != 0:
             dists_pooled = {7: data.distance_map}
             for level in range(min(self.output_levels), 7)[::-1]:
@@ -290,6 +314,22 @@ class GraphDataset(torch_geometric.data.Dataset):
                     torch.clip(dists_pooled[level], 0, 300),
                 )
         return data
+    
+    def add_object_detection(self,data_dict):
+        """calculate object detection labels for data"""
+        lesion = data_dict['labels'].astype(bool)
+        if lesion.sum()>0:
+            lesion_coords = self.icospheres.icospheres[7]['coords'][lesion]/100
+            center_of_mass = lesion_coords.mean(axis=0)
+            distances = np.linalg.norm(lesion_coords-center_of_mass,axis=1)
+            radius = np.max(distances)
+        else:
+            center_of_mass = np.array([1,0,0])
+            radius = -1
+        # add object detection labels
+        data_dict['xyzr'] = np.hstack([center_of_mass,radius])
+        return 
+        
 
     @property
     def lesional_idxs(self):
@@ -301,3 +341,4 @@ class GraphDataset(torch_geometric.data.Dataset):
                     lesional_idxs.append(i)
             self._lesional_idxs = np.array(lesional_idxs)
         return self._lesional_idxs
+

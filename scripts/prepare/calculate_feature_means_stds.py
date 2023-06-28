@@ -106,5 +106,18 @@ if __name__ == "__main__":
         mean_stds_dict[feature]["mean"] = means_stds[0, fi]
         mean_stds_dict[feature]["std"] = means_stds[1, fi]
 
-    with open("../data/feature_means_msm.json", "w") as fp:
+    means_stds = np.zeros((2,len(config.data_parameters['features'])))
+    means_stds[0,flair_mask] = mean_std_flair.mean
+    means_stds[1,flair_mask] = mean_std_flair.std
+    means_stds[0,~flair_mask] = mean_std.mean
+    means_stds[1,~flair_mask] = mean_std.std
+
+    mean_stds_dict={
+                   }
+    for fi,feature in enumerate(config.data_parameters['features']):
+        mean_stds_dict[feature]={}
+        mean_stds_dict[feature]['mean'] = means_stds[0,fi]
+        mean_stds_dict[feature]['std'] = means_stds[1,fi]
+
+    with open('../data/feature_means_no_combat.json', 'w') as fp:
         json.dump(mean_stds_dict, fp)
