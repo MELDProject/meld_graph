@@ -85,6 +85,22 @@ python cross_val_aucs.py --experiment_path PATH_TO_EXPERIMENT --split test
 This runs on the test set and saves out the predictions for the test set for each of the folds. These then need to be ensembled and thresholded to compare experiments. 
 
 **Ensemble final model**
+To create a final ensemble model, summarising all fold-specific models, run
+```
+python create_ensemble.py PATH_TO_EXPERIMENT_FOLDER
+```
+This will create an ensemble model in PATH_TO_EXPERIMENT_FOLDER/fold_all, ensembling all five folds in PATH_TO_EXPERIMENT_FOLDER/fold_XX. If other folds should be ensembled use the `--folds` argument.
+
+To evaluate the ensemble model, simply use 
+```
+python evaluate_single_model.py --model_path PATH_TO_EXPERIMENT --split test
+```
+This will automatically detect using the fold name if an ensemble is present of if a single fold model should be evaluated. 
+
+TODO what about bootstrapping?
+
+OLD below:
+
 To compare final performance of ensemble models, update the model paths in `ensemble.py` script and run 
 ```
 python ensemble.py

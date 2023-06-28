@@ -36,7 +36,7 @@ if __name__ == "__main__":
     )
     features = exp.data_parameters["features"]
     exp.data_parameters["augment_data"] = {}
-    dataset = GraphDataset(subjects, cohort, exp.data_parameters, mode="test")
+    dataset = GraphDataset(subjects[:10], cohort, exp.data_parameters, mode="test")
 
     eva = Evaluator(
         experiment=exp,
@@ -73,3 +73,6 @@ if __name__ == "__main__":
         roc_curves_thresholds=roc_curves_thresholds,
         save_prediction_suffix=suffix,
     )
+
+    # # calculate stats
+    eva.stat_subjects()

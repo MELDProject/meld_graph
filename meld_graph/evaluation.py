@@ -64,7 +64,7 @@ class Evaluator:
         # if checkpoint load model
         if checkpoint_path:
             self.experiment.load_model(
-                checkpoint_path=os.path.join(checkpoint_path, "best_model.pt"),
+                checkpoint_path=self._find_checkpoint(checkpoint_path),
                 force=True,
             )
 
@@ -91,16 +91,19 @@ class Evaluator:
             self.subject_ids = self.dataset.subject_ids
             self.cohort = self.dataset.cohort
         else:
-            self.dataset = GraphDataset(
-                self.subject_ids,
-                self.cohort,
-                self.experiment.data_parameters,
-                mode=mode,
-            )
+            self.dataset = GraphDataset(self.subject_ids, self.cohort, self.experiment.data_parameters, mode=mode)
+            
+    def _find_checkpoint(self, experiment_path):
+        """
+        Identify existing checkpoint file. Looks for best_model.pt and ensemble_model.pt
+        """
+        if os.path.isfile(os.path.join(experiment_path, 'best_model.pt')):
+            return os.path.join(experiment_path, 'best_model.pt')
+        if os.path.isfile(os.path.join(experiment_path, 'ensemble_model.pt')):
+            return os.path.join(experiment_path, 'ensemble_model.pt')
+        return None
 
-    def evaluate(
-        self,
-    ):
+    def evaluate(self,):
         """
         Evaluate the model.
         Runs `self.get_metrics(); self.plot_prediction_space(); self.plot_subjects_prediction()`
@@ -162,11 +165,11 @@ class Evaluator:
                 distance_map = estimates["non_lesion_logits"][:, 0]
             else:
                 distance_map = torch.full((len(prediction), 1), torch.nan)[:, 0]
-            prediction_array.append(prediction.detach().numpy()[self.cohort.cortex_mask])
-            labels_array.append(labels.numpy()[self.cohort.cortex_mask])
-            features_array.append(data.x.numpy()[self.cohort.cortex_mask])
-            distance_map_array.append(distance_map.detach().numpy()[self.cohort.cortex_mask])
-            geodesic_array.append(geo_distance.numpy()[self.cohort.cortex_mask])
+            prediction_array.append(prediction.detach().cpu().numpy()[self.cohort.cortex_mask])
+            labels_array.append(labels.cpu().numpy()[self.cohort.cortex_mask])
+            features_array.append(data.x.cpu().numpy()[self.cohort.cortex_mask])
+            distance_map_array.append(distance_map.detach().cpu().numpy()[self.cohort.cortex_mask])
+            geodesic_array.append(geo_distance.cpu().numpy()[self.cohort.cortex_mask])
             # only save after right hemi has been run.
             if hemi == "rh":
                 subject_dictionary = {

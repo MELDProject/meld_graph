@@ -15,4 +15,5 @@ dependencies:
   - pip
   - pip:
     - potpourri3d
+    - captum
 
