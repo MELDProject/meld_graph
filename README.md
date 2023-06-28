@@ -95,8 +95,7 @@ To evaluate the ensemble model, simply use
 ```
 python evaluate_single_model.py --model_path PATH_TO_EXPERIMENT --split test
 ```
-This will automatically detect using the fold name if an ensemble is present of if a single fold model should be evaluated. 
-
+This will automatically detect using the fold name if an ensemble is present of if a single fold model should be evaluated. To additionally calculate saliency values, add the flag `--saliency`.
 
 To compare final performance of models, update the model paths in `compare_models.py` script and run 
 ```
