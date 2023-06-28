@@ -97,15 +97,12 @@ python evaluate_single_model.py --model_path PATH_TO_EXPERIMENT --split test
 ```
 This will automatically detect using the fold name if an ensemble is present of if a single fold model should be evaluated. 
 
-TODO what about bootstrapping?
 
-OLD below:
-
-To compare final performance of ensemble models, update the model paths in `ensemble.py` script and run 
+To compare final performance of models, update the model paths in `compare_models.py` script and run 
 ```
-python ensemble.py
+python compare_models.py
 ```
-This will produce a table of ensembled results on the model and a bootstrapped ensemble model for statsitics. The data tables and figures can be found in data/ and imgs/ inside the experiment folder.
+This will produce a table of ensembled results on the model. The data tables and figures can be found in data/ and imgs/ inside the experiment folder.
 
 ## Contributing
 If you'd like to contribute to this code base, have a look at our [contribution guide](CONTRIBUTING.md)
