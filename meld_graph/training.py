@@ -85,7 +85,7 @@ class MaskCrossEntropyLoss(torch.nn.Module):
         # target with class probabilities, need to be softmax, except empty probabilities
         mask = (targets.sum(axis=1)==0)
         targets[~mask]=targets[~mask].softmax(dim=1)
-        targets[mask]=torch.zeros(1,5).to(device)
+        targets[mask]=torch.zeros(1,4).to(device)
         return self.loss(inputs, targets)
     
 
@@ -451,9 +451,8 @@ class Metrics:
                     if histo_tp[i]+histo_fp[i] == 0:
                         metrics[f'histo_{i}_precision'] = 0
                     else:
-                        metrics[f'histo_{i}_precision'] = (histo_tp[i]/(histo_tp[i]+histo_fp[i])).item()
-                    metrics[f'histo_{i}_accuracy'] = (histo_tp[i]/(histo_tp[i]+histo_fn[i]+histo_tn[i]+histo_fn[i])).item()
-                    
+                        metrics[f'histo_{i}_precision'] = (histo_tp[i]/(histo_tp[i]+histo_fp[i])).item()                    
+                    metrics[f'histo_{i}_sensitivity'] = (histo_tp[i]/(histo_tp[i]+histo_fn[i])).item()
             elif metric == 'histo_recall':
                 for i in range(0,4):
                     if histo_tp[i]+histo_fn[i] == 0:

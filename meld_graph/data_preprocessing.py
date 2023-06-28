@@ -89,7 +89,7 @@ class Preprocess:
     def histo_encoder(self):
         if self._histo_encoder is None:
             from sklearn.preprocessing import OneHotEncoder
-            X=np.array(['FCD_1','FCD_2A','FCD_2B','FCD_3','no_lesion']).reshape(-1, 1)
+            X=np.array(['FCD_1','FCD_2A','FCD_2B','no_lesion']).reshape(-1, 1)
             ohe = OneHotEncoder()
             ohe.fit(X)
             self._histo_encoder = ohe
