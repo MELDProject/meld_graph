@@ -319,7 +319,7 @@ class Metrics:
                                                                       'histo_1_tp', 'histo_1_fp', 'histo_1_fn', 'histo_1_tn',
                                                                       'histo_2_tp', 'histo_2_fp', 'histo_2_fn', 'histo_2_tn',
                                                                       'histo_3_tp', 'histo_3_fp', 'histo_3_fn', 'histo_3_tn',
-                                                                      'histo_4_tp', 'histo_4_fp', 'histo_4_fn', 'histo_4_tn']))
+                                                                      ]))
         if 'auroc' in self.metrics:
             import torchmetrics
             self.auroc = torchmetrics.AUROC(task="binary", thresholds=10).to(self.device)
@@ -395,7 +395,7 @@ class Metrics:
         # histology classification metrics
         if 'histo_precision' in self.metrics_to_track:
             if target_histo!=None:
-                for i in range(0,5):
+                for i in range(0,4):
                     histo_tp, histo_fp, histo_fn, histo_tn= histo_tp_fp_fn_tn(pred_histo, target_histo, histo_class=i)
                     self.running_scores[f'histo_{i}_tp'].append(histo_tp.item())
                     self.running_scores[f'histo_{i}_fp'].append(histo_fp.item())
@@ -425,7 +425,7 @@ class Metrics:
             histo_fp=[]
             histo_fn=[]
             histo_tn=[]
-            for i in range(0,5):
+            for i in range(0,4):
                 histo_tp.append(np.sum(self.running_scores[f'histo_{i}_tp']))
                 histo_fp.append(np.sum(self.running_scores[f'histo_{i}_fp']))
                 histo_fn.append(np.sum(self.running_scores[f'histo_{i}_fn']))
@@ -447,7 +447,7 @@ class Metrics:
             elif metric == 'cl_recall':
                 metrics['cl_recall'] = (cl_tp/(cl_tp+cl_fn)).item()
             elif metric == 'histo_precision':
-                for i in range(0,5):
+                for i in range(0,4):
                     if histo_tp[i]+histo_fp[i] == 0:
                         metrics[f'histo_{i}_precision'] = 0
                     else:
@@ -455,7 +455,7 @@ class Metrics:
                     metrics[f'histo_{i}_accuracy'] = (histo_tp[i]/(histo_tp[i]+histo_fn[i]+histo_tn[i]+histo_fn[i])).item()
                     
             elif metric == 'histo_recall':
-                for i in range(0,5):
+                for i in range(0,4):
                     if histo_tp[i]+histo_fn[i] == 0:
                         metrics[f'histo_{i}_recall'] = 0
                     else:

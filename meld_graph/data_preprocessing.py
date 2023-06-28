@@ -96,8 +96,8 @@ class Preprocess:
         return self._histo_encoder
 
     def encode_histology(self, histology):
-        if not histology in ['FCD_1', 'FCD_2A', 'FCD_2B', 'FCD_3', 'no_lesion']:
-            return np.array([0,0,0,0,0]).reshape(1, -1)
+        if not histology in ['FCD_1', 'FCD_2A', 'FCD_2B', 'no_lesion']:
+            return np.array([0,0,0,0]).reshape(1, -1)
         else:
             return self.histo_encoder.transform(np.array([histology]).reshape(-1, 1)).toarray()
         

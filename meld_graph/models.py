@@ -236,7 +236,7 @@ class MoNetUnet(nn.Module):
             # go from all vertices at lowest level to 2 nodes. First aggregated over kernel size, then over vertices
             self.histo_classification_head = nn.ModuleList([
                 nn.Conv1d(in_size, 1, kernel_size=1),
-                nn.Linear(len(self.icospheres.icospheres[level]['coords']), 5)
+                nn.Linear(len(self.icospheres.icospheres[level]['coords']), 4)
                 ])
 
 
@@ -376,7 +376,7 @@ class MoNetUnet(nn.Module):
             if 'non_lesion_logits' in key:
                 shape = (-1, 1)
             if 'histo_log_softmax' in key:
-                shape = (-1, 5)
+                shape = (-1, 4)
             outputs[key] = torch.stack(output).view(shape)
         return outputs
 
