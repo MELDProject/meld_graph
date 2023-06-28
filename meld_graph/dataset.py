@@ -70,6 +70,7 @@ class GraphDataset(torch_geometric.data.Dataset):
             will be available as self.get().output_level<level>.
             Distance maps will be available as self.get().output_level<level>_distance_map.
         distance_mask_medial_wall (bool): mask of medial wall in distance maps to 300.
+        get_histology (bool): return the histology as a class
     """
     def __init__(
         self,
@@ -103,6 +104,7 @@ class GraphDataset(torch_geometric.data.Dataset):
                 for level in range(min(self.output_levels), 7)[::-1]
             }
         self._lesional_idxs = None
+        self.use_histology = self.params.get('use_histology', False)
 
         # preload data in memory, with all preprocessing done
         self.data_list = []
@@ -148,7 +150,7 @@ class GraphDataset(torch_geometric.data.Dataset):
             subject_data_list = self.prep.get_data_preprocessed(subject=subj_id, 
                                         features=params['features'], 
                                         lobes = params['lobes'], lesion_bias=False,
-                                        distance_maps=False,
+                                        distance_maps=False, histology=self.use_histology,
                                         combine_hemis = self.params['combine_hemis'])
             
             # add lesion if simulating synthetic data
@@ -210,7 +212,7 @@ class GraphDataset(torch_geometric.data.Dataset):
                 if self.params['smooth_labels']:
                     sdl['smooth_labels'] = np.zeros(len(sdl['labels']),dtype=np.float32)
         return subject_data_list
-
+    
     def synthetic_lesion(self, subject_data_list=[{'features':None},
                                                   {'features':None}]):
         """Add synthetic lesion to input features for both hemis"""
@@ -252,6 +254,10 @@ class GraphDataset(torch_geometric.data.Dataset):
         x=torch.tensor(subject_data_dict['features'], dtype=torch.float32),
         y=torch.tensor(subject_data_dict['labels'], dtype=torch.int64),
         num_nodes=len(subject_data_dict['features']),)
+
+        # add histology class to data
+        if self.use_histology:
+            setattr(data, f"histology_class", torch.tensor(subject_data_dict['histology'], dtype=torch.float32))
 
         # add extra output levels to data
         if len(self.output_levels) != 0:

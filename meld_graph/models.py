@@ -169,6 +169,7 @@ class MoNetUnet(nn.Module):
                  activation_fn='relu', norm=None,
                  classification_head=False,
                  distance_head=False,
+                 histology_head=False,
                  ):
         super(MoNetUnet, self).__init__()
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -177,6 +178,7 @@ class MoNetUnet(nn.Module):
         self.deep_supervision = sorted(deep_supervision)
         self.classification_head = classification_head
         self.distance_head = distance_head
+        self.histology_head = histology_head
         if activation_fn == 'relu':
             self.activation_function = nn.ReLU()
         elif activation_fn == 'leaky_relu':
@@ -230,6 +232,13 @@ class MoNetUnet(nn.Module):
                 nn.Conv1d(in_size, 1, kernel_size=1),
                 nn.Linear(len(self.icospheres.icospheres[level]['coords']), 2)
                 ])
+        if self.histology_head:
+            # go from all vertices at lowest level to 2 nodes. First aggregated over kernel size, then over vertices
+            self.histo_classification_head = nn.ModuleList([
+                nn.Conv1d(in_size, 1, kernel_size=1),
+                nn.Linear(len(self.icospheres.icospheres[level]['coords']), 5)
+                ])
+
 
         # - decoder going from lowest level up, but don't need to do the bottom block, is already in encoder
         # start with uppooling
@@ -293,6 +302,8 @@ class MoNetUnet(nn.Module):
             outputs[f'ds{level}_log_sumexp'] = []
         if self.classification_head:
             outputs['hemi_log_softmax'] = []
+        if self.histology_head:
+            outputs['histo_log_softmax'] = []
         for x in batch_x:
             level = 7
             for i, block in enumerate(self.encoder_conv_layers):
@@ -310,7 +321,12 @@ class MoNetUnet(nn.Module):
                 hemi_classification = self.hemi_classification_head[1](hemi_classification.view(-1))
                 hemi_classification = nn.LogSoftmax(dim=0)(hemi_classification)
                 outputs['hemi_log_softmax'].append(hemi_classification)
-
+            if self.histology_head:
+                histo_classification = self.activation_function(self.histo_classification_head[0](x.unsqueeze(2)))
+                histo_classification = self.histo_classification_head[1](histo_classification.view(-1))
+                histo_classification = nn.LogSoftmax(dim=0)(histo_classification)
+                outputs['histo_log_softmax'].append(histo_classification)
+            
             for i, block in enumerate(self.decoder_conv_layers):
                 # check if want deep supervision for this level
                 if level in self.deep_supervision:
@@ -354,10 +370,13 @@ class MoNetUnet(nn.Module):
         
         # stack and reshape outputs to (batch * n_vertices, -1)
         # in case of hemi classification will be (batch, -1)
+        # in case of histo classification will be (batch, 5)
         for key, output in outputs.items():
             shape = (-1, 2)
             if 'non_lesion_logits' in key:
                 shape = (-1, 1)
+            if 'histo_log_softmax' in key:
+                shape = (-1, 5)
             outputs[key] = torch.stack(output).view(shape)
         return outputs
 

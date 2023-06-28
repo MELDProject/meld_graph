@@ -37,6 +37,7 @@ class Preprocess:
         self._subject_ids = None
         self.log = logging.getLogger(__name__)
         self._lobes = None
+        self._histo_encoder = None
         self.initialise_distances()
         self.icospheres = icospheres
 
@@ -84,10 +85,26 @@ class Preprocess:
             pass
         return vals
     
+    @property
+    def histo_encoder(self):
+        if self._histo_encoder is None:
+            from sklearn.preprocessing import OneHotEncoder
+            X=np.array(['FCD_1','FCD_2A','FCD_2B','FCD_3','no_lesion']).reshape(-1, 1)
+            ohe = OneHotEncoder()
+            ohe.fit(X)
+            self._histo_encoder = ohe
+        return self._histo_encoder
+
+    def encode_histology(self, histology):
+        if not histology in ['FCD_1', 'FCD_2A', 'FCD_2B', 'FCD_3', 'no_lesion']:
+            return np.array([0,0,0,0,0]).reshape(1, -1)
+        else:
+            return self.histo_encoder.transform(np.array([histology]).reshape(-1, 1)).toarray()
+        
     def get_data_preprocessed(self, subject, features, 
     lobes=False, lesion_bias=False,
-    distance_maps = False,
-    combine_hemis=None):
+    distance_maps = False, histology=False,
+    combine_hemis=None, ):
         """
         Preprocess features data for a single subject depending on params.
 
@@ -105,7 +122,7 @@ class Preprocess:
             features_left, features_right, lesion_left, lesion_right
         """
         subj = MeldSubject(subject, cohort=self.cohort)
-        subject_data = []  
+        subject_data = []
         # load data & lesion
         for hemi in ('lh','rh'):
             vals_array, lesion = subj.load_feature_lesion_data(features, hemi=hemi)
@@ -129,9 +146,18 @@ class Preprocess:
                 vals_array[lesion==1] += lesion_bias
             if combine_hemis is not None:
                 self.log.info(f"WARNING: combine_hemis is not implemented.")
-
             subject_data_dict['features'] = vals_array
-            subject_data_dict['labels'] = lesion 
+            subject_data_dict['labels'] = lesion
+            #add histology
+            if histology:
+                if subj.group == 'patient':
+                    if lesion.sum()!=0:
+                        histology =  subj.get_demographic_features('Histology')
+                    else:
+                        histology = 'no_lesion'
+                else:
+                    histology = 'no_lesion'
+                subject_data_dict['histology'] = self.encode_histology(histology) 
                 
             subject_data.append(subject_data_dict)
         return subject_data

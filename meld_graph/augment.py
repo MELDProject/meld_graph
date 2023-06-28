@@ -155,6 +155,8 @@ class Augment():
                 # TODO Q Hannah: potential bug here: smooth_labels could result in labels <1 everywhere. Better to do (tdd[field]==0).all()
                 if (tdd[field]==1).any():
                     tdd[field] = tdd[field][indices] 
+            elif field=='histology':
+                pass
             else:
                 tdd[field] = tdd[field][indices]
         return tdd

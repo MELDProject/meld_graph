@@ -23,7 +23,7 @@ module load cuda/11.1
 CONDA_PATH=~/.conda/envs/meld_graph
 
 # run script
-BASE=/home/kw350/software/gdl
+BASE=/rds/user/co-ripa1/hpc-work/scripts
 echo $1
 echo $2
 source activate $CONDA_PATH; $CONDA_PATH/bin/python3 $BASE/meld_classifier_GDL/scripts/evaluate_single_model.py --model_path $1 --split $2

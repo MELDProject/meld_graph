@@ -208,6 +208,7 @@ class Experiment:
             self.model = meld_graph.models.MoNetUnet(**self.network_parameters['model_parameters'], num_features=num_features, 
                 icosphere_params=icosphere_params, deep_supervision=self.network_parameters['training_parameters'].get('deep_supervision', {}).get('levels', []),
                 classification_head=self.network_parameters['training_parameters']['loss_dictionary'].get('lesion_classification', {}).get('apply_to_bottleneck', False),
+                histology_head=self.network_parameters['training_parameters']['loss_dictionary'].get('histology_classification', {}).get('apply_to_bottleneck', False),
             )
         else:
             raise(NotImplementedError, network_type)
