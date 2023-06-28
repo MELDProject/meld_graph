@@ -121,7 +121,7 @@ class Evaluator:
     def load_predict_data(
         self,
         store_predictions=True,
-        roc_curves_thresholds=np.linspace(0, 1, 21),
+        roc_curves_thresholds=np.linspace(0, 1, 51),
         save_prediction=True,
         save_prediction_suffix="",
     ):
