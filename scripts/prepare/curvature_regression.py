@@ -40,23 +40,15 @@ def curvature_regress(
 
 
 if __name__ == "__main__":
-    hdf5_file_root = "{site_code}_{group}_featurematrix_combat_6_kernels.hdf5"
+    hdf5_file_root = "{site_code}_{group}_featurematrix_combat_6_kernels_noCombat.hdf5",
     dataset = "MELD_dataset_V6.csv"
     cohort = MeldCohort(hdf5_file_root=hdf5_file_root, dataset=dataset)
     subs = cohort.get_subject_ids(group="both")
     features = [
-        ".combat.on_lh.gm_FLAIR_0.75.sm3.mgh",
-        ".combat.on_lh.gm_FLAIR_0.5.sm3.mgh",
-        ".combat.on_lh.gm_FLAIR_0.25.sm3.mgh",
-        ".combat.on_lh.wm_FLAIR_0.5.sm3.mgh",
-        ".combat.on_lh.wm_FLAIR_1.sm3.mgh",
+        ".combat.on_lh.thickness.sm3.mgh",
     ]
     new_features = [
-        ".combat.on_lh.gm_FLAIR_0.75_regression.sm3.mgh",
-        ".combat.on_lh.gm_FLAIR_0.5_regression.sm3.mgh",
-        ".combat.on_lh.gm_FLAIR_0.25_regression.sm3.mgh",
-        ".combat.on_lh.wm_FLAIR_0.5_regression.sm3.mgh",
-        ".combat.on_lh.wm_FLAIR_1_regression.sm3.mgh",
+        ".combat.on_lh.thickness_regression.sm3.mgh",
     ]
     for fi, feature in enumerate(features):
         curvature_regress(
@@ -65,5 +57,5 @@ if __name__ == "__main__":
             source_feature=feature,
             curv_feature=".combat.on_lh.curv.sm3.mgh",
             target_feature=new_features[fi],
-            hdf5_file_root="{site_code}_{group}_featurematrix_combat_6_kernels.hdf5",
+            hdf5_file_root="{site_code}_{group}_featurematrix_combat_6_kernels_noCombat.hdf5",
         )
