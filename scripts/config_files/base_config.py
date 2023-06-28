@@ -33,8 +33,8 @@ network_parameters = {
         "lr_decay": 0.9,
         "max_epochs_lr_decay": 1000,
         "max_patience": 400,
-        "stopping_metric":{'name':'loss','sign':1},
-        'metric_smoothing':False,
+        "stopping_metric": {"name": "loss", "sign": 1},
+        "metric_smoothing": False,
         "metrics": [
             "dice_lesion",
             "dice_nonlesion",

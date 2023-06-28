@@ -9,7 +9,7 @@
 #SBATCH -p ampere
 #SBATCH --gres=gpu:1
 #SBATCH --mem=24000
-#SBATCH -t 02:00:00
+#SBATCH -t 08:00:00
 
 #! partitions: ampere, pascal
 # set up
@@ -21,7 +21,7 @@ module load rhel7/default-gpu              # REQUIRED - loads the basic environm
 module load miniconda/3
 
 source ~/activate_env.sh
-conda activate meld_graph
+conda activate meld_test
 
 # run script
 BASE=/home/co-spit1/software/
