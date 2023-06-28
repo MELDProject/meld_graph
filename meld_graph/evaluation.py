@@ -157,6 +157,7 @@ class Evaluator:
             saliency_model = IntegratedGradients(
                 PredictionForSaliency(self.experiment.model, threshold=saliency_threshold))
         for i, data in enumerate(data_loader):
+            self.log.info(i)
             subject_index = i // 2
             hemi = ["lh", "rh"][i % 2]
             if hemi == "lh":
@@ -224,7 +225,7 @@ class Evaluator:
                         self.save_prediction(
                             subj_id,
                             subject_dictionary["saliency"],
-                            dataset_str="saliency",
+                            dataset_str="integrated_gradients_pred",
                             suffix=save_prediction_suffix,
                         )
                 # save features if mode is training
