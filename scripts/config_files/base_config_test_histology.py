@@ -17,7 +17,7 @@ network_parameters = {
         "norm": None,
         "spiral_len": 7,
     },
-    "name": '23-05-23_MATH_test_histology_head',
+    "name": '23-06-28_MATH_test_histology_head',
     "network_type": "MoNetUnet",
     "training_parameters": {
         "batch_size": 8,
