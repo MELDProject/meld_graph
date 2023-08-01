@@ -67,6 +67,8 @@ if __name__ == "__main__":
         mode="test",
     )
    
+    # only save predictions on test, no need on vals but instead calculate ROCs
+    if args.split == "test":
         save_prediction = True
         roc_curves_thresholds = None
         suffix = ""
