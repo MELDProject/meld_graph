@@ -16,9 +16,13 @@ import h5py
 import matplotlib.pyplot as plt
 import sklearn.metrics as metrics
 
-# for saliency
-import captum
-from captum.attr import IntegratedGradients
+# for saliency - do not force people to have this
+try:
+    import captum
+    from captum.attr import IntegratedGradients
+except ImportError:
+    print("NOTE: captum not found. You will not be able to compute saliency.")
+
 
 
 class Evaluator:
