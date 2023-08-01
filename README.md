@@ -104,6 +104,22 @@ python compare_models.py
 ```
 This will produce a table of ensembled results on the model. The data tables and figures can be found in data/ and imgs/ inside the experiment folder.
 
+**Test model on new data**
+
+To test a trained model on new data, simply use the command below:
+```
+python evaluate_single_model.py --model_path PATH_TO_EXPERIMENT --split test --new_data NEW_DATA_JSON
+```
+
+You will need to provide the path to the trained model for `--model_path` , and provide a the path to a json file containing the information of your new data after `--new_data`. The json file will need to contain: 
+- `hdf5_file_root`: name of the hdf5 that have your new data in the right format
+- `dataset`: a csv containing the dataset ids with all data as test split
+- `save_dir`: a directory where to save the results. 
+
+An example of json file can be found at *scripts/config_files/example_config_evaluate_new_data.json*
+
+
+
 ## Contributing
 If you'd like to contribute to this code base, have a look at our [contribution guide](CONTRIBUTING.md)
 
