@@ -209,8 +209,9 @@ class Evaluator:
                     "result": np.concatenate(prediction_array),
                     "distance_map": np.concatenate(distance_map_array),
                     "borderzone": np.concatenate(geodesic_array) < 20,
-                    "saliency": np.concatenate(saliency_array),
                 }
+                if saliency:
+                    subject_dictionary["saliency"]= np.concatenate(saliency_array)
                 # save prediction
                 if save_prediction:
                     self.save_prediction(
