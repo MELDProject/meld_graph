@@ -182,7 +182,7 @@ class Preprocess:
     def zscore_data(self, values,features):
         """zscore features using precalculated means and stds"""
         for fi,f_value in enumerate(values):
-            if np.std(f_value)!=0:
+            if (np.std(f_value)!=0) and (features[fi]!='.on_lh.lesion.mgh'):
                 values[fi] = (f_value-self.z_params[features[fi]]['mean'])/self.z_params[features[fi]]['std']
         return values
 

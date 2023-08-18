@@ -8,7 +8,10 @@ import torch
 import logging
 from meld_graph.graph_tools import GraphTools
 
+import torch
 
+
+        
 class Oversampler(torch.utils.data.Sampler):
     """
     NNUnet-like oversampling.
@@ -20,6 +23,7 @@ class Oversampler(torch.utils.data.Sampler):
         self.log = logging.getLogger(__name__)
         self.data_source = data_source
         self._num_samples = None
+        self._num_per_histos = None
 
         if not isinstance(self.num_samples, int) or self.num_samples <= 0:
             raise ValueError(
@@ -30,19 +34,36 @@ class Oversampler(torch.utils.data.Sampler):
     @property
     def num_samples(self):
         if self._num_samples is None:
-            return len(self.data_source.lesional_idxs) * 3
+            # find the maximum number of sample of histology
+            return int(np.max(self.num_per_histos))
         return self._num_samples
+    
+    @property
+    def num_per_histos(self):
+        if self._num_per_histos is None:
+            # find the number of samples for each histology 
+            return np.array([len(x) for x in self.data_source.histo_idxs[0:3]]).astype('int64')
+        return self._num_per_histos
+    
 
     def get_sampling_idxs(self):
         """
         Return list of len num_samples, containing data_source idxs to sample.
         Call once per epoch (when restarting iterator).
         """
-        n_non = len(self.data_source.lesional_idxs) * 2
+        # get the number of random samples to match the number of histo samples (max number sample histologies * number of histologies)
+        n_non = self.num_samples*(self.num_per_histos>0).sum()
+        # randomly select n_non samples among all samples 
         non_ids = torch.randperm(len(self.data_source), dtype=torch.int64)[:n_non]
+        # randomly select the same number of sample for each histologies than one that have the most of sample        n_0 = np.random.choice(self.data_source.histo_idxs[0], size=self.num_samples, replace=True)
+        n_0 = np.random.choice(self.data_source.histo_idxs[0], size=self.num_samples, replace=True) # FCD 1
+        n_1 = np.random.choice(self.data_source.histo_idxs[1], size=self.num_samples, replace=True) # FCD 2A
+        n_2 = np.random.choice(self.data_source.histo_idxs[2], size=self.num_samples, replace=True) # FCD 2B
+        # stack the histological samples with the random sample 
         ids_to_choose = torch.hstack(
-            [torch.from_numpy(self.data_source.lesional_idxs), non_ids]
+            [torch.from_numpy(n_0), torch.from_numpy(n_1), torch.from_numpy(n_2), non_ids]
         )
+        #return list of samples permute
         return ids_to_choose[torch.randperm(len(ids_to_choose), dtype=torch.int64)]
 
     def __iter__(self):
@@ -95,9 +116,12 @@ class GraphDataset(torch_geometric.data.Dataset):
         self.icospheres = IcoSpheres()
         self.gt = GraphTools(self.icospheres, cohort=self.cohort, distance_mask_medial_wall=distance_mask_medial_wall)
         self.augment = None
+        self.index_overwrite = None
         if (self.mode == "train") & (self.params["augment_data"] != None):
             self.augment = Augment(self.params["augment_data"], self.gt)
-        
+            # create mask to overwrite the lesion mask if given as input feature after augmentation 
+        if ".on_lh.lesion.mgh" in self.params["features"]:
+            self.index_overwrite = np.where(np.array(self.params["features"])==".on_lh.lesion.mgh")[0][0]   
         if len(self.output_levels) != 0:
             self.pool_layers = {
                 level: HexPool(self.icospheres.get_downsample(target_level=level))
@@ -105,6 +129,9 @@ class GraphDataset(torch_geometric.data.Dataset):
             }
         self._lesional_idxs = None
         self.use_histology = self.params.get('use_histology', False)
+        self._histo_idxs = None
+        self._num_histos = None
+
 
         # preload data in memory, with all preprocessing done
         self.data_list = []
@@ -244,6 +271,10 @@ class GraphDataset(torch_geometric.data.Dataset):
         if self.augment != None:
             subject_data_dict = self.augment.apply(subject_data_dict)
         
+        # overwrite lesion mask by labels if given as input features
+        if self.index_overwrite != None:
+            subject_data_dict['features'][:,self.index_overwrite]=subject_data_dict['labels']
+
         if self.params['smooth_labels'] and self.augment!=None:
             data = torch_geometric.data.Data(
         x=torch.tensor(subject_data_dict['features'], dtype=torch.float32),
@@ -288,3 +319,27 @@ class GraphDataset(torch_geometric.data.Dataset):
                     lesional_idxs.append(i)
             self._lesional_idxs = np.array(lesional_idxs)
         return self._lesional_idxs
+    
+    @property
+    def histo_idxs(self):
+        """find ids of data entries with each histology examples"""
+        if self._histo_idxs is None:
+            histo_0_idxs = []
+            histo_1_idxs = []
+            histo_2_idxs = []
+            histo_3_idxs = []
+            for i, d in enumerate(self.data_list):
+                if d['histology'][0][0]==1:
+                    histo_0_idxs.append(i)
+                elif d['histology'][0][1]==1:
+                    histo_1_idxs.append(i)
+                elif d['histology'][0][2]==1:
+                    histo_2_idxs.append(i)
+                elif d['histology'][0][3]==1:
+                    histo_3_idxs.append(i)
+                else:
+                    pass
+            self._histo_idxs = np.array([np.array(histo_0_idxs), np.array(histo_1_idxs), np.array(histo_2_idxs), np.array(histo_3_idxs)])
+        return self._histo_idxs
+    
+    
