@@ -34,6 +34,7 @@ class Evaluator:
         mode="test",
         checkpoint_path=None,
         make_images=False,
+        thresh_and_clust=True,
         dataset=None,
         cohort=None,
         subject_ids=None,
@@ -50,17 +51,17 @@ class Evaluator:
         ), "mode needs to be either test or val or train or inference"
         self.mode = mode
         self.make_images = make_images
+        self.thresh_and_clust = thresh_and_clust
 
         self.data_dictionary = None
         self._roc_dictionary = None
 
-        # TODO: add clustering and thershold
-        # self.threshold = self.experiment.network_parameters["optimal_threshold"]
-        # if threshold was not optimized, use 0.5
-        # if not isinstance(self.threshold, float):
-        #     self.threshold = 0.5
-        # self.min_area_threshold = self.experiment.data_parameters["min_area_threshold"]
-        # self.log.info("Evalution {}, {}".format(self.mode, self.threshold))
+        #add clustering and thershold
+        self.threshold = self.experiment.network_parameters.get("optimal_threshold", "sigmoid")
+        if not isinstance(self.threshold, float):
+            self.threshold = "sigmoid"
+        self.min_area_threshold = self.experiment.data_parameters.get("min_area_threshold",100)
+        self.log.info("Evalution {}, {}".format(self.mode, self.threshold))
 
         # Initialised directory to save results and plots
         if save_dir is None:
@@ -121,6 +122,9 @@ class Evaluator:
         # need to load and predict data
         if self.data_dictionary is None:
             self.load_predict_data()
+        #threshold and cluster
+        if self.thresh_and_clust:
+            self.threshold_and_cluster()
         # calculate stats
         self.stat_subjects()
         # make images if asked for
@@ -317,22 +321,58 @@ class Evaluator:
             }
         return self._roc_dictionary
 
-    def stat_subjects(self, suffix="", fold=None, threshold=0.5):
+    def threshold_and_cluster(self, data_dictionary=None, save_prediction_suffix=""):
+        return_dict = data_dictionary is not None
+        if data_dictionary is None:
+            data_dictionary = self.data_dictionary
+        for subj_id, data in data_dictionary.items():
+            distances = data["distance_map"]
+            if self.threshold == 'sigmoid':
+                threshold_subj = sigmoid(np.array([distances.min()]), k=1, m=0.05, ymin=0.03, ymax=0.4)[0]
+            else:
+                threshold_subj = self.threshold
+            predictions = self.experiment.cohort.split_hemispheres(data["result"])
+            island_count = 0
+            result_hemis_clustered = {}
+            for h, hemi in enumerate(["left", "right"]):
+                mask = predictions[hemi] >= threshold_subj
+                islands = self.cluster_and_area_threshold(mask, island_count=island_count, min_area_threshold=self.min_area_threshold)
+                result_hemis_clustered[hemi] = islands
+                island_count += np.max(islands)
+            data["cluster_thresholded"]=np.hstack([result_hemis_clustered['left'][self.cohort.cortex_mask],result_hemis_clustered['right'][self.cohort.cortex_mask]])
+        #save clustered predictions
+        self.save_prediction(
+                        subj_id,
+                        data["cluster_thresholded"],
+                        dataset_str="prediction_clustered",
+                        suffix=save_prediction_suffix,
+                    )
+        if return_dict:
+            return data_dictionary
+        else:
+            self.data_dictionary = data_dictionary
+
+    def stat_subjects(self, suffix="", fold=None):
         """calculate stats for each subjects"""
 
-        # TODO: need to add boundaries and clusters
+        # TODO: need to add boundaries 
         # boundary_label = MeldSubject(subject, self.experiment.cohort).load_boundary_zone(max_distance=20)
 
-        # calculate stats first
+        # calculate stats on thresholded and clustered predictions
         for subject in self.data_dictionary.keys():
-            prediction = self.data_dictionary[subject]["result"]
+            # use prediction clustered
+            if not isinstance(self.data_dictionary[subject]["cluster_thresholded"], np.ndarray):
+                print('Cannot perform stats on non-thresholded and clustered data')
+                return
+            prediction = self.data_dictionary[subject]["cluster_thresholded"]
             labels = self.data_dictionary[subject]["input_labels"]
+            
             group = labels.sum() != 0
 
-            detected = np.logical_and(prediction > threshold, labels).any()
-            difference = np.setdiff1d(np.unique(prediction), np.unique(prediction[labels]))
-            difference = difference[difference > 0]
-            n_clusters = len(difference)
+            detected = np.logical_and(prediction>0, labels).any()
+            # difference = np.setdiff1d(np.unique(prediction), np.unique(prediction[labels]))
+            # difference = difference[difference > 0]
+            # n_clusters = len(difference)
             # # if not detected, does a cluster overlap boundary zone and if so, how big is the cluster?
             # if not detected and prediction[np.logical_and(boundary_label, ~labels)].sum() > 0:
             #     border_verts = prediction[np.logical_and(boundary_label, ~labels)]
@@ -344,7 +384,7 @@ class Evaluator:
             # else:
             #     border_detected = 0
             patient_dice_vars = {"TP": 0, "FP": 0, "FN": 0, "TN": 0}
-            mask = torch.as_tensor(np.array(prediction > threshold)).long()
+            mask = torch.as_tensor(np.array(prediction > 0)).long()
             label = torch.as_tensor(np.array(labels.astype(bool))).long()
             dices = dice_coeff(torch.nn.functional.one_hot(mask, num_classes=2), label)
             (
@@ -405,7 +445,7 @@ class Evaluator:
             else:
                 sub_df.to_csv(filename, index=False)
 
-    def plot_subjects_prediction(self, rootfile=None, flat_map=True, threshold=0.5):
+    def plot_subjects_prediction(self, rootfile=None, flat_map=True):
         """plot predicted subjects"""
         import matplotlib.pyplot as plt
         from matplotlib.gridspec import GridSpec
@@ -430,12 +470,15 @@ class Evaluator:
                     exist_ok=True,
                 )
 
-            result = self.data_dictionary[subject]["result"]
             distance_map = self.data_dictionary[subject]["distance_map"]
-            # thresholded = self.data_dictionary[subject]["cluster_thresholded"]
-            label = self.data_dictionary[subject]["input_labels"]
+            # if clustered predictions exists takes that, otherwise take raw predictions
+            if isinstance(self.data_dictionary[subject]["cluster_thresholded"], np.ndarray):
+                result = self.data_dictionary[subject]["cluster_thresholded"]
+            else:
+                result = self.data_dictionary[subject]["result"]
             result = np.reshape(result, len(result))
-
+            label = self.data_dictionary[subject]["input_labels"]
+           
             result_hemis = self.experiment.cohort.split_hemispheres(result)
             distance_map_hemis = self.experiment.cohort.split_hemispheres(distance_map)
             label_hemis = self.experiment.cohort.split_hemispheres(label)
@@ -490,10 +533,7 @@ class Evaluator:
                 ]
             for i, overlay in enumerate(data_to_plot):
                 ax = fig.add_subplot(gs1[i])
-                if "distance" in titles[i]:
-                    im = create_surface_plots(coords, faces, overlay, flat_map=True)
-                else:
-                    im = create_surface_plots(coords, faces, overlay, flat_map=True, limits=[0.4, 0.6])
+                im = create_surface_plots(coords, faces, overlay, flat_map=True)
                 ax.imshow(im)
                 ax.axis("off")
                 ax.set_title(titles[i], loc="left", fontsize=20)
@@ -539,6 +579,54 @@ class Evaluator:
             except OSError:
                 done = False
 
+   
+    def cluster_and_area_threshold(self, mask, island_count=0, min_area_threshold=0):
+        """cluster predictions and threshold based on min_area_threshold
+
+        Args:
+            mask: boolean mask of the per-vertex lesion predictions to cluster"""
+        n_comp, labels = scipy.sparse.csgraph.connected_components(self.experiment.cohort.adj_mat[mask][:, mask])
+        islands = np.zeros(len(mask))
+        # only include islands larger than minimum size.
+        for island_index in np.arange(n_comp):
+            include_vec = labels == island_index
+            size = np.sum(include_vec)
+            if size >= min_area_threshold:
+                island_count += 1
+                island_mask = mask.copy()
+                island_mask[mask] = include_vec
+                islands[island_mask] = island_count
+        return islands
+
+def sigmoid(x, k=2, m=0.5, ymin=0.03, ymax=0.5):
+    """
+    Inverse sigmoid function with fixed endpoints ymin and ymax, variable midpoint m and slope k.
+    Function has the following properties: f(0)=ymax, f(1)=ymin (except for k=0, where f(x)=ymin)
+    
+    Shifting the midpoint will squeeze the function in the range 0,2*midpoint, and set all values beyond to ymin.
+    
+    Args:
+        x: input values that should be transformed
+        k: slope
+        m: midpoint
+        ymin: min value
+        ymax: max value
+    """
+    xmax = m*2
+    # inverse sigmoid function with fixed endpoints and variable slope k
+    # k = 0 defaults to ymin
+    if k == 0:
+        return np.ones_like(x)*ymin
+    eps = 1e-15
+    res = 1 / (1 + (1/(x/xmax+eps)-1)**(-k))
+    # scale y range
+    scaled_res = res * (ymax - ymin) + ymin
+    # clip values of x > xmax to ymin
+    scaled_res[x > xmax] = ymin
+
+    # clip values to be ymax at max
+    scaled_res[scaled_res > ymax] = ymax
+    return scaled_res
 
 def save_json(json_filename, json_results):
     """
