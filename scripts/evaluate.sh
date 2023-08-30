@@ -7,7 +7,7 @@
 #SBATCH --mem=64000
 #SBATCH --time=00:40:00 
 #SBATCH --mail-type=FAIL
-#SBATCH -p skylake
+#SBATCH -p icelake
 
 #! partitions: ampere, pascal
 # set up
