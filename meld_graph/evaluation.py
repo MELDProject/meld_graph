@@ -39,6 +39,7 @@ class Evaluator:
         cohort=None,
         subject_ids=None,
         save_dir=None,
+        saliency=False,
     ):
         # set class params
         self.log = logging.getLogger(__name__)
@@ -52,6 +53,7 @@ class Evaluator:
         self.mode = mode
         self.make_images = make_images
         self.thresh_and_clust = thresh_and_clust
+        self.saliency = saliency
 
         self.data_dictionary = None
         self._roc_dictionary = None
@@ -130,6 +132,9 @@ class Evaluator:
         # make images if asked for
         if self.make_images:
             self.plot_subjects_prediction()
+        # saliency
+        if self.saliency:
+            self.calculate_saliency()
 
     def load_predict_data(
         self,
@@ -137,16 +142,11 @@ class Evaluator:
         roc_curves_thresholds=np.linspace(0, 1, 51),
         save_prediction=True,
         save_prediction_suffix="",
-        saliency=False,
-        saliency_threshold=0.5,
     ):
         """
         Args:
             save_prediction (bool): save predictions to EXPERIMENT_FOLDER/results/predictions{save_prediction_suffix}.hdf5
             save_prediction_suffix (str): suffix for predictions file.
-            saliency (bool): calculate integrated gradients saliency.
-            saliency_theshold (float): prediction threshold for saliency calculation. 
-                Predictions > threshold will be included in saliency estimates.
         """
         self.log.info("loading data and predicting model")
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -160,12 +160,8 @@ class Evaluator:
         self.data_dictionary = {}
         store_sub_aucs = True
         self.subject_aucs = {}
-        if saliency:
-            # prepare model for saliency
-            saliency_model = IntegratedGradients(
-                PredictionForSaliency(self.experiment.model, threshold=saliency_threshold))
         for i, data in enumerate(data_loader):
-            self.log.info(i)
+            self.log.debug(i)
             subject_index = i // 2
             hemi = ["lh", "rh"][i % 2]
             if hemi == "lh":
@@ -181,16 +177,6 @@ class Evaluator:
             labels = data.y.squeeze()
             geo_distance = data.distance_map
             prediction = torch.exp(estimates["log_softmax"])[:, 1]
-            if saliency:
-                # calculate saliency
-                # are there lesional predictions?
-                if (prediction > saliency_threshold).max():
-                    # if yes, calculate saliency
-                    self.log.info(f'calculating saliency for {subj_id} {hemi}')
-                    cur_saliency = saliency_model.attribute(data.x, target=1, n_steps=25, 
-                                                        method='gausslegendre', internal_batch_size=100).cpu().numpy()
-                else:
-                    cur_saliency = np.zeros((len(prediction), len(self.experiment.data_parameters['features'])))
             # get distance map if exist in loss, otherwise return array of NaN
             if (
                 "distance_regression"
@@ -204,8 +190,6 @@ class Evaluator:
             features_array.append(data.x.cpu().numpy()[self.cohort.cortex_mask])
             distance_map_array.append(distance_map.detach().cpu().numpy()[self.cohort.cortex_mask])
             geodesic_array.append(geo_distance.cpu().numpy()[self.cohort.cortex_mask])
-            if saliency:
-                saliency_array.append(cur_saliency[self.cohort.cortex_mask])
             # only save after right hemi has been run.
             if hemi == "rh":
                 subject_dictionary = {
@@ -214,8 +198,6 @@ class Evaluator:
                     "distance_map": np.concatenate(distance_map_array),
                     "borderzone": np.concatenate(geodesic_array) < 20,
                 }
-                if saliency:
-                    subject_dictionary["saliency"]= np.concatenate(saliency_array)
                 # save prediction
                 if save_prediction:
                     self.save_prediction(
@@ -230,14 +212,7 @@ class Evaluator:
                         dataset_str="distance_map",
                         suffix=save_prediction_suffix,
                     )
-                    if saliency:
-                        self.save_prediction(
-                            subj_id,
-                            subject_dictionary["saliency"],
-                            dataset_str="integrated_gradients_pred",
-                            suffix=save_prediction_suffix,
-                        )
-                # save features if mode is training
+                # save features if mode is not train
                 if self.mode != "train":
                     subject_dictionary["input_features"] = np.concatenate(features_array)
                 if store_predictions:
@@ -340,8 +315,8 @@ class Evaluator:
                 result_hemis_clustered[hemi] = islands
                 island_count += np.max(islands)
             data["cluster_thresholded"]=np.hstack([result_hemis_clustered['left'][self.cohort.cortex_mask],result_hemis_clustered['right'][self.cohort.cortex_mask]])
-        #save clustered predictions
-        self.save_prediction(
+            # save clustered predictions
+            self.save_prediction(
                         subj_id,
                         data["cluster_thresholded"],
                         dataset_str="prediction_clustered",
@@ -351,6 +326,89 @@ class Evaluator:
             return data_dictionary
         else:
             self.data_dictionary = data_dictionary
+
+    def calculate_saliency(
+        self,
+        save_prediction_suffix="",
+    ):
+        """
+        Calculate saliency for all subjects.
+
+        Tries to load data from self.data_dictionary or from existing prediction.hdf5. 
+        If this is not possible, predicts & clusters data with load_predict_data and threshold_and_cluster.
+
+        Saliency is integrated gradients calculated for every cluster. 
+        The saliency is calculate for all vertices in the cluster with respect to all vertices in the cluster. 
+        The mean saliency is saved in a csv file with name saliency{suffix}.csv, with subj_id, cluster_id, and aggregation function (mean,std) as indices and saliency for n_features as values.
+        This csv can be read using `pd.read_csv('saliency.csv', index_col=[0,1,2])`.
+        """
+        # helper functions
+        def _load_data_from_dict(subj_id):
+            data = {}
+            if self.data_dictionary is None:
+                return False
+            try:
+                for key in ['cluster_thresholded', 'input_features']:
+                    data[key] = self.data_dictionary[subj_id][key]
+                    data[key] = self.experiment.cohort.split_hemispheres(data[key])
+                data['input_features']['left'] = torch.tensor(data['input_features']['left'], dtype=torch.float32)
+                data['input_features']['right'] = torch.tensor(data['input_features']['right'], dtype=torch.float32)
+            except KeyError:
+                # some key was missing
+                return False
+            return data
+
+        def _load_data_from_file(subj_id):
+            # try to load predictions
+            data = {}
+            data['cluster_thresholded'] = self.load_prediction(subj_id, dataset_str='prediction_clustered', suffix=save_prediction_suffix)
+            if data['cluster_thresholded'] is None:
+                return False
+            data['cluster_thresholded'] = self.experiment.cohort.split_hemispheres(data['cluster_thresholded'])
+            
+            # load features from using dataset
+            dataset = GraphDataset([subj_id], self.cohort, self.experiment.data_parameters, mode="test")
+            data_loader = torch_geometric.loader.DataLoader(dataset,shuffle=False,batch_size=1,)
+            hemis = ['left', 'right']
+            data['input_features'] = {}
+            for i, sample in enumerate(data_loader):
+                data['input_features'][hemis[i]] = sample.x
+            return data
+        
+        self.log.info('calculating saliency')
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        # prepare saliency model
+        saliency_model = IntegratedGradients(PredictionForSaliency(self.experiment.model))
+        saliency_dict = {}
+        for subj_id in self.subject_ids:
+            # get data
+            data_dict = _load_data_from_dict(subj_id)
+            if data_dict is False:
+                data_dict = _load_data_from_file(subj_id)
+                if data_dict is False:
+                    # calculate predictions because did not find data in dict and in hdf5 file
+                    self.load_predict_data(store_predictions=True)
+                    self.threshold_and_cluster(save_prediction_suffix=save_prediction_suffix)
+                    data_dict = self.load_data_from_dict()
+                    if data_dict is False:
+                        raise ValueError("Could not successfully calculate predictions and thresholds for saliency calculation.")
+
+            for hemi in ['left', 'right']:
+                # calculate saliency for every cluster (and average?)
+                for cl in np.unique(data_dict['cluster_thresholded'][hemi]):
+                    if cl == 0:  # dont do background cluster
+                        continue
+                    self.log.info(f'calculating saliency for {subj_id}, cluster {cl}')
+                    mask = data_dict['cluster_thresholded'][hemi] == cl
+                    
+                    inputs = data_dict['input_features'][hemi].to(device)
+                    cur_saliency = saliency_model.attribute(inputs, additional_forward_args=mask, target=1, n_steps=25, 
+                                                method='gausslegendre', internal_batch_size=100).cpu().numpy()
+                    # take mean saliency inside mask
+                    saliency_dict[(subj_id, cl, 'mean')] = cur_saliency[mask].mean(axis=0)
+                    saliency_dict[(subj_id, cl, 'std')] = cur_saliency[mask].std(axis=0)
+        # save saliency
+        pd.DataFrame(saliency_dict).T.to_csv(os.path.join(self.save_dir, "results", f"saliency{save_prediction_suffix}.csv"))
 
     def stat_subjects(self, suffix="", fold=None):
         """calculate stats for each subjects"""
@@ -579,6 +637,26 @@ class Evaluator:
             except OSError:
                 done = False
 
+    def load_prediction(self, subject, dataset_str="prediction", suffix=""):
+        """
+        load prediction from file.
+        """
+        filename = os.path.join(self.save_dir, "results", f"predictions{suffix}.hdf5")
+        if not os.path.isfile(filename):
+            # cannot load data
+            self.log.debug('file does not exist')
+            return None
+        with h5py.File(filename, mode='r') as f:
+            prediction = []
+            try:
+                for i, hemi in enumerate(["lh", "rh"]):
+                    prediction.append(f[f"{subject}/{hemi}/{dataset_str}"][:])
+                prediction = np.concatenate(prediction)
+            except KeyError:
+                # dataset does not exist, cannot load data
+                self.log.debug(f'dataset does not exist {subject}/{hemi}/{dataset_str}')
+                prediction = None
+        return prediction
    
     def cluster_and_area_threshold(self, mask, island_count=0, min_area_threshold=0):
         """cluster predictions and threshold based on min_area_threshold

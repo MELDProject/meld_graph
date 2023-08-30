@@ -518,15 +518,16 @@ class HexSmoothSparse(nn.Module):
 class PredictionForSaliency(nn.Module):
     """
     Adds layer to model to output the sum of all predicted lesional vertices for integrated gradients
-    TODO threshold could be calculated in this class.
     """
-    def __init__(self, model, threshold=0.5):
+    def __init__(self, model):
         super().__init__()
         self.model = model
-        self.threshold=threshold
         
-    def forward(self, input):
+    def forward(self, input, mask=None):
         prediction = torch.exp(self.model(input)['log_softmax'])
-        prediction = torch.mean(prediction[prediction[:,1] >= self.threshold], axis=0)
+        if mask is None:
+            prediction = torch.mean(prediction, axis=0)
+        else:
+            prediction = torch.mean(prediction[mask], axis=0)
         # return shape is (1,2)
         return prediction[None,:]
