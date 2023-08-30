@@ -54,14 +54,17 @@ class Oversampler(torch.utils.data.Sampler):
         # get the number of random samples to match the number of histo samples (max number sample histologies * number of histologies)
         n_non = self.num_samples*(self.num_per_histos>0).sum()
         # randomly select n_non samples among all samples 
-        non_ids = torch.randperm(len(self.data_source), dtype=torch.int64)[:n_non]
+        # non_ids = torch.randperm(len(self.data_source), dtype=torch.int64)[:n_non]
         # randomly select the same number of sample for each histologies than one that have the most of sample        n_0 = np.random.choice(self.data_source.histo_idxs[0], size=self.num_samples, replace=True)
         n_0 = np.random.choice(self.data_source.histo_idxs[0], size=self.num_samples, replace=True) # FCD 1
         n_1 = np.random.choice(self.data_source.histo_idxs[1], size=self.num_samples, replace=True) # FCD 2A
         n_2 = np.random.choice(self.data_source.histo_idxs[2], size=self.num_samples, replace=True) # FCD 2B
         # stack the histological samples with the random sample 
+        # ids_to_choose = torch.hstack(
+        #     [torch.from_numpy(n_0), torch.from_numpy(n_1), torch.from_numpy(n_2), non_ids]
+        # )
         ids_to_choose = torch.hstack(
-            [torch.from_numpy(n_0), torch.from_numpy(n_1), torch.from_numpy(n_2), non_ids]
+            [torch.from_numpy(n_0), torch.from_numpy(n_1), torch.from_numpy(n_2)]
         )
         #return list of samples permute
         return ids_to_choose[torch.randperm(len(ids_to_choose), dtype=torch.int64)]

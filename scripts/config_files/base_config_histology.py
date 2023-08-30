@@ -17,7 +17,7 @@ network_parameters = {
         "norm": None,
         "spiral_len": 7,
     },
-    "name": '23-08-16_MATH_histology_head_noseg_lesionfeat_oversampler',
+    "name": '23-08-30_MATH_histology_head_after_pred',
     "network_type": "MoNetUnet",
     "training_parameters": {
         "batch_size": 8,
@@ -56,7 +56,7 @@ network_parameters = {
         "num_epochs": 150,
         "optimiser": "sgd",
         "optimiser_parameters": {"lr": 0.0001, "momentum": 0.99, "nesterov": True},
-        "oversampling": True,
+        "oversampling": "histo", # can be False, lesion or histo
         "shuffle_each_epoch": True,
     },
 }
