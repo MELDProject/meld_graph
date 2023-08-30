@@ -65,6 +65,7 @@ if __name__ == "__main__":
         cohort=cohort,
         subject_ids=subjects,
         mode="test",
+        saliency=args.saliency,
     )
    
     # only save predictions on test, no need on vals but instead calculate ROCs
@@ -91,7 +92,6 @@ if __name__ == "__main__":
         save_prediction=save_prediction,
         roc_curves_thresholds=roc_curves_thresholds,
         save_prediction_suffix=suffix,
-        saliency=args.saliency,
     )
 
     # # calculate stats
