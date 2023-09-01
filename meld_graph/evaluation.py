@@ -15,6 +15,8 @@ import numpy as np
 import h5py
 import matplotlib.pyplot as plt
 import sklearn.metrics as metrics
+import itertools
+import seaborn as sns
 
 # for saliency - do not force people to have this
 try:
@@ -327,6 +329,53 @@ class Evaluator:
         else:
             self.data_dictionary = data_dictionary
 
+    # def load_data_from_file(self, subj_id, keys=['cluster_thresholded','distance_map'], split_hemis=False, save_prediction_suffix=""):
+    #         # try to load predictions
+    #         data = {}
+            
+    #         if 'result' in keys:
+    #             data['result'] = self.load_prediction(subj_id, dataset_str='prediction', suffix=save_prediction_suffix)
+    #             if data['result'] is None:
+    #                 return False
+    #             if split_hemis:
+    #                 data['result'] = self.experiment.cohort.split_hemispheres(data['result'])
+            
+    #         if 'cluster_thresholded' in keys:
+    #             data['cluster_thresholded'] = self.load_prediction(subj_id, dataset_str='prediction_clustered', suffix=save_prediction_suffix)
+    #             if split_hemis:
+    #                 data['cluster_thresholded'] = self.experiment.cohort.split_hemispheres(data['cluster_thresholded'])
+            
+    #         if 'distance_map' in keys:
+    #             data['distance_map'] = self.load_prediction(subj_id, dataset_str='distance_map', suffix=save_prediction_suffix)
+    #             if split_hemis:
+    #                 data['distance_map'] = self.experiment.cohort.split_hemispheres(data['distance_map'])
+
+    #         if ('input_features' in keys) or ('input_labels' in keys):
+    #             # load features from using dataset
+    #             dataset = GraphDataset([subj_id], self.cohort, self.experiment.data_parameters, mode="test")
+    #             data_loader = torch_geometric.loader.DataLoader(dataset,shuffle=False,batch_size=1,)
+    #             features_hemis = []
+    #             labels_hemis = []
+    #             for i, sample in enumerate(data_loader):
+    #                 features_hemis.append(sample.x)
+    #                 labels_hemis.append(sample.y)
+    #             if 'input_features' in keys:
+    #                 if split_hemis:
+    #                     data['input_features'] = {}
+    #                     data['input_features']['left'] = features_hemis[0]
+    #                     data['input_features']['right'] = features_hemis[1]
+    #                 else:
+    #                     data['input_features'] = np.hstack([features_hemis[0][self.experiment.cohort.cortex_mask].T,features_hemis[1][self.experiment.cohort.cortex_mask].T]).T
+    #             if 'input_labels' in keys:
+    #                 if split_hemis:
+    #                     data['input_labels'] = {}
+    #                     data['input_labels']['left'] = labels_hemis[0]
+    #                     data['input_labels']['right'] = labels_hemis[1]
+    #                 else:
+    #                     data['input_labels'] = np.hstack([labels_hemis[0][self.experiment.cohort.cortex_mask],labels_hemis[1][self.experiment.cohort.cortex_mask]])
+            
+    #         return data
+    
     def calculate_saliency(
         self,
         save_prediction_suffix="",
@@ -675,6 +724,91 @@ class Evaluator:
                 island_mask[mask] = include_vec
                 islands[island_mask] = island_count
         return islands
+
+
+    def optimise_sigmoid(self, ymin_r=[0.01,0.03,0.05], ymax_r=[0.3,0.4,0.5], k_r=[1], m_r=[0.1,0.05], suffix=""): 
+        """
+        Function to find the parameters of the sigmoid used to threshold the predictions based on min_distance
+        It returns the ymin, ymax, k and m parameters that find an optimal compromise between sensitivity and dice score
+
+        Args:
+            k_r: the range of slopes to try
+            m_r: the range of midpoint to try
+            ymin_r: the range of min value to try
+            ymax_r: the range of max value to try
+        """
+        
+        #get the data dictionary with raw prediction, distance_map and labels
+        if self.data_dictionary == None:
+           #TODO: load data_dictionary from file if does not exist already
+           print('Need to predict first')
+        else:
+            data_dictionary = self.data_dictionary
+
+        # get min distance for all subjects
+        min_dist = [data_dictionary[subject]['distance_map'].min() for subject in data_dictionary.keys()]
+
+        # calculate threshold as a function of min dist
+        res = [] 
+        for ymin,ymax,k,m in itertools.product(ymin_r,ymax_r,k_r,m_r):
+            print(ymin,ymax,k,m)
+            thresholds = sigmoid(np.array(min_dist), k=k, m=m, ymax=ymax, ymin=ymin)
+            cur_dice, cur_sens = get_scores(data_dictionary, thresholds)
+            res.append({'dice': cur_dice, 'sensitivity': cur_sens,'ymin':ymin, 'ymax':ymax, 'k':k, 'm':m, 'desc':f'ymin{ymin}_ymax{ymax}_k{k}_m{m}'})
+        
+        df = pd.DataFrame(res)
+        
+        # plot the results
+        ax = sns.scatterplot(data=df, x='desc', y='dice', label='dice') #, 'sensitivity'))
+        ax = sns.scatterplot(data=df, x='desc', y='sensitivity', label='sensitivity')
+        for tick in ax.xaxis.get_ticklabels():
+            tick.set_rotation(90)
+        plt.ylabel('score')
+        plt.xlabel('k (sigmoid param)')
+        plt.legend()
+
+        # find the parameters of the best sigmoid 
+        df['sum'] = df['sensitivity'].values + df['dice'].values
+        best_dice_sens = df['sum'].max()
+        df_best = df[df['sum'] == best_dice_sens]
+
+        #save best parameters
+        filename = os.path.join(self.save_dir,'results',f'sigmoid_optimal_parameters{suffix}.csv')
+        print(f'Save parameters optimised sigmoid at {filename}')
+        df_best.to_csv(filename)
+
+        # plot the selected sigmoid
+        plt.figure()
+        ymin,ymax,k,m = df_best[['ymin','ymax','k','m']].values[0]
+        plt.plot(np.linspace(0,1,100), sigmoid(np.linspace(0,1,100), k=k, m=m, ymax=ymax, ymin=ymin), label=f'ymin{ymin}_ymax{ymax}_k{k}_m{m}')
+        plt.ylabel('threshold')
+        plt.xlabel('min_dist')
+        plt.legend()
+
+        filename = os.path.join(self.save_dir,'results',f'sigmoid_optimal_parameters{suffix}.png')
+        plt.savefig(filename)
+
+        return df
+
+def get_scores(subjects_dict, thresholds):
+        """
+        return sensitivity & dice for given threshold
+        """
+        patient_sens = []
+        dice = []
+        for subj, thresh in zip(subjects_dict, thresholds):
+            subj = subjects_dict[subj]
+
+            mask = torch.as_tensor(np.array(subj['result'] >= thresh)).long()
+            label = torch.as_tensor(np.array(subj['input_labels'].astype(bool))).long()
+            dices = dice_coeff(torch.nn.functional.one_hot(mask, num_classes=2), label)
+            #report dice lesional
+            dice.append(dices[1])
+            #get sensitivity
+            tp, fp, fn, tn = tp_fp_fn_tn(mask, label)       
+            if sum(subj['input_labels']) != 0:
+                patient_sens.append(tp > 1)
+        return np.mean(dice), np.mean(patient_sens)
 
 def sigmoid(x, k=2, m=0.5, ymin=0.03, ymax=0.5):
     """
