@@ -329,52 +329,52 @@ class Evaluator:
         else:
             self.data_dictionary = data_dictionary
 
-    # def load_data_from_file(self, subj_id, keys=['cluster_thresholded','distance_map'], split_hemis=False, save_prediction_suffix=""):
-    #         # try to load predictions
-    #         data = {}
+    def load_data_from_file(self, subj_id, keys=['cluster_thresholded','distance_map'], split_hemis=False, save_prediction_suffix=""):
+            # try to load predictions
+            data = {}
             
-    #         if 'result' in keys:
-    #             data['result'] = self.load_prediction(subj_id, dataset_str='prediction', suffix=save_prediction_suffix)
-    #             if data['result'] is None:
-    #                 return False
-    #             if split_hemis:
-    #                 data['result'] = self.experiment.cohort.split_hemispheres(data['result'])
+            if 'result' in keys:
+                data['result'] = self.load_prediction(subj_id, dataset_str='prediction', suffix=save_prediction_suffix)
+                if data['result'] is None:
+                    return False
+                if split_hemis:
+                    data['result'] = self.experiment.cohort.split_hemispheres(data['result'])
             
-    #         if 'cluster_thresholded' in keys:
-    #             data['cluster_thresholded'] = self.load_prediction(subj_id, dataset_str='prediction_clustered', suffix=save_prediction_suffix)
-    #             if split_hemis:
-    #                 data['cluster_thresholded'] = self.experiment.cohort.split_hemispheres(data['cluster_thresholded'])
+            if 'cluster_thresholded' in keys:
+                data['cluster_thresholded'] = self.load_prediction(subj_id, dataset_str='prediction_clustered', suffix=save_prediction_suffix)
+                if split_hemis:
+                    data['cluster_thresholded'] = self.experiment.cohort.split_hemispheres(data['cluster_thresholded'])
             
-    #         if 'distance_map' in keys:
-    #             data['distance_map'] = self.load_prediction(subj_id, dataset_str='distance_map', suffix=save_prediction_suffix)
-    #             if split_hemis:
-    #                 data['distance_map'] = self.experiment.cohort.split_hemispheres(data['distance_map'])
+            if 'distance_map' in keys:
+                data['distance_map'] = self.load_prediction(subj_id, dataset_str='distance_map', suffix=save_prediction_suffix)
+                if split_hemis:
+                    data['distance_map'] = self.experiment.cohort.split_hemispheres(data['distance_map'])
 
-    #         if ('input_features' in keys) or ('input_labels' in keys):
-    #             # load features from using dataset
-    #             dataset = GraphDataset([subj_id], self.cohort, self.experiment.data_parameters, mode="test")
-    #             data_loader = torch_geometric.loader.DataLoader(dataset,shuffle=False,batch_size=1,)
-    #             features_hemis = []
-    #             labels_hemis = []
-    #             for i, sample in enumerate(data_loader):
-    #                 features_hemis.append(sample.x)
-    #                 labels_hemis.append(sample.y)
-    #             if 'input_features' in keys:
-    #                 if split_hemis:
-    #                     data['input_features'] = {}
-    #                     data['input_features']['left'] = features_hemis[0]
-    #                     data['input_features']['right'] = features_hemis[1]
-    #                 else:
-    #                     data['input_features'] = np.hstack([features_hemis[0][self.experiment.cohort.cortex_mask].T,features_hemis[1][self.experiment.cohort.cortex_mask].T]).T
-    #             if 'input_labels' in keys:
-    #                 if split_hemis:
-    #                     data['input_labels'] = {}
-    #                     data['input_labels']['left'] = labels_hemis[0]
-    #                     data['input_labels']['right'] = labels_hemis[1]
-    #                 else:
-    #                     data['input_labels'] = np.hstack([labels_hemis[0][self.experiment.cohort.cortex_mask],labels_hemis[1][self.experiment.cohort.cortex_mask]])
+            if ('input_features' in keys) or ('input_labels' in keys):
+                # load features from using dataset
+                dataset = GraphDataset([subj_id], self.cohort, self.experiment.data_parameters, mode="test")
+                data_loader = torch_geometric.loader.DataLoader(dataset,shuffle=False,batch_size=1,)
+                features_hemis = []
+                labels_hemis = []
+                for i, sample in enumerate(data_loader):
+                    features_hemis.append(sample.x)
+                    labels_hemis.append(sample.y)
+                if 'input_features' in keys:
+                    if split_hemis:
+                        data['input_features'] = {}
+                        data['input_features']['left'] = features_hemis[0]
+                        data['input_features']['right'] = features_hemis[1]
+                    else:
+                        data['input_features'] = np.hstack([features_hemis[0][self.experiment.cohort.cortex_mask].T,features_hemis[1][self.experiment.cohort.cortex_mask].T]).T
+                if 'input_labels' in keys:
+                    if split_hemis:
+                        data['input_labels'] = {}
+                        data['input_labels']['left'] = labels_hemis[0]
+                        data['input_labels']['right'] = labels_hemis[1]
+                    else:
+                        data['input_labels'] = np.hstack([labels_hemis[0][self.experiment.cohort.cortex_mask],labels_hemis[1][self.experiment.cohort.cortex_mask]])
             
-    #         return data
+            return data
     
     def calculate_saliency(
         self,
@@ -438,7 +438,7 @@ class Evaluator:
                     # calculate predictions because did not find data in dict and in hdf5 file
                     self.load_predict_data(store_predictions=True)
                     self.threshold_and_cluster(save_prediction_suffix=save_prediction_suffix)
-                    data_dict = self.load_data_from_dict()
+                    data_dict = _load_data_from_dict()
                     if data_dict is False:
                         raise ValueError("Could not successfully calculate predictions and thresholds for saliency calculation.")
 
