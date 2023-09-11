@@ -31,6 +31,7 @@ network_parameters = {
             "dice": {"class_weights": [0.0, 1.0], "weight": 1},
         },
         "lr_decay": 0.9,
+        "start_epoch":0,
         "max_epochs_lr_decay": 1000,
         "max_patience": 400,
         "stopping_metric": {"name": "loss", "sign": 1},

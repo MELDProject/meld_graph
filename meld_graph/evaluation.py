@@ -101,6 +101,8 @@ class Evaluator:
             return os.path.join(experiment_path, 'best_model.pt')
         if os.path.isfile(os.path.join(experiment_path, 'ensemble_model.pt')):
             return os.path.join(experiment_path, 'ensemble_model.pt')
+        if os.path.isfile(os.path.join(experiment_path, 'best_auc_model.pt')):
+            return os.path.join(experiment_path, 'best_auc_model.pt')
         return None
 
     def evaluate(self,):

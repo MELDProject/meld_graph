@@ -387,11 +387,13 @@ class MoNetUnet(nn.Module):
             if self.object_detection_head:
                 # Object detection head
                 xyzr = self.object_detection_head[0](x.unsqueeze(2))
-                xyz = xyzr[:, :3, :].contiguous()
-                r = xyzr[:, 3:, :].contiguous()
+                xyzr = self.object_detection_head[1](xyzr.view(-1))
+                xyz = xyzr[:3].contiguous()
+                r = xyzr[ 3:].contiguous()
                 xyz = xyz.view(xyz.size(0), -1)
-                xyz_norm = nn.functional.normalize(xyz, p=2, dim=1)
-                xyzr_norm = torch.cat([xyz_norm, r.view(r.size(0), -1)], dim=1)
+                xyz_norm = nn.functional.normalize(xyz, p=2, dim=0)
+                xyzr_norm = torch.cat([xyz_norm, r.view(r.size(0), -1)], dim=0)
+                xyzr_norm = torch.squeeze(xyzr_norm)
                 outputs['object_detection_linear'].append(xyzr_norm)
 
             for i, block in enumerate(self.decoder_conv_layers):
@@ -442,6 +444,8 @@ class MoNetUnet(nn.Module):
             shape = (-1, 2)
             if "non_lesion_logits" in key:
                 shape = (-1, 1)
+            if "object_detection_linear" in key:
+                shape = (-1,4)
             outputs[key] = torch.stack(output).view(shape)
         return outputs
 
