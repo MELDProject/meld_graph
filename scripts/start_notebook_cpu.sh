@@ -6,7 +6,7 @@
 #SBATCH -A CORE-WCHN-MELD-SL2-CPU
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH -p skylake-himem
+#SBATCH -p icelake
 #SBATCH --mem=24000
 #SBATCH -t 08:00:00
 

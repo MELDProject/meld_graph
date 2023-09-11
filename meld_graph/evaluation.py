@@ -3,6 +3,7 @@ import os
 import torch
 import torch_geometric.data
 from meld_graph.dataset import GraphDataset
+from meld_graph.models import PredictionForSaliency
 import numpy as np
 import h5py
 import scipy
@@ -14,6 +15,16 @@ import numpy as np
 import h5py
 import matplotlib.pyplot as plt
 import sklearn.metrics as metrics
+import itertools
+import seaborn as sns
+
+# for saliency - do not force people to have this
+try:
+    import captum
+    from captum.attr import IntegratedGradients
+except ImportError:
+    print("NOTE: captum not found. You will not be able to compute saliency.")
+
 
 
 class Evaluator:
@@ -25,10 +36,12 @@ class Evaluator:
         mode="test",
         checkpoint_path=None,
         make_images=False,
+        thresh_and_clust=True,
         dataset=None,
         cohort=None,
         subject_ids=None,
         save_dir=None,
+        saliency=False,
     ):
         # set class params
         self.log = logging.getLogger(__name__)
@@ -41,17 +54,18 @@ class Evaluator:
         ), "mode needs to be either test or val or train or inference"
         self.mode = mode
         self.make_images = make_images
+        self.thresh_and_clust = thresh_and_clust
+        self.saliency = saliency
 
         self.data_dictionary = None
         self._roc_dictionary = None
 
-        # TODO: add clustering and thershold
-        # self.threshold = self.experiment.network_parameters["optimal_threshold"]
-        # if threshold was not optimized, use 0.5
-        # if not isinstance(self.threshold, float):
-        #     self.threshold = 0.5
-        # self.min_area_threshold = self.experiment.data_parameters["min_area_threshold"]
-        # self.log.info("Evalution {}, {}".format(self.mode, self.threshold))
+        #add clustering and thershold
+        self.threshold = self.experiment.network_parameters.get("optimal_threshold", "sigmoid")
+        if not isinstance(self.threshold, float):
+            self.threshold = "sigmoid"
+        self.min_area_threshold = self.experiment.data_parameters.get("min_area_threshold",100)
+        self.log.info("Evalution {}, {}".format(self.mode, self.threshold))
 
         # Initialised directory to save results and plots
         if save_dir is None:
@@ -114,11 +128,17 @@ class Evaluator:
         # need to load and predict data
         if self.data_dictionary is None:
             self.load_predict_data()
+        #threshold and cluster
+        if self.thresh_and_clust:
+            self.threshold_and_cluster()
         # calculate stats
         self.stat_subjects()
         # make images if asked for
         if self.make_images:
             self.plot_subjects_prediction()
+        # saliency
+        if self.saliency:
+            self.calculate_saliency()
 
     def load_predict_data(
         self,
@@ -145,6 +165,7 @@ class Evaluator:
         store_sub_aucs = True
         self.subject_aucs = {}
         for i, data in enumerate(data_loader):
+            self.log.debug(i)
             subject_index = i // 2
             hemi = ["lh", "rh"][i % 2]
             if hemi == "lh":
@@ -153,6 +174,7 @@ class Evaluator:
                 labels_array = []
                 features_array = []
                 geodesic_array = []
+                saliency_array = []
             subj_id = self.subject_ids[subject_index]
             data = data.to(device)
             estimates = self.experiment.model(data.x)
@@ -194,7 +216,7 @@ class Evaluator:
                         dataset_str="distance_map",
                         suffix=save_prediction_suffix,
                     )
-                # save features if mode is training
+                # save features if mode is not train
                 if self.mode != "train":
                     subject_dictionary["input_features"] = np.concatenate(features_array)
                 if store_predictions:
@@ -278,22 +300,188 @@ class Evaluator:
             }
         return self._roc_dictionary
 
-    def stat_subjects(self, suffix="", fold=None, threshold=0.5):
+    def threshold_and_cluster(self, data_dictionary=None, save_prediction_suffix=""):
+        return_dict = data_dictionary is not None
+        if data_dictionary is None:
+            data_dictionary = self.data_dictionary
+        for subj_id, data in data_dictionary.items():
+            distances = data["distance_map"]
+            if self.threshold == 'sigmoid':
+                threshold_subj = sigmoid(np.array([distances.min()]), k=1, m=0.05, ymin=0.03, ymax=0.4)[0]
+            else:
+                threshold_subj = self.threshold
+            predictions = self.experiment.cohort.split_hemispheres(data["result"])
+            island_count = 0
+            result_hemis_clustered = {}
+            for h, hemi in enumerate(["left", "right"]):
+                mask = predictions[hemi] >= threshold_subj
+                islands = self.cluster_and_area_threshold(mask, island_count=island_count, min_area_threshold=self.min_area_threshold)
+                result_hemis_clustered[hemi] = islands
+                island_count += np.max(islands)
+            data["cluster_thresholded"]=np.hstack([result_hemis_clustered['left'][self.cohort.cortex_mask],result_hemis_clustered['right'][self.cohort.cortex_mask]])
+            # save clustered predictions
+            self.save_prediction(
+                        subj_id,
+                        data["cluster_thresholded"],
+                        dataset_str="prediction_clustered",
+                        suffix=save_prediction_suffix,
+                    )
+        if return_dict:
+            return data_dictionary
+        else:
+            self.data_dictionary = data_dictionary
+
+    def load_data_from_file(self, subj_id, keys=['cluster_thresholded','distance_map'], split_hemis=False, save_prediction_suffix=""):
+            # try to load predictions
+            data = {}
+            
+            if 'result' in keys:
+                data['result'] = self.load_prediction(subj_id, dataset_str='prediction', suffix=save_prediction_suffix)
+                if data['result'] is None:
+                    return False
+                if split_hemis:
+                    data['result'] = self.experiment.cohort.split_hemispheres(data['result'])
+            
+            if 'cluster_thresholded' in keys:
+                data['cluster_thresholded'] = self.load_prediction(subj_id, dataset_str='prediction_clustered', suffix=save_prediction_suffix)
+                if split_hemis:
+                    data['cluster_thresholded'] = self.experiment.cohort.split_hemispheres(data['cluster_thresholded'])
+            
+            if 'distance_map' in keys:
+                data['distance_map'] = self.load_prediction(subj_id, dataset_str='distance_map', suffix=save_prediction_suffix)
+                if split_hemis:
+                    data['distance_map'] = self.experiment.cohort.split_hemispheres(data['distance_map'])
+
+            if ('input_features' in keys) or ('input_labels' in keys):
+                # load features from using dataset
+                dataset = GraphDataset([subj_id], self.cohort, self.experiment.data_parameters, mode="test")
+                data_loader = torch_geometric.loader.DataLoader(dataset,shuffle=False,batch_size=1,)
+                features_hemis = []
+                labels_hemis = []
+                for i, sample in enumerate(data_loader):
+                    features_hemis.append(sample.x)
+                    labels_hemis.append(sample.y)
+                if 'input_features' in keys:
+                    if split_hemis:
+                        data['input_features'] = {}
+                        data['input_features']['left'] = features_hemis[0]
+                        data['input_features']['right'] = features_hemis[1]
+                    else:
+                        data['input_features'] = np.hstack([features_hemis[0][self.experiment.cohort.cortex_mask].T,features_hemis[1][self.experiment.cohort.cortex_mask].T]).T
+                if 'input_labels' in keys:
+                    if split_hemis:
+                        data['input_labels'] = {}
+                        data['input_labels']['left'] = labels_hemis[0]
+                        data['input_labels']['right'] = labels_hemis[1]
+                    else:
+                        data['input_labels'] = np.hstack([labels_hemis[0][self.experiment.cohort.cortex_mask],labels_hemis[1][self.experiment.cohort.cortex_mask]])
+            
+            return data
+    
+    def calculate_saliency(
+        self,
+        save_prediction_suffix="",
+    ):
+        """
+        Calculate saliency for all subjects.
+
+        Tries to load data from self.data_dictionary or from existing prediction.hdf5. 
+        If this is not possible, predicts & clusters data with load_predict_data and threshold_and_cluster.
+
+        Saliency is integrated gradients calculated for every cluster. 
+        The saliency is calculate for all vertices in the cluster with respect to all vertices in the cluster. 
+        The mean saliency is saved in a csv file with name saliency{suffix}.csv, with subj_id, cluster_id, and aggregation function (mean,std) as indices and saliency for n_features as values.
+        This csv can be read using `pd.read_csv('saliency.csv', index_col=[0,1,2])`.
+        """
+        # helper functions
+        def _load_data_from_dict(subj_id):
+            data = {}
+            if self.data_dictionary is None:
+                return False
+            try:
+                for key in ['cluster_thresholded', 'input_features']:
+                    data[key] = self.data_dictionary[subj_id][key]
+                    data[key] = self.experiment.cohort.split_hemispheres(data[key])
+                data['input_features']['left'] = torch.tensor(data['input_features']['left'], dtype=torch.float32)
+                data['input_features']['right'] = torch.tensor(data['input_features']['right'], dtype=torch.float32)
+            except KeyError:
+                # some key was missing
+                return False
+            return data
+
+        def _load_data_from_file(subj_id):
+            # try to load predictions
+            data = {}
+            data['cluster_thresholded'] = self.load_prediction(subj_id, dataset_str='prediction_clustered', suffix=save_prediction_suffix)
+            if data['cluster_thresholded'] is None:
+                return False
+            data['cluster_thresholded'] = self.experiment.cohort.split_hemispheres(data['cluster_thresholded'])
+            
+            # load features from using dataset
+            dataset = GraphDataset([subj_id], self.cohort, self.experiment.data_parameters, mode="test")
+            data_loader = torch_geometric.loader.DataLoader(dataset,shuffle=False,batch_size=1,)
+            hemis = ['left', 'right']
+            data['input_features'] = {}
+            for i, sample in enumerate(data_loader):
+                data['input_features'][hemis[i]] = sample.x
+            return data
+        
+        self.log.info('calculating saliency')
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        # prepare saliency model
+        saliency_model = IntegratedGradients(PredictionForSaliency(self.experiment.model))
+        saliency_dict = {}
+        for subj_id in self.subject_ids:
+            # get data
+            data_dict = _load_data_from_dict(subj_id)
+            if data_dict is False:
+                data_dict = _load_data_from_file(subj_id)
+                if data_dict is False:
+                    # calculate predictions because did not find data in dict and in hdf5 file
+                    self.load_predict_data(store_predictions=True)
+                    self.threshold_and_cluster(save_prediction_suffix=save_prediction_suffix)
+                    data_dict = _load_data_from_dict()
+                    if data_dict is False:
+                        raise ValueError("Could not successfully calculate predictions and thresholds for saliency calculation.")
+
+            for hemi in ['left', 'right']:
+                # calculate saliency for every cluster (and average?)
+                for cl in np.unique(data_dict['cluster_thresholded'][hemi]):
+                    if cl == 0:  # dont do background cluster
+                        continue
+                    self.log.info(f'calculating saliency for {subj_id}, cluster {cl}')
+                    mask = data_dict['cluster_thresholded'][hemi] == cl
+                    
+                    inputs = data_dict['input_features'][hemi].to(device)
+                    cur_saliency = saliency_model.attribute(inputs, additional_forward_args=mask, target=1, n_steps=25, 
+                                                method='gausslegendre', internal_batch_size=100).cpu().numpy()
+                    # take mean saliency inside mask
+                    saliency_dict[(subj_id, cl, 'mean')] = cur_saliency[mask].mean(axis=0)
+                    saliency_dict[(subj_id, cl, 'std')] = cur_saliency[mask].std(axis=0)
+        # save saliency
+        pd.DataFrame(saliency_dict).T.to_csv(os.path.join(self.save_dir, "results", f"saliency{save_prediction_suffix}.csv"))
+
+    def stat_subjects(self, suffix="", fold=None):
         """calculate stats for each subjects"""
 
-        # TODO: need to add boundaries and clusters
+        # TODO: need to add boundaries 
         # boundary_label = MeldSubject(subject, self.experiment.cohort).load_boundary_zone(max_distance=20)
 
-        # calculate stats first
+        # calculate stats on thresholded and clustered predictions
         for subject in self.data_dictionary.keys():
-            prediction = self.data_dictionary[subject]["result"]
+            # use prediction clustered
+            if not isinstance(self.data_dictionary[subject]["cluster_thresholded"], np.ndarray):
+                print('Cannot perform stats on non-thresholded and clustered data')
+                return
+            prediction = self.data_dictionary[subject]["cluster_thresholded"]
             labels = self.data_dictionary[subject]["input_labels"]
+            
             group = labels.sum() != 0
 
-            detected = np.logical_and(prediction > threshold, labels).any()
-            difference = np.setdiff1d(np.unique(prediction), np.unique(prediction[labels]))
-            difference = difference[difference > 0]
-            n_clusters = len(difference)
+            detected = np.logical_and(prediction>0, labels).any()
+            # difference = np.setdiff1d(np.unique(prediction), np.unique(prediction[labels]))
+            # difference = difference[difference > 0]
+            # n_clusters = len(difference)
             # # if not detected, does a cluster overlap boundary zone and if so, how big is the cluster?
             # if not detected and prediction[np.logical_and(boundary_label, ~labels)].sum() > 0:
             #     border_verts = prediction[np.logical_and(boundary_label, ~labels)]
@@ -305,7 +493,7 @@ class Evaluator:
             # else:
             #     border_detected = 0
             patient_dice_vars = {"TP": 0, "FP": 0, "FN": 0, "TN": 0}
-            mask = torch.as_tensor(np.array(prediction > threshold)).long()
+            mask = torch.as_tensor(np.array(prediction > 0)).long()
             label = torch.as_tensor(np.array(labels.astype(bool))).long()
             dices = dice_coeff(torch.nn.functional.one_hot(mask, num_classes=2), label)
             (
@@ -366,7 +554,7 @@ class Evaluator:
             else:
                 sub_df.to_csv(filename, index=False)
 
-    def plot_subjects_prediction(self, rootfile=None, flat_map=True, threshold=0.5):
+    def plot_subjects_prediction(self, rootfile=None, flat_map=True):
         """plot predicted subjects"""
         import matplotlib.pyplot as plt
         from matplotlib.gridspec import GridSpec
@@ -391,12 +579,15 @@ class Evaluator:
                     exist_ok=True,
                 )
 
-            result = self.data_dictionary[subject]["result"]
             distance_map = self.data_dictionary[subject]["distance_map"]
-            # thresholded = self.data_dictionary[subject]["cluster_thresholded"]
-            label = self.data_dictionary[subject]["input_labels"]
+            # if clustered predictions exists takes that, otherwise take raw predictions
+            if isinstance(self.data_dictionary[subject]["cluster_thresholded"], np.ndarray):
+                result = self.data_dictionary[subject]["cluster_thresholded"]
+            else:
+                result = self.data_dictionary[subject]["result"]
             result = np.reshape(result, len(result))
-
+            label = self.data_dictionary[subject]["input_labels"]
+           
             result_hemis = self.experiment.cohort.split_hemispheres(result)
             distance_map_hemis = self.experiment.cohort.split_hemispheres(distance_map)
             label_hemis = self.experiment.cohort.split_hemispheres(label)
@@ -451,10 +642,7 @@ class Evaluator:
                 ]
             for i, overlay in enumerate(data_to_plot):
                 ax = fig.add_subplot(gs1[i])
-                if "distance" in titles[i]:
-                    im = create_surface_plots(coords, faces, overlay, flat_map=True)
-                else:
-                    im = create_surface_plots(coords, faces, overlay, flat_map=True, limits=[0.4, 0.6])
+                im = create_surface_plots(coords, faces, overlay, flat_map=True)
                 ax.imshow(im)
                 ax.axis("off")
                 ax.set_title(titles[i], loc="left", fontsize=20)
@@ -500,6 +688,159 @@ class Evaluator:
             except OSError:
                 done = False
 
+    def load_prediction(self, subject, dataset_str="prediction", suffix=""):
+        """
+        load prediction from file.
+        """
+        filename = os.path.join(self.save_dir, "results", f"predictions{suffix}.hdf5")
+        if not os.path.isfile(filename):
+            # cannot load data
+            self.log.debug('file does not exist')
+            return None
+        with h5py.File(filename, mode='r') as f:
+            prediction = []
+            try:
+                for i, hemi in enumerate(["lh", "rh"]):
+                    prediction.append(f[f"{subject}/{hemi}/{dataset_str}"][:])
+                prediction = np.concatenate(prediction)
+            except KeyError:
+                # dataset does not exist, cannot load data
+                self.log.debug(f'dataset does not exist {subject}/{hemi}/{dataset_str}')
+                prediction = None
+        return prediction
+   
+    def cluster_and_area_threshold(self, mask, island_count=0, min_area_threshold=0):
+        """cluster predictions and threshold based on min_area_threshold
+
+        Args:
+            mask: boolean mask of the per-vertex lesion predictions to cluster"""
+        n_comp, labels = scipy.sparse.csgraph.connected_components(self.experiment.cohort.adj_mat[mask][:, mask])
+        islands = np.zeros(len(mask))
+        # only include islands larger than minimum size.
+        for island_index in np.arange(n_comp):
+            include_vec = labels == island_index
+            size = np.sum(include_vec)
+            if size >= min_area_threshold:
+                island_count += 1
+                island_mask = mask.copy()
+                island_mask[mask] = include_vec
+                islands[island_mask] = island_count
+        return islands
+
+
+    def optimise_sigmoid(self, ymin_r=[0.01,0.03,0.05], ymax_r=[0.3,0.4,0.5], k_r=[1], m_r=[0.1,0.05], suffix=""): 
+        """
+        Function to find the parameters of the sigmoid used to threshold the predictions based on min_distance
+        It returns the ymin, ymax, k and m parameters that find an optimal compromise between sensitivity and dice score
+
+        Args:
+            k_r: the range of slopes to try
+            m_r: the range of midpoint to try
+            ymin_r: the range of min value to try
+            ymax_r: the range of max value to try
+        """
+        
+        #get the data dictionary with raw prediction, distance_map and labels
+        if self.data_dictionary == None:
+           #TODO: load data_dictionary from file if does not exist already
+           print('Need to predict first')
+        else:
+            data_dictionary = self.data_dictionary
+
+        # get min distance for all subjects
+        min_dist = [data_dictionary[subject]['distance_map'].min() for subject in data_dictionary.keys()]
+
+        # calculate threshold as a function of min dist
+        res = [] 
+        for ymin,ymax,k,m in itertools.product(ymin_r,ymax_r,k_r,m_r):
+            print(ymin,ymax,k,m)
+            thresholds = sigmoid(np.array(min_dist), k=k, m=m, ymax=ymax, ymin=ymin)
+            cur_dice, cur_sens = get_scores(data_dictionary, thresholds)
+            res.append({'dice': cur_dice, 'sensitivity': cur_sens,'ymin':ymin, 'ymax':ymax, 'k':k, 'm':m, 'desc':f'ymin{ymin}_ymax{ymax}_k{k}_m{m}'})
+        
+        df = pd.DataFrame(res)
+        
+        # plot the results
+        ax = sns.scatterplot(data=df, x='desc', y='dice', label='dice') #, 'sensitivity'))
+        ax = sns.scatterplot(data=df, x='desc', y='sensitivity', label='sensitivity')
+        for tick in ax.xaxis.get_ticklabels():
+            tick.set_rotation(90)
+        plt.ylabel('score')
+        plt.xlabel('k (sigmoid param)')
+        plt.legend()
+
+        # find the parameters of the best sigmoid 
+        df['sum'] = df['sensitivity'].values + df['dice'].values
+        best_dice_sens = df['sum'].max()
+        df_best = df[df['sum'] == best_dice_sens]
+
+        #save best parameters
+        filename = os.path.join(self.save_dir,'results',f'sigmoid_optimal_parameters{suffix}.csv')
+        print(f'Save parameters optimised sigmoid at {filename}')
+        df_best.to_csv(filename)
+
+        # plot the selected sigmoid
+        plt.figure()
+        ymin,ymax,k,m = df_best[['ymin','ymax','k','m']].values[0]
+        plt.plot(np.linspace(0,1,100), sigmoid(np.linspace(0,1,100), k=k, m=m, ymax=ymax, ymin=ymin), label=f'ymin{ymin}_ymax{ymax}_k{k}_m{m}')
+        plt.ylabel('threshold')
+        plt.xlabel('min_dist')
+        plt.legend()
+
+        filename = os.path.join(self.save_dir,'results',f'sigmoid_optimal_parameters{suffix}.png')
+        plt.savefig(filename)
+
+        return df
+
+def get_scores(subjects_dict, thresholds):
+        """
+        return sensitivity & dice for given threshold
+        """
+        patient_sens = []
+        dice = []
+        for subj, thresh in zip(subjects_dict, thresholds):
+            subj = subjects_dict[subj]
+
+            mask = torch.as_tensor(np.array(subj['result'] >= thresh)).long()
+            label = torch.as_tensor(np.array(subj['input_labels'].astype(bool))).long()
+            dices = dice_coeff(torch.nn.functional.one_hot(mask, num_classes=2), label)
+            #report dice lesional
+            dice.append(dices[1])
+            #get sensitivity
+            tp, fp, fn, tn = tp_fp_fn_tn(mask, label)       
+            if sum(subj['input_labels']) != 0:
+                patient_sens.append(tp > 1)
+        return np.mean(dice), np.mean(patient_sens)
+
+def sigmoid(x, k=2, m=0.5, ymin=0.03, ymax=0.5):
+    """
+    Inverse sigmoid function with fixed endpoints ymin and ymax, variable midpoint m and slope k.
+    Function has the following properties: f(0)=ymax, f(1)=ymin (except for k=0, where f(x)=ymin)
+    
+    Shifting the midpoint will squeeze the function in the range 0,2*midpoint, and set all values beyond to ymin.
+    
+    Args:
+        x: input values that should be transformed
+        k: slope
+        m: midpoint
+        ymin: min value
+        ymax: max value
+    """
+    xmax = m*2
+    # inverse sigmoid function with fixed endpoints and variable slope k
+    # k = 0 defaults to ymin
+    if k == 0:
+        return np.ones_like(x)*ymin
+    eps = 1e-15
+    res = 1 / (1 + (1/(x/xmax+eps)-1)**(-k))
+    # scale y range
+    scaled_res = res * (ymax - ymin) + ymin
+    # clip values of x > xmax to ymin
+    scaled_res[x > xmax] = ymin
+
+    # clip values to be ymax at max
+    scaled_res[scaled_res > ymax] = ymax
+    return scaled_res
 
 def save_json(json_filename, json_results):
     """

@@ -1,0 +1,5 @@
+{
+    "hdf5_file_root":"{site_code}_{group}_featurematrix_NewSite.hdf5", 
+    "dataset":"MELD_dataset_NewSite.csv",
+    "save_dir":"/home/myproject/experiments/myexperiment"
+     }

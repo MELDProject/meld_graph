@@ -517,3 +517,21 @@ class HexSmoothSparse(nn.Module):
     def forward(self, x):
         new_x = self.sparse_weights @ x
         return new_x
+
+
+class PredictionForSaliency(nn.Module):
+    """
+    Adds layer to model to output the sum of all predicted lesional vertices for integrated gradients
+    """
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+        
+    def forward(self, input, mask=None):
+        prediction = torch.exp(self.model(input)['log_softmax'])
+        if mask is None:
+            prediction = torch.mean(prediction, axis=0)
+        else:
+            prediction = torch.mean(prediction[mask], axis=0)
+        # return shape is (1,2)
+        return prediction[None,:]
