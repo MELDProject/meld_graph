@@ -118,14 +118,18 @@ class SmoothL1Loss(torch.nn.Module):
 
     def forward(self, inputs, targets,xyzr, **kwargs):
         # inputs are log softmax, pass directly to NLLLoss
-        # mask out non-lesional examples from the loss
-        print(inputs.shape)
-        return self.loss(inputs, xyzr) * targets
+        # mask out non-lesional examples from the loss using targets  
+        xyzr_reshaped = xyzr.view(-1,4)
+        inputs = inputs * targets.unsqueeze(1).float()
+        xyzr_reshaped = xyzr_reshaped * targets.unsqueeze(1).float()
+        loss = self.loss(inputs, xyzr_reshaped)
+       # masked_loss = loss * targets.float()  # Apply binary mask
+        return loss
+    
 
 class DistanceRegressionLoss(torch.nn.Module):
     """
     Distance regression loss. Either MSE, MAE, MLE
-
     Args:
         params (dict): loss dict from experiment_config.py
     """
@@ -526,17 +530,18 @@ class Trainer:
 
             # metrics
             pred = torch.argmax(estimates["log_softmax"], axis=1)
+           # pred_obj=None
             if model.classification_head:
                 pred_class = torch.argmax(estimates['hemi_log_softmax'], axis=1)
-           # elif model.object_detection_head:
-          #      pred_obj = estimates['object_detection_linear']
+       #     elif model.object_detection_head:
+       #         pred_obj = estimates['object_detection_linear']
             else:
                 pred_class = torch.argmax(estimates["log_sumexp"], axis=1)
             # update running metrics
             borderzone = None
             if "sub_auroc" in metrics.metrics_to_track:
                 borderzone = distance_map <= 20
-            metrics.update(pred, labels, pred_class=pred_class, #pred_obj=pred_obj,
+            metrics.update(pred, labels, pred_class=pred_class,# pred_obj=pred_obj,
                            estimates=estimates['log_softmax'],
                            borderzone = borderzone)
             # TODO add distance regression to metrics
@@ -607,6 +612,7 @@ class Trainer:
 
                 # metrics
                 pred = torch.argmax(estimates["log_softmax"], axis=1)
+                pred_obj=None
                 if model.classification_head:
                     pred_class = torch.argmax(estimates['hemi_log_softmax'], axis=1)
             #    elif model.object_detection_head:
@@ -618,7 +624,7 @@ class Trainer:
                 borderzone = None
                 if "sub_auroc" in metrics.metrics_to_track:
                     borderzone = distance_map <= 20
-                metrics.update(pred, labels, pred_class=pred_class, #pred_obj=pred_obj,
+                metrics.update(pred, labels, pred_class=pred_class, # pred_obj=pred_obj,
                                 estimates=estimates['log_softmax'],
                             borderzone = borderzone)
      
@@ -634,6 +640,11 @@ class Trainer:
         """
         # set up model & put on correct device
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        # load model if start epoch > 0
+        if self.params.get("start_epoch", False):
+            self.init_weights = os.path.join(self.experiment.experiment_path, f"epoch_{self.params['start_epoch']}.pt")
+            self.experiment.load_model(checkpoint_path=self.init_weights)
+
         self.experiment.load_model(checkpoint_path=self.init_weights)
         self.experiment.model.to(device)
         if wandb_logging:
@@ -663,7 +674,9 @@ class Trainer:
         val_data_loader = torch_geometric.loader.DataLoader(
             GraphDataset.from_experiment(self.experiment, mode="val"),
             shuffle=False,
-            batch_size=self.params["batch_size"],
+            #THIS shouldn't be hard coded as 2, but currently is because otherwise sub_auroc
+            #is a bit off
+            batch_size= 2, #self.params["batch_size"],
             num_workers=4,
             persistent_workers=True,
             prefetch_factor=2,
@@ -690,6 +703,9 @@ class Trainer:
         name = self.params["stopping_metric"]["name"]
         self.log.info(f"Stopping metric set to {name} ")
 
+        #extra auc stopping metric
+       # self.params["auc_stopping"] = {'name':'sub_auroc', "sign":-1}
+
         # set up learning rate scheduler
         max_epochs_lr_decay = self.params.get("max_epochs_lr_decay", None)
         if max_epochs_lr_decay is None:
@@ -699,80 +715,119 @@ class Trainer:
         self.log.info(f"using max_epochs {max_epochs_lr_decay} for lr decay")
         lambda1 = lambda epoch: (1 - epoch / max_epochs_lr_decay) ** self.params["lr_decay"]
         # NOTE: when resuming training, need to set last epoch to epoch-1
-        scheduler = torch.optim.lr_scheduler.LambdaLR(optimiser, lr_lambda=lambda1, last_epoch=-1)
+        if self.params.get("start_epoch", False):
+            scheduler = torch.optim.lr_scheduler.LambdaLR(optimiser, lr_lambda=lambda1,
+             last_epoch=-1)
+            for epoch in range(self.params["start_epoch"]):
+                scheduler.step()
+            scores = {"train": pd.read_csv(os.path.join(self.experiment.experiment_path, "train_scores.csv")),
+                    "val": pd.read_csv(os.path.join(self.experiment.experiment_path, "val_scores.csv"))}
+            #convert them back in to list for appending new epoch scores
+            scores["train"] = scores["train"].to_dict('records')
+            scores["val"] = scores["val"].to_dict('records')
+        else:
+            scheduler = torch.optim.lr_scheduler.LambdaLR(optimiser, lr_lambda=lambda1,
+             last_epoch=-1)
+            scores = {"train": [], "val": []}
 
-        scores = {"train": [], "val": []}
         best_loss = 100000
+        #auc hack
+      #  auc_loss = 10000
         patience = 0
         running_metrics = []
         for epoch in range(self.params["num_epochs"]):
-            self.log.info(f"Epoch {epoch} :: learning rate {scheduler.get_last_lr()[0]}")
-            start = time.time()
-            cur_scores = self.train_epoch(train_data_loader, optimiser)
-            self.log.info(f"Epoch {epoch} :: time {time.time()-start}")
-            scheduler.step()  # update lr
-            # get memory usage
-            process = psutil.Process(os.getpid())
-            # TODO remove?
-            with open("memory_usage_gpu_parrallel.txt", "a") as f:
-                f.write(
-                    f"Epoch {epoch} :: memory usage {process.memory_info().rss / 1024 ** 2}MB-  time {time.time()-start} \n "
-                )
-            self.log.info(f"Epoch {epoch} :: memory usage {process.memory_info().rss / 1024 ** 2}MB")  # in bytes
-
-            # only log non-deep supervision losses
-            log_keys = list(cur_scores.keys())
-            for i, key in enumerate(self.params["loss_dictionary"].keys()):
-                for level in self.deep_supervision["levels"]:
-                    log_keys.remove(f"ds{level}_{key}")
-            log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items() if key in log_keys)
-            self.log.info(f"Epoch {epoch} :: Train {log_str}")
-            scores["train"].append(cur_scores)
-
-            if wandb_logging:
-                parameters = model.state_dict()
-                wandb.log(parameters)
-                for name, param in parameters.items():
-                    wandb.log({name + "_grad": param.grad}, step=epoch)
-                wandb.log({"train_losses": cur_scores})
-                # weights = self.experiment.model.get_weights()
-                # biases = self.experiment.model.get_biases()
-                # wandb.log({"weights": weights,'biases':biases})
-            if epoch % 1 == 0:
-                cur_scores = self.val_epoch(val_data_loader)
-                log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items() if key in log_keys)
-                self.log.info(f"Epoch {epoch} :: Val   {log_str}")
-                scores["val"].append(cur_scores)
-                epoch_stopping_metric = (
-                    cur_scores[self.params["stopping_metric"]["name"]] * self.params["stopping_metric"]["sign"]
-                )
-                running_metrics.append(epoch_stopping_metric)
-                # TODO remove metric smoothing? If not, add to example_experiment_config!
-                # if self.params['metric_smoothing']:
-                # smooth metric to limit noise
-                #    epoch_stopping_metric = gaussian_filter1d(running_metrics,2)[-1]
-
-                if epoch_stopping_metric < best_loss:
-                    best_loss = epoch_stopping_metric
-                    if self.experiment.experiment_path is not None:
-                        fname = os.path.join(self.experiment.experiment_path, "best_model.pt")
-                        torch.save(self.experiment.model.state_dict(), fname)
-                        self.log.info(f"Saved new best model to {fname}")
-                    patience = 0
-                else:
-                    patience += 1
-                if patience >= self.params["max_patience"]:
-                    self.log.info(f"Stopping early at epoch {epoch}, with patience {patience}")
-                    break
-            if epoch % 5 == 0:
-                # save train/val scores
-                if self.experiment.experiment_path is not None:
-                    pd.DataFrame(scores["train"]).to_csv(
-                        os.path.join(self.experiment.experiment_path, "train_scores.csv")
+            #introduce start epoch here
+            if epoch > self.params.get("start_epoch", 0):
+                
+                self.log.info(f"Epoch {epoch} :: learning rate {scheduler.get_last_lr()[0]}")
+                start = time.time()
+                cur_scores = self.train_epoch(train_data_loader, optimiser)
+                self.log.info(f"Epoch {epoch} :: time {time.time()-start}")
+                scheduler.step()  # update lr
+                # get memory usage
+                process = psutil.Process(os.getpid())
+                # TODO remove?
+                with open("memory_usage_gpu_parrallel.txt", "a") as f:
+                    f.write(
+                        f"Epoch {epoch} :: memory usage {process.memory_info().rss / 1024 ** 2}MB-  time {time.time()-start} \n "
                     )
-                    pd.DataFrame(scores["val"]).to_csv(os.path.join(self.experiment.experiment_path, "val_scores.csv"))
+                self.log.info(f"Epoch {epoch} :: memory usage {process.memory_info().rss / 1024 ** 2}MB")  # in bytes
+
+                # only log non-deep supervision losses
+                log_keys = list(cur_scores.keys())
+                for i, key in enumerate(self.params["loss_dictionary"].keys()):
+                    for level in self.deep_supervision["levels"]:
+                        log_keys.remove(f"ds{level}_{key}")
+                log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items() if key in log_keys)
+                self.log.info(f"Epoch {epoch} :: Train {log_str}")
+                scores["train"].append(cur_scores)
+
+                if wandb_logging:
+                    parameters = model.state_dict()
+                    wandb.log(parameters)
+                    for name, param in parameters.items():
+                        wandb.log({name + "_grad": param.grad}, step=epoch)
+                    wandb.log({"train_losses": cur_scores})
+                    # weights = self.experiment.model.get_weights()
+                    # biases = self.experiment.model.get_biases()
+                    # wandb.log({"weights": weights,'biases':biases})
+                if epoch % 1 == 0:
+                    cur_scores = self.val_epoch(val_data_loader)
+                    log_str = ", ".join(f"{key} {val:.3f}" for key, val in cur_scores.items() if key in log_keys)
+                    self.log.info(f"Epoch {epoch} :: Val   {log_str}")
+                    scores["val"].append(cur_scores)
+                    epoch_stopping_metric = (
+                        cur_scores[self.params["stopping_metric"]["name"]] * self.params["stopping_metric"]["sign"]
+                    )
+                    running_metrics.append(epoch_stopping_metric)
+                    
+
+                    # TODO remove metric smoothing? If not, add to example_experiment_config!
+                    # if self.params['metric_smoothing']:
+                    # smooth metric to limit noise
+                    #    epoch_stopping_metric = gaussian_filter1d(running_metrics,2)[-1]
+
+                    if epoch_stopping_metric < best_loss:
+                        best_loss = epoch_stopping_metric
+                        if self.experiment.experiment_path is not None:
+                            fname = os.path.join(self.experiment.experiment_path, "best_model.pt")
+                            torch.save(self.experiment.model.state_dict(), fname)
+                            self.log.info(f"Saved new best model to {fname}")
+                        patience = 0
+                    else:
+                        patience += 1
+
+                    #hacky auc
+                #  extra_stopping_metric = ( cur_scores[self.params["auc_stopping"]["name"]] * self.params["auc_stopping"]["sign"])
+                #  if extra_stopping_metric < auc_loss and epoch>99 :
+                #      auc_loss = extra_stopping_metric
+                #      if self.experiment.experiment_path is not None:
+                #          fname = os.path.join(self.experiment.experiment_path, "best_auc_model.pt")
+                #          torch.save(self.experiment.model.state_dict(), fname)
+                #          self.log.info(f"Saved new best auc model to {fname}")
+
+                    if patience >= self.params["max_patience"]:
+                        self.log.info(f"Stopping early at epoch {epoch}, with patience {patience}")
+                        break
+                if epoch % 5 == 0:
+                    # save train/val scores
+                    if self.experiment.experiment_path is not None:
+                        pd.DataFrame(scores["train"]).to_csv(
+                            os.path.join(self.experiment.experiment_path, "train_scores.csv")
+                        )
+                        pd.DataFrame(scores["val"]).to_csv(os.path.join(self.experiment.experiment_path, "val_scores.csv"))
+                if epoch % 200 ==0:
+                    if self.experiment.experiment_path is not None:
+                            fname = os.path.join(self.experiment.experiment_path, f"epoch_{epoch}.pt")
+                            torch.save(self.experiment.model.state_dict(), fname)
+                            self.log.info(f"Saved checkpoint model to {fname}")
 
         self.log.info(f"Finished training")
+        self.log.info(f"Saving final model")
+        if self.experiment.experiment_path is not None:
+                        fname = os.path.join(self.experiment.experiment_path, "final_model.pt")
+                        torch.save(self.experiment.model.state_dict(), fname)
+                        self.log.info(f"Saved final model to {fname}")
         # save train/val scores
         if self.experiment.experiment_path is not None:
             pd.DataFrame(scores["train"]).to_csv(os.path.join(self.experiment.experiment_path, "train_scores.csv"))
