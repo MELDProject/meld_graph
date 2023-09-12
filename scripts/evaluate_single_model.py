@@ -49,13 +49,14 @@ if __name__ == "__main__":
                 hdf5_file_root=exp.data_parameters["hdf5_file_root"],
                 dataset=exp.data_parameters["dataset"],
             )
+    
     dataset = GraphDataset(subjects, cohort, exp.data_parameters, mode="test")
 
     if args.new_data != None:
         save_dir = new_data_params['save_dir']
     else:
         save_dir = args.model_path
-
+    
     eva = Evaluator(
         experiment=exp,
         checkpoint_path=args.model_path,
@@ -94,5 +95,11 @@ if __name__ == "__main__":
         save_prediction_suffix=suffix,
     )
 
-    # # calculate stats
+    # threshold and clustering
+    eva.threshold_and_cluster(save_prediction_suffix=suffix, )
+    
+    # make images 
+    eva.plot_subjects_prediction()
+
+    # calculate stats
     eva.stat_subjects()

@@ -37,6 +37,8 @@ class Evaluator:
         checkpoint_path=None,
         make_images=False,
         thresh_and_clust=True,
+        threshold="sigmoid",
+        min_area_threshold=100,
         dataset=None,
         cohort=None,
         subject_ids=None,
@@ -60,12 +62,28 @@ class Evaluator:
         self.data_dictionary = None
         self._roc_dictionary = None
 
-        #add clustering and thershold
-        self.threshold = self.experiment.network_parameters.get("optimal_threshold", "sigmoid")
-        if not isinstance(self.threshold, float):
-            self.threshold = "sigmoid"
-        self.min_area_threshold = self.experiment.data_parameters.get("min_area_threshold",100)
-        self.log.info("Evalution {}, {}".format(self.mode, self.threshold))
+        #add thresholding and clustering 
+        if thresh_and_clust:
+            self.min_area_threshold = min_area_threshold
+            if threshold == 'sigmoid':
+                #check if sigmoid have been optimised for model
+                sigmoid_file = os.path.join(self.experiment.experiment_path, 'sigmoid_optimal_parameters.csv')
+                if os.path.isfile(sigmoid_file):
+                    try:
+                        self.threshold = pd.read_csv(sigmoid_file)[['ymin','ymax','k','m']].values[0]
+                        self.log.info("Evaluation {}, min area threshold={}, threshold sigmoid(ymin={}, ymax={}, k={}, m={})".format(
+                                    self.mode,self.min_area_threshold, self.threshold[0], self.threshold[1], self.threshold[2], self.threshold[3]))    
+                    except:
+                        print(f'Error: problem reading sigmoid parameters {sigmoid_file}')
+                else:
+                    print(f"Could not find an optimised sigmoid at {sigmoid_file}. You need to run script optimise_sigmoid_trainval.py")
+                    exit()
+            elif isinstance(threshold, float):
+                self.threshold = threshold
+                self.log.info("Evaluation {}, min area threshold={}, threshold {}".format(self.mode, self.min_area_threshold, self.threshold))
+            else:
+                print('Cannot understand the threshold provided')
+                exit()
 
         # Initialised directory to save results and plots
         if save_dir is None:
@@ -303,9 +321,10 @@ class Evaluator:
         if data_dictionary is None:
             data_dictionary = self.data_dictionary
         for subj_id, data in data_dictionary.items():
-            distances = data["distance_map"]
-            if self.threshold == 'sigmoid':
-                threshold_subj = sigmoid(np.array([distances.min()]), k=1, m=0.05, ymin=0.03, ymax=0.4)[0]
+            if isinstance(self.threshold, np.ndarray):
+                distances = data["distance_map"]
+                ymin, ymax, k, m = self.threshold
+                threshold_subj = sigmoid(np.array([distances.min()]), k=k, m=m, ymin=ymin, ymax=ymax)[0]
             else:
                 threshold_subj = self.threshold
             predictions = self.experiment.cohort.split_hemispheres(data["result"])
@@ -429,6 +448,7 @@ class Evaluator:
         # prepare saliency model
         saliency_model = IntegratedGradients(PredictionForSaliency(self.experiment.model))
         saliency_dict = {}
+        saliency_vert = {}
         for subj_id in self.subject_ids:
             # get data
             data_dict = _load_data_from_dict(subj_id)
@@ -441,7 +461,7 @@ class Evaluator:
                     data_dict = _load_data_from_dict()
                     if data_dict is False:
                         raise ValueError("Could not successfully calculate predictions and thresholds for saliency calculation.")
-
+            saliency_vert[subj_id] = {}
             for hemi in ['left', 'right']:
                 # calculate saliency for every cluster (and average?)
                 for cl in np.unique(data_dict['cluster_thresholded'][hemi]):
@@ -453,12 +473,15 @@ class Evaluator:
                     inputs = data_dict['input_features'][hemi].to(device)
                     cur_saliency = saliency_model.attribute(inputs, additional_forward_args=mask, target=1, n_steps=25, 
                                                 method='gausslegendre', internal_batch_size=100).cpu().numpy()
+                    saliency_vert[subj_id][cl] = cur_saliency
+                    
                     # take mean saliency inside mask
                     saliency_dict[(subj_id, cl, 'mean')] = cur_saliency[mask].mean(axis=0)
                     saliency_dict[(subj_id, cl, 'std')] = cur_saliency[mask].std(axis=0)
         # save saliency
         pd.DataFrame(saliency_dict).T.to_csv(os.path.join(self.save_dir, "results", f"saliency{save_prediction_suffix}.csv"))
-
+        return saliency_vert
+    
     def stat_subjects(self, suffix="", fold=None):
         """calculate stats for each subjects"""
 
@@ -477,9 +500,9 @@ class Evaluator:
             group = labels.sum() != 0
 
             detected = np.logical_and(prediction>0, labels).any()
-            # difference = np.setdiff1d(np.unique(prediction), np.unique(prediction[labels]))
-            # difference = difference[difference > 0]
-            # n_clusters = len(difference)
+            difference = np.setdiff1d(np.unique(prediction), np.unique(prediction[labels]))
+            difference = difference[difference > 0]
+            n_clusters = len(difference)
             # # if not detected, does a cluster overlap boundary zone and if so, how big is the cluster?
             # if not detected and prediction[np.logical_and(boundary_label, ~labels)].sum() > 0:
             #     border_verts = prediction[np.logical_and(boundary_label, ~labels)]
@@ -511,6 +534,7 @@ class Evaluator:
                         subject,
                         group,
                         detected,
+                        n_clusters,
                         patient_dice_vars["TP"].numpy(),
                         patient_dice_vars["FP"].numpy(),
                         patient_dice_vars["FN"].numpy(),
@@ -525,6 +549,7 @@ class Evaluator:
                     "ID",
                     "group",
                     "detected",
+                    "number clusters",
                     "tp",
                     "fp",
                     "fn",

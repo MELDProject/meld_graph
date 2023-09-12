@@ -35,7 +35,9 @@ if __name__ == "__main__":
 
     #save results in the model_path 
     save_dir = args.model_path
-    # save_dir = '/rds/project/kw350/rds-kw350-meld/experiments_graph/co-ripa1/23-08-39_TEST_optimise_sigmoid'
+   
+    # set thresholding and clustering to false
+    thresh_and_clust = False
 
     # create evaluator
     eva = Evaluator(
@@ -47,6 +49,7 @@ if __name__ == "__main__":
         cohort=cohort,
         subject_ids=subjects,
         mode="test",
+        thresh_and_clust=thresh_and_clust,
     )
    
     save_prediction = True
