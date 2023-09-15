@@ -81,21 +81,21 @@ class Evaluator:
                         print(f'Error: problem reading sigmoid parameters {sigmoid_file}')
                 else:
                     print(f"Could not find an optimised sigmoid at {sigmoid_file}. You need to run script optimise_sigmoid_trainval.py")
-                    exit()
+                    return
             elif isinstance(threshold, float):
                 self.threshold = threshold
                 self.log.info("Evaluation {}, min area threshold={}, threshold {}".format(self.mode, self.min_area_threshold, self.threshold))
             else:
                 print('Cannot understand the threshold provided')
-                exit()
+                return
 
         # Initialised directory to save results and plots
         if save_dir is None:
-            self.save_dir = self.experiment.path
+            self.save_dir = self.experiment.experiment_path
         else:
             self.save_dir = save_dir
-        if not os.path.isdir(os.path.join(save_dir, "results")):
-            os.makedirs(os.path.join(save_dir, "results"), exist_ok=True)
+        if not os.path.isdir(os.path.join(self.save_dir, "results")):
+            os.makedirs(os.path.join(self.save_dir, "results"), exist_ok=True)
 
         # if checkpoint load model
         if checkpoint_path:
@@ -128,6 +128,7 @@ class Evaluator:
             self.cohort = self.dataset.cohort
         else:
             self.dataset = GraphDataset(self.subject_ids, self.cohort, self.experiment.data_parameters, mode=mode)
+        self.disable_mc_dropout() # call this to init dropout variables
             
     def _find_checkpoint(self, experiment_path):
         """
@@ -137,6 +138,22 @@ class Evaluator:
             return os.path.join(experiment_path, self.model_name)
         return None
         
+    def enable_mc_dropout(self, p, n=100):
+        """
+        Set parameters to do MC dropout on input data when predicting.
+        Has an effect on the prediction (load_predict_data) and on all functions saving / reading data,
+        which will use an additional suffix "_dropout" to write/read paths. 
+        """
+        self.dropout=True
+        self.dropout_p = p
+        self.dropout_n = n
+        self.dropout_suffix = "_dropout"
+        self.log.info(f"Predicting model with droput (p={self.dropout_p}, n={self.dropout_n})")
+        
+    def disable_mc_dropout(self):
+        self.dropout = False
+        self.dropout_suffix = ""
+        self.log.info("Predicting model without dropout")
 
     def evaluate(self,):
         """
@@ -173,6 +190,7 @@ class Evaluator:
         """
         self.log.info("loading data and predicting model")
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        save_prediction_suffix = f"{save_prediction_suffix}{self.dropout_suffix}"
         # predict on data
         # TODO: enable batch_size > 1
         data_loader = torch_geometric.loader.DataLoader(
@@ -196,22 +214,40 @@ class Evaluator:
                 saliency_array = []
             subj_id = self.subject_ids[subject_index]
             data = data.to(device)
-            estimates = self.experiment.model(data.x)
             labels = data.y.squeeze()
             geo_distance = data.distance_map
-            prediction = torch.exp(estimates["log_softmax"])[:, 1]
-            # get distance map if exist in loss, otherwise return array of NaN
-            if (
-                "distance_regression"
-                in self.experiment.network_parameters["training_parameters"]["loss_dictionary"].keys()
-            ):
-                distance_map = estimates["non_lesion_logits"][:, 0]
+            distance_regression_flag = "distance_regression" in self.experiment.network_parameters["training_parameters"]["loss_dictionary"].keys()
+            if self.dropout:
+                list_prediction = []
+                list_distance_map = []
+                for _ in range(self.dropout_n):
+                    mask = torch.tensor(np.random.choice([0,1],data.x.shape, p=[self.dropout_p,1-self.dropout_p]), dtype=torch.bool)
+                    x = torch.clone(data.x)
+                    x[mask] = 0
+                    estimates = self.experiment.model(x)
+                    list_prediction.append(torch.exp(estimates["log_softmax"])[:, 1].detach().cpu())
+                    if distance_regression_flag:
+                        list_distance_map.append(estimates["non_lesion_logits"][:, 0].detach().cpu())
+                prediction = torch.mean(torch.stack(list_prediction), axis=0)
+                if distance_regression_flag:
+                    distance_map = torch.mean(torch.stack(list_distance_map), axis=0)
+                else:
+                    distance_map = torch.full((len(prediction), 1), torch.nan)[:, 0]
             else:
-                distance_map = torch.full((len(prediction), 1), torch.nan)[:, 0]
-            prediction_array.append(prediction.detach().cpu().numpy()[self.cohort.cortex_mask])
+                estimates = self.experiment.model(data.x)
+                prediction = torch.exp(estimates["log_softmax"])[:, 1].detach().cpu()
+                # get distance map if exist in loss, otherwise return array of NaN
+                if (
+                    "distance_regression"
+                    in self.experiment.network_parameters["training_parameters"]["loss_dictionary"].keys()
+                ):
+                    distance_map = estimates["non_lesion_logits"][:, 0].detach().cpu()
+                else:
+                    distance_map = torch.full((len(prediction), 1), torch.nan)[:, 0]
+            prediction_array.append(prediction.numpy()[self.cohort.cortex_mask])
             labels_array.append(labels.cpu().numpy()[self.cohort.cortex_mask])
             features_array.append(data.x.cpu().numpy()[self.cohort.cortex_mask])
-            distance_map_array.append(distance_map.detach().cpu().numpy()[self.cohort.cortex_mask])
+            distance_map_array.append(distance_map.numpy()[self.cohort.cortex_mask])
             geodesic_array.append(geo_distance.cpu().numpy()[self.cohort.cortex_mask])
             # only save after right hemi has been run.
             if hemi == "rh":
@@ -259,11 +295,11 @@ class Evaluator:
         sub_auc = metrics.roc_auc_score(subject_dictionary["borderzone"], subject_dictionary["result"])
         return sub_auc
 
-    def save_sub_aucs(self):
+    def save_sub_aucs(self, suffix=""):
         """save out the dictionary"""
         import pickle
-
-        filename = os.path.join(self.save_dir, "results", f"sub_aucs.pickle")
+        suffix = f"{suffix}{self.droput_suffix}"
+        filename = os.path.join(self.save_dir, "results", f"sub_aucs{suffix}.pickle")
         with open(filename, "wb") as write_file:
             pickle.dump(self.subject_aucs, write_file, protocol=pickle.HIGHEST_PROTOCOL)
         return
@@ -279,10 +315,10 @@ class Evaluator:
         self.roc_dictionary["thresholds"] = self.thresholds
         return
 
-    def save_roc_scores(self):
+    def save_roc_scores(self, suffix=""):
         import pickle
-
-        filename = os.path.join(self.save_dir, "results", f"roc_auc.pickle")
+        suffix = f"{suffix}{self.droput_suffix}"
+        filename = os.path.join(self.save_dir, "results", f"roc_auc{suffix}.pickle")
         with open(filename, "wb") as write_file:
             pickle.dump(self.roc_dictionary, write_file, protocol=pickle.HIGHEST_PROTOCOL)
         return
@@ -320,6 +356,7 @@ class Evaluator:
         return self._roc_dictionary
 
     def threshold_and_cluster(self, data_dictionary=None, save_prediction_suffix=""):
+        save_prediction_suffix = f"{save_prediction_suffix}{self.dropout_suffix}"
         return_dict = data_dictionary is not None
         if data_dictionary is None:
             data_dictionary = self.data_dictionary
@@ -352,51 +389,52 @@ class Evaluator:
             self.data_dictionary = data_dictionary
 
     def load_data_from_file(self, subj_id, keys=['cluster_thresholded','distance_map'], split_hemis=False, save_prediction_suffix=""):
-            # try to load predictions
-            data = {}
-            
-            if 'result' in keys:
-                data['result'] = self.load_prediction(subj_id, dataset_str='prediction', suffix=save_prediction_suffix)
-                if data['result'] is None:
-                    return False
-                if split_hemis:
-                    data['result'] = self.experiment.cohort.split_hemispheres(data['result'])
-            
-            if 'cluster_thresholded' in keys:
-                data['cluster_thresholded'] = self.load_prediction(subj_id, dataset_str='prediction_clustered', suffix=save_prediction_suffix)
-                if split_hemis:
-                    data['cluster_thresholded'] = self.experiment.cohort.split_hemispheres(data['cluster_thresholded'])
-            
-            if 'distance_map' in keys:
-                data['distance_map'] = self.load_prediction(subj_id, dataset_str='distance_map', suffix=save_prediction_suffix)
-                if split_hemis:
-                    data['distance_map'] = self.experiment.cohort.split_hemispheres(data['distance_map'])
+        save_prediction_suffix = f"{save_prediction_suffix}{self.dropout_suffix}"
+        # try to load predictions
+        data = {}
+        
+        if 'result' in keys:
+            data['result'] = self.load_prediction(subj_id, dataset_str='prediction', suffix=save_prediction_suffix)
+            if data['result'] is None:
+                return False
+            if split_hemis:
+                data['result'] = self.experiment.cohort.split_hemispheres(data['result'])
+        
+        if 'cluster_thresholded' in keys:
+            data['cluster_thresholded'] = self.load_prediction(subj_id, dataset_str='prediction_clustered', suffix=save_prediction_suffix)
+            if split_hemis:
+                data['cluster_thresholded'] = self.experiment.cohort.split_hemispheres(data['cluster_thresholded'])
+        
+        if 'distance_map' in keys:
+            data['distance_map'] = self.load_prediction(subj_id, dataset_str='distance_map', suffix=save_prediction_suffix)
+            if split_hemis:
+                data['distance_map'] = self.experiment.cohort.split_hemispheres(data['distance_map'])
 
-            if ('input_features' in keys) or ('input_labels' in keys):
-                # load features from using dataset
-                dataset = GraphDataset([subj_id], self.cohort, self.experiment.data_parameters, mode="test")
-                data_loader = torch_geometric.loader.DataLoader(dataset,shuffle=False,batch_size=1,)
-                features_hemis = []
-                labels_hemis = []
-                for i, sample in enumerate(data_loader):
-                    features_hemis.append(sample.x)
-                    labels_hemis.append(sample.y)
-                if 'input_features' in keys:
-                    if split_hemis:
-                        data['input_features'] = {}
-                        data['input_features']['left'] = features_hemis[0]
-                        data['input_features']['right'] = features_hemis[1]
-                    else:
-                        data['input_features'] = np.hstack([features_hemis[0][self.experiment.cohort.cortex_mask].T,features_hemis[1][self.experiment.cohort.cortex_mask].T]).T
-                if 'input_labels' in keys:
-                    if split_hemis:
-                        data['input_labels'] = {}
-                        data['input_labels']['left'] = labels_hemis[0]
-                        data['input_labels']['right'] = labels_hemis[1]
-                    else:
-                        data['input_labels'] = np.hstack([labels_hemis[0][self.experiment.cohort.cortex_mask],labels_hemis[1][self.experiment.cohort.cortex_mask]])
-            
-            return data
+        if ('input_features' in keys) or ('input_labels' in keys):
+            # load features from using dataset
+            dataset = GraphDataset([subj_id], self.cohort, self.experiment.data_parameters, mode="test")
+            data_loader = torch_geometric.loader.DataLoader(dataset,shuffle=False,batch_size=1,)
+            features_hemis = []
+            labels_hemis = []
+            for i, sample in enumerate(data_loader):
+                features_hemis.append(sample.x)
+                labels_hemis.append(sample.y)
+            if 'input_features' in keys:
+                if split_hemis:
+                    data['input_features'] = {}
+                    data['input_features']['left'] = features_hemis[0]
+                    data['input_features']['right'] = features_hemis[1]
+                else:
+                    data['input_features'] = np.hstack([features_hemis[0][self.experiment.cohort.cortex_mask].T,features_hemis[1][self.experiment.cohort.cortex_mask].T]).T
+            if 'input_labels' in keys:
+                if split_hemis:
+                    data['input_labels'] = {}
+                    data['input_labels']['left'] = labels_hemis[0]
+                    data['input_labels']['right'] = labels_hemis[1]
+                else:
+                    data['input_labels'] = np.hstack([labels_hemis[0][self.experiment.cohort.cortex_mask],labels_hemis[1][self.experiment.cohort.cortex_mask]])
+        
+        return data
     
     def calculate_saliency(
         self,
@@ -413,6 +451,7 @@ class Evaluator:
         The mean saliency is saved in a csv file with name saliency{suffix}.csv, with subj_id, cluster_id, and aggregation function (mean,std) as indices and saliency for n_features as values.
         This csv can be read using `pd.read_csv('saliency.csv', index_col=[0,1,2])`.
         """
+        save_prediction_suffix = f"{save_prediction_suffix}{self.dropout_suffix}"
         # helper functions
         def _load_data_from_dict(subj_id):
             data = {}
@@ -487,7 +526,7 @@ class Evaluator:
     
     def stat_subjects(self, suffix="", fold=None):
         """calculate stats for each subjects"""
-
+        suffix = f"{suffix}{self.dropout_suffix}"
         # TODO: need to add boundaries 
         # boundary_label = MeldSubject(subject, self.experiment.cohort).load_boundary_zone(max_distance=20)
 
