@@ -28,6 +28,13 @@ if __name__ == "__main__":
     parser.add_argument("--model_name", default="ensemble_best_model.pt", help="name of the model to load")
     args = parser.parse_args()
     exp = meld_graph.experiment.Experiment.from_folder(args.model_path)
+    if 'ensemble' in args.model_name:
+        #check optimised sigmoid parameters are present
+        suffix = args.model_name.split('.')[0]
+        sigmoid_file = os.path.join(exp.experiment_path, 
+        'results',f'sigmoid_optimal_parameters_{suffix}.csv')
+        if not os.path.exists(sigmoid_file):
+            raise ValueError('Optimised sigmoid parameters not found')
     if args.new_data != None:
         args.split = 'test'
         new_data_params = json.load(open(args.new_data))
