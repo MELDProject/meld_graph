@@ -298,7 +298,7 @@ class Evaluator:
     def save_sub_aucs(self, suffix=""):
         """save out the dictionary"""
         import pickle
-        suffix = f"{suffix}{self.droput_suffix}"
+        suffix = f"{suffix}{self.dropout_suffix}"
         filename = os.path.join(self.save_dir, "results", f"sub_aucs{suffix}.pickle")
         with open(filename, "wb") as write_file:
             pickle.dump(self.subject_aucs, write_file, protocol=pickle.HIGHEST_PROTOCOL)
