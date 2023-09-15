@@ -25,6 +25,7 @@ if __name__ == "__main__":
     parser.add_argument("--split", help="train, test, val, or trainval")
     parser.add_argument("--saliency", action='store_true', default=False, help="calculate integrated gradients saliency")
     parser.add_argument("--new_data", help="json file containing new data parameters", default=None)
+    parser.add_argument("--model_name", default="ensemble_best_model.pt", help="name of the model to load")
     args = parser.parse_args()
     exp = meld_graph.experiment.Experiment.from_folder(args.model_path)
     if args.new_data != None:
@@ -67,6 +68,8 @@ if __name__ == "__main__":
         subject_ids=subjects,
         mode="test",
         saliency=args.saliency,
+        model_name=args.model_name,
+
     )
    
     # only save predictions on test, no need on vals but instead calculate ROCs

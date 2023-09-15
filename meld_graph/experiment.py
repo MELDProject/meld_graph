@@ -83,7 +83,10 @@ class Experiment:
         self.fold = self.data_parameters["fold_n"]
         self.experiment_path = None
         if self.experiment_name is not None:
-            self.experiment_path = os.path.join(EXPERIMENT_PATH, self.experiment_name, f"fold_{self.fold:02d}")
+            if isinstance(self.fold, int) :
+                self.experiment_path = os.path.join(EXPERIMENT_PATH, self.experiment_name, f"fold_{self.fold:02d}")
+            else:
+                self.experiment_path = os.path.join(EXPERIMENT_PATH, self.experiment_name, f"fold_{self.fold}")
             os.makedirs(self.experiment_path, exist_ok=True)
         # init logging now, path is created
         # if save_params, will overwrite/append to logs
@@ -106,6 +109,7 @@ class Experiment:
         Args:
             experiment_path (str): path to experiment. E.g. experiment_name/fold_00
         """
+        print(experiment_path)
         data_parameters = json.load(open(os.path.join(experiment_path, "data_parameters.json")))
         network_parameters = json.load(open(os.path.join(experiment_path, "network_parameters.json")))
         return cls(network_parameters, data_parameters, save_params=False)
@@ -202,7 +206,7 @@ class Experiment:
             force (bool): reload model if model is already loaded.
         """
         # check if need to use load_ensemble_model
-        if checkpoint_path is not None and 'fold_all/ensemble_model.pt' in checkpoint_path:
+        if checkpoint_path is not None and 'ensemble' in checkpoint_path:
             return self.load_ensemble_model(checkpoint_path=checkpoint_path, force=force)
         
         if self.model is not None and not force:

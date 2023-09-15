@@ -44,6 +44,7 @@ class Evaluator:
         subject_ids=None,
         save_dir=None,
         saliency=False,
+        model_name='best_model.pt',
     ):
         # set class params
         self.log = logging.getLogger(__name__)
@@ -61,13 +62,16 @@ class Evaluator:
 
         self.data_dictionary = None
         self._roc_dictionary = None
+        self.model_name = model_name
 
         #add thresholding and clustering 
         if thresh_and_clust:
             self.min_area_threshold = min_area_threshold
             if threshold == 'sigmoid':
                 #check if sigmoid have been optimised for model
-                sigmoid_file = os.path.join(self.experiment.experiment_path, 'sigmoid_optimal_parameters.csv')
+                #save model name in sigmoid filename
+                suffix = self.model_name.split('.')[0]
+                sigmoid_file = os.path.join(self.experiment.experiment_path, f'sigmoid_optimal_parameters_{suffix}.csv')
                 if os.path.isfile(sigmoid_file):
                     try:
                         self.threshold = pd.read_csv(sigmoid_file)[['ymin','ymax','k','m']].values[0]
@@ -127,15 +131,12 @@ class Evaluator:
             
     def _find_checkpoint(self, experiment_path):
         """
-        Identify existing checkpoint file. Looks for best_model.pt and ensemble_model.pt
+        Identify existing checkpoint file. Looks for suggested model name
         """
-        if os.path.isfile(os.path.join(experiment_path, 'best_model.pt')):
-            return os.path.join(experiment_path, 'best_model.pt')
-        if os.path.isfile(os.path.join(experiment_path, 'ensemble_model.pt')):
-            return os.path.join(experiment_path, 'ensemble_model.pt')
-        if os.path.isfile(os.path.join(experiment_path, 'best_auc_model.pt')):
-            return os.path.join(experiment_path, 'best_auc_model.pt')
+        if os.path.isfile(os.path.join(experiment_path, self.model_name)):
+            return os.path.join(experiment_path, self.model_name)
         return None
+        
 
     def evaluate(self,):
         """
@@ -753,7 +754,8 @@ class Evaluator:
         return islands
 
 
-    def optimise_sigmoid(self, ymin_r=[0.01,0.03,0.05], ymax_r=[0.3,0.4,0.5], k_r=[1], m_r=[0.1,0.05], suffix=""): 
+    def optimise_sigmoid(self, ymin_r=[0.01,0.03,0.05], ymax_r=[0.3,0.4,0.5], k_r=[1], m_r=[0.1,0.05], 
+    suffix=""): 
         """
         Function to find the parameters of the sigmoid used to threshold the predictions based on min_distance
         It returns the ymin, ymax, k and m parameters that find an optimal compromise between sensitivity and dice score
@@ -800,7 +802,7 @@ class Evaluator:
         df_best = df[df['sum'] == best_dice_sens]
 
         #save best parameters
-        filename = os.path.join(self.save_dir,'results',f'sigmoid_optimal_parameters{suffix}.csv')
+        filename = os.path.join(self.save_dir,'results',f'sigmoid_optimal_parameters_{suffix}.csv')
         print(f'Save parameters optimised sigmoid at {filename}')
         df_best.to_csv(filename)
 
