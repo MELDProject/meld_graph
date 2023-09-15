@@ -22,10 +22,13 @@ def _update_subj_ids(data_param_file, ensemble_experiments):
     params = json.load(open(data_param_file, "r"))
     params["train_ids"] = train_ids
     params["val_ids"] = []
+    params['fold_n'] = 'all'
     json.dump(params, open(data_param_file, "w"), indent=4)
 
 
-def create_ensemble(experiment_path, ensemble_experiments):
+
+
+def create_ensemble(experiment_path, ensemble_experiments,model_name='best_model'):
     """
     Creates ensemble model from experiments and stores it in experiment_path/experiment_name
     Sets train_ids to the union of all train_ids in every experiment (fold). val_ids are empty.
@@ -51,12 +54,12 @@ def create_ensemble(experiment_path, ensemble_experiments):
     models = []
     for exp_dir in ensemble_experiments:
         exp = Experiment.from_folder(exp_dir)
-        exp.load_model(os.path.join(exp.experiment_path, 'best_model.pt'))
+        exp.load_model(os.path.join(exp.experiment_path, f'{model_name}'))
         models.append(exp.model)
     ensemble = Ensemble(models)
     
     # save ensemble
-    torch.save(ensemble.state_dict(), os.path.join(experiment_path, 'ensemble_model.pt'))
+    torch.save(ensemble.state_dict(), os.path.join(experiment_path, f'ensemble_{model_name}'))
 
 
 if __name__ == "__main__":
@@ -71,6 +74,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ensemble-experiment-path", default=None, help="experiment path of the resulting ensemble experiment. Default is experiment-folder/fold_all"
     )
+    parser.add_argument(
+        "--model-name", default='best_model.pt', help="name of the model to be ensembled. Default is best_model"
+    )
     parser.add_argument("--folds", nargs="+", default=range(5), help='folds in experiment-folder that should be ensembled')
     args = parser.parse_args()
 
@@ -84,4 +90,4 @@ if __name__ == "__main__":
     # create ensemble
     print("Creating ensemble of {}".format(exp_dirs))
     print("Saving ensembled models to {}".format(output_dir))
-    create_ensemble(output_dir, exp_dirs)
+    create_ensemble(output_dir, exp_dirs,model_name=args.model_name)

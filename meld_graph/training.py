@@ -722,15 +722,19 @@ class Trainer:
                 scheduler.step()
             scores = {"train": pd.read_csv(os.path.join(self.experiment.experiment_path, "train_scores.csv")),
                     "val": pd.read_csv(os.path.join(self.experiment.experiment_path, "val_scores.csv"))}
+            best_loss = np.min(scores["val"][self.params["stopping_metric"]["name"] * self.params["stopping_metric"]["sign"]])
             #convert them back in to list for appending new epoch scores
             scores["train"] = scores["train"].to_dict('records')
             scores["val"] = scores["val"].to_dict('records')
+
+            #discard scores after to start epoch
+            scores["train"] = scores["train"][:self.params["start_epoch"]]
+            scores["val"] = scores["val"][:self.params["start_epoch"]]
         else:
             scheduler = torch.optim.lr_scheduler.LambdaLR(optimiser, lr_lambda=lambda1,
              last_epoch=-1)
             scores = {"train": [], "val": []}
-
-        best_loss = 100000
+            best_loss = 100000
         #auc hack
       #  auc_loss = 10000
         patience = 0
