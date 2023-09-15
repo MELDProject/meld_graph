@@ -71,7 +71,7 @@ class Evaluator:
                 #check if sigmoid have been optimised for model
                 #save model name in sigmoid filename
                 suffix = self.model_name.split('.')[0]
-                sigmoid_file = os.path.join(self.experiment.experiment_path, f'sigmoid_optimal_parameters_{suffix}.csv')
+                sigmoid_file = os.path.join(self.experiment.experiment_path, 'results',f'sigmoid_optimal_parameters_{suffix}.csv')
                 if os.path.isfile(sigmoid_file):
                     try:
                         self.threshold = pd.read_csv(sigmoid_file)[['ymin','ymax','k','m']].values[0]
