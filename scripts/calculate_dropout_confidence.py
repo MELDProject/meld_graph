@@ -1,6 +1,6 @@
-### called by evaluate.sh which is launched by cross_val_aucs.py
-### Runs one model across a val /test cohort and will either save predictions
-### or calculate summary statistics
+# this script evaluates an existing model with MC dropout
+# this is needed for confidence estimation
+
 import argparse
 import meld_graph
 import meld_graph.models
@@ -13,9 +13,9 @@ from meld_graph.dataset import GraphDataset
 from meld_classifier.meld_cohort import MeldCohort
 
 from meld_graph.evaluation import Evaluator
-import numpy as np
 import json
 import os
+import h5py
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -24,18 +24,13 @@ if __name__ == "__main__":
     )
     parser.add_argument("--model_path", help="path to trained model config")
     parser.add_argument("--split", help="train, test, val, or trainval")
-    parser.add_argument("--saliency", action='store_true', default=False, help="calculate integrated gradients saliency")
     parser.add_argument("--new_data", help="json file containing new data parameters", default=None)
     parser.add_argument("--model_name", default="ensemble_best_model.pt", help="name of the model to load")
+    parser.add_argument('--p', default=0.8, type=float, help='probability of keeping a value. p=1 means no dropout, p=0 means all values are dropped out')
+    parser.add_argument('--n', default=10, type=int, help='number of times MC dropout estimation is run')
     args = parser.parse_args()
     exp = meld_graph.experiment.Experiment.from_folder(args.model_path)
-    if 'ensemble' in args.model_name:
-        #check optimised sigmoid parameters are present
-        suffix = args.model_name.split('.')[0]
-        sigmoid_file = os.path.join(exp.experiment_path, 
-        'results',f'sigmoid_optimal_parameters_{suffix}.csv')
-        if not os.path.exists(sigmoid_file):
-            raise ValueError('Optimised sigmoid parameters not found')
+
     if args.new_data != None:
         args.split = 'test'
         new_data_params = json.load(open(args.new_data))
@@ -75,42 +70,30 @@ if __name__ == "__main__":
         cohort=cohort,
         subject_ids=subjects,
         mode="test",
-        saliency=args.saliency,
+        saliency=False,
         model_name=args.model_name,
-
     )
    
-    # only save predictions on test, no need on vals but instead calculate ROCs
+    eva.enable_mc_dropout(p=args.p, n=args.n)
+
+    # set up suffix for saved hdf5 file
     if args.split == "test":
-        save_prediction = True
-        roc_curves_thresholds = None
         suffix = ""
     elif args.split == "val":
-        save_prediction = False
-        roc_curves_thresholds = np.linspace(0, 1, 21)
         suffix = ""
     elif args.split == "train":
-        save_prediction = True
-        roc_curves_thresholds = None
         suffix = "_train"
     elif args.split == "trainval":
-        save_prediction = True
-        roc_curves_thresholds = None
         suffix = "_trainval"
     else:
         raise NotImplementedError(args.split)
-
-    eva.load_predict_data(
-        save_prediction=save_prediction,
-        roc_curves_thresholds=roc_curves_thresholds,
-        save_prediction_suffix=suffix,
-    )
-
-    # threshold and clustering
-    eva.threshold_and_cluster(save_prediction_suffix=suffix, )
     
-    # make images 
-    eva.plot_subjects_prediction()
+    # predict and cluster data
+    eva.load_predict_data(save_prediction=True, save_prediction_suffix=suffix)
+    eva.threshold_and_cluster(save_prediction_suffix=suffix)
 
-    # calculate stats
-    eva.stat_subjects()
+    # save dropout parameters in hdf5
+    filename = os.path.join(eva.save_dir, "results", f"predictions{suffix}{eva.dropout_suffix}.hdf5")
+    with h5py.File(filename, mode='r+') as f:
+        f.attrs['dropout_p'] = args.p
+        f.attrs['dropout_n'] = args.n
