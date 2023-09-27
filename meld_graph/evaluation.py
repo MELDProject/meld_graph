@@ -761,7 +761,7 @@ class Evaluator:
         filename = os.path.join(self.save_dir, "results", f"predictions{suffix}.hdf5")
         if not os.path.isfile(filename):
             # cannot load data
-            self.log.debug('file does not exist')
+            self.log.debug(f'file {filename} does not exist')
             return None
         with h5py.File(filename, mode='r') as f:
             prediction = []
