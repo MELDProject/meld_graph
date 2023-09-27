@@ -147,7 +147,7 @@ class Evaluator:
         self.dropout=True
         self.dropout_p = p
         self.dropout_n = n
-        self.dropout_suffix = "_dropout"
+        self.dropout_suffix = f"_dropout{self.dropout_p:.1f}"
         self.log.info(f"Predicting model with droput (p={self.dropout_p}, n={self.dropout_n})")
         
     def disable_mc_dropout(self):
@@ -355,7 +355,7 @@ class Evaluator:
             }
         return self._roc_dictionary
 
-    def threshold_and_cluster(self, data_dictionary=None, save_prediction_suffix=""):
+    def threshold_and_cluster(self, data_dictionary=None, save_prediction=True, save_prediction_suffix=""):
         save_prediction_suffix = f"{save_prediction_suffix}{self.dropout_suffix}"
         return_dict = data_dictionary is not None
         if data_dictionary is None:
@@ -376,13 +376,14 @@ class Evaluator:
                 result_hemis_clustered[hemi] = islands
                 island_count += np.max(islands)
             data["cluster_thresholded"]=np.hstack([result_hemis_clustered['left'][self.cohort.cortex_mask],result_hemis_clustered['right'][self.cohort.cortex_mask]])
-            # save clustered predictions
-            self.save_prediction(
-                        subj_id,
-                        data["cluster_thresholded"],
-                        dataset_str="prediction_clustered",
-                        suffix=save_prediction_suffix,
-                    )
+            if save_prediction:
+                # save clustered predictions
+                self.save_prediction(
+                            subj_id,
+                            data["cluster_thresholded"],
+                            dataset_str="prediction_clustered",
+                            suffix=save_prediction_suffix,
+                        )
         if return_dict:
             return data_dictionary
         else:
@@ -779,7 +780,7 @@ class Evaluator:
         filename = os.path.join(self.save_dir, "results", f"predictions{suffix}.hdf5")
         if not os.path.isfile(filename):
             # cannot load data
-            self.log.debug('file does not exist')
+            self.log.debug(f'file {filename} does not exist')
             return None
         with h5py.File(filename, mode='r') as f:
             prediction = []
