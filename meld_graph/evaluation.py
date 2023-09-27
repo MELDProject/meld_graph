@@ -410,6 +410,13 @@ class Evaluator:
             data['distance_map'] = self.load_prediction(subj_id, dataset_str='distance_map', suffix=save_prediction_suffix)
             if split_hemis:
                 data['distance_map'] = self.experiment.cohort.split_hemispheres(data['distance_map'])
+            
+        saliency_keys = [key for key in keys if 'saliencies_' in key]
+        if saliency_keys != []:
+            for saliency_key in saliency_keys:
+                data[saliency_key] = self.load_prediction(subj_id, dataset_str=saliency_key, suffix=save_prediction_suffix)
+                if split_hemis:
+                    data[saliency_key] = self.experiment.cohort.split_hemispheres(data[saliency_key])
 
         if ('input_features' in keys) or ('input_labels' in keys):
             # load features from using dataset
@@ -490,8 +497,8 @@ class Evaluator:
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         # prepare saliency model
         saliency_model = IntegratedGradients(PredictionForSaliency(self.experiment.model))
-        saliency_dict = {}
         saliency_vert = {}
+        # saliency_dict={}
         for subj_id in self.subject_ids:
             # get data
             data_dict = _load_data_from_dict(subj_id)
@@ -506,7 +513,7 @@ class Evaluator:
                         raise ValueError("Could not successfully calculate predictions and thresholds for saliency calculation.")
             saliency_vert[subj_id] = {}
             for hemi in ['left', 'right']:
-                # calculate saliency for every cluster (and average?)
+                # calculate saliency for every cluster
                 for cl in np.unique(data_dict['cluster_thresholded'][hemi]):
                     if cl == 0:  # dont do background cluster
                         continue
@@ -516,13 +523,25 @@ class Evaluator:
                     inputs = data_dict['input_features'][hemi].to(device)
                     cur_saliency = saliency_model.attribute(inputs, additional_forward_args=mask, target=1, n_steps=25, 
                                                 method='gausslegendre', internal_batch_size=100).cpu().numpy()
-                    saliency_vert[subj_id][cl] = cur_saliency
-                    
+                    empty_hemi = np.zeros(cur_saliency.shape)
+                    #rearange saliencies in whole brain - add empty hemi
+                    if hemi=='left':
+                        saliency_vert[subj_id][cl] = np.hstack([cur_saliency[self.experiment.cohort.cortex_mask,:].T,empty_hemi[self.experiment.cohort.cortex_mask,:].T]).T
+                    else:
+                        saliency_vert[subj_id][cl] = np.hstack([empty_hemi[self.experiment.cohort.cortex_mask,:].T, cur_saliency[self.experiment.cohort.cortex_mask,:].T]).T
+                    # save saliency
+                    self.save_prediction(
+                        subj_id,
+                        saliency_vert[subj_id][cl],
+                        dataset_str=f"saliencies_{cl}",
+                        suffix=save_prediction_suffix,
+                        dtype=np.float32,
+                    )  
                     # take mean saliency inside mask
-                    saliency_dict[(subj_id, cl, 'mean')] = cur_saliency[mask].mean(axis=0)
-                    saliency_dict[(subj_id, cl, 'std')] = cur_saliency[mask].std(axis=0)
-        # save saliency
-        pd.DataFrame(saliency_dict).T.to_csv(os.path.join(self.save_dir, "results", f"saliency{save_prediction_suffix}.csv"))
+                    # saliency_dict[(subj_id, cl, 'mean')] = cur_saliency[mask].mean(axis=0)
+                    # saliency_dict[(subj_id, cl, 'std')] = cur_saliency[mask].std(axis=0)
+        # #save saliency
+        # pd.DataFrame(saliency_dict).T.to_csv(os.path.join(self.save_dir, "results", f"saliency{save_prediction_suffix}.csv"))
         return saliency_vert
     
     def stat_subjects(self, suffix="", fold=None):
