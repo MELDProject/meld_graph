@@ -417,6 +417,13 @@ class Evaluator:
                 data[saliency_key] = self.load_prediction(subj_id, dataset_str=saliency_key, suffix=save_prediction_suffix)
                 if split_hemis:
                     data[saliency_key] = self.experiment.cohort.split_hemispheres(data[saliency_key])
+        
+        mask_salient_keys = [key for key in keys if 'mask_salient_' in key]
+        if mask_salient_keys != []:
+            for mask_salient_key in mask_salient_keys:
+                data[mask_salient_key] = self.load_prediction(subj_id, dataset_str=mask_salient_key, suffix=save_prediction_suffix)
+                if split_hemis:
+                    data[mask_salient_key] = self.experiment.cohort.split_hemispheres(data[mask_salient_key])
 
         if ('input_features' in keys) or ('input_labels' in keys):
             # load features from using dataset
@@ -498,6 +505,7 @@ class Evaluator:
         # prepare saliency model
         saliency_model = IntegratedGradients(PredictionForSaliency(self.experiment.model))
         saliency_vert = {}
+        mask_salient_vert={}
         # saliency_dict={}
         for subj_id in self.subject_ids:
             # get data
@@ -512,6 +520,7 @@ class Evaluator:
                     if data_dict is False:
                         raise ValueError("Could not successfully calculate predictions and thresholds for saliency calculation.")
             saliency_vert[subj_id] = {}
+            mask_salient_vert[subj_id] = {}
             for hemi in ['left', 'right']:
                 # calculate saliency for every cluster
                 for cl in np.unique(data_dict['cluster_thresholded'][hemi]):
@@ -523,12 +532,23 @@ class Evaluator:
                     inputs = data_dict['input_features'][hemi].to(device)
                     cur_saliency = saliency_model.attribute(inputs, additional_forward_args=mask, target=1, n_steps=25, 
                                                 method='gausslegendre', internal_batch_size=100).cpu().numpy()
+                    # extract mask of most salient vertices
+                    mean_saliencies = cur_saliency.mean(axis=1)
+                    # if cluster > 125 vertices, extract 20% most salient vertices
+                    size_clust = mask.sum()
+                    if size_clust > 125:
+                        thresh= np.percentile(mean_saliencies[np.array(mask)], 80)
+                        mask_salient = (mean_saliencies>thresh)
+                    else:
+                        mask_salient = mask
+                    #rearange saliencies and mask salient in whole brain - add empty hemi
                     empty_hemi = np.zeros(cur_saliency.shape)
-                    #rearange saliencies in whole brain - add empty hemi
                     if hemi=='left':
                         saliency_vert[subj_id][cl] = np.hstack([cur_saliency[self.experiment.cohort.cortex_mask,:].T,empty_hemi[self.experiment.cohort.cortex_mask,:].T]).T
+                        mask_salient_vert[subj_id][cl] = np.hstack([mask_salient[self.experiment.cohort.cortex_mask],empty_hemi[self.experiment.cohort.cortex_mask, 0]])
                     else:
                         saliency_vert[subj_id][cl] = np.hstack([empty_hemi[self.experiment.cohort.cortex_mask,:].T, cur_saliency[self.experiment.cohort.cortex_mask,:].T]).T
+                        mask_salient_vert[subj_id][cl] = np.hstack([empty_hemi[self.experiment.cohort.cortex_mask, 0], mask_salient[self.experiment.cohort.cortex_mask]])
                     # save saliency
                     self.save_prediction(
                         subj_id,
@@ -536,13 +556,16 @@ class Evaluator:
                         dataset_str=f"saliencies_{cl}",
                         suffix=save_prediction_suffix,
                         dtype=np.float32,
-                    )  
-                    # take mean saliency inside mask
-                    # saliency_dict[(subj_id, cl, 'mean')] = cur_saliency[mask].mean(axis=0)
-                    # saliency_dict[(subj_id, cl, 'std')] = cur_saliency[mask].std(axis=0)
-        # #save saliency
-        # pd.DataFrame(saliency_dict).T.to_csv(os.path.join(self.save_dir, "results", f"saliency{save_prediction_suffix}.csv"))
-        return saliency_vert
+                    )
+                    
+                    # save mask salient vertices
+                    self.save_prediction(
+                        subj_id,
+                        mask_salient_vert[subj_id][cl],
+                        dataset_str=f"mask_salient_{cl}",
+                        suffix=save_prediction_suffix,
+                    ) 
+
     
     def stat_subjects(self, suffix="", fold=None):
         """calculate stats for each subjects"""
