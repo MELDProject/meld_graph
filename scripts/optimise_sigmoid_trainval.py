@@ -56,7 +56,7 @@ if __name__ == "__main__":
    
     save_prediction = True
     roc_curves_thresholds = None
-    suffix = 'trainval' 
+    suffix = '_trainval' 
     
     #TODO:need to enable loading pre-existing predictions
     #predict subjects
