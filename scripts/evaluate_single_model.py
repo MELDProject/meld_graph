@@ -12,6 +12,7 @@ import meld_graph.evaluation
 from meld_graph.dataset import GraphDataset
 from meld_classifier.meld_cohort import MeldCohort
 
+import os
 from meld_graph.evaluation import Evaluator
 import numpy as np
 import json
@@ -26,16 +27,14 @@ if __name__ == "__main__":
     parser.add_argument("--split", help="train, test, val, or trainval")
     parser.add_argument("--saliency", action='store_true', default=False, help="calculate integrated gradients saliency")
     parser.add_argument("--new_data", help="json file containing new data parameters", default=None)
-    parser.add_argument("--model_name", default="ensemble_best_model.pt", help="name of the model to load")
+    parser.add_argument("--model_name", default="best_model", help="name of the model to load")
     args = parser.parse_args()
     exp = meld_graph.experiment.Experiment.from_folder(args.model_path)
-    if 'ensemble' in args.model_name:
-        #check optimised sigmoid parameters are present
-        suffix = args.model_name.split('.')[0]
-        sigmoid_file = os.path.join(exp.experiment_path, 
-        'results',f'sigmoid_optimal_parameters_{suffix}.csv')
-        if not os.path.exists(sigmoid_file):
-            raise ValueError('Optimised sigmoid parameters not found')
+    #check optimised sigmoid parameters are present
+    sigmoid_file = os.path.join(exp.experiment_path, 
+    f'results_{args.model_name}',f'sigmoid_optimal_parameters.csv')
+    if not os.path.exists(sigmoid_file):
+        raise ValueError('Optimised sigmoid parameters not found')
     if args.new_data != None:
         args.split = 'test'
         new_data_params = json.load(open(args.new_data))
@@ -58,7 +57,6 @@ if __name__ == "__main__":
                 hdf5_file_root=exp.data_parameters["hdf5_file_root"],
                 dataset=exp.data_parameters["dataset"],
             )
-    
     dataset = GraphDataset(subjects, cohort, exp.data_parameters, mode="test")
 
     if args.new_data != None:
@@ -108,9 +106,7 @@ if __name__ == "__main__":
 
     # threshold and clustering
     eva.threshold_and_cluster(save_prediction_suffix=suffix, )
-    
-    # make images 
-    eva.plot_subjects_prediction()
-
     # calculate stats
-    eva.stat_subjects()
+    eva.stat_subjects()    
+    # make images 
+    eva.plot_subjects_prediction(suffix=suffix,)

@@ -44,7 +44,7 @@ class Evaluator:
         subject_ids=None,
         save_dir=None,
         saliency=False,
-        model_name='best_model.pt',
+        model_name='best_model',
     ):
         # set class params
         self.log = logging.getLogger(__name__)
@@ -62,7 +62,15 @@ class Evaluator:
 
         self.data_dictionary = None
         self._roc_dictionary = None
-        self.model_name = model_name
+        self.model_name = model_name+'.pt'
+        # Initialised directory to save results and plots
+        if save_dir is None:
+            self.save_dir = self.experiment.experiment_path
+        else:
+            self.save_dir = save_dir
+        self.results_dir = os.path.join(self.save_dir, f"results_{model_name}")
+        if not os.path.isdir(self.results_dir):
+            os.makedirs(self.results_dir, exist_ok=True)
 
         #add thresholding and clustering 
         if thresh_and_clust:
@@ -70,8 +78,7 @@ class Evaluator:
             if threshold == 'sigmoid':
                 #check if sigmoid have been optimised for model
                 #save model name in sigmoid filename
-                suffix = self.model_name.split('.')[0]
-                sigmoid_file = os.path.join(self.experiment.experiment_path, 'results',f'sigmoid_optimal_parameters_{suffix}.csv')
+                sigmoid_file = os.path.join(self.results_dir,f'sigmoid_optimal_parameters.csv')
                 if os.path.isfile(sigmoid_file):
                     try:
                         self.threshold = pd.read_csv(sigmoid_file)[['ymin','ymax','k','m']].values[0]
@@ -89,13 +96,7 @@ class Evaluator:
                 print('Cannot understand the threshold provided')
                 return
 
-        # Initialised directory to save results and plots
-        if save_dir is None:
-            self.save_dir = self.experiment.experiment_path
-        else:
-            self.save_dir = save_dir
-        if not os.path.isdir(os.path.join(self.save_dir, "results")):
-            os.makedirs(os.path.join(self.save_dir, "results"), exist_ok=True)
+        
 
         # if checkpoint load model
         if checkpoint_path:
@@ -299,7 +300,7 @@ class Evaluator:
         """save out the dictionary"""
         import pickle
         suffix = f"{suffix}{self.dropout_suffix}"
-        filename = os.path.join(self.save_dir, "results", f"sub_aucs{suffix}.pickle")
+        filename = os.path.join(self.results_dir, f"sub_aucs{suffix}.pickle")
         with open(filename, "wb") as write_file:
             pickle.dump(self.subject_aucs, write_file, protocol=pickle.HIGHEST_PROTOCOL)
         return
@@ -318,7 +319,7 @@ class Evaluator:
     def save_roc_scores(self, suffix=""):
         import pickle
         suffix = f"{suffix}{self.dropout_suffix}"
-        filename = os.path.join(self.save_dir, "results", f"roc_auc{suffix}.pickle")
+        filename = os.path.join(self.results_dir, f"roc_auc{suffix}.pickle")
         with open(filename, "wb") as write_file:
             pickle.dump(self.roc_dictionary, write_file, protocol=pickle.HIGHEST_PROTOCOL)
         return
@@ -364,6 +365,7 @@ class Evaluator:
             if isinstance(self.threshold, np.ndarray):
                 distances = data["distance_map"]
                 ymin, ymax, k, m = self.threshold
+                print('Using sigmoid params: {}, {}, {}, {}'.format(ymin, ymax, k, m))
                 threshold_subj = sigmoid(np.array([distances.min()]), k=k, m=m, ymin=ymin, ymax=ymax)[0]
             else:
                 threshold_subj = self.threshold
@@ -581,10 +583,11 @@ class Evaluator:
                 return
             prediction = self.data_dictionary[subject]["cluster_thresholded"]
             labels = self.data_dictionary[subject]["input_labels"]
+            boundary_zone = self.data_dictionary[subject]["borderzone"]
             
             group = labels.sum() != 0
 
-            detected = np.logical_and(prediction>0, labels).any()
+            detected = np.logical_and(prediction>0, boundary_zone).any()
             difference = np.setdiff1d(np.unique(prediction), np.unique(prediction[labels]))
             difference = difference[difference > 0]
             n_clusters = len(difference)
@@ -644,9 +647,9 @@ class Evaluator:
                 ],
             )
             # save results
-            filename = os.path.join(self.save_dir, "results", f"test_results{suffix}.csv")
+            filename = os.path.join(self.results_dir, f"test_results.csv")
             if fold is not None:
-                filename = os.path.join(self.save_dir, "results", f"test_results_{fold}{suffix}.csv")
+                filename = os.path.join(self.results_dir, f"test_results_{fold}.csv")
 
             if os.path.isfile(filename):
                 done = False
@@ -662,7 +665,7 @@ class Evaluator:
             else:
                 sub_df.to_csv(filename, index=False)
 
-    def plot_subjects_prediction(self, rootfile=None, flat_map=True):
+    def plot_subjects_prediction(self, rootfile=None, flat_map=True, suffix=""):
         """plot predicted subjects"""
         import matplotlib.pyplot as plt
         from matplotlib.gridspec import GridSpec
@@ -670,18 +673,17 @@ class Evaluator:
         plt.close("all")
 
         # create directory to save images
-        if not os.path.isdir(os.path.join(self.save_dir, "results", "images")):
-            os.makedirs(os.path.join(self.save_dir, "results", "images"), exist_ok=True)
+        if not os.path.isdir(os.path.join(self.results_dir, "images")):
+            os.makedirs(os.path.join(self.results_dir, "images"), exist_ok=True)
 
         for subject in self.data_dictionary.keys():
             if rootfile is not None:
                 filename = os.path.join(rootfile.format(subject))
             else:
-                filename = os.path.join(self.save_dir, "results", "images", "{}.jpg".format(subject))
+                filename = os.path.join(self.results_dir, "images", "{}{}.jpg".format(subject,suffix))
                 os.makedirs(
                     os.path.join(
-                        self.save_dir,
-                        "results",
+                        self.results_dir,
                         "images",
                     ),
                     exist_ok=True,
@@ -773,7 +775,7 @@ class Evaluator:
         if dtype is None:
             dtype = prediction.dtype
 
-        filename = os.path.join(self.save_dir, "results", f"predictions{suffix}.hdf5")
+        filename = os.path.join(self.results_dir, f"predictions{suffix}.hdf5")
         if not os.path.isfile(filename):
             mode = "a"
         else:
@@ -800,7 +802,7 @@ class Evaluator:
         """
         load prediction from file.
         """
-        filename = os.path.join(self.save_dir, "results", f"predictions{suffix}.hdf5")
+        filename = os.path.join(self.results_dir, f"predictions{suffix}.hdf5")
         if not os.path.isfile(filename):
             # cannot load data
             self.log.debug(f'file {filename} does not exist')
@@ -856,6 +858,26 @@ class Evaluator:
         else:
             data_dictionary = self.data_dictionary
 
+        maxes =[]
+        for subject in self.data_dictionary.keys():
+            if "_C_" in subject:
+                maxes.append(self.data_dictionary[subject]["result"])
+        maxes = np.array(maxes)
+        #shortcut here
+        ymin = np.percentile(maxes,95)
+        ymax = 0.5
+        k = 1
+        m = 0.05
+        res = [] 
+        res.append({'ymin':ymin, 'ymax':ymax,
+                     'k':k, 'm':m, 'desc':f'ymin{ymin}_ymax{ymax}_k{k}_m{m}'})
+        df_best = pd.DataFrame(res)
+        
+        filename = os.path.join(self.results_dir,f'sigmoid_optimal_parameters.csv')
+        print(f'Save parameters optimised sigmoid at {filename}')
+        df_best.to_csv(filename)
+        return 
+    
         # get min distance for all subjects
         min_dist = [data_dictionary[subject]['distance_map'].min() for subject in data_dictionary.keys()]
 
@@ -864,27 +886,38 @@ class Evaluator:
         for ymin,ymax,k,m in itertools.product(ymin_r,ymax_r,k_r,m_r):
             print(ymin,ymax,k,m)
             thresholds = sigmoid(np.array(min_dist), k=k, m=m, ymax=ymax, ymin=ymin)
-            cur_dice, cur_sens = get_scores(data_dictionary, thresholds)
-            res.append({'dice': cur_dice, 'sensitivity': cur_sens,'ymin':ymin, 'ymax':ymax, 'k':k, 'm':m, 'desc':f'ymin{ymin}_ymax{ymax}_k{k}_m{m}'})
+            cur_dice, cur_sens, cur_spec = get_scores(data_dictionary, thresholds)
+            res.append({'dice': cur_dice, 'sensitivity': cur_sens,
+                        'specificity': cur_spec, 
+                        'ymin':ymin, 'ymax':ymax, 'k':k, 'm':m, 'desc':f'ymin{ymin}_ymax{ymax}_k{k}_m{m}'})
         
         df = pd.DataFrame(res)
         
         # plot the results
         ax = sns.scatterplot(data=df, x='desc', y='dice', label='dice') #, 'sensitivity'))
         ax = sns.scatterplot(data=df, x='desc', y='sensitivity', label='sensitivity')
+        ax = sns.scatterplot(data=df, x='desc', y='specificity', label='specificity')
+
         for tick in ax.xaxis.get_ticklabels():
             tick.set_rotation(90)
         plt.ylabel('score')
         plt.xlabel('k (sigmoid param)')
         plt.legend()
+        filename = os.path.join(self.results_dir,f'sigmoid_optimization.png')
+        plt.savefig(filename)
 
         # find the parameters of the best sigmoid 
         df['sum'] = df['sensitivity'].values + df['dice'].values
         best_dice_sens = df['sum'].max()
         df_best = df[df['sum'] == best_dice_sens]
 
+        #save all parameters
+        filename = os.path.join(self.results_dir,f'sigmoid_optimization.csv')
+        print(f'Save all parameters optimised sigmoid at {filename}')
+        df.to_csv(filename)
+
         #save best parameters
-        filename = os.path.join(self.save_dir,'results',f'sigmoid_optimal_parameters_{suffix}.csv')
+        filename = os.path.join(self.results_dir,f'sigmoid_optimal_parameters.csv')
         print(f'Save parameters optimised sigmoid at {filename}')
         df_best.to_csv(filename)
 
@@ -896,7 +929,7 @@ class Evaluator:
         plt.xlabel('min_dist')
         plt.legend()
 
-        filename = os.path.join(self.save_dir,'results',f'sigmoid_optimal_parameters{suffix}.png')
+        filename = os.path.join(self.results_dir,f'sigmoid_optimal_parameters.png')
         plt.savefig(filename)
 
         return df
@@ -906,20 +939,24 @@ def get_scores(subjects_dict, thresholds):
         return sensitivity & dice for given threshold
         """
         patient_sens = []
+        control_spec = []
         dice = []
         for subj, thresh in zip(subjects_dict, thresholds):
             subj = subjects_dict[subj]
-
             mask = torch.as_tensor(np.array(subj['result'] >= thresh)).long()
             label = torch.as_tensor(np.array(subj['input_labels'].astype(bool))).long()
             dices = dice_coeff(torch.nn.functional.one_hot(mask, num_classes=2), label)
             #report dice lesional
             dice.append(dices[1])
             #get sensitivity
-            tp, fp, fn, tn = tp_fp_fn_tn(mask, label)       
+            label2= torch.as_tensor(np.array(subj['borderzone'].astype(bool))).long()
+            tp, fp, fn, tn = tp_fp_fn_tn(mask, label2)   
+                
             if sum(subj['input_labels']) != 0:
                 patient_sens.append(tp > 1)
-        return np.mean(dice), np.mean(patient_sens)
+            else:
+                control_spec.append(fp >1 )
+        return np.mean(dice), np.mean(patient_sens), 1-np.mean(control_spec)
 
 def sigmoid(x, k=2, m=0.5, ymin=0.03, ymax=0.5):
     """
@@ -972,20 +1009,22 @@ def create_surface_plots(coords, faces, overlay, flat_map=True, limits=None):
     else:
         vmin = limits[0]
         vmax = limits[1]
+    f = np.random.choice(np.arange(1000))
     msp.plot_surf(
         coords,
         faces,
         overlay,
         flat_map=flat_map,
         rotate=[90, 270],
-        filename="tmp.png",
+        filename="tmp{}.png".format(f),
         vmin=vmin,
         vmax=vmax,
     )
-    im = Image.open("tmp.png")
+    im = Image.open("tmp{}.png".format(f))
     im = trim(im)
     im = im.convert("RGBA")
     im1 = np.array(im)
+    os.remove("tmp{}.png".format(f))
     return im1
 
 
