@@ -29,4 +29,4 @@ conda activate meld_test
 # run script
 BASE=/home/co-spit1/software/
 MODEL_PATH='/rds/project/kw350/rds-kw350-meld/experiments_graph/co-spit1/23-08-30_IGKW_object_save_final/s_0/fold_all'
-python $BASE/meld_classifier_GDL/scripts/calculate_dropout_confidence.py --model_path $MODEL_PATH --split test --model_name ensemble_best_model.pt --p $1 --n 10
+python $BASE/meld_classifier_GDL/scripts/calculate_dropout_confidence.py --model_path $MODEL_PATH --split test --model_name best_model.pt --p $1 --n 10
