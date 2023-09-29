@@ -1,8 +1,8 @@
 import os
 import pwd
 
-username = pwd.getpwuid(os.getuid())[0]
-
+#username = pwd.getpwuid(os.getuid())[0]
+username = 'kw350'
 # get scripts dir (parent dir of dir that this file is in)
 SCRIPTS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
