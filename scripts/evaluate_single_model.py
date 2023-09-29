@@ -12,6 +12,7 @@ import meld_graph.evaluation
 from meld_graph.dataset import GraphDataset
 from meld_classifier.meld_cohort import MeldCohort
 
+import os
 from meld_graph.evaluation import Evaluator
 import numpy as np
 import json
@@ -35,6 +36,8 @@ if __name__ == "__main__":
         'results',f'sigmoid_optimal_parameters_{suffix}.csv')
         if not os.path.exists(sigmoid_file):
             raise ValueError('Optimised sigmoid parameters not found')
+    else:
+        suffix=""
     if args.new_data != None:
         args.split = 'test'
         new_data_params = json.load(open(args.new_data))
@@ -57,7 +60,6 @@ if __name__ == "__main__":
                 hdf5_file_root=exp.data_parameters["hdf5_file_root"],
                 dataset=exp.data_parameters["dataset"],
             )
-    
     dataset = GraphDataset(subjects, cohort, exp.data_parameters, mode="test")
 
     if args.new_data != None:
@@ -83,7 +85,7 @@ if __name__ == "__main__":
     if args.split == "test":
         save_prediction = True
         roc_curves_thresholds = None
-        suffix = ""
+        #suffix = ""
     elif args.split == "val":
         save_prediction = False
         roc_curves_thresholds = np.linspace(0, 1, 21)
@@ -107,9 +109,7 @@ if __name__ == "__main__":
 
     # threshold and clustering
     eva.threshold_and_cluster(save_prediction_suffix=suffix, )
-    
-    # make images 
-    eva.plot_subjects_prediction()
-
     # calculate stats
-    eva.stat_subjects()
+    eva.stat_subjects()    
+    # make images 
+    eva.plot_subjects_prediction(suffix=suffix,)
