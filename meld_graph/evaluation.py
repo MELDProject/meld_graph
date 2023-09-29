@@ -534,13 +534,14 @@ class Evaluator:
                                                 method='gausslegendre', internal_batch_size=100).cpu().numpy()
                     # extract mask of most salient vertices
                     mean_saliencies = cur_saliency.mean(axis=1)
-                    # if cluster > 125 vertices, extract 20% most salient vertices
-                    size_clust = mask.sum()
-                    if size_clust > 125:
-                        thresh= np.percentile(mean_saliencies[np.array(mask)], 80)
-                        mask_salient = (mean_saliencies>thresh)
-                    else:
-                        mask_salient = mask
+                    # extract 20% most salient vertices
+                    thresh= np.percentile(mean_saliencies[np.array(mask)], 80)
+                    mask_salient = (mean_saliencies>thresh)
+                    # if 20% vertices < 125 vertices , take the first 125 vertices most salient one
+                    if mask_salient.sum() < 125:
+                        vertices_salient = np.argsort(mean_saliencies)[::-1][0:125]
+                        mask_salient=np.zeros(len(mean_saliencies)).astype('bool')
+                        mask_salient[vertices_salient]= True
                     #rearange saliencies and mask salient in whole brain - add empty hemi
                     empty_hemi = np.zeros(cur_saliency.shape)
                     if hemi=='left':
@@ -634,7 +635,7 @@ class Evaluator:
                     "ID",
                     "group",
                     "detected",
-                    "number clusters",
+                    "number cresultsloadlusters",
                     "tp",
                     "fp",
                     "fn",
@@ -800,7 +801,7 @@ class Evaluator:
         """
         load prediction from file.
         """
-        filename = os.path.join(self.save_dir, "results", f"predictions{suffix}.hdf5")
+        filename = os.path.join(self.save_dir, "results_best_model", f"predictions{suffix}.hdf5")
         if not os.path.isfile(filename):
             # cannot load data
             self.log.debug(f'file {filename} does not exist')
