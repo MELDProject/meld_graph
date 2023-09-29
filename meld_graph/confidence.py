@@ -2,6 +2,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from meld_classifier.meld_cohort import MeldSubject
+import seaborn as sns
+import pandas as pd
 
 
 def get_lesion(subjects, cohort, results_dict=None):
@@ -16,7 +18,7 @@ def get_lesion(subjects, cohort, results_dict=None):
             np.ceil(subj.load_feature_values(".on_lh.lesion.mgh", hemi='rh')).astype(int)[cohort.cortex_mask]])
     return results_dict
 
-def get_confidence(eva, subjects, cohort, threshold=0.5, confidence_suffix=""):
+def get_confidence(eva, subjects, cohort, threshold=0.5, prediction_suffix="", confidence_suffix=""):
     """
     Return pixel-wise confidence for a prediction hdf5 file and a list of subjects.
     Returned dict will contain for each subject:
@@ -37,8 +39,8 @@ def get_confidence(eva, subjects, cohort, threshold=0.5, confidence_suffix=""):
         if subj_id not in results_dict.keys():
             results_dict[subj_id] = {}
             
-        subj_results_dict = eva.load_data_from_file(subj_id, keys=['cluster_thresholded','result'])
-        if confidence_suffix == "":
+        subj_results_dict = eva.load_data_from_file(subj_id, keys=['cluster_thresholded','result'], save_prediction_suffix=prediction_suffix)
+        if confidence_suffix == prediction_suffix:
             subj_results_dict_confidence = subj_results_dict
         else:
             subj_results_dict_confidence = eva.load_data_from_file(subj_id, keys=['result',], 
@@ -96,19 +98,27 @@ def calibration_plot(results_dict, n_bins=10, confidence='confidence_lesion'):
     fig, ax = plt.subplots(1,1, figsize=(5,5))
     ax.plot(bins[:-1] + (bins[1:]-bins[:-1])/2, freq, 'o-')
     ax.bar(bins[:-1] + (bins[1:]-bins[:-1])/2, n, width=0.05, color='black', alpha=0.5)
+    # plot line for perfect calibration
+    ax.plot([0,1],[0,1], '--')
+    ax.set_ylim(0,1)
+    ax.set_xlim(0,1)
     ax.set_xlabel(confidence)
-    ax.set_ylabel('frequency of label')
+    ax.set_ylabel('frequency of TPs')
     ax.set_title('Per vertex confidence (ECE: {:.2f})'.format(ece))
     return fig
 
-def calculate_per_cluster_confidence(results_dict, aggregation_fn='median'):
+def calculate_per_cluster_confidence(results_dict, aggregation_fn='median', mask_by_saliency=False, eva=None, prediction_suffix=""):
     """
-    calculate mean confidence per cluster & whether it was detected
+    calculate mean confidence per cluster & whether it was detected.
+    Args:
+        mask_by_saliency: limit vertices to 
     Returns:
-        per_cluster_confidence, per_cluster_label
+        DataFrame with columns subject_id, cluster_id, confidence, TP 
     """
     per_cluster_confidence = []
     per_cluster_label = []
+    subjects = []
+    cluster_ids = []
     for subj in results_dict.keys():
         #print(results_dict[subj]['clusters'].max())
         for i in range(int(results_dict[subj]['clusters'].max())+1):
@@ -117,6 +127,9 @@ def calculate_per_cluster_confidence(results_dict, aggregation_fn='median'):
                 continue
             # for foreground cluster, calculate mean confidence
             mask = results_dict[subj]['clusters'] == i
+            if mask_by_saliency:
+                data = eva.load_data_from_file(subj, keys=[f'mask_salient_{i:.1f}'], split_hemis=False, save_prediction_suffix=prediction_suffix)
+                mask = np.logical_and(mask, data[f'mask_salient_{i:.1f}'].astype(bool))
             if aggregation_fn == 'mean':
                 conf  = np.mean(results_dict[subj]['confidence_lesion'][mask])
             elif aggregation_fn == 'median':
@@ -125,8 +138,12 @@ def calculate_per_cluster_confidence(results_dict, aggregation_fn='median'):
                 raise NotImplementedError(f'aggregation function {aggregation_fn}')
             per_cluster_confidence.append(conf)
             per_cluster_label.append(results_dict[subj]['lesion'][mask].max())
+            subjects.append(subj)
+            cluster_ids.append(i)
             
-    return np.array(per_cluster_confidence), np.array(per_cluster_label)
+    results_df = pd.DataFrame({'subject_id': subjects, 'cluster_id': cluster_ids, 'confidence': per_cluster_confidence, 'TP': per_cluster_label})
+    return results_df
+
 
 def cluster_calibration_plot(confidence, label, n_bins=10):
     """
@@ -161,7 +178,20 @@ def cluster_calibration_plot(confidence, label, n_bins=10):
     fig, ax = plt.subplots(1,1, figsize=(5,5))
     ax.plot(bins[:-1] + (bins[1:]-bins[:-1])/2, freq, 'o-')
     ax.bar(bins[:-1] + (bins[1:]-bins[:-1])/2, n, width=0.05, color='black', alpha=0.5)
+    # plot line for perfect calibration
+    ax.plot([0,1],[0,1], '--')
+    ax.set_ylim(0,1)
+    ax.set_xlim(0,1)
     ax.set_xlabel('confidence')
-    ax.set_ylabel('frequency of label')
+    ax.set_ylabel('frequency of TPs')
     ax.set_title('Per cluster confidence (ECE: {:.2f})'.format(ece))
+    return fig
+
+def confidence_label_distplot(per_cluster_confidence, per_cluster_label):
+    # quick check to see if this roughly makes sense - FP clusters should have low confidence
+    fig, ax = plt.subplots(1,1)
+    sns.kdeplot(x=per_cluster_confidence[per_cluster_label==0], ax=ax, label='FP')
+    sns.kdeplot(x=per_cluster_confidence[per_cluster_label==1], ax=ax, label='TP')
+    plt.legend()
+    ax.set_xlabel('confidence')
     return fig

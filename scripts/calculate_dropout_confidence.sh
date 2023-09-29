@@ -9,7 +9,7 @@
 #SBATCH -p ampere
 #SBATCH --gres=gpu:1
 #SBATCH --mem=48000
-#SBATCH -t 02:00:00
+#SBATCH -t 01:00:00
 
 #! partitions: ampere, pascal
 # set up
