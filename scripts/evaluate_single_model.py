@@ -27,18 +27,14 @@ if __name__ == "__main__":
     parser.add_argument("--split", help="train, test, val, or trainval")
     parser.add_argument("--saliency", action='store_true', default=False, help="calculate integrated gradients saliency")
     parser.add_argument("--new_data", help="json file containing new data parameters", default=None)
-    parser.add_argument("--model_name", default="ensemble_best_model.pt", help="name of the model to load")
+    parser.add_argument("--model_name", default="best_model", help="name of the model to load")
     args = parser.parse_args()
     exp = meld_graph.experiment.Experiment.from_folder(args.model_path)
-    if 'ensemble' in args.model_name:
-        #check optimised sigmoid parameters are present
-        suffix = args.model_name.split('.')[0]
-        sigmoid_file = os.path.join(exp.experiment_path, 
-        'results',f'sigmoid_optimal_parameters_{suffix}.csv')
-        if not os.path.exists(sigmoid_file):
-            raise ValueError('Optimised sigmoid parameters not found')
-    else:
-        suffix=""
+    #check optimised sigmoid parameters are present
+    sigmoid_file = os.path.join(exp.experiment_path, 
+    f'results_{args.model_name}',f'sigmoid_optimal_parameters.csv')
+    if not os.path.exists(sigmoid_file):
+        raise ValueError('Optimised sigmoid parameters not found')
     if args.new_data != None:
         args.split = 'test'
         new_data_params = json.load(open(args.new_data))
@@ -86,7 +82,7 @@ if __name__ == "__main__":
     if args.split == "test":
         save_prediction = True
         roc_curves_thresholds = None
-        #suffix = ""
+        suffix = ""
     elif args.split == "val":
         save_prediction = False
         roc_curves_thresholds = np.linspace(0, 1, 21)

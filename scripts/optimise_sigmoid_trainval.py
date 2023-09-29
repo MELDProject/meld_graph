@@ -20,7 +20,7 @@ if __name__ == "__main__":
         Script to evaluate one model on either train, test, val, or trainval. Val as default does not save predictions"""
     )
     parser.add_argument("--model_path", help="path to trained model config")
-    parser.add_argument("--model_name", default="ensemble_best_model.pt", help="name of the model to load")
+    parser.add_argument("--model_name", default="best_model", help="name of the model to load")
     args = parser.parse_args()
     exp = meld_graph.experiment.Experiment.from_folder(args.model_path)
     
@@ -56,7 +56,7 @@ if __name__ == "__main__":
    
     save_prediction = True
     roc_curves_thresholds = None
-    suffix = 'trainval_' + args.model_name.split('.')[0]
+    suffix = 'trainval' 
     
     #TODO:need to enable loading pre-existing predictions
     #predict subjects
