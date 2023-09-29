@@ -47,19 +47,19 @@ def create_ensemble(experiment_path, ensemble_experiments,model_name='best_model
     _update_subj_ids(data_param_file, ensemble_experiments)
 
     # create results dir
-    if not os.path.exists(os.path.join(experiment_path, "results")):
-        os.makedirs(os.path.join(experiment_path, "results"))
+    if not os.path.exists(os.path.join(experiment_path, f"results_{model_name}")):
+        os.makedirs(os.path.join(experiment_path, f"results_{model_name}"))
 
     # create ensemble
     models = []
     for exp_dir in ensemble_experiments:
         exp = Experiment.from_folder(exp_dir)
-        exp.load_model(os.path.join(exp.experiment_path, f'{model_name}'))
+        exp.load_model(os.path.join(exp.experiment_path, f'{model_name}.pt'))
         models.append(exp.model)
     ensemble = Ensemble(models)
     
     # save ensemble
-    torch.save(ensemble.state_dict(), os.path.join(experiment_path, f'ensemble_{model_name}'))
+    torch.save(ensemble.state_dict(), os.path.join(experiment_path, f'{model_name}.pt'))
 
 
 if __name__ == "__main__":
@@ -75,7 +75,7 @@ if __name__ == "__main__":
         "--ensemble-experiment-path", default=None, help="experiment path of the resulting ensemble experiment. Default is experiment-folder/fold_all"
     )
     parser.add_argument(
-        "--model-name", default='best_model.pt', help="name of the model to be ensembled. Default is best_model"
+        "--model-name", default='best_model', help="name of the model to be ensembled. Default is best_model"
     )
     parser.add_argument("--folds", nargs="+", default=range(5), help='folds in experiment-folder that should be ensembled')
     args = parser.parse_args()
