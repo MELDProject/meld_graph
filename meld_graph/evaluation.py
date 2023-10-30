@@ -536,13 +536,14 @@ class Evaluator:
                                                 method='gausslegendre', internal_batch_size=100).cpu().numpy()
                     # extract mask of most salient vertices
                     mean_saliencies = cur_saliency.mean(axis=1)
-                    # if cluster > 125 vertices, extract 20% most salient vertices
-                    size_clust = mask.sum()
-                    if size_clust > 125:
-                        thresh= np.percentile(mean_saliencies[np.array(mask)], 80)
-                        mask_salient = (mean_saliencies>thresh)
-                    else:
-                        mask_salient = mask
+                    # extract 20% most salient vertices
+                    thresh= np.percentile(mean_saliencies[np.array(mask)], 80)
+                    mask_salient = (mean_saliencies>thresh)
+                    # if 20% vertices < 125 vertices , take the first 125 vertices most salient one
+                    if mask_salient.sum() < 125:
+                        vertices_salient = np.argsort(mean_saliencies)[::-1][0:125]
+                        mask_salient=np.zeros(len(mean_saliencies)).astype('bool')
+                        mask_salient[vertices_salient]= True
                     #rearange saliencies and mask salient in whole brain - add empty hemi
                     empty_hemi = np.zeros(cur_saliency.shape)
                     if hemi=='left':
@@ -637,7 +638,7 @@ class Evaluator:
                     "ID",
                     "group",
                     "detected",
-                    "number clusters",
+                    "number cresultsloadlusters",
                     "tp",
                     "fp",
                     "fn",
@@ -877,62 +878,6 @@ class Evaluator:
         print(f'Save parameters optimised sigmoid at {filename}')
         df_best.to_csv(filename)
         return 
-    
-        # get min distance for all subjects
-        min_dist = [data_dictionary[subject]['distance_map'].min() for subject in data_dictionary.keys()]
-
-        # calculate threshold as a function of min dist
-        res = [] 
-        for ymin,ymax,k,m in itertools.product(ymin_r,ymax_r,k_r,m_r):
-            print(ymin,ymax,k,m)
-            thresholds = sigmoid(np.array(min_dist), k=k, m=m, ymax=ymax, ymin=ymin)
-            cur_dice, cur_sens, cur_spec = get_scores(data_dictionary, thresholds)
-            res.append({'dice': cur_dice, 'sensitivity': cur_sens,
-                        'specificity': cur_spec, 
-                        'ymin':ymin, 'ymax':ymax, 'k':k, 'm':m, 'desc':f'ymin{ymin}_ymax{ymax}_k{k}_m{m}'})
-        
-        df = pd.DataFrame(res)
-        
-        # plot the results
-        ax = sns.scatterplot(data=df, x='desc', y='dice', label='dice') #, 'sensitivity'))
-        ax = sns.scatterplot(data=df, x='desc', y='sensitivity', label='sensitivity')
-        ax = sns.scatterplot(data=df, x='desc', y='specificity', label='specificity')
-
-        for tick in ax.xaxis.get_ticklabels():
-            tick.set_rotation(90)
-        plt.ylabel('score')
-        plt.xlabel('k (sigmoid param)')
-        plt.legend()
-        filename = os.path.join(self.results_dir,f'sigmoid_optimization.png')
-        plt.savefig(filename)
-
-        # find the parameters of the best sigmoid 
-        df['sum'] = df['sensitivity'].values + df['dice'].values
-        best_dice_sens = df['sum'].max()
-        df_best = df[df['sum'] == best_dice_sens]
-
-        #save all parameters
-        filename = os.path.join(self.results_dir,f'sigmoid_optimization.csv')
-        print(f'Save all parameters optimised sigmoid at {filename}')
-        df.to_csv(filename)
-
-        #save best parameters
-        filename = os.path.join(self.results_dir,f'sigmoid_optimal_parameters.csv')
-        print(f'Save parameters optimised sigmoid at {filename}')
-        df_best.to_csv(filename)
-
-        # plot the selected sigmoid
-        plt.figure()
-        ymin,ymax,k,m = df_best[['ymin','ymax','k','m']].values[0]
-        plt.plot(np.linspace(0,1,100), sigmoid(np.linspace(0,1,100), k=k, m=m, ymax=ymax, ymin=ymin), label=f'ymin{ymin}_ymax{ymax}_k{k}_m{m}')
-        plt.ylabel('threshold')
-        plt.xlabel('min_dist')
-        plt.legend()
-
-        filename = os.path.join(self.results_dir,f'sigmoid_optimal_parameters.png')
-        plt.savefig(filename)
-
-        return df
 
 def get_scores(subjects_dict, thresholds):
         """
