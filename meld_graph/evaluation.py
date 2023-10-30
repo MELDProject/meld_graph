@@ -861,10 +861,10 @@ class Evaluator:
         maxes =[]
         for subject in self.data_dictionary.keys():
             if "_C_" in subject:
-                maxes.append(self.data_dictionary[subject]["result"])
+                maxes.append(np.max(self.data_dictionary[subject]["result"]))
         maxes = np.array(maxes)
         #shortcut here
-        ymin = np.percentile(maxes,95)
+        ymin = np.percentile(maxes,80)
         ymax = 0.5
         k = 1
         m = 0.05
