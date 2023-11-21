@@ -227,24 +227,24 @@ class Evaluator:
                     x[mask] = 0
                     estimates = self.experiment.model(x)
                     list_prediction.append(torch.exp(estimates["log_softmax"])[:, 1].detach().cpu())
-                    if distance_regression_flag:
-                        list_distance_map.append(estimates["non_lesion_logits"][:, 0].detach().cpu())
+                    # if distance_regression_flag:
+                    list_distance_map.append(estimates["non_lesion_logits"][:, 0].detach().cpu())
                 prediction = torch.mean(torch.stack(list_prediction), axis=0)
-                if distance_regression_flag:
-                    distance_map = torch.mean(torch.stack(list_distance_map), axis=0)
-                else:
-                    distance_map = torch.full((len(prediction), 1), torch.nan)[:, 0]
+                # if distance_regression_flag:
+                distance_map = torch.mean(torch.stack(list_distance_map), axis=0)
+                # else:
+                    # distance_map = torch.full((len(prediction), 1), torch.nan)[:, 0]
             else:
                 estimates = self.experiment.model(data.x)
                 prediction = torch.exp(estimates["log_softmax"])[:, 1].detach().cpu()
                 # get distance map if exist in loss, otherwise return array of NaN
-                if (
-                    "distance_regression"
-                    in self.experiment.network_parameters["training_parameters"]["loss_dictionary"].keys()
-                ):
-                    distance_map = estimates["non_lesion_logits"][:, 0].detach().cpu()
-                else:
-                    distance_map = torch.full((len(prediction), 1), torch.nan)[:, 0]
+                # if (
+                #     "distance_regression"
+                #     in self.experiment.network_parameters["training_parameters"]["loss_dictionary"].keys()
+                # ):
+                distance_map = estimates["non_lesion_logits"][:, 0].detach().cpu()
+                # else:
+                # distance_map = torch.full((len(prediction), 1), torch.nan)[:, 0]
             prediction_array.append(prediction.numpy()[self.cohort.cortex_mask])
             labels_array.append(labels.cpu().numpy()[self.cohort.cortex_mask])
             features_array.append(data.x.cpu().numpy()[self.cohort.cortex_mask])
