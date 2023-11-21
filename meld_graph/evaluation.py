@@ -865,7 +865,7 @@ class Evaluator:
                 maxes.append(np.max(self.data_dictionary[subject]["result"]))
         maxes = np.array(maxes)
         #shortcut here
-        ymin = np.percentile(maxes,80)
+        ymin = np.percentile(maxes,60)
         ymax = 0.5
         k = 1
         m = 0.05
