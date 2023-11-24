@@ -206,7 +206,7 @@ class Experiment:
             force (bool): reload model if model is already loaded.
         """
         # check if need to use load_ensemble_model
-        if checkpoint_path is not None and 'ensemble' in checkpoint_path:
+        if checkpoint_path is not None and 'fold_all' in checkpoint_path:
             return self.load_ensemble_model(checkpoint_path=checkpoint_path, force=force)
         
         if self.model is not None and not force:
