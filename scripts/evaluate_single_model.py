@@ -31,9 +31,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     exp = meld_graph.experiment.Experiment.from_folder(args.model_path)
     #check optimised sigmoid parameters are present
-    sigmoid_file = os.path.join(exp.experiment_path, 
+    threshold_file = os.path.join(exp.experiment_path, 
     f'results_{args.model_name}',f'two_thresholds.csv')
-    if not os.path.exists(sigmoid_file):
+    if not os.path.exists(threshold_file):
         raise ValueError('Optimised two thresholds parameters not found')
     if args.new_data != None:
         args.split = 'test'
