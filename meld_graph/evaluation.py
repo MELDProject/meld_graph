@@ -28,7 +28,12 @@ except ImportError:
 
 
 class Evaluator:
-    """ """
+    """ 
+    Args:
+        threshold: threshold to use for predictions. Either a float, or special values "sigmoid", "step".
+            In case of "sigmoid" will read sigmoid_optimal_parameters.csv to determine subject-level threshold.
+            In case of "two_threshold" will read two_thresholds.csv to determine subject-level threshold.
+    """
 
     def __init__(
         self,
@@ -37,7 +42,7 @@ class Evaluator:
         checkpoint_path=None,
         make_images=False,
         thresh_and_clust=True,
-        threshold="sigmoid",
+        threshold="two_threshold",
         min_area_threshold=100,
         dataset=None,
         cohort=None,
@@ -76,9 +81,10 @@ class Evaluator:
         if thresh_and_clust:
             self.min_area_threshold = min_area_threshold
             if threshold == 'sigmoid':
+                self.threshold_mode = 'sigmoid'
                 #check if sigmoid have been optimised for model
                 #save model name in sigmoid filename
-                sigmoid_file = os.path.join(self.results_dir,f'sigmoid_optimal_parameters.csv')
+                sigmoid_file = os.path.join(self.experiment.experiment_path, f'results_{model_name}',f'sigmoid_optimal_parameters.csv')
                 if os.path.isfile(sigmoid_file):
                     try:
                         self.threshold = pd.read_csv(sigmoid_file)[['ymin','ymax','k','m']].values[0]
@@ -89,14 +95,26 @@ class Evaluator:
                 else:
                     print(f"Could not find an optimised sigmoid at {sigmoid_file}. You need to run script optimise_sigmoid_trainval.py")
                     return
+            elif threshold == "two_threshold":
+                self.threshold_mode = 'two_threshold'
+                threshold_file = os.path.join(self.experiment.experiment_path, f'results_{model_name}', "two_thresholds.csv")
+                if os.path.isfile(threshold_file):
+                    try:
+                        self.threshold = pd.read_csv(threshold_file)[['ymin','ymax']].values[0]
+                        self.log.info("Evaluation {}, min area threshold={}, threshold two_threshold(ymin={}, ymax={})".format(
+                                    self.mode,self.min_area_threshold, self.threshold[0], self.threshold[1]))
+                    except:
+                        print(f'Error reading threshold {threshold_file}')    
+                else:
+                    print(f"Could not find an optimised threshold file at {threshold_file}. You need to run script optimise_sigmoid_trainval.py")
+                    return
             elif isinstance(threshold, float):
+                self.threshold_mode = 'threshold'
                 self.threshold = threshold
                 self.log.info("Evaluation {}, min area threshold={}, threshold {}".format(self.mode, self.min_area_threshold, self.threshold))
             else:
                 print('Cannot understand the threshold provided')
                 return
-
-        
 
         # if checkpoint load model
         if checkpoint_path:
@@ -207,7 +225,6 @@ class Evaluator:
         store_sub_aucs = True
         self.subject_aucs = {}
         for i, data in enumerate(data_loader):
-            
             self.log.debug(i)
             subject_index = i // 2
             hemi = ["lh", "rh"][i % 2]
@@ -361,19 +378,9 @@ class Evaluator:
         return self._roc_dictionary
 
     def threshold_and_cluster(self, data_dictionary=None, save_prediction=True, save_prediction_suffix=""):
-        save_prediction_suffix = f"{save_prediction_suffix}{self.dropout_suffix}"
-        return_dict = data_dictionary is not None
-        if data_dictionary is None:
-            data_dictionary = self.data_dictionary
-        for subj_id, data in data_dictionary.items():
-            if isinstance(self.threshold, np.ndarray):
-                distances = data["distance_map"]
-                ymin, ymax, k, m = self.threshold
-                print('Using sigmoid params: {}, {}, {}, {}'.format(ymin, ymax, k, m))
-                threshold_subj = sigmoid(np.array([distances.min()]), k=k, m=m, ymin=ymin, ymax=ymax)[0]
-            else:
-                threshold_subj = self.threshold
-            predictions = self.experiment.cohort.split_hemispheres(data["result"])
+        # helper fn getting the clustered and thresholded data for a given threshold
+        def get_cluster_thresholded(predictions, threshold_subj):
+            print(predictions, threshold_subj)
             island_count = 0
             result_hemis_clustered = {}
             for h, hemi in enumerate(["left", "right"]):
@@ -381,7 +388,36 @@ class Evaluator:
                 islands = self.cluster_and_area_threshold(mask, island_count=island_count, min_area_threshold=self.min_area_threshold)
                 result_hemis_clustered[hemi] = islands
                 island_count += np.max(islands)
-            data["cluster_thresholded"]=np.hstack([result_hemis_clustered['left'][self.cohort.cortex_mask],result_hemis_clustered['right'][self.cohort.cortex_mask]])
+            return np.hstack([result_hemis_clustered['left'][self.cohort.cortex_mask],result_hemis_clustered['right'][self.cohort.cortex_mask]])
+
+        save_prediction_suffix = f"{save_prediction_suffix}{self.dropout_suffix}"
+        return_dict = data_dictionary is not None
+        if data_dictionary is None:
+            data_dictionary = self.data_dictionary
+        for subj_id, data in data_dictionary.items():
+            if self.threshold_mode == 'sigmoid':
+                distances = data["distance_map"]
+                ymin, ymax, k, m = self.threshold
+                print('Using sigmoid params: {}, {}, {}, {}'.format(ymin, ymax, k, m))
+                threshold_subj = sigmoid(np.array([distances.min()]), k=k, m=m, ymin=ymin, ymax=ymax)[0]
+                print(f"threshold_subj = {threshold_subj}")
+            else:
+                threshold_subj = self.threshold
+            
+            predictions = self.experiment.cohort.split_hemispheres(data["result"])
+            if self.threshold_mode == 'two_threshold':
+                print(f'using thresholds {threshold_subj}')
+                pred_low_confidence = get_cluster_thresholded(predictions, threshold_subj[0])
+                pred_high_confidence = get_cluster_thresholded(predictions, threshold_subj[1])
+                data["cluster_thresholded_low_conf"] = pred_low_confidence
+                data["cluster_thresholded_high_conf"] = pred_high_confidence
+                data["cluster_thresholded"] = pred_high_confidence if data["result"].max() > threshold_subj[1] else pred_low_confidence
+                if data["result"].max() > threshold_subj[1]:
+                    print(f"threshold_subj = {threshold_subj[1]}")
+                else:
+                    print(f"threshold_subj = {threshold_subj[0]}")
+            else:
+                data["cluster_thresholded"] = get_cluster_thresholded(predictions, threshold_subj)
             if save_prediction:
                 # save clustered predictions
                 self.save_prediction(
