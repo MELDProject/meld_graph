@@ -94,15 +94,16 @@ This will create an ensemble model in PATH_TO_EXPERIMENT_FOLDER/fold_all, ensemb
 
 **Optimise threshold for evaluation**
 
-Before doing the evaluation you can optimised the sigmoid threshold on the training dataset. 
+Before doing the evaluation you set the thresholds on the trainval dataset. 
 
-To optimise the sigmoid, simply run
+To simply run
 
 ```
-python optimise_sigmoid_trainval.py --model_path PATH_TO_EXPERIMENT
+python evaluate_trainval.py --model_path PATH_TO_EXPERIMENT --model_name best_model
+python calculate_thresholds.py --model_path PATH_TO_EXPERIMENT
 ```
-This will run the predictions on the training dataset and calculate the optimal parameters of the sigmoid that provide the best performances in term of sensitivity and dice score. 
-The optimal parameters will be saved in the file "sigmoid_optimal_parameters.csv" at PATH_TO_EXPERIMENT
+This will run the predictions on the trainval dataset and calculate the optimal thresholds that provide the best performances in term of sensitivity and dice score. 
+The threshold parameters will be saved in the file "two_thresholds.csv" at PATH_TO_EXPERIMENT
 
 **Evaluate final model**
 

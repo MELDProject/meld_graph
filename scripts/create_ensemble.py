@@ -13,8 +13,10 @@ from meld_graph.experiment import Experiment
 from meld_graph.ensemble import Ensemble
 
 def _update_subj_ids(data_param_file, ensemble_experiments):
+    print('updating subj_ids')
     train_ids = []
     for exp in ensemble_experiments:
+        print(exp)
         params = json.load(open(os.path.join(exp, f"data_parameters.json"), "r"))
         train_ids.extend(params["train_ids"])
     train_ids = list(np.unique(train_ids))
@@ -22,10 +24,11 @@ def _update_subj_ids(data_param_file, ensemble_experiments):
     params = json.load(open(data_param_file, "r"))
     params["train_ids"] = train_ids
     params["val_ids"] = []
-    params['fold_n'] = 'all'
+    params['fold_n'] = "all"
+
     json.dump(params, open(data_param_file, "w"), indent=4)
 
-
+    return
 
 
 def create_ensemble(experiment_path, ensemble_experiments,model_name='best_model'):
@@ -44,6 +47,7 @@ def create_ensemble(experiment_path, ensemble_experiments,model_name='best_model
     network_param_file = os.path.join(ensemble_experiments[0], "network_parameters.json")
     shutil.copyfile(network_param_file, os.path.join(experiment_path, "network_parameters.json"))
     # merge all train ids
+    print('about to update subj ids')
     _update_subj_ids(data_param_file, ensemble_experiments)
 
     # create results dir

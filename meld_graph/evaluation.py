@@ -142,11 +142,13 @@ class Evaluator:
                 self.subject_ids = test_ids
 
         if dataset != None:
+            print('using dataset')
             self.dataset = dataset
             self.subject_ids = self.dataset.subject_ids
             self.cohort = self.dataset.cohort
         else:
             self.dataset = GraphDataset(self.subject_ids, self.cohort, self.experiment.data_parameters, mode=mode)
+        
         self.disable_mc_dropout() # call this to init dropout variables
             
     def _find_checkpoint(self, experiment_path):
@@ -209,6 +211,8 @@ class Evaluator:
         """
         self.log.info("loading data and predicting model")
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        #quick fix for bug if not doing dropout
+        self.dropout_suffix=""
         save_prediction_suffix = f"{save_prediction_suffix}{self.dropout_suffix}"
         # predict on data
         # TODO: enable batch_size > 1
@@ -221,6 +225,7 @@ class Evaluator:
         store_sub_aucs = True
         self.subject_aucs = {}
         for i, data in enumerate(data_loader):
+            
             self.log.debug(i)
             subject_index = i // 2
             hemi = ["lh", "rh"][i % 2]
@@ -325,7 +330,6 @@ class Evaluator:
 
     def calculate_aucs(self):
         import sklearn.metrics as metrics
-
         x = 1 - self.roc_dictionary["specificity"] / self.roc_dictionary["specificity"][-1]
         y1 = self.roc_dictionary["sensitivity"] / self.roc_dictionary["sensitivity"][0]
         y2 = self.roc_dictionary["sensitivity_plus"] / self.roc_dictionary["sensitivity_plus"][0]
@@ -902,7 +906,7 @@ class Evaluator:
                 maxes.append(np.max(self.data_dictionary[subject]["result"]))
         maxes = np.array(maxes)
         #shortcut here
-        ymin = np.percentile(maxes,80)
+        ymin = np.percentile(maxes,60)
         ymax = 0.5
         k = 1
         m = 0.05
