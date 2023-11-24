@@ -32,9 +32,9 @@ if __name__ == "__main__":
     exp = meld_graph.experiment.Experiment.from_folder(args.model_path)
     #check optimised sigmoid parameters are present
     sigmoid_file = os.path.join(exp.experiment_path, 
-    f'results_{args.model_name}',f'sigmoid_optimal_parameters.csv')
+    f'results_{args.model_name}',f'two_thresholds.csv')
     if not os.path.exists(sigmoid_file):
-        raise ValueError('Optimised sigmoid parameters not found')
+        raise ValueError('Optimised two thresholds parameters not found')
     if args.new_data != None:
         args.split = 'test'
         new_data_params = json.load(open(args.new_data))
@@ -57,6 +57,8 @@ if __name__ == "__main__":
                 hdf5_file_root=exp.data_parameters["hdf5_file_root"],
                 dataset=exp.data_parameters["dataset"],
             )
+    ## TODO: to remove
+    # subjects=subjects[0:5]
     dataset = GraphDataset(subjects, cohort, exp.data_parameters, mode="test")
 
     if args.new_data != None:
@@ -75,6 +77,7 @@ if __name__ == "__main__":
         mode="test",
         saliency=args.saliency,
         model_name=args.model_name,
+        threshold='two_threshold',
 
     )
    

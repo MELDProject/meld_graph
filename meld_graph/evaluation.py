@@ -84,7 +84,7 @@ class Evaluator:
                 self.threshold_mode = 'sigmoid'
                 #check if sigmoid have been optimised for model
                 #save model name in sigmoid filename
-                sigmoid_file = os.path.join(self.results_dir,f'sigmoid_optimal_parameters.csv')
+                sigmoid_file = os.path.join(self.experiment.experiment_path, f'results_{model_name}',f'sigmoid_optimal_parameters.csv')
                 if os.path.isfile(sigmoid_file):
                     try:
                         self.threshold = pd.read_csv(sigmoid_file)[['ymin','ymax','k','m']].values[0]
@@ -97,7 +97,7 @@ class Evaluator:
                     return
             elif threshold == "two_threshold":
                 self.threshold_mode = 'two_threshold'
-                threshold_file = os.path.join(self.results_dir, "two_thresholds.csv")
+                threshold_file = os.path.join(self.experiment.experiment_path, f'results_{model_name}', "two_thresholds.csv")
                 if os.path.isfile(threshold_file):
                     try:
                         self.threshold = pd.read_csv(threshold_file)[['ymin','ymax']].values[0]
@@ -225,7 +225,6 @@ class Evaluator:
         store_sub_aucs = True
         self.subject_aucs = {}
         for i, data in enumerate(data_loader):
-            
             self.log.debug(i)
             subject_index = i // 2
             hemi = ["lh", "rh"][i % 2]
