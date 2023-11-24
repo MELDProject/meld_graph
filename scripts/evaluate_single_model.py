@@ -30,11 +30,8 @@ if __name__ == "__main__":
     parser.add_argument("--model_name", default="best_model", help="name of the model to load")
     args = parser.parse_args()
     exp = meld_graph.experiment.Experiment.from_folder(args.model_path)
-    #check optimised sigmoid parameters are present
-    sigmoid_file = os.path.join(exp.experiment_path, 
-    f'results_{args.model_name}',f'sigmoid_optimal_parameters.csv')
-    if not os.path.exists(sigmoid_file):
-        raise ValueError('Optimised sigmoid parameters not found')
+    #consider check for 2 thresholds csv here to save finding out later.
+    thresh_and_clust=True
     if args.new_data != None:
         args.split = 'test'
         new_data_params = json.load(open(args.new_data))
@@ -51,6 +48,7 @@ if __name__ == "__main__":
         else:
             sub_split = args.split + "_ids"
             subjects = exp.data_parameters[sub_split]
+            thresh_and_clust=False
         exp.data_parameters["augment_data"] = {}
         features = exp.data_parameters["features"]
         cohort = MeldCohort(
@@ -75,6 +73,7 @@ if __name__ == "__main__":
         mode="test",
         saliency=args.saliency,
         model_name=args.model_name,
+        thresh_and_clust=thresh_and_clust
 
     )
    
@@ -105,8 +104,10 @@ if __name__ == "__main__":
     )
 
     # threshold and clustering
-    eva.threshold_and_cluster(save_prediction_suffix=suffix, )
+    
     # calculate stats
-    eva.stat_subjects()    
     # make images 
-    eva.plot_subjects_prediction(suffix=suffix,)
+    if args.split!='val':
+        eva.threshold_and_cluster(save_prediction_suffix=suffix, )
+        eva.stat_subjects()    
+        eva.plot_subjects_prediction(suffix=suffix,)
