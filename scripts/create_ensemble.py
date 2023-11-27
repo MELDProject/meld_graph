@@ -31,7 +31,7 @@ def _update_subj_ids(data_param_file, ensemble_experiments):
     return
 
 
-def create_ensemble(experiment_path, ensemble_experiments,model_name='best_model'):
+def create_ensemble(experiment_path, ensemble_experiments, model_name='best_model'):
     """
     Creates ensemble model from experiments and stores it in experiment_path/experiment_name
     Sets train_ids to the union of all train_ids in every experiment (fold). val_ids are empty.
@@ -42,13 +42,13 @@ def create_ensemble(experiment_path, ensemble_experiments,model_name='best_model
 
     # use parameters of first experiments for this
     data_param_file = os.path.join(ensemble_experiments[0], "data_parameters.json")
-    
     shutil.copyfile(data_param_file, os.path.join(experiment_path, "data_parameters.json"))
     network_param_file = os.path.join(ensemble_experiments[0], "network_parameters.json")
     shutil.copyfile(network_param_file, os.path.join(experiment_path, "network_parameters.json"))
     # merge all train ids
     print('about to update subj ids')
-    _update_subj_ids(data_param_file, ensemble_experiments)
+    ensemble_data_param_file = os.path.join(experiment_path, "data_parameters.json")
+    _update_subj_ids(ensemble_data_param_file, ensemble_experiments)
 
     # create results dir
     if not os.path.exists(os.path.join(experiment_path, f"results_{model_name}")):
