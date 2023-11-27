@@ -32,6 +32,12 @@ if __name__ == "__main__":
             hdf5_file_root=exp.data_parameters["hdf5_file_root"],
             dataset=exp.data_parameters["dataset"],
         )
+    #only need controls now for optimise sigmoid
+    control_subjects = []
+    for subject in subjects:
+        if "_C_" in subject:
+            control_subjects.append(subject)
+    subjects=control_subjects
     dataset = GraphDataset(subjects, cohort, exp.data_parameters, mode="test")
 
     #save results in the model_path 

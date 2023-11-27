@@ -1,12 +1,13 @@
 import torch_geometric.data
 from meld_graph.data_preprocessing import Preprocess
 from meld_graph.icospheres import IcoSpheres
+from meld_graph.graph_tools import GraphTools
+
 from meld_graph.models import HexPool
 from meld_graph.augment import Augment
 import numpy as np
 import torch
 import logging
-from meld_graph.graph_tools import GraphTools
 
 
 class Oversampler(torch.utils.data.Sampler):

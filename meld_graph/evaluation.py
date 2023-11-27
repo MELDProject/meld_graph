@@ -380,7 +380,6 @@ class Evaluator:
     def threshold_and_cluster(self, data_dictionary=None, save_prediction=True, save_prediction_suffix=""):
         # helper fn getting the clustered and thresholded data for a given threshold
         def get_cluster_thresholded(predictions, threshold_subj):
-            print(predictions, threshold_subj)
             island_count = 0
             result_hemis_clustered = {}
             for h, hemi in enumerate(["left", "right"]):
@@ -411,7 +410,8 @@ class Evaluator:
                 pred_high_confidence = get_cluster_thresholded(predictions, threshold_subj[1])
                 data["cluster_thresholded_low_conf"] = pred_low_confidence
                 data["cluster_thresholded_high_conf"] = pred_high_confidence
-                data["cluster_thresholded"] = pred_high_confidence if data["result"].max() > threshold_subj[1] else pred_low_confidence
+                #data["cluster_thresholded"] = pred_high_confidence if data["result"].max() > threshold_subj[1] else pred_low_confidence
+                data["cluster_thresholded"] = pred_high_confidence if pred_high_confidence.sum()>0 else pred_low_confidence
                 if data["result"].max() > threshold_subj[1]:
                     print(f"threshold_subj = {threshold_subj[1]}")
                 else:
@@ -629,9 +629,12 @@ class Evaluator:
             group = labels.sum() != 0
 
             detected = np.logical_and(prediction>0, boundary_zone).any()
-            difference = np.setdiff1d(np.unique(prediction), np.unique(prediction[labels]))
+            difference = np.setdiff1d(np.unique(prediction), np.unique(prediction[boundary_zone]))
             difference = difference[difference > 0]
             n_clusters = len(difference)
+            correct_values = np.unique(prediction[boundary_zone])
+            correct_values = correct_values[correct_values > 0]
+            n_tp_clusters = len(correct_values)
             # # if not detected, does a cluster overlap boundary zone and if so, how big is the cluster?
             # if not detected and prediction[np.logical_and(boundary_label, ~labels)].sum() > 0:
             #     border_verts = prediction[np.logical_and(boundary_label, ~labels)]
@@ -664,6 +667,7 @@ class Evaluator:
                         group,
                         detected,
                         n_clusters,
+                        n_tp_clusters,
                         patient_dice_vars["TP"].numpy(),
                         patient_dice_vars["FP"].numpy(),
                         patient_dice_vars["FN"].numpy(),
@@ -678,7 +682,8 @@ class Evaluator:
                     "ID",
                     "group",
                     "detected",
-                    "number cresultsloadlusters",
+                    "number FP clusters",
+                    "number TP clusters",
                     "tp",
                     "fp",
                     "fn",
