@@ -43,7 +43,7 @@ class Evaluator:
         make_images=False,
         thresh_and_clust=True,
         threshold="two_threshold",
-        min_area_threshold=5,
+        min_area_threshold=100,
         dataset=None,
         cohort=None,
         subject_ids=None,
