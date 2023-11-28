@@ -43,7 +43,7 @@ class Evaluator:
         make_images=False,
         thresh_and_clust=True,
         threshold="two_threshold",
-        min_area_threshold=100,
+        min_area_threshold=5,
         dataset=None,
         cohort=None,
         subject_ids=None,
@@ -115,7 +115,6 @@ class Evaluator:
             else:
                 print('Cannot understand the threshold provided')
                 return
-
         # if checkpoint load model
         if checkpoint_path:
             self.experiment.load_model(
@@ -308,6 +307,7 @@ class Evaluator:
                     self.subject_aucs[subj_id] = sub_auc
 
         if roc_curves_thresholds is not None:
+            print('doing it')
             self.calculate_aucs()
             self.save_roc_scores()
         if store_sub_aucs:

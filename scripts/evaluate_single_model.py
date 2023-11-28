@@ -33,8 +33,10 @@ if __name__ == "__main__":
     #check optimised sigmoid parameters are present
     threshold_file = os.path.join(exp.experiment_path, 
     f'results_{args.model_name}',f'two_thresholds.csv')
+    thresh_and_clust = True
     if not os.path.exists(threshold_file):
-        raise ValueError('Optimised two thresholds parameters not found')
+        print('Optimised two thresholds parameters not found')
+        thresh_and_clust = False
     if args.new_data != None:
         args.split = 'test'
         new_data_params = json.load(open(args.new_data))
@@ -45,13 +47,17 @@ if __name__ == "__main__":
                 dataset=new_data_params["dataset"],
             )
         subjects, _, _ = cohort.read_subject_ids_from_dataset()
+        print(f'New data: {len(subjects)} subjects')
     else:
         if args.split == "trainval":
             subjects = exp.data_parameters["train_ids"] + exp.data_parameters["val_ids"]
-        else:
+        elif args.split == "val":
             sub_split = args.split + "_ids"
             subjects = exp.data_parameters[sub_split]
             thresh_and_clust=False
+        else:
+            sub_split = args.split + "_ids"
+            subjects = exp.data_parameters[sub_split]
         exp.data_parameters["augment_data"] = {}
         features = exp.data_parameters["features"]
         cohort = MeldCohort(
@@ -60,12 +66,15 @@ if __name__ == "__main__":
             )
     ## TODO: to remove
     # subjects=subjects[0:5]
-    dataset = GraphDataset(subjects, cohort, exp.data_parameters, mode="test")
-
     if args.new_data != None:
         save_dir = new_data_params['save_dir']
+        print(save_dir)
+        if not os.path.isdir(save_dir):
+            os.makedirs(save_dir, exist_ok=True)
     else:
         save_dir = args.model_path
+    dataset = GraphDataset(subjects, cohort, exp.data_parameters, mode="test")
+
     
     eva = Evaluator(
         experiment=exp,
@@ -79,6 +88,7 @@ if __name__ == "__main__":
         saliency=args.saliency,
         model_name=args.model_name,
         threshold='two_threshold',
+        thresh_and_clust=thresh_and_clust,
 
     )
    
@@ -91,6 +101,7 @@ if __name__ == "__main__":
         save_prediction = False
         roc_curves_thresholds = np.linspace(0, 1, 21)
         suffix = ""
+        
     elif args.split == "train":
         save_prediction = True
         roc_curves_thresholds = None

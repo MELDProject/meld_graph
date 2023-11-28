@@ -104,7 +104,7 @@ def calculate_optimal_threshold(roc_dictionary,thresholds):
 
     peaks,_=find_peaks(youden_curve)
     peaks=peaks[peaks>bigjump]
-    threshold_best = np.min(peaks)-1
+    threshold_best = np.min(peaks)
     return thresholds[threshold_best]
 
 if __name__ == "__main__":
@@ -126,7 +126,7 @@ if __name__ == "__main__":
         )
     #only need controls now for optimise sigmoid
     pred_fname = 'predictions_trainval.hdf5'
-    thresholds = np.linspace(0, 1, 51)
+    thresholds = np.linspace(0, 1, 101)
     roc_dictionary_trainval, auc = calculate_roc(args.model_path, pred_fname,cohort,thresholds)
     tb = calculate_optimal_threshold(roc_dictionary_trainval,thresholds)
     df = np.array([tb,0.5]).reshape(-1,1).T
