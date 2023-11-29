@@ -127,3 +127,5 @@ if __name__ == "__main__":
         eva.threshold_and_cluster(save_prediction_suffix=suffix, )
         eva.stat_subjects()    
         eva.plot_subjects_prediction(suffix=suffix,)
+        if args.saliency:
+            eva.calculate_saliency(save_prediction_suffix=suffix)
