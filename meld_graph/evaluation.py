@@ -129,7 +129,7 @@ class Evaluator:
             self.cohort = self.experiment.cohort
 
         if subject_ids != None:
-            self.subject_id = subject_ids
+            self.subject_ids = subject_ids
         else:
             # set subject_ids
             train_ids, val_ids, test_ids = self.experiment.get_train_val_test_ids()
@@ -146,7 +146,8 @@ class Evaluator:
             self.subject_ids = self.dataset.subject_ids
             self.cohort = self.dataset.cohort
         else:
-            self.dataset = GraphDataset(self.subject_ids, self.cohort, self.experiment.data_parameters, mode=mode)
+            self.dataset = None 
+            # self.dataset = GraphDataset(self.subject_ids, self.cohort, self.experiment.data_parameters, mode=mode)
         
         self.disable_mc_dropout() # call this to init dropout variables
             
@@ -215,6 +216,8 @@ class Evaluator:
         save_prediction_suffix = f"{save_prediction_suffix}{self.dropout_suffix}"
         # predict on data
         # TODO: enable batch_size > 1
+        if self.dataset==None:
+            self.dataset = GraphDataset(self.subject_ids, self.cohort, self.experiment.data_parameters, mode=mode)
         data_loader = torch_geometric.loader.DataLoader(
             self.dataset,
             shuffle=False,
@@ -883,7 +886,79 @@ class Evaluator:
                 islands[island_mask] = island_count
         return islands
 
-
+    def save_confidence_csv(self, suffix="" ):
+        ''' Get confidence per cluster per subject and save as csv
+            Require to have compute salient vertices'''
+    
+        values = {}
+        df=pd.DataFrame()
+        for subj_id in self.subject_ids:
+            data_dict = self.load_data_from_file(subj_id, keys=['result', 'cluster_thresholded','input_labels'], split_hemis=False, save_prediction_suffix=suffix)
+            # get cluster
+            for cl in np.unique(data_dict['cluster_thresholded']):
+                if cl == 0:  # dont do background cluster
+                    continue
+                values['subject_id']=subj_id
+                values['cluster_id']=cl
+                #cluster detected or not
+                labels = data_dict['input_labels'].astype(bool)
+                cl_mask = (data_dict['cluster_thresholded']==cl)
+                if (labels*cl_mask==True).any():
+                    values['detected']=True
+                else:
+                    values['detected']=False
+                data_mask = self.load_data_from_file(subj_id, keys=[f'mask_salient_{cl}'], split_hemis=False, save_prediction_suffix="")
+                mask_salient = data_mask[f'mask_salient_{cl}'].astype(bool)
+                # extract confidence on mask salient
+                confidence_cl = data_dict['result'][(data_dict['cluster_thresholded']==cl).astype(bool)].mean()
+                confidence_cl_salient = data_dict['result'][mask_salient].mean()
+                values['confidence_lesion'] = confidence_cl_salient
+                values['confidence_nonlesion'] = 1 - confidence_cl
+                df = pd.concat([df, pd.DataFrame([values])])
+                #save file 
+                file = os.path.join(self.results_dir, f'confidence{suffix}.csv')
+                df.to_csv(file)
+    
+    def save_fingerprints_csv(self, suffix=''):
+        ''' Get fingerprint per cluster per subject and save as csv'''
+        values = {}
+        df=pd.DataFrame()
+        features = self.experiment.data_parameters["features"]
+        for subj_id in self.subject_ids:
+            data_dict = self.load_data_from_file(subj_id, keys=['cluster_thresholded','input_labels', 'input_features'], split_hemis=False, save_prediction_suffix="")
+            # get cluster
+            for cl in np.unique(data_dict['cluster_thresholded']):
+                if cl == 0:  # dont do background cluster
+                    continue
+                values['subject_id']=subj_id
+                values['cluster_id']=cl
+                #cluster detected or not
+                labels = data_dict['input_labels'].astype(bool)
+                cl_mask = (data_dict['cluster_thresholded']==cl)
+                if (labels*cl_mask==True).any():
+                    values['detected']=True
+                else:
+                    values['detected']=False
+                data_mask = self.load_data_from_file(subj_id, keys=[f'mask_salient_{cl}'], split_hemis=False, save_prediction_suffix="")
+                mask_salient = data_mask[f'mask_salient_{cl}'].astype(bool)
+                print(mask_salient.sum())
+                # extract mean and std feature on mask salient
+                data_features = data_dict[f'input_features']
+                mean_features = data_features[mask_salient].mean(axis=0)
+                std_features = data_features[mask_salient].std(axis=0)
+                # save in dataframe
+                for f, feature in enumerate(features):
+                    if mean_features[f].sum()!=0:
+                        values[f'mean_salient_{feature}'] = mean_features[f]
+                        values[f'std_salient_{feature}'] = std_features[f]
+                    else:
+                        values[f'mean_salient_{feature}'] = np.nan
+                        values[f'std_salient_{feature}'] = np.nan
+                df = pd.concat([df, pd.DataFrame([values])])
+                #save file 
+                file = os.path.join(self.results_dir, f'fingerprints{suffix}.csv')
+                df.to_csv(file)
+        
     def optimise_sigmoid(self, ymin_r=[0.01,0.03,0.05], ymax_r=[0.3,0.4,0.5], k_r=[1], m_r=[0.1,0.05], 
     suffix=""): 
         """
