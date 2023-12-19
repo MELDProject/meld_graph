@@ -4,7 +4,7 @@ import logging
 import os
 import torch
 import meld_graph.models
-from meld_classifier.meld_cohort import MeldCohort
+from meld_graph.meld_cohort import MeldCohort
 from meld_graph.ensemble import Ensemble
 from meld_graph.training import Trainer
 import numpy as np

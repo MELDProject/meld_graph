@@ -1,7 +1,7 @@
 # scripts for creating per-vertex and per-cluster calibration plots
 import matplotlib.pyplot as plt
 import numpy as np
-from meld_classifier.meld_cohort import MeldSubject
+from meld_graph.meld_cohort import MeldSubject
 import seaborn as sns
 import pandas as pd
 

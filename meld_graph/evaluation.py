@@ -64,7 +64,6 @@ class Evaluator:
         self.make_images = make_images
         self.thresh_and_clust = thresh_and_clust
         self.saliency = saliency
-
         self.data_dictionary = None
         self._roc_dictionary = None
         self.model_name = model_name+'.pt'
@@ -77,6 +76,40 @@ class Evaluator:
         if not os.path.isdir(self.results_dir):
             os.makedirs(self.results_dir, exist_ok=True)
 
+        # if checkpoint load model
+        if checkpoint_path:
+            self.experiment.load_model(
+                checkpoint_path=self._find_checkpoint(checkpoint_path),
+                force=True,
+            )
+
+        # update dataset, cohort and subjects if provided or take from experiment
+        if cohort != None:
+            self.cohort = cohort
+        else:
+            self.cohort = self.experiment.cohort
+
+        if subject_ids != None:
+            self.subject_ids = subject_ids
+        else:
+            # set subject_ids
+            train_ids, val_ids, test_ids = self.experiment.get_train_val_test_ids()
+            if mode == "train":
+                self.subject_ids = train_ids
+            elif mode == "val":
+                self.subject_ids = val_ids
+            elif mode == "test":
+                self.subject_ids = test_ids
+
+        if dataset != None:
+            print('using dataset')
+            self.dataset = dataset
+            self.subject_ids = self.dataset.subject_ids
+            self.cohort = self.dataset.cohort
+        else:
+            self.dataset = None 
+            # self.dataset = GraphDataset(self.subject_ids, self.cohort, self.experiment.data_parameters, mode=mode)
+          
         #add thresholding and clustering 
         if thresh_and_clust:
             self.min_area_threshold = min_area_threshold
@@ -115,42 +148,9 @@ class Evaluator:
             else:
                 print('Cannot understand the threshold provided')
                 return
-        # if checkpoint load model
-        if checkpoint_path:
-            self.experiment.load_model(
-                checkpoint_path=self._find_checkpoint(checkpoint_path),
-                force=True,
-            )
-
-        # update dataset, cohort and subjects if provided or take from experiment
-        if cohort != None:
-            self.cohort = cohort
-        else:
-            self.cohort = self.experiment.cohort
-
-        if subject_ids != None:
-            self.subject_ids = subject_ids
-        else:
-            # set subject_ids
-            train_ids, val_ids, test_ids = self.experiment.get_train_val_test_ids()
-            if mode == "train":
-                self.subject_ids = train_ids
-            elif mode == "val":
-                self.subject_ids = val_ids
-            elif mode == "test":
-                self.subject_ids = test_ids
-
-        if dataset != None:
-            print('using dataset')
-            self.dataset = dataset
-            self.subject_ids = self.dataset.subject_ids
-            self.cohort = self.dataset.cohort
-        else:
-            self.dataset = None 
-            # self.dataset = GraphDataset(self.subject_ids, self.cohort, self.experiment.data_parameters, mode=mode)
-        
         self.disable_mc_dropout() # call this to init dropout variables
-            
+         
+         
     def _find_checkpoint(self, experiment_path):
         """
         Identify existing checkpoint file. Looks for suggested model name
@@ -217,7 +217,7 @@ class Evaluator:
         # predict on data
         # TODO: enable batch_size > 1
         if self.dataset==None:
-            self.dataset = GraphDataset(self.subject_ids, self.cohort, self.experiment.data_parameters, mode=mode)
+            self.dataset = GraphDataset(self.subject_ids, self.cohort, self.experiment.data_parameters, mode=self.mode)
         data_loader = torch_geometric.loader.DataLoader(
             self.dataset,
             shuffle=False,
@@ -761,9 +761,9 @@ class Evaluator:
                 faces = ico_ini["faces"]
             else:
                 import nibabel as nb
-                from meld_classifier.paths import BASE_PATH
+                from meld_graph.paths import MELD_PARAMS_PATH
 
-                flat = nb.load(os.path.join(BASE_PATH, "fsaverage_sym", "surf", "lh.full.patch.flat.gii"))
+                flat = nb.load(os.path.join(MELD_PARAMS_PATH, "fsaverage_sym", "surf", "lh.full.patch.flat.gii"))
                 coords, faces = flat.darrays[0].data, flat.darrays[1].data
 
             # round up to get the square grid size
@@ -1064,7 +1064,7 @@ def save_json(json_filename, json_results):
 
 def create_surface_plots(coords, faces, overlay, flat_map=True, limits=None):
     """plot and reload surface images"""
-    from meld_classifier.meld_plotting import trim
+    from meld_graph.meld_plotting import trim
     import matplotlib_surface_plotting.matplotlib_surface_plotting as msp
     from PIL import Image
 
