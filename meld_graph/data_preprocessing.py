@@ -10,6 +10,7 @@ import nibabel as nb
 import os
 import logging
 import json
+import csv
 import copy
 import h5py
 import pandas as pd
@@ -19,6 +20,7 @@ from itertools import chain
 from meld_graph.meld_cohort import MeldSubject, MeldCohort
 from neuroCombat import neuroCombat, neuroCombatFromTraining
 import meld_graph.distributedCombat as dc
+import meld_graph.mesh_tools as mt
 class Preprocess:
     """
     Load and preprocess data.
@@ -98,13 +100,22 @@ class Preprocess:
                 hdf5_file_root=self.write_output_file,
             )
 
-    def correct_sulc_freesurfer(self, vals):
+    # def correct_sulc_freesurfer(self, vals):
+    #     """this function normalized sulcul feature in cm when values are in mm (depending on Freesurfer version used)"""
+    #     if np.mean(vals, axis=0) > 0.2:
+    #         vals = vals / 10
+    #     else:
+    #         pass
+    #     return vals
+    
+    def correct_sulc_freesurfer(self, vals, mask):
         """this function normalized sulcul feature in cm when values are in mm (depending on Freesurfer version used)"""
-        if np.mean(vals, axis=0) > 0.2:
+        if np.mean(abs(vals)[mask], axis=0) > 2:
             vals = vals / 10
         else:
             pass
         return vals
+
 
     def get_data_preprocessed(
         self,
@@ -1322,7 +1333,7 @@ class Preprocess:
 def surface_regression(metric_in, remove):
         from scipy.stats import linregress
         remove_means = np.mean(remove)
-        remove_data = remove - remove_means
+        remove_data = remove - remove_means        
         remove_slope = linregress(remove_data, metric_in).slope
         regress_scaled = remove_data * remove_slope
         metric_out = metric_in - regress_scaled

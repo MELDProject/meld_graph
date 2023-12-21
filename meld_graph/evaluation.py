@@ -209,6 +209,7 @@ class Evaluator:
             save_prediction (bool): save predictions to EXPERIMENT_FOLDER/results/predictions{save_prediction_suffix}.hdf5
             save_prediction_suffix (str): suffix for predictions file.
         """
+
         self.log.info("loading data and predicting model")
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         #quick fix for bug if not doing dropout
@@ -482,15 +483,15 @@ class Evaluator:
             if 'input_features' in keys:
                 if split_hemis:
                     data['input_features'] = {}
-                    data['input_features']['left'] = features_hemis[0]
-                    data['input_features']['right'] = features_hemis[1]
+                    data['input_features']['left'] = np.array(features_hemis[0])
+                    data['input_features']['right'] = np.array(features_hemis[1])
                 else:
                     data['input_features'] = np.hstack([features_hemis[0][self.experiment.cohort.cortex_mask].T,features_hemis[1][self.experiment.cohort.cortex_mask].T]).T
             if 'input_labels' in keys:
                 if split_hemis:
                     data['input_labels'] = {}
-                    data['input_labels']['left'] = labels_hemis[0]
-                    data['input_labels']['right'] = labels_hemis[1]
+                    data['input_labels']['left'] =  np.array(labels_hemis[0])
+                    data['input_labels']['right'] = np.array(labels_hemis[1])
                 else:
                     data['input_labels'] = np.hstack([labels_hemis[0][self.experiment.cohort.cortex_mask],labels_hemis[1][self.experiment.cohort.cortex_mask]])
         

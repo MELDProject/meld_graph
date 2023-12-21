@@ -70,7 +70,7 @@ NEWSUBJECTS_DATASET = "MELD_dataset_newSubjects.csv"
 NVERT = 163842
 
 # pre-trained model path and name
-MODEL_PATH = '23-10-30_MSBS_dcop_with_combat'
+MODEL_PATH = '23-10-30_MSBS_dcop_with_combat/fold_all'
 MODEL_NAME = 'best_model'
 
 #list of MELD sites

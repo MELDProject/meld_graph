@@ -1,0 +1,247 @@
+## This script runs the MELD surface-based FCD classifier on the patient using the output features from script 2.
+## The predicted clusters are then saved as file " " in the /output/<pat_id>/xhemi/classifier folder
+## The predicted clusters are then registered back to native space and saved as a .mgh file in the /output/<pat_id>/classifier folder
+## The predicted clusters are then registered back to the nifti volume and saved as nifti in the input/<pat_id>/predictions folder
+## Individual reports for each identified cluster are calculated and saved in the input/<pat_id>/predictions/reports folder
+## These contain images of the clusters on the surface and on the volumetric MRI as well as saliency reports
+## The saliency reports include the z-scored feature values and how "salient" they were to the classifier
+
+## To run : python run_script_prediction.py -ids <text_file_with_ids> -site <site_code>
+
+
+import os
+import sys
+import numpy as np
+import pandas as pd
+import argparse
+import tempfile
+from os.path import join as opj
+from meld_graph.paths import FS_SUBJECTS_PATH, MELD_DATA_PATH, DEFAULT_HDF5_FILE_ROOT, EXPERIMENT_PATH, MODEL_PATH
+from meld_graph.evaluation import Evaluator
+from meld_graph.experiment import Experiment
+from meld_graph.meld_cohort import MeldCohort
+from scripts.manage_results.register_back_to_xhemi import register_subject_to_xhemi
+from scripts.manage_results.move_predictions_to_mgh import move_predictions_to_mgh
+# from scripts.manage_results.merge_predictions_t1 import call_merge_predictions_t1
+from scripts.manage_results.plot_prediction_report import generate_prediction_report
+from meld_graph.tools_commands_prints import get_m
+
+def create_dataset_file(subjects_ids, save_file):
+    df=pd.DataFrame()
+    if  isinstance(subjects_ids, str):
+        subjects_ids=[subjects_ids]
+    df['subject_id']=subjects_ids
+    df['split']=['test' for subject in subjects_ids]
+    df.to_csv(save_file)
+
+def predict_subjects(subject_ids, output_dir, plot_images = False, saliency=False,
+    experiment_path=EXPERIMENT_PATH, hdf5_file_root= DEFAULT_HDF5_FILE_ROOT,):       
+    ''' function to predict on new subject using trained MELD classifier'''
+    
+    # create dataset csv
+    tmp = tempfile.NamedTemporaryFile(mode="w")
+    create_dataset_file(subject_ids, tmp.name)
+
+    # load models
+    exp = Experiment.from_folder(experiment_path)
+
+    #update experiment 
+    exp.cohort = MeldCohort(hdf5_file_root=hdf5_file_root, dataset=tmp.name)
+    exp.data_parameters["hdf5_file_root"] = hdf5_file_root
+    exp.data_parameters["dataset"] = tmp.name
+    exp.data_parameters["augment_data"] = {}
+    exp.experiment_path = experiment_path
+    #create sub-folders if do not exist
+    # os.makedirs(output_dir , exist_ok=True )
+    # os.makedirs(os.path.join(output_dir, "results"),  exist_ok=True)
+    # if plot_images:
+    #     os.makedirs(os.path.join(output_dir, "results", "images"), exist_ok=True)
+    
+    # launch evaluation
+    # features = exp.data_parameters["features"]
+    cohort = MeldCohort(
+                hdf5_file_root=exp.data_parameters["hdf5_file_root"],
+                dataset=exp.data_parameters["dataset"],
+            )
+    eva = Evaluator(
+        experiment=exp,
+        checkpoint_path=experiment_path,
+        cohort=cohort,
+        subject_ids=subject_ids,
+        save_dir=output_dir,
+        mode="test",
+        model_name="best_model",
+        threshold='two_threshold',
+        thresh_and_clust=True,
+        saliency=saliency,
+        make_images=plot_images,
+        
+    )
+    #predict for the dataset
+    eva.load_predict_data(
+        save_prediction=True,
+        roc_curves_thresholds=None,
+        )
+    #threshold predictions
+    eva.threshold_and_cluster()
+    #write results in csv
+    eva.stat_subjects()
+    #plot images 
+    if plot_images: 
+        eva.plot_subjects_prediction()
+    #compute saliency:
+    if saliency:
+        eva.calculate_saliency()
+
+def run_script_prediction(site_code, list_ids=None, sub_id=None, no_prediction_nifti=False, no_report=False, split=False, verbose=False):
+    
+    site_code = str(site_code)
+    subject_id=None
+    subject_ids=None
+    if list_ids != None:
+        list_ids=opj(MELD_DATA_PATH, list_ids)
+        try:
+            sub_list_df=pd.read_csv(list_ids)
+            subject_ids=np.array(sub_list_df.ID.values)
+        except:
+            subject_ids=np.array(np.loadtxt(list_ids, dtype='str', ndmin=1)) 
+        else:
+            sys.exit(get_m(f'Could not open {subject_ids}', None, 'ERROR'))       
+    elif sub_id != None:
+        subject_id=sub_id
+        subject_ids=np.array([sub_id])
+    else:
+        print(get_m(f'No ids were provided', None, 'ERROR'))
+        print(get_m(f'Please specify both subject(s) and site_code ...', None, 'ERROR'))
+        sys.exit(-1) 
+    
+    # initialise variables
+    experiment_path = os.path.join(EXPERIMENT_PATH, MODEL_PATH)
+    subjects_dir = FS_SUBJECTS_PATH
+    classifier_output_dir = opj(MELD_DATA_PATH,'output','classifier_outputs')
+    data_dir = opj(MELD_DATA_PATH,'input')
+    predictions_output_dir = opj(MELD_DATA_PATH,'output','predictions_reports')
+    
+    # #split the subject in group of 5 if big number of subjects
+    # chunked_subject_list = list()
+    # if (split) and (len(subject_ids))>5 : 
+    #     chunk_size = min(len(subject_ids), 5)
+    #     for i in range(0, len(subject_ids), chunk_size):
+    #         chunked_subject_list.append(subject_ids[i : i + chunk_size])
+    #     print(get_m(f'{len(subject_ids)} subjects splitted in {len(chunked_subject_list)}', None, 'INFO'))
+    # else:
+    #     subject_ids_chunk = chunked_subject_list.append(subject_ids)
+
+    # # for each chunk of subjects
+    subject_ids_failed=[]
+    # for subject_ids_chunk in chunked_subject_list:
+    print(get_m(f'Run predictions', subject_ids, 'STEP 1'))
+    
+    #predict on new subjects 
+    predict_subjects(subject_ids=subject_ids, 
+                    output_dir=classifier_output_dir,  
+                    plot_images=True, 
+                    saliency=True,
+                    experiment_path=experiment_path, 
+                    hdf5_file_root= DEFAULT_HDF5_FILE_ROOT)
+    
+    if not no_prediction_nifti:        
+        #Register predictions to native space
+        for i, subject_id in enumerate(subject_ids):
+            print(get_m(f'Move predictions into volume', subject_id, 'STEP 2'))
+            result = move_predictions_to_mgh(subject_id=subject_id, 
+                                subjects_dir=subjects_dir, 
+                                prediction_file=prediction_file,
+                                verbose=verbose)
+            if result == False:
+                print(get_m(f'One step of the pipeline has failed. Process has been aborted for this subject', subject_id, 'ERROR'))
+                subject_ids_chunk = np.delete(subject_ids_chunk, i)
+                subject_ids_failed.append(subject_id)
+
+            #Register prediction back to nifti volume
+            for subject_id in subject_ids:
+                print(get_m(f'Move prediction back to native space', subject_id, 'STEP 3'))
+                result = register_subject_to_xhemi(subject_id=subject_id, 
+                                        subjects_dir=subjects_dir, 
+                                        output_dir=predictions_output_dir, 
+                                        verbose=verbose)
+                if result == False:
+                    print(get_m(f'One step of the pipeline has failed. Process has been aborted for this subject', subject_id, 'ERROR'))
+                    subject_ids_chunk = np.delete(subject_ids_chunk, i)
+                    subject_ids_failed.append(subject_id)
+            
+            #Merged predictions and T1
+            #TODO: remove dependancie to FSL
+            #print(get_m(f'Merge prediction and T1', subject_ids_chunk, 'STEP 4'))
+            #call_merge_predictions_t1(subject_ids=subject_ids_chunk, 
+            #                          subjects_dir=data_dir, 
+            #                          output_dir=predictions_output_dir, 
+            #                          verbose=verbose)
+
+
+        if not no_report:
+            # Create individual reports of each identified cluster
+            print(get_m(f'Create pdf report', subject_ids, 'STEP 5'))
+            generate_prediction_report(
+                subject_ids = subject_ids,
+                data_dir = data_dir,
+                prediction_path=classifier_output_dir,
+                experiment_path=experiment_path, 
+                output_dir = predictions_output_dir,
+                hdf5_file_root = DEFAULT_HDF5_FILE_ROOT
+            )
+        
+    if len(subject_ids_failed)>0:
+        print(get_m(f'One step of the pipeline has failed and process has been aborted for subjects {subject_ids_failed}', None, 'ERROR'))
+        return False
+
+if __name__ == '__main__':
+
+    #parse commandline arguments 
+    parser = argparse.ArgumentParser(description='')
+    #TODO think about how to best pass a list
+    parser.add_argument("-id","--id",
+                        help="Subject ID.",
+                        default=None,
+                        required=False,
+                        )
+    parser.add_argument("-ids","--list_ids",
+                        default=None,
+                        help="File containing list of ids. Can be txt or csv with 'ID' column",
+                        required=False,
+                        )
+    parser.add_argument("-site",
+                        "--site_code",
+                        help="Site code",
+                        required=True,
+                        )
+    parser.add_argument('--no_prediction_nifti',
+                        action="store_true",
+                        help='Only predict. Does not produce prediction on native T1, nor report',
+                        )
+    parser.add_argument('--no_report',
+                        action="store_true",
+                        help='Predict and map back into native T1. Does not produce report',)
+    parser.add_argument('--split',
+                        action="store_true",
+                        help='Split subjects list in chunk to avoid data overload',
+                        )
+    parser.add_argument("--debug_mode", 
+                        help="mode to debug error", 
+                        required=False,
+                        default=False,
+                        action="store_true",
+                        )
+    args = parser.parse_args()
+    print(args)    
+
+    run_script_prediction(
+                        site_code = args.site_code,
+                        list_ids=args.list_ids,
+                        sub_id=args.id,
+                        no_prediction_nifti = args.no_prediction_nifti,
+                        no_report = args.no_report,
+                        split = args.split, 
+                        verbose = args.debug_mode
+                        )
+                
