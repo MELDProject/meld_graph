@@ -81,17 +81,17 @@ class PDF(FPDF):
         self.set_font('Arial', 'I', 10)
         #set box color
         self.set_fill_color(160,214,190)
-        # add texte box info
+        # add text box info
         self.multi_cell(w=190, h=5, txt=txt , border=1, align='L', fill=True)
         
     def info_box_clust(self, txt):
-        self.ln(140)
+        self.ln(40)
         # set font
-        self.set_font('Arial', 'I', 6)
+        self.set_font('Arial', 'I', 10)
         #set box color
         self.set_fill_color(160,214,190)
         # add text box info
-        self.multi_cell(w=80, h=5, txt=txt , border=1, align='L', fill=True)
+        self.multi_cell(w=160, h=5, txt=txt , border=1, align='L', fill=True)
     
     def disclaimer_box(self, txt):
         # set font
@@ -261,6 +261,18 @@ def get_subj_data(subject_id, eva):
 
     return list_clust, features_vals, predictions, threshold_text, saliencies, confidences
 
+def get_info_soft():
+    meld_version='True'
+    FS_version='True'
+    Fastsurfer_use='True'
+    text = "\n".join((
+                "Information about softwares:",
+                f"MELD package version: {meld_version}",
+                f"Freesurfer version: {FS_version}",
+                f"Use of FastSurfer: {Fastsurfer_use}",
+                ))
+    return text
+        
 def generate_prediction_report(
     subject_ids, data_dir, prediction_path, output_dir, 
     experiment_path=EXPERIMENT_PATH, hdf5_file_root=DEFAULT_HDF5_FILE_ROOT, dataset=None):
@@ -527,16 +539,17 @@ def generate_prediction_report(
 
         logo = os.path.join(SCRIPTS_DIR, "MELD_logo.png")
 
-        text_info_1 = "Information: \n The MRI data of this patient has been processed through the MELD surface-based FCD detection algorithm. \n Page 1 of this report will show all detected clusters on an inflated view of the brain. \n Each subsequent page is an individual cluster"
+        text_info_1 = "Information: \n The MRI data of this patient has been processed through the MELD surface-based FCD detection algorithm. \n Page 1 of this report will show all detected clusters on an inflated view of the brain. \n Each subsequent page is an individual cluster. \n Last page summarises the softwares version used to creates this report"
 
-        text_info_2 = "For each cluster, the information below are provided: \n   -The hemisphere the cluster is on \n   -The surface area of the cluster (across the cortical surface) \n   -The location of the cluster \n   -The z-scores of the patient cortical features averaged within the cluster. \n   -The saliency of each feature to the network - if a feature is brighter pink, that feature was more important to the network. \n \n For more information, please read the Guide to using the MELD surface-based FCD detection."
+        text_info_2 = "The next pages present information for each cluster: \n   -The hemisphere the cluster is on \n   -The surface area of the cluster (across the cortical surface) \n   -The location of the cluster \n   -The z-scores of the patient cortical features averaged within the cluster. \n   -The saliency of each feature to the network - if a feature is brighter pink, that feature was more important to the network. \n \n For more information, please read the Guide to using the MELD surface-based FCD detection."
 
         disclaimer = "Disclaimer: The MELD surface-based FCD detection algorithm is intended for research purposes only and has not been reviewed or approved by the Medicines and Healthcare products Regulatory Agency (MHRA),European Medicine Agency (EMA) or by any other agency. Any clinical application of the software is at the sole risk of the party engaged in such application. \nThere is no warranty of any kind that the software will produce useful results in any way. Use of the software is at the recipient own risk"
 
         footer_txt = "This report was created by Mathilde Ripart, Hannah Spitzer, Sophie Adler and Konrad Wagstyl on behalf of the MELD Project"
 
+        text_info_3 = get_info_soft()
+        
         #### create main page with overview on inflated brain
-
         # add page
         pdf.add_page()
         # add line contours
@@ -550,7 +563,9 @@ def generate_prediction_report(
         # add image
         pdf.subtitle_inflat()
         im_inflat = os.path.join(output_dir_sub, f"inflatbrain_{subject.subject_id}.png")
-        pdf.imagey(im_inflat, 130)
+        pdf.image(im_inflat, 5, 110, link='', type='', w=190, h=297/3)
+        # add info cluster analysis 
+        pdf.info_box_clust(text_info_2)
         # add footer date
         pdf.custom_footer(footer_txt)
 
@@ -572,14 +587,21 @@ def generate_prediction_report(
             im_sal = glob.glob(os.path.join(output_dir_sub, f"saliency_{subject.subject_id}_*_c{cluster}.png"))[0]
             # pdf.imagey(im_sal, 150)
             pdf.image(im_sal, 5, 150, link='', type='', w=190, h=297/3)
-            # # add info cluster analysis txt only 1st cluster
-            # if cluster == 1:
-            #     pdf.info_box_clust(text_info_2)
-            # im_inflat_cl=glob.glob(os.path.join(output_dir_sub, f"inflatbrain_{subject.subject_id}_*_c{cluster}.png"))[0]
-            # pdf.imagey(im_inflat_cl, 80)
-            
             # add footer date
             pdf.custom_footer(footer_txt)
+        
+        #### create last page with info for reproducibility
+        # add page
+        pdf.add_page()
+        # add line contours
+        pdf.lines()
+        # add header
+        pdf.custom_header(logo, txt1="MELD report", txt2=f"Patient ID: {subject.subject_id}")
+        # add info box
+        pdf.info_box(text_info_3)
+        # add footer date
+        pdf.custom_footer(footer_txt)
+        
         # save pdf
         file_path = os.path.join(output_dir_sub, f"MELD_report_{subject.subject_id}.pdf")
         pdf.output(file_path, "F")
