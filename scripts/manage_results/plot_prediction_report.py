@@ -361,6 +361,9 @@ def generate_prediction_report(
             feature_names = feature_names_sets[2:]
         # load predictions and data subject
         list_clust, features_vals, predictions, threshold_text, saliencies, confidences  = get_subj_data(subject_id, eva)
+        #save info cluster
+        df=pd.DataFrame()
+        info_cl={}
         # Loop over hemi
         for i, hemi in enumerate(["left", "right"]):
             # prepare grid plot
@@ -398,6 +401,7 @@ def generate_prediction_report(
             # loop over clusters
             for cluster in list_clust[hemi]:
                 fig2 = plt.figure(figsize=(17, 9))
+                info_cl['cluster']=cluster
                 # get and plot saliencies
                 saliencies_cl = saliencies[f'saliencies_{cluster}'][hemi]
                 saliencies_cl = saliencies_cl * (NVERT/2)
@@ -431,6 +435,10 @@ def generate_prediction_report(
                         saliency_data[b] = np.mean(
                             saliencies_cl[mask_salient ,features.index(prefix + bf)]
                             )
+                        #add fingerprints
+                        info_cl[labels[pr] + ' ' + feature_names[b] +' mean'] = cur_data[b]
+                        info_cl[labels[pr] + ' ' + feature_names[b] +' std'] = cur_err[b]
+                        info_cl[labels[pr] + ' ' + feature_names[b] +' saliency'] = saliency_data[b]
                     ax2.barh(
                         y=np.array(range(len(base_features))) - pr * 0.3,
                         width=cur_data,
@@ -447,16 +455,20 @@ def generate_prediction_report(
                 ax2.set_yticklabels(feature_names, fontsize=16)
                 ax2.set_xlabel("Z score", fontsize=16)
                 ax2.legend(loc="upper center", bbox_to_anchor=(0.5, 1.17), fontsize=16)
-                fig2.colorbar(m, label=f"Saliency", ax=ax2, ticks=[-0.1, -0.05, 0, 0.05, 0.1])
+                fig2.colorbar(m, label=f"Saliency", ax=ax2, ticks=[-50, -25, 0, 25, 50])
                 ax2.set_autoscale_on(True)
                 ## display info cluster
                 # get size
                 size_clust = np.sum(c.surf_area[predictions[hemi] == cluster]) / 100
                 size_clust = round(size_clust, 3)
+                info_cl['size'] = size_clust
                 # get location
                 location = get_cluster_location(predictions[hemi] == cluster)
+                info_cl['location'] = location
                 # get confidence
                 confidence = round(confidences[f'confidence_{cluster}'].mean(),2)
+                info_cl['confidence'] = confidence
+                info_cl['high_low_threshold']=threshold_text
                 # plot info in text box in upper left in axes coords
                 textstr = "\n".join(
                     (
@@ -493,8 +505,10 @@ def generate_prediction_report(
                 # save figure for each cluster
                 #                 fig3.tight_layout()
                 fig3.savefig(f"{output_dir_sub}/mri_{subject.subject_id}_{hemi}_c{int(cluster)}.png")
+                # Add info to df
+                df = pd.concat([df,pd.DataFrame([info_cl])])
         # Add information subject in text box
-                n_clusters = len(list_clust["left"]) + len(list_clust["right"])
+        n_clusters = len(list_clust["left"]) + len(list_clust["right"])
         ax = fig.add_subplot(gs1[0, 0])
         textstr = "\n".join((f"patient {subject.subject_id}", " ", f"number of predicted clusters = {n_clusters}"))
         # place a text box in upper left in axes coords
@@ -503,7 +517,8 @@ def generate_prediction_report(
         ax.axis("off")
         # save overview figure
         fig.savefig(f"{output_dir_sub}/inflatbrain_{subject.subject_id}.png")
-
+        # save info subject
+        df.to_csv(f"{output_dir_sub}/info_clusters_{subject.subject_id}.csv")
         # create PDF overview
         pdf = PDF()  # pdf object
         pdf = PDF(orientation="P")  # landscape
