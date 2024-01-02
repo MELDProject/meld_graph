@@ -57,7 +57,7 @@ class Preprocess:
         self.initialise_distances()
         self.icospheres = icospheres
         if self.params["zscore"] != False:
-            self.load_z_params(self.params["zscore"])
+            self.load_z_params(os.path.join(MELD_PARAMS_PATH,self.params["zscore"]))
         self.feat = Feature()
         # calibration_smoothing : curve to calibrate smoothing on surface mesh
         self._calibration_smoothing = None
@@ -185,7 +185,7 @@ class Preprocess:
             gdist = np.clip(gdist, 0, 300)
         return gdist
 
-    def load_z_params(self, file="../data/feature_means.json"):
+    def load_z_params(self, file="data/feature_means.json"):
         import json
 
         with open(file, "r") as fp:

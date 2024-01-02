@@ -29,7 +29,7 @@ class IcoSpheres:
 
     def __init__(
         self,
-        icosphere_path="../data/icospheres/",
+        icosphere_path="data/icospheres/",
         distance_type="pseudo",
         conv_type="GMMConv",
         **kwargs,

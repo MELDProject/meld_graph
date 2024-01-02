@@ -109,7 +109,6 @@ class Experiment:
         Args:
             experiment_path (str): path to experiment. E.g. experiment_name/fold_00
         """
-        print(experiment_path)
         data_parameters = json.load(open(os.path.join(experiment_path, "data_parameters.json")))
         network_parameters = json.load(open(os.path.join(experiment_path, "network_parameters.json")))
         return cls(network_parameters, data_parameters, save_params=False)
