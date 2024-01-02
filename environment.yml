@@ -5,9 +5,28 @@ channels:
 dependencies:
   - python=3.9
   - pytorch=1.10.2
-  - pytest
-  - jupyterlab
-  - pip
+  - pytest=7.0.1
+  - jupyterlab=3.2.9
+  - h5py=3.6.0
+  - fpdf=1.7.2
+  - scikit-image=0.18
+  - pip=23.3.1
   - pip:
-    - potpourri3d
-    - captum
+    - potpourri3d==0.0.6
+    - captum==0.6.0
+    - pandas==1.4.1
+    - numpy==1.22.0
+    - matplotlib==3.5.1
+    - neuroCombat==0.2.12
+    - nibabel==3.2.2
+    - nilearn==0.10.2
+    - patsy==0.5.4
+    - progressbar2==4.2.0
+    - statsmodels==0.14.1
+    - seaborn==0.11.0
+    - SimpleITK==2.1.1
+    - matplotlib_surface_plotting==0.10
+    - torch-scatter -f https://data.pyg.org/whl/torch-1.10.0+cu111.html
+    - torch-sparse -f https://data.pyg.org/whl/torch-1.10.0+cu111.html
+    - torch-geometric
+    - torchvision==0.13
