@@ -21,18 +21,17 @@ import multiprocessing
 from functools import partial
 import tempfile
 import glob
-from meld_graph.paths import BASE_PATH, MELD_DATA_PATH, FS_SUBJECTS_PATH, CLIPPING_PARAMS_FILE
 import pandas as pd
+from os.path import join as opj
+from meld_graph.paths import BASE_PATH, MELD_DATA_PATH, FS_SUBJECTS_PATH, CLIPPING_PARAMS_FILE
+from meld_graph.meld_cohort import MeldCohort
+from meld_graph.data_preprocessing import Preprocess
+from meld_graph.tools_commands_prints import get_m
 from scripts.data_preparation.extract_features.create_xhemi import run_parallel_xhemi, create_xhemi
 from scripts.data_preparation.extract_features.create_training_data_hdf5 import create_training_data_hdf5
 from scripts.data_preparation.extract_features.sample_FLAIR_smooth_features import sample_flair_smooth_features
 from scripts.data_preparation.extract_features.lesion_labels import lesion_labels
 from scripts.data_preparation.extract_features.move_to_xhemi_flip import move_to_xhemi_flip
-from meld_graph.meld_cohort import MeldCohort
-from meld_graph.data_preprocessing import Preprocess
-from os.path import join as opj
-from meld_graph.tools_commands_prints import get_m
-
 
 
 def init(lock):
@@ -98,8 +97,10 @@ def fastsurfer_subject(subject, fs_folder, verbose=False):
 
     # setup cortical segmentation command
     print(get_m(f'Segmentation using T1 only with FastSurfer', subject_id, 'INFO'))
+    python_version = 'python'+'.'.join(sys.version.split('.')[0:2])
+    print(python_version)
     command = format(
-        "$FASTSURFER_HOME/run_fastsurfer.sh --sd {} --sid {} --t1 {} --parallel --batch 1 --viewagg_device auto --fsaparc".format(fs_folder, subject_id, subject_t1_path)
+        "$FASTSURFER_HOME/run_fastsurfer.sh --sd {} --sid {} --t1 {} --parallel --batch 1 --fsaparc --py {}".format(fs_folder, subject_id, subject_t1_path, python_version)
     )
 
     # call fastsurfer
