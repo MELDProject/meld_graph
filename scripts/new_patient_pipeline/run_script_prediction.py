@@ -128,7 +128,7 @@ def run_script_prediction(site_code, list_ids=None, sub_id=None, no_prediction_n
     # for subject_ids_chunk in chunked_subject_list:
     print(get_m(f'Run predictions', subject_ids, 'STEP 1'))
     
-    #predict on new subjects 
+    predict on new subjects 
     predict_subjects(subject_ids=subject_ids, 
                     output_dir=classifier_output_dir,  
                     plot_images=True, 

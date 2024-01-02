@@ -261,10 +261,28 @@ def get_subj_data(subject_id, eva):
 
     return list_clust, features_vals, predictions, threshold_text, saliencies, confidences
 
-def get_info_soft():
-    meld_version='True'
-    FS_version='True'
-    Fastsurfer_use='True'
+def get_info_soft( subject_id):
+    ''' Report information of softwares (e.g Freesurfer) '''
+    from meld_graph import __version__
+    from meld_graph.paths import BASE_PATH
+
+    if __version__ != None:
+        meld_version = __version__
+    else:
+        meld_version = "Unknown"
+
+
+    fs_scripts = os.path.join(MELD_DATA_PATH, 'output','fs_outputs', subject_id, 'scripts')
+    if os.path.isfile(os.path.join(fs_scripts,'build-stamp.txt')):
+        with open(os.path.join(fs_scripts,'build-stamp.txt')) as f:
+            FS_version = f.readlines()[0].strip()
+        if os.path.isfile(os.path.join(fs_scripts,'deep-seg.log')):
+            Fastsurfer_use =  'True'
+        else:
+            Fastsurfer_use =  'False'
+    else:
+        FS_version = 'Unknown'
+    
     text = "\n".join((
                 "Information about softwares:",
                 f"MELD package version: {meld_version}",
@@ -547,7 +565,7 @@ def generate_prediction_report(
 
         footer_txt = "This report was created by Mathilde Ripart, Hannah Spitzer, Sophie Adler and Konrad Wagstyl on behalf of the MELD Project"
 
-        text_info_3 = get_info_soft()
+        text_info_3 = get_info_soft(subject.subject_id)
         
         #### create main page with overview on inflated brain
         # add page
