@@ -30,3 +30,4 @@ dependencies:
     - torch-sparse -f https://data.pyg.org/whl/torch-1.10.0+cu111.html
     - torch-geometric
     - torchvision==0.13
+    - git+https://github.com/Deep-MI/LaPy.git
