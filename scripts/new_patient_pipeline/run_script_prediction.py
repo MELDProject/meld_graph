@@ -51,14 +51,8 @@ def predict_subjects(subject_ids, output_dir, plot_images = False, saliency=Fals
     exp.data_parameters["dataset"] = tmp.name
     exp.data_parameters["augment_data"] = {}
     exp.experiment_path = experiment_path
-    #create sub-folders if do not exist
-    # os.makedirs(output_dir , exist_ok=True )
-    # os.makedirs(os.path.join(output_dir, "results"),  exist_ok=True)
-    # if plot_images:
-    #     os.makedirs(os.path.join(output_dir, "results", "images"), exist_ok=True)
     
     # launch evaluation
-    # features = exp.data_parameters["features"]
     cohort = MeldCohort(
                 hdf5_file_root=exp.data_parameters["hdf5_file_root"],
                 dataset=exp.data_parameters["dataset"],
@@ -123,9 +117,7 @@ def run_script_prediction(site_code, list_ids=None, sub_id=None, no_prediction_n
     predictions_output_dir = opj(MELD_DATA_PATH,'output','predictions_reports')
     prediction_file = opj(classifier_output_dir, 'results_best_model', 'predictions.hdf5')
     
-    # # for each chunk of subjects
     subject_ids_failed=[]
-    # for subject_ids_chunk in chunked_subject_list:
     print(get_m(f'Run predictions', subject_ids, 'STEP 1'))
     
     #predict on new subjects 
@@ -180,7 +172,6 @@ if __name__ == '__main__':
 
     #parse commandline arguments 
     parser = argparse.ArgumentParser(description='')
-    #TODO think about how to best pass a list
     parser.add_argument("-id","--id",
                         help="Subject ID.",
                         default=None,
