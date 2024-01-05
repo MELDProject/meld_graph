@@ -45,7 +45,8 @@ def check_demographic_file(demographic_file, subject_ids):
     #check demographic file has the right columns
     try:
         df = pd.read_csv(demographic_file)
-        df[['ID', 'Sex', 'Age at preoperative']]
+        if not any(ext in ';'.join(df.keys()) for ext in ['ID', 'Sex', 'Age at preoperative']):
+            sys.exit(get_m(f'Error with column names', None, 'ERROR'))
     except Exception as e:
         sys.exit(get_m(f'Error with the demographic file provided for the harmonisation\n{e}', None, 'ERROR'))
     #check demographic file has the right subjects
@@ -188,7 +189,26 @@ def new_site_harmonisation(subject_ids, site_code, demographic_file, output_dir=
     create_dataset_file(subject_ids, tmp.name)
 
     check_demographic_file(demographic_file, subject_ids)
-   
+    
+    ### REGRESS THICKNESS ###
+    if (".on_lh.thickness" in "".join(features_smooth)) and (".on_lh.curv" in "".join(features_smooth)):
+        print(get_m(f'Regress thickness with curvature', subject_ids, 'STEP'))
+        #create cohort for the new subject
+        c_smooth = MeldCohort(hdf5_file_root='{site_code}_{group}_featurematrix_smoothed.hdf5', dataset=tmp.name)
+        #create object combat
+        regress =Preprocess(c_smooth,
+                        write_output_file='{site_code}_{group}_featurematrix_smoothed.hdf5',
+                        data_dir=output_dir)
+        #features names
+        feature = [feat for feat in features_smooth if ".on_lh.thickness" in feat][0]
+        curv_feature = [feat for feat in features_smooth if ".on_lh.curv" in feat][0]
+        regress.curvature_regress(feature, curv_feature=curv_feature)
+
+        #add features to list
+        feat_regress = feat.regress_feat(feature)
+        print(f'Add feature {feat_regress} in features')
+        features_smooth = features_smooth + [feat_regress]
+    
     ### COMBAT DISTRIBUTED DATA ###
     #-----------------------------------------------------------------------------------------------
     print(get_m(f'Compute combat harmonisation parameters for new site', None, 'STEP'))

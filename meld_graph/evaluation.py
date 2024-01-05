@@ -89,9 +89,7 @@ class Evaluator:
         else:
             self.cohort = self.experiment.cohort
 
-        if subject_ids != None:
-            self.subject_ids = subject_ids
-        else:
+        if subject_ids is None:
             # set subject_ids
             train_ids, val_ids, test_ids = self.experiment.get_train_val_test_ids()
             if mode == "train":
@@ -100,6 +98,9 @@ class Evaluator:
                 self.subject_ids = val_ids
             elif mode == "test":
                 self.subject_ids = test_ids
+        else:
+            self.subject_ids = subject_ids
+            
 
         if dataset != None:
             print('using dataset')

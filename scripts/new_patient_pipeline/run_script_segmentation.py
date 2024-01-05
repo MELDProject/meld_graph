@@ -38,6 +38,54 @@ def init(lock):
     global starting
     starting = lock
 
+def get_anat_files(subject_id):
+    ''' 
+    return path of T1 and FLAIR if BIDs format or MELD format
+    TODO : improve flexibility of BIDS
+    '''
+    subject_dir = opj(MELD_DATA_PATH, "input", subject_id)
+    subject_data = {}
+    subject_data['id'] = subject_id
+    t1_files_MELD = glob.glob(opj(subject_dir, "T1", "*.nii*"))
+    t1_files_bids = glob.glob(opj(subject_dir, "anat", "*T1*nii*"))
+    if len(t1_files_MELD)==1:
+        subject_data["t1_path"] = t1_files_MELD[0]
+        print(get_m(f'T1 file used : {subject_data["t1_path"]} ', subject_id, 'INFO'))
+        flair_files_MELD = glob.glob(opj(subject_dir, "FLAIR", "*.nii*"))
+        if len(flair_files_MELD)==1:
+            subject_data["flair_path"] = flair_files_MELD[0]
+            print(get_m(f'FLAIR file used : {subject_data["flair_path"]} ', subject_id, 'INFO'))
+        elif len(t1_files_MELD)>1:
+            print(get_m(f'Find too much volumes for FLAIR. Check and remove the additional volumes with same key name', subject_id, 'WARNING'))
+            return None
+        else:
+            print(get_m(f'No FLAIR found', subject_id, 'INFO'))
+            subject_data["flair_path"] = None
+    elif len(t1_files_MELD)>1:
+        print(get_m(f'Find too much volumes for T1. Check and remove the additional volumes with same key name', subject_id, 'WARNING'))
+        return None
+    elif len(t1_files_bids)==1:
+        subject_data["t1_path"] = t1_files_bids[0]
+        print(get_m(f'T1 file used : {subject_data["t1_path"]} ', subject_id, 'INFO'))
+        flair_files_bids = glob.glob(opj(subject_dir, "anat", "*FLAIR*nii*"))
+        if len(flair_files_bids)==1:
+            subject_data["flair_path"] = flair_files_bids[0]
+            print(get_m(f'FLAIR file used : {subject_data["flair_path"]} ', subject_id, 'INFO'))
+        elif len(flair_files_bids)>1:
+            print(get_m(f'Find too much volumes for FLAIR. Check and remove the additional volumes with same key name', subject_id, 'WARNING'))
+            return None
+        else:
+            print(get_m(f'No FLAIR found', subject_id, 'INFO'))
+            subject_data["flair_path"] = None
+    elif len(t1_files_bids)>1:
+        print(get_m(f'Find too much volumes for T1. Check and remove the additional volumes with same key name', subject_id, 'WARNING'))
+        return None
+    else:
+        print(get_m(f'Could not find any T1w nifti file. Please ensure your data are in MELD or BIDS format', subject_id, 'ERROR'))
+        return None
+    
+    return subject_data
+
 def check_FS_outputs(folder):
     FS_complete=True
     surf_files = ['pial','white','sphere']
@@ -55,18 +103,12 @@ def check_xhemi_outputs():
 
 def fastsurfer_subject(subject, fs_folder, verbose=False):
     # run fastsurfer segmentation on 1 subject
-
-    #TODO: enable BIDS format
-    if type(subject) == dict:
-        subject_id = subject['id']
-        subject_t1_path = subject['t1_path']
-    else:
-        subject_id = subject
-        subject_t1_path =''
-
+    subject_id = subject['id']
+    subject_t1_path = subject['t1_path']
+    
     # get subject folder
     # if freesurfer outputs already exist for this subject, continue running from where it stopped
-    # else, find inputs T1 and FLAIR and run FS
+    # else, run FS
     if os.path.isdir(opj(fs_folder, subject_id)):
         if check_FS_outputs(opj(fs_folder, subject_id))==True:
             print(get_m(f'Fastsurfer outputs already exists for subject {subject_id}. Freesurfer will be skipped', subject_id, 'STEP 1'))
@@ -77,21 +119,6 @@ def fastsurfer_subject(subject, fs_folder, verbose=False):
     else:
         pass  
     
-    # select inputs files T1 and FLAIR
-    if subject_t1_path == '':
-        # assume meld data structure
-        subject_dir = opj(MELD_DATA_PATH, "input", subject_id)
-        subject_t1_path = glob.glob(opj(subject_dir, "T1", "*T1*.nii*"))
-
-        # check T1 and FLAIR exist
-        if len(subject_t1_path) > 1:
-            raise FileNotFoundError(
-                get_m(f'Find too much volumes for T1. Check and remove the additional volumes with same key name', subject, 'ERROR'))
-        elif not subject_t1_path:
-            raise FileNotFoundError(get_m(f'Could not find T1 volume. Check if name follow the right nomenclature', subject,'ERROR'))
-        else:
-            subject_t1_path = subject_t1_path[0]
-
     # for parallelisation
     starting.acquire()  # no other process can get it until it is released
 
@@ -124,35 +151,15 @@ def fastsurfer_subject(subject, fs_folder, verbose=False):
 def fastsurfer_flair(subject, fs_folder, verbose=False):
     #improve fastsurfer segmentation with FLAIR on 1 subject
 
-    #TODO: enable BIDS format
-    if type(subject) == dict:
-        subject_id = subject['id']
-        subject_flair_path = subject['flair_path']
-    else:
-        subject_id = subject
-        subject_flair_path =''
+    subject_id = subject['id']
+    subject_flair_path = subject['flair_path']
 
     if os.path.isfile(opj(fs_folder, subject_id, "mri", "FLAIR.mgz")):
         print(get_m(f'Freesurfer FLAIR reconstruction outputs already exists. FLAIRpial will be skipped', subject_id, 'STEP 1'))
         return
 
-    if subject_flair_path == '':
-        # get subject folder
-        #assume meld data structure
-        subject_dir = opj(MELD_DATA_PATH, "input", subject_id)
-        subject_flair_path = glob.glob(opj(subject_dir, "FLAIR", "*FLAIR*.nii*"))
-
-        if len(subject_flair_path) > 1:
-            raise FileNotFoundError(
-                get_m("Find too much volumes for FLAIR. Check and remove the additional volumes with same key name", subject_id, 'ERROR')
-            )
-
-        if not subject_flair_path:
-            print(get_m('No FLAIR file has been found', subject_id, 'WARNING'))
-            return 
-
-        subject_flair_path = subject_flair_path[0]
-
+    if subject_flair_path == None:
+        return 
 
     print(get_m("Starting FLAIRpial", subject_id, 'INFO'))
     command = format(
@@ -173,19 +180,13 @@ def fastsurfer_flair(subject, fs_folder, verbose=False):
 def freesurfer_subject(subject, fs_folder, verbose=False):
     #run freesurfer recon-all segmentation on 1 subject
 
-    #TODO: enable BIDS format
-    if type(subject) == dict:
-        subject_id = subject['id']
-        subject_t1_path = subject['t1_path']
-        subject_flair_path = subject['flair_path']
-    else:
-        subject_id = subject
-        subject_t1_path =''
-        subject_flair_path =''
+    subject_id = subject['id']
+    subject_t1_path = subject['t1_path']
+    subject_flair_path = subject['flair_path']
 
     # get subject folder
     # If freesurfer outputs already exist for this subject, continue running from where it stopped
-    # Else, find inputs T1 and FLAIR and run FS
+    # Else, run FS
     if os.path.isdir(opj(fs_folder, subject_id)):
         if check_FS_outputs(opj(fs_folder, subject_id))==True:
             print(get_m(f'Freesurfer outputs already exists for subject {subject_id}. Freesurfer will be skipped', subject_id, 'STEP 1'))
@@ -196,37 +197,8 @@ def freesurfer_subject(subject, fs_folder, verbose=False):
     else:
         pass 
 
-    # select inputs files T1 and FLAIR
-    if subject_t1_path == '':
-        # assume meld data structure
-        subject_dir = opj(MELD_DATA_PATH, "input", subject_id)
-        subject_t1_path = glob.glob(opj(subject_dir, "T1", "*T1*.nii*"))
-        # check T1 exists
-        if len(subject_t1_path) > 1:
-            raise FileNotFoundError(
-                get_m('Find too much volumes for T1. Check and remove the additional volumes with same key name', subject_id, 'ERROR'))
-        elif not subject_t1_path:
-            raise FileNotFoundError(get_m('Could not find T1 volume. Check if name follow the right nomenclature', subject_id, 'ERROR'))
-        else:
-            subject_t1_path = subject_t1_path[0]
-
-    if subject_flair_path == '':
-        # assume meld data structure
-        subject_dir = opj(MELD_DATA_PATH, "input", subject_id)
-        subject_flair_path = glob.glob(opj(subject_dir, "FLAIR", "*FLAIR*.nii*"))
-        # check FLAIR exists
-        if len(subject_flair_path) > 1:
-            raise FileNotFoundError(
-                get_m('Find too much volumes for FLAIR. Check and remove the additional volumes with same key name', subject_id, 'ERROR'))
-        elif not subject_flair_path:
-            print(get_m('No FLAIR file has been found for subject', subject_id, 'INFO'))
-            isflair = False
-        else:
-            subject_flair_path = subject_flair_path[0]
-            isflair = True
-
     # setup cortical segmentation command
-    if isflair == True:
+    if subject_flair_path != None:
         print(get_m('Segmentation using T1 and FLAIR with Freesurfer', subject_id, 'STEP 1'))
         command = format(
             "$FREESURFER_HOME/bin/recon-all -sd {} -s {} -i {} -FLAIR {} -FLAIRpial -all".format(
@@ -240,7 +212,7 @@ def freesurfer_subject(subject, fs_folder, verbose=False):
         )
 
     # call Freesurfer
-    print(get_m('Start cortical parcellation (up to 36h). Please wait', subject_id, 'INFO'))
+    print(get_m('Start cortical parcellation (up to 6h). Please wait', subject_id, 'INFO'))
     print(get_m(f'Results will be stored in {fs_folder}', subject_id, 'INFO'))
     starting.acquire()  # no other process can get it until it is released
     proc = Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
@@ -360,41 +332,52 @@ def run_subjects_segmentation_and_smoothing_parallel(subject_ids, num_procs=10, 
     fs_folder = FS_SUBJECTS_PATH
     os.makedirs(fs_folder, exist_ok=True)
 
+    ## create dictionary with T1 and FLAIR paths
+    subjects_dict = [get_anat_files(subject_id) for subject_id in subject_ids]
     
     if use_fastsurfer:
         ## first processing stage with fastsurfer: segmentation
         pool = multiprocessing.Pool(processes=num_procs, initializer=init, initargs=[multiprocessing.Lock()])
         subject_ids_failed=[]
-        for i,result in enumerate(pool.imap(partial(fastsurfer_subject, fs_folder=fs_folder, verbose=verbose), subject_ids)):
+        mask=[]
+        for i,result in enumerate(pool.imap(partial(fastsurfer_subject, fs_folder=fs_folder, verbose=verbose), subjects_dict)):
             if result==False:
                 print(get_m(f'Subject removed from futur process because a step in the pipeline failed', subject_ids[i], 'ERROR'))
                 subject_ids_failed.append(subject_ids[i])
+                mask.append(False)
             else:
+                mask.append(True)
                 pass
-        
+        #update list subjects 
         subject_ids = list(set(subject_ids).difference(subject_ids_failed))
+        subjects_dict = subjects_dict[mask]
+        
         ## flair pial correction
         pool = multiprocessing.Pool(processes=num_procs)
         subject_ids_failed=[]
-        for i,result in enumerate(pool.imap(partial(fastsurfer_flair, fs_folder=fs_folder, verbose=verbose), subject_ids)):
+        mask=[]
+        for i,result in enumerate(pool.imap(partial(fastsurfer_flair, fs_folder=fs_folder, verbose=verbose), subjects_dict)):
             if result==False:
                 print(get_m(f'Subject removed from futur process because a step in the pipeline failed', subject_ids[i], 'ERROR'))
                 subject_ids_failed.append(subject_ids[i])
+                mask.append(False)
             else:
+                mask.append(True)
                 pass    
         subject_ids = list(set(subject_ids).difference(subject_ids_failed))
+        subjects_dict = subjects_dict[mask]
     else:
         ## processing with freesurfer: segmentation
         pool = multiprocessing.Pool(processes=num_procs, initializer=init, initargs=[multiprocessing.Lock()])
         subject_ids_failed=[]
-        for i,result in enumerate(pool.imap(partial(freesurfer_subject, fs_folder=fs_folder, verbose=verbose), subject_ids)):
+        for i,result in enumerate(pool.imap(partial(freesurfer_subject, fs_folder=fs_folder, verbose=verbose), subjects_dict)):
             if result==False:
                 print(get_m(f'Subject removed from futur process because a step in the pipeline failed', subject_ids[i], 'ERROR'))
                 subject_ids_failed.append(subject_ids[i])
             else:
                 pass
         subject_ids = list(set(subject_ids).difference(subject_ids_failed))
-    
+
 
     ### EXTRACT SURFACE-BASED FEATURES ###
     print(get_m(f'Extract surface-based features', subject_ids, 'STEP 2'))
@@ -425,9 +408,9 @@ def run_subjects_segmentation_and_smoothing_parallel(subject_ids, num_procs=10, 
     subject_ids = list(set(subject_ids).difference(subject_ids_failed))
     return subject_ids
 
-def run_subject_segmentation_and_smoothing(subject, site_code="", use_fastsurfer=False, verbose=False):
+def run_subject_segmentation_and_smoothing(subject_id, site_code="", use_fastsurfer=False, verbose=False):
     # pipeline to segment the brain, exract surface-based features and smooth features for 1 subject
-    
+        
     ### SEGMENTATION ###
     ini_freesurfer = format("$FREESURFER_HOME/SetUpFreeSurfer.sh")
     proc = Popen(ini_freesurfer, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
@@ -441,33 +424,36 @@ def run_subject_segmentation_and_smoothing(subject, site_code="", use_fastsurfer
     fs_folder = FS_SUBJECTS_PATH
     os.makedirs(fs_folder, exist_ok=True)
 
+    ## create dictionary with T1 and FLAIR paths
+    subject_dict = get_anat_files(subject_id)
+    
     if use_fastsurfer:
         ## first processing stage with fastsurfer: segmentation
         init(multiprocessing.Lock())
-        result = fastsurfer_subject(subject,fs_folder, verbose=verbose)
+        result = fastsurfer_subject(subject_dict,fs_folder, verbose=verbose)
         if result == False:
             return False
 
         ## flair pial correction
         init(multiprocessing.Lock())
-        result = fastsurfer_flair(subject,fs_folder, verbose=verbose)
+        result = fastsurfer_flair(subject_dict,fs_folder, verbose=verbose)
         if result == False:
             return False
     else:
         ## processing with freesurfer: segmentation
         init(multiprocessing.Lock())
-        result = freesurfer_subject(subject,fs_folder, verbose=verbose)
+        result = freesurfer_subject(subject_dict,fs_folder, verbose=verbose)
         if result == False:
             return False
     
     ### EXTRACT SURFACE-BASED FEATURES ###
     output_dir = opj(BASE_PATH, f"MELD_{site_code}")
-    result = extract_features(subject, fs_folder=fs_folder, output_dir=output_dir, verbose=verbose)
+    result = extract_features(subject_id, fs_folder=fs_folder, output_dir=output_dir, verbose=verbose)
     if result == False:
             return False
 
     ### SMOOTH FEATURES ###
-    result = smooth_features_new_subjects(subject, output_dir=output_dir)
+    result = smooth_features_new_subjects(subject_id, output_dir=output_dir)
     if result == False:
             return False
 

@@ -8,13 +8,15 @@ from meld_graph.paths import (
     DEFAULT_HDF5_FILE_ROOT,
     NVERT,
     BASE_PATH,
-    MELD_PARAMS_PATH
+    MELD_PARAMS_PATH,
+    MELD_DATA_PATH,
 )
 import pandas as pd
 import numpy as np
 import nibabel as nb
 import os
 import h5py
+import sys
 import glob
 import logging
 import meld_graph.mesh_tools as mt
@@ -385,25 +387,31 @@ class MeldSubject:
 
     @property
     def scanner(self):
-        _, site_code, scanner, group, ID = self.subject_id.split("_")
+        scanner = self.get_demographic_features('scanner')
+        if scanner in ("15T" , "1.5T" , "15t" , "1.5t" ):
+            scanner="15T"
+        elif scanner in ("3T" , "3t" ):
+            scanner="3T"
+        else:
+            print(
+                f"Error: incorrect naming scheme used for {self.subject_id}. Unable to determine if scanner 15T or 3T "
+            )
+            sys.exit()
         return scanner
 
     @property
     def group(self):
-        _, site_code, scanner, group, ID = self.subject_id.split("_")
-        if group == "FCD":
-            group = "patient"
-        elif group == "C":
-            group = "control"
-        else:
+        group = self.get_demographic_features('group')
+        if (group != "patient") and (group != "control") :
             print(
                 f"Error: incorrect naming scheme used for {self.subject_id}. Unable to determine if patient or control."
             )
+            sys.exit()
         return group
 
     @property
     def site_code(self):
-        _, site_code, scanner, group, ID = self.subject_id.split("_")
+        site_code = self.get_demographic_features('site code')
         return site_code
 
     def surf_dir_path(self, hemi):
@@ -471,7 +479,7 @@ class MeldSubject:
         Returns:
             list of features, matching structure of feature_names
         """
-        csv_path = os.path.join(self.cohort.meld_dir, csv_file)
+        csv_path = os.path.join(MELD_DATA_PATH, csv_file)
         return_single = False
         if isinstance(feature_names, str):
             return_single = True

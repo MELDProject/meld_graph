@@ -246,13 +246,14 @@ def get_subj_data(subject_id, eva):
     #find clusters and load saliencies and confidence
     list_clust = {}
     confidences = {}
+    saliencies = {}
     for hemi in ['left','right']:
         list_clust[hemi] = set(predictions[hemi])
         list_clust[hemi].remove(0.0)
         keys = [f'saliencies_{cl}' for cl in list_clust[hemi]] + [f'mask_salient_{cl}' for cl in list_clust[hemi]]
-        saliencies= eva.load_data_from_file(subject_id, 
+        saliencies.update(eva.load_data_from_file(subject_id, 
                                             keys=keys, 
-                                            split_hemis=True)
+                                            split_hemis=True))
     
         for cl in list_clust[hemi]:
             mask_salient = saliencies[f'mask_salient_{cl}'][hemi].astype(bool)
@@ -290,7 +291,31 @@ def get_info_soft( subject_id):
                 f"Use of FastSurfer: {Fastsurfer_use}",
                 ))
     return text
-        
+
+def get_t1_file(subject_id, subject_dir):
+    ''' 
+    return path of T1 if BIDs format or MELD format
+    TODO : improve flexibility of BIDS
+    '''
+    t1_files_MELD = glob.glob(os.path.join(subject_dir, "T1", "*.nii*"))
+    t1_files_bids = glob.glob(os.path.join(subject_dir, "anat", "*T1*.nii*"))
+    if len(t1_files_MELD)==1:
+        t1_path= t1_files_MELD[0]
+        print(get_m(f'T1 file used : {t1_path} ', subject_id, 'INFO'))
+    elif len(t1_files_MELD)>1:
+        print(get_m(f'Find too much volumes for T1. Check and remove the additional volumes with same key name', subject_id, 'WARNING'))
+        return None
+    elif len(t1_files_bids)==1:
+        t1_path = t1_files_bids[0]
+        print(get_m(f'T1 file used : {t1_path} ', subject_id, 'INFO'))
+    elif len(t1_files_bids)>1:
+        print(get_m(f'Find too much volumes for T1. Check and remove the additional volumes with same key name', subject_id, 'WARNING'))
+        return None
+    else:
+        print(get_m(f'Could not find any T1w nifti file. Please ensure your data are in MELD or BIDS format', subject_id, 'ERROR'))
+        return None
+    return t1_path
+      
 def generate_prediction_report(
     subject_ids, data_dir, prediction_path, output_dir, 
     experiment_path=EXPERIMENT_PATH, hdf5_file_root=DEFAULT_HDF5_FILE_ROOT, dataset=None):
@@ -349,7 +374,7 @@ def generate_prediction_report(
         output_dir_sub = os.path.join(output_dir, subject_id, "reports")
         os.makedirs(os.path.join(output_dir_sub), exist_ok=True)
         # Open their MRI data if available
-        t1_file = glob.glob(os.path.join(data_dir, subject_id, "T1", "*T1*.nii*"))[0]
+        t1_file = get_t1_file(subject_id, os.path.join(data_dir, subject_id))
         prediction_file_lh = glob.glob(os.path.join(output_dir, subject_id, "predictions", "lh.prediction*"))[0]
         prediction_file_rh = glob.glob(os.path.join(output_dir, subject_id, "predictions", "rh.prediction*"))[0]
         # load image

@@ -4,6 +4,7 @@ from meld_graph.paths import (
     DEMOGRAPHIC_FEATURES_FILE,
     DK_ATLAS_FILE,
     MELD_PARAMS_PATH,
+    DISTRIBUTED_COMBAT,
 )
 import numpy as np
 import nibabel as nb
@@ -16,6 +17,7 @@ import h5py
 import pandas as pd
 import sys
 import pickle
+import random
 from itertools import chain
 from meld_graph.meld_cohort import MeldSubject, MeldCohort
 from neuroCombat import neuroCombat, neuroCombatFromTraining
@@ -707,7 +709,7 @@ class Preprocess:
         site_combat_path = os.path.join(self.data_dir,f'MELD_{site_code}','distributed_combat')
         if not os.path.isdir(site_combat_path):
             os.makedirs(site_combat_path)
-        meld_combat_path = os.path.join(self.meld_dir,'distributed_combat')
+        meld_combat_path = os.path.join(self.meld_dir,DISTRIBUTED_COMBAT)
         listids = self.subject_ids    
         site_codes = np.zeros(len(listids))
         precombat_features=[]

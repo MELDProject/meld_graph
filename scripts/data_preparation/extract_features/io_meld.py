@@ -1,5 +1,6 @@
 import numpy as np
 import nibabel as nb
+import pandas as pd
 import os
 import h5py
 
@@ -75,45 +76,62 @@ def load_subject_features(fs_id,features,subject_number,medial_wall,subjects_dir
         feature_matrix[h_index*n_vert : n_vert*(h_index+1),:]=hemisphere_feature_matrix
     return feature_matrix
 
+def get_group_site(fs_id, csv_path):
+        """
+        Read demographic features from csv file and extract group, sex and scanner 
+        """
+        features_name=["code", "group", "scanner"]
+        df = pd.read_csv(csv_path, header=0, encoding="latin")
+        # get index column
+        id_col = None
+        for col in df.keys():
+            if "ID" in col:
+                id_col = col
+        # ensure that found an index column
+        if id_col is None:
+            print("No ID column found in file, please check the csv file")
+            return None
+        df = df.set_index(id_col)
+        # find desired demographic features
+        features = []
+        for desired_name in features_name:
+            matched_name = None
+            for col in df.keys():
+                if desired_name in col:
+                    if matched_name is not None:
+                        # already found another matching col
+                        print(
+                            f"Multiple columns matching {desired_name} found ({matched_name}, {col}), please make search more specific"
+                        )
+                        return None
+                    matched_name = col
+            # ensure that found necessary data
+            if matched_name is None:
+                    print(f"Unable to find column matching {desired_name}, please double check for typos")
+                    return None
 
-def get_sitecode(fs_id):
-    site_code=fs_id.split('_')[1]
-    if site_code[0] != 'H':
-        print('site code from subject id does not fit format "H<num>". please double check')
-        site_code='false'
-    return site_code
+            # read feature
+            # if subject does not exists, add None
+            if fs_id in df.index:
+                feature = df.loc[fs_id][matched_name]
+            else:
+                print(f"Unable to find subject matching {fs_id}, please double check this subject exists in {csv_path}")
+                return None
+            features.append(feature)
+        return features
 
-def get_cp(fs_id):
-    cp=fs_id.split('_')[3]
-    if cp in ("FCD" , "fcd"):
-        c_p='patient'
-    elif cp in ("C" , "c"):
-        c_p='control'
-    else:
-        print('subject '+ fs_id + ' cannot be identified as either patient or control...')
-        print('Please double check the IDs in the list of subjects')
-        c_p='false'
-    return c_p
-
-def get_scanner(fs_id):
-    sc=fs_id.split('_')[2]
-    if sc in ("15T" , "1.5T" , "15t" , "1.5t" ):
-        scanner="15T"
-    elif sc in ("3T" , "3t" ):
-        scanner="3T"
-    else:
-        print('scanner for subject '+ fs_id + ' cannot be identified as either 1.5T or 3T...')
-        print('Please double check the IDs in the list of subjects')
-        scanner='false'
-    return scanner
-
-def save_subject(fs_id,features,medial_wall,subject_dir, output_dir=None):
+def save_subject(fs_id,features,medial_wall,subject_dir, demographic_file,  output_dir=None):
     failed=False
     n_vert=163842
     #get subject info from id
-    c_p=get_cp(fs_id)
-    scanner=get_scanner(fs_id)
-    site_code=get_sitecode(fs_id)
+    site_code, c_p, scanner = get_group_site(fs_id, demographic_file)
+    if scanner in ("15T" , "1.5T" , "15t" , "1.5t" ):
+        scanner="15T"
+    elif scanner in ("3T" , "3t" ):
+        scanner="3T"
+    else:
+        print('scanner for subject '+ fs_id + ' cannot be identified as either 1.5T or 3T...')
+        scanner='false'
     #skip subject if info not available
     if 'false' in (c_p, scanner, site_code):
         print("Skipping subject " + fs_id)

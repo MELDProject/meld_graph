@@ -191,10 +191,6 @@ def register_subject_to_xhemi(subject_id, subjects_dir, output_dir, template = '
 if __name__ == "__main__":
     pass
 
-#TODO: for sub in $subjects
-#     do
-#     
-#     done
 
 
 

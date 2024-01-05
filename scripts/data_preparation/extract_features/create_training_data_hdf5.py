@@ -7,6 +7,7 @@ import numpy as np
 import nibabel as nb
 import argparse
 from scripts.data_preparation.extract_features.io_meld import save_subject
+from meld_graph.paths import MELD_DATA_PATH, DEMOGRAPHIC_FEATURES_FILE
 from meld_graph.tools_commands_prints import get_m
 import os
 
@@ -19,7 +20,12 @@ def create_training_data_hdf5(subject, subject_dir, output_dir):
     n_vert=163842
     cortex_label=nb.freesurfer.io.read_label(os.path.join(subject_dir,'fsaverage_sym/label/lh.cortex.label'))
     medial_wall = np.delete(np.arange(n_vert),cortex_label)
-    failed = save_subject(subject,features,medial_wall, subject_dir, output_dir)
+    failed = save_subject(subject,
+                          features = features,
+                          medial_wall = medial_wall, 
+                          subject_dir = subject_dir,
+                          demographic_file=os.path.join(MELD_DATA_PATH, DEMOGRAPHIC_FEATURES_FILE),
+                          output_dir=output_dir)
     if failed == True:
         print(get_m(f'Features not saved. Something went wrong', subject, 'ERROR'))
         return False
