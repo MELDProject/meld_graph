@@ -260,8 +260,8 @@ def get_subj_data(subject_id, eva):
 
     return list_clust, features_vals, predictions, threshold_text, saliencies, confidences
 
-def get_info_soft( subject_id, exp):
-    ''' Report information of softwares (e.g Freesurfer) '''
+def get_info_soft( subject_id, harmo_code, exp):
+    ''' Report information of software (e.g Freesurfer) '''
     from meld_graph import __version__
 
     #find MELD version
@@ -285,12 +285,25 @@ def get_info_soft( subject_id, exp):
     #find model used
     model_name = exp.network_parameters['name']
     
+    #use harmonisation
+    if harmo_code == 'noHarmo':
+        harmo = "No" 
+        harmo_code = "NaN"
+    else:
+        harmo = "Yes"
+    
     text = "\n".join((
-                "Information about softwares:",
+                "Information about MELD software:",
                 f"MELD package version: {meld_version}",
                 f"MELD model used: {model_name}",
+                "", 
+                "Information about segmentation software:",
                 f"Freesurfer version: {FS_version}",
                 f"Use of FastSurfer: {Fastsurfer_use}",
+                "", 
+                "Information about features preprocessing:",
+                f"Harmonisation of the feature: {harmo}",
+                f"Harmonisation code: {harmo_code}",
                 ))
     return text
 
@@ -319,7 +332,7 @@ def get_t1_file(subject_id, subject_dir):
     return t1_path
       
 def generate_prediction_report(
-    subject_ids, data_dir, prediction_path, output_dir, 
+    subject_ids, data_dir, prediction_path, output_dir, harmo_code="noHarmo",
     experiment_path=EXPERIMENT_PATH, hdf5_file_root=DEFAULT_HDF5_FILE_ROOT, dataset=None):
     ''' Create images and report of predictions on inflated brain, on native T1 accompanied with saliencies explaining the predictions
     inputs: 
@@ -435,7 +448,8 @@ def generate_prediction_report(
             ax = fig.add_subplot(gs1[i, 1])
             ax.imshow(im1)
             ax.axis("off")
-            ax.set_title(hemi, loc="left", fontsize=20)
+            title = 'Left hemisphere' if hemi=='left' else 'Right hemisphere'
+            ax.set_title(title, loc="left", fontsize=20)
             ax = fig.add_subplot(gs1[i, 2])
             ax.imshow(im2)
             ax.axis("off")
@@ -453,7 +467,7 @@ def generate_prediction_report(
                 ],
             )
             m = cm.ScalarMappable(norm=norm, cmap=cmap)
-            labels = ["Combat", "Normalised", "Asymmetry"]
+            labels = ["Harmonised", "Normalised", "Asymmetry"]
             hatching = ["\\\\", "//", "--"]
             # loop over clusters
             for cluster in list_clust[hemi]:
@@ -512,7 +526,7 @@ def generate_prediction_report(
                 ax2.set_yticklabels(feature_names, fontsize=16)
                 ax2.set_xlabel("Z score", fontsize=16)
                 ax2.legend(loc="upper center", bbox_to_anchor=(0.5, 1.17), fontsize=16)
-                fig2.colorbar(m, label=f"Saliency", ax=ax2, ticks=[-50, -25, 0, 25, 50])
+                fig2.colorbar(m, ax=ax2, ticks=[-50, -25, 0, 25, 50]).set_label(label='Saliency',size=18,weight='bold')
                 ax2.set_autoscale_on(True)
                 ## display info cluster
                 # get size
@@ -529,15 +543,17 @@ def generate_prediction_report(
                 # plot info in text box in upper left in axes coords
                 textstr = "\n".join(
                     (
-                        f" cluster {int(cluster)} on {hemi} hemi",
+                        f" Cluster {int(cluster)} on the {hemi} hemisphere",
                         " ",
-                        f" size cluster = {size_clust} cm2",
+                        f" Cluster size = {size_clust} cm2",
                         " ",
-                        f" location =  {location}",
+                        f" Cortical region =  {location}",
                         " ",
-                        f"{threshold_text}",
+                        f" Confidence score =  {confidence}",
                         " ",
-                        f" confidence =  {confidence}",
+                        f"-{threshold_text}",
+                        
+                        
                     )
                 )
                 props = dict(boxstyle="round", facecolor=colors[int(cluster)], alpha=0.5)
@@ -555,7 +571,9 @@ def generate_prediction_report(
                 coords = plotting.find_xyz_cut_coords(mask)
                 vmax = np.percentile(imgs["anat"].get_fdata(), 99)
                 display = plotting.plot_anat(
-                    t1_file, colorbar=False, cut_coords=coords, draw_cross=True, figure=fig3, axes=ax3, vmax=vmax
+                    t1_file, colorbar=False, cut_coords=coords, 
+                    draw_cross=True, radiological=True,
+                    figure=fig3, axes=ax3, vmax=vmax
                 )
                 display.add_contours(prediction_file_lh, filled=True, alpha=0.7, levels=[0.5], colors="darkred")
                 display.add_contours(prediction_file_rh, filled=True, alpha=0.7, levels=[0.5], colors="darkred")
@@ -567,7 +585,7 @@ def generate_prediction_report(
         # Add information subject in text box
         n_clusters = len(list_clust["left"]) + len(list_clust["right"])
         ax = fig.add_subplot(gs1[0, 0])
-        textstr = "\n".join((f"patient {subject.subject_id}", " ", f"number of predicted clusters = {n_clusters}"))
+        textstr = "\n".join((f"Patient {subject.subject_id}", " ", f"Number of predicted clusters = {n_clusters}"))
         # place a text box in upper left in axes coords
         props = dict(boxstyle="round", facecolor="gray", alpha=0.5)
         ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=16, verticalalignment="top", bbox=props)
@@ -584,15 +602,15 @@ def generate_prediction_report(
 
         logo = os.path.join(SCRIPTS_DIR, "MELD_logo.png")
 
-        text_info_1 = "Information: \n The MRI data of this patient has been processed through the MELD surface-based FCD detection algorithm. \n Page 1 of this report will show all detected clusters on an inflated view of the brain. \n Each subsequent page is an individual cluster. \n Last page summarises the softwares version used to creates this report"
+        text_info_1 = "Information: \n The MRI data of this patient has been processed through the MELD surface-based FCD detection algorithm. \n Page 1 of this report will show all detected clusters on an inflated view of the brain. \n Subsequent pages characterise individual predicted clusters. \n The last page summarises the software version used to create this report."
 
-        text_info_2 = "The next pages present information for each cluster: \n   -The hemisphere the cluster is on \n   -The surface area of the cluster (across the cortical surface) \n   -The location of the cluster \n   -The z-scores of the patient cortical features averaged within the cluster. \n   -The saliency of each feature to the network - if a feature is brighter pink, that feature was more important to the network. \n \n For more information, please read the Guide to using the MELD surface-based FCD detection."
+        text_info_2 = "The following pages characterise each cluster according to: \n   -The hemisphere the cluster is on \n   -The cortical surface area of the cluster \n   -The cortical region in which the cluster is located \n   -The average of cortical morphological features within the cluster. \n   -The saliency of each feature to the network - if a feature is brighter pink, that feature was more important to the network. \n \n For more information, please read the Guide to using the MELD surface-based FCD detection."
 
-        disclaimer = "Disclaimer: The MELD surface-based FCD detection algorithm is intended for research purposes only and has not been reviewed or approved by the Medicines and Healthcare products Regulatory Agency (MHRA),European Medicine Agency (EMA) or by any other agency. Any clinical application of the software is at the sole risk of the party engaged in such application. \nThere is no warranty of any kind that the software will produce useful results in any way. Use of the software is at the recipient own risk"
+        disclaimer = "Disclaimer: The MELD surface-based FCD detection algorithm is intended for research purposes only and has not been reviewed or approved by the Medicines and Healthcare products Regulatory Agency (MHRA),European Medicine Agency (EMA) or by any other agency. Any clinical application of the software is at the sole risk of the party engaged in such application. \nThere is no warranty of any kind that the software will produce useful results in any way. Use of the software is at the recipient's own risk."
 
-        footer_txt = "This report was created by Mathilde Ripart, Hannah Spitzer, Sophie Adler and Konrad Wagstyl on behalf of the MELD Project"
+        footer_txt = "This report was automatically generated by software by Mathilde Ripart, Hannah Spitzer, Sophie Adler and Konrad Wagstyl on behalf of the MELD Project"
 
-        text_info_3 = get_info_soft(subject.subject_id, exp)
+        text_info_3 = get_info_soft(subject.subject_id, harmo_code, exp)
         
         #### create main page with overview on inflated brain
         # add page

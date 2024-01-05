@@ -167,6 +167,7 @@ def run_script_prediction(list_ids=None, sub_id=None, harmo_code='noHarmo', no_p
                 prediction_path=classifier_output_dir,
                 experiment_path=experiment_path, 
                 output_dir = predictions_output_dir,
+                harmo_code = harmo_code,
                 hdf5_file_root = DEFAULT_HDF5_FILE_ROOT
             )
         
