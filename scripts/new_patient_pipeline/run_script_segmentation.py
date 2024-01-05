@@ -4,7 +4,7 @@
 ## that contains the T1 in nifti format ".nii" and where available a FLAIR 
 ## folder that contains the FLAIR in nifti format ".nii"
 
-## To run : python run_script_segmentation.py -id <sub_id> -site <site_code>
+## To run : python run_script_segmentation.py -id <sub_id> -harmo_code <harmo_code>
 
 
 import os
@@ -317,7 +317,7 @@ def smooth_features_new_subjects(subject_ids, output_dir):
 
     tmp.close()
     
-def run_subjects_segmentation_and_smoothing_parallel(subject_ids, num_procs=10, site_code="", use_fastsurfer=False, verbose=False):
+def run_subjects_segmentation_and_smoothing_parallel(subject_ids, num_procs=10, harmo_code="noHarmo", use_fastsurfer=False, verbose=False):
     # parallel version of the pipeline, finish each stage for all subjects first
 
     ### SEGMENTATION ###
@@ -381,7 +381,7 @@ def run_subjects_segmentation_and_smoothing_parallel(subject_ids, num_procs=10, 
 
     ### EXTRACT SURFACE-BASED FEATURES ###
     print(get_m(f'Extract surface-based features', subject_ids, 'STEP 2'))
-    output_dir = opj(BASE_PATH, f"MELD_{site_code}")
+    output_dir = opj(BASE_PATH, f"MELD_{harmo_code}")
 
     # parallelize create xhemi because it takes a while!
     print(get_m(f'Run create xhemi in parallel', subject_ids, 'INFO'))
@@ -408,7 +408,7 @@ def run_subjects_segmentation_and_smoothing_parallel(subject_ids, num_procs=10, 
     subject_ids = list(set(subject_ids).difference(subject_ids_failed))
     return subject_ids
 
-def run_subject_segmentation_and_smoothing(subject_id, site_code="", use_fastsurfer=False, verbose=False):
+def run_subject_segmentation_and_smoothing(subject_id, harmo_code="noHarmo", use_fastsurfer=False, verbose=False):
     # pipeline to segment the brain, exract surface-based features and smooth features for 1 subject
         
     ### SEGMENTATION ###
@@ -447,7 +447,7 @@ def run_subject_segmentation_and_smoothing(subject_id, site_code="", use_fastsur
             return False
     
     ### EXTRACT SURFACE-BASED FEATURES ###
-    output_dir = opj(BASE_PATH, f"MELD_{site_code}")
+    output_dir = opj(BASE_PATH, f"MELD_{harmo_code}")
     result = extract_features(subject_id, fs_folder=fs_folder, output_dir=output_dir, verbose=verbose)
     if result == False:
             return False
@@ -457,8 +457,8 @@ def run_subject_segmentation_and_smoothing(subject_id, site_code="", use_fastsur
     if result == False:
             return False
 
-def run_script_segmentation(site_code, list_ids=None,sub_id=None, use_parallel=False, use_fastsurfer=False, verbose=False ):
-    site_code = str(site_code)
+def run_script_segmentation(list_ids=None, sub_id=None, harmo_code='noHarmo', use_parallel=False, use_fastsurfer=False, verbose=False ):
+    harmo_code = str(harmo_code)
     subject_id=None
     subject_ids=None
     if list_ids != None:
@@ -475,12 +475,12 @@ def run_script_segmentation(site_code, list_ids=None,sub_id=None, use_parallel=F
         subject_ids=np.array([sub_id])
     else:
         print(get_m(f'No ids were provided', None, 'ERROR'))
-        print(get_m(f'Please specify both subject(s) and site_code ...', None, 'ERROR'))
+        print(get_m(f'Please specify both subject(s) and harmonisation code ...', None, 'ERROR'))
         sys.exit(-1) 
     
     if subject_id != None:
         #launch segmentation and feature extraction for 1 subject
-        result = run_subject_segmentation_and_smoothing(subject_id,  site_code = site_code, use_fastsurfer = use_fastsurfer, verbose=verbose)
+        result = run_subject_segmentation_and_smoothing(subject_id,  harmo_code = harmo_code, use_fastsurfer = use_fastsurfer, verbose=verbose)
         if result == False:
             print(get_m(f'One step of the pipeline has failed. Process has been aborted for this subject', subject_id, 'ERROR'))
             return False
@@ -488,7 +488,7 @@ def run_script_segmentation(site_code, list_ids=None,sub_id=None, use_parallel=F
         if use_parallel:
             #launch segmentation and feature extraction in parallel
             print(get_m(f'Run subjects in parallel', None, 'INFO'))
-            subject_ids_succeed = run_subjects_segmentation_and_smoothing_parallel(subject_ids, site_code = site_code, use_fastsurfer = use_fastsurfer, verbose=verbose)
+            subject_ids_succeed = run_subjects_segmentation_and_smoothing_parallel(subject_ids, harmo_code = harmo_code, use_fastsurfer = use_fastsurfer, verbose=verbose)
             subject_ids_failed= list(set(subject_ids).difference(subject_ids_succeed))
             if len(subject_ids_failed):
                 print(get_m(f'One step of the pipeline has failed. Process has been aborted for subjects {subject_ids_failed}', None, 'ERROR'))
@@ -498,7 +498,7 @@ def run_script_segmentation(site_code, list_ids=None,sub_id=None, use_parallel=F
             print(get_m(f'Run subjects one after another', None, 'INFO'))
             subject_ids_failed=[]
             for subj in subject_ids:
-                result = run_subject_segmentation_and_smoothing(subj,  site_code = site_code, use_fastsurfer = use_fastsurfer, verbose=verbose)
+                result = run_subject_segmentation_and_smoothing(subj,  harmo_code = harmo_code, use_fastsurfer = use_fastsurfer, verbose=verbose)
                 if result == False:
                     print(get_m(f'One step of the pipeline has failed. Process has been aborted for this subject', subj, 'ERROR'))
                     subject_ids_failed.append(subj)
@@ -519,10 +519,10 @@ if __name__ == "__main__":
                         help="File containing list of ids. Can be txt or csv with 'ID' column",
                         required=False,
                         )
-    parser.add_argument("-site",
-                        "--site_code",
-                        help="Site code",
-                        required=True,
+    parser.add_argument("-harmo_code","--harmo_code",
+                        default="noHarmo",
+                        help="Harmonisation code",
+                        required=False,
                         )
     parser.add_argument("--fastsurfer", 
                         help="use fastsurfer instead of freesurfer", 
@@ -546,7 +546,7 @@ if __name__ == "__main__":
     print(args)
 
     run_script_segmentation(
-                        site_code = args.site_code,
+                        harmo_code = args.harmo_code,
                         list_ids=args.list_ids,
                         sub_id=args.id, 
                         use_parallel=args.parallelise, 

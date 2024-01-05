@@ -6,7 +6,7 @@
 ## These contain images of the clusters on the surface and on the volumetric MRI as well as saliency reports
 ## The saliency reports include the z-scored feature values and how "salient" they were to the classifier
 
-## To run : python run_script_prediction.py -ids <text_file_with_ids> -site <site_code>
+## To run : python run_script_prediction.py -ids <text_file_with_ids> -harmo_code <harmo_code>
 
 
 import os
@@ -16,13 +16,16 @@ import pandas as pd
 import argparse
 import tempfile
 from os.path import join as opj
-from meld_graph.paths import FS_SUBJECTS_PATH, MELD_DATA_PATH, DEFAULT_HDF5_FILE_ROOT, EXPERIMENT_PATH, MODEL_PATH
+from meld_graph.paths import (FS_SUBJECTS_PATH, 
+                              MELD_DATA_PATH, 
+                              DEFAULT_HDF5_FILE_ROOT, 
+                              EXPERIMENT_PATH, 
+                              MODEL_PATH)
 from meld_graph.evaluation import Evaluator
 from meld_graph.experiment import Experiment
 from meld_graph.meld_cohort import MeldCohort
 from scripts.manage_results.register_back_to_xhemi import register_subject_to_xhemi
 from scripts.manage_results.move_predictions_to_mgh import move_predictions_to_mgh
-# from scripts.manage_results.merge_predictions_t1 import call_merge_predictions_t1
 from scripts.manage_results.plot_prediction_report import generate_prediction_report
 from meld_graph.tools_commands_prints import get_m
 
@@ -87,9 +90,8 @@ def predict_subjects(subject_ids, output_dir, plot_images = False, saliency=Fals
     if saliency:
         eva.calculate_saliency()
 
-def run_script_prediction(site_code, list_ids=None, sub_id=None, no_prediction_nifti=False, no_report=False, split=False, verbose=False):
-    
-    site_code = str(site_code)
+def run_script_prediction(list_ids=None, sub_id=None, harmo_code='noHarmo', no_prediction_nifti=False, no_report=False, split=False, verbose=False):
+    harmo_code = str(harmo_code)
     subject_id=None
     subject_ids=None
     if list_ids != None:
@@ -106,13 +108,17 @@ def run_script_prediction(site_code, list_ids=None, sub_id=None, no_prediction_n
         subject_ids=np.array([sub_id])
     else:
         print(get_m(f'No ids were provided', None, 'ERROR'))
-        print(get_m(f'Please specify both subject(s) and site_code ...', None, 'ERROR'))
+        print(get_m(f'Please specify both subject(s) and harmonisation code ...', None, 'ERROR'))
         sys.exit(-1) 
     
     # initialise variables
-    experiment_path = os.path.join(EXPERIMENT_PATH, MODEL_PATH)
+    if harmo_code == "noHarmo":
+        model_name = MODEL_PATH.format('nocombat')
+    else:
+        model_name = MODEL_PATH.format('combat')
+    experiment_path = os.path.join(EXPERIMENT_PATH, model_name)
     subjects_dir = FS_SUBJECTS_PATH
-    classifier_output_dir = opj(MELD_DATA_PATH,'output','classifier_outputs')
+    classifier_output_dir = opj(MELD_DATA_PATH,'output','classifier_outputs', model_name)
     data_dir = opj(MELD_DATA_PATH,'input')
     predictions_output_dir = opj(MELD_DATA_PATH,'output','predictions_reports')
     prediction_file = opj(classifier_output_dir, 'results_best_model', 'predictions.hdf5')
@@ -182,10 +188,10 @@ if __name__ == '__main__':
                         help="File containing list of ids. Can be txt or csv with 'ID' column",
                         required=False,
                         )
-    parser.add_argument("-site",
-                        "--site_code",
-                        help="Site code",
-                        required=True,
+    parser.add_argument("-harmo_code","--harmo_code",
+                        default="noHarmo",
+                        help="Harmonisation code",
+                        required=False,
                         )
     parser.add_argument('--no_prediction_nifti',
                         action="store_true",
@@ -208,7 +214,7 @@ if __name__ == '__main__':
     print(args)    
 
     run_script_prediction(
-                        site_code = args.site_code,
+                        harmo_code = args.harmo_code,
                         list_ids=args.list_ids,
                         sub_id=args.id,
                         no_prediction_nifti = args.no_prediction_nifti,

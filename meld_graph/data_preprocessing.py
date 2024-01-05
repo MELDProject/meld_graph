@@ -4,7 +4,6 @@ from meld_graph.paths import (
     DEMOGRAPHIC_FEATURES_FILE,
     DK_ATLAS_FILE,
     MELD_PARAMS_PATH,
-    DISTRIBUTED_COMBAT,
 )
 import numpy as np
 import nibabel as nb
@@ -23,6 +22,7 @@ from meld_graph.meld_cohort import MeldSubject, MeldCohort
 from neuroCombat import neuroCombat, neuroCombatFromTraining
 import meld_graph.distributedCombat as dc
 import meld_graph.mesh_tools as mt
+
 class Preprocess:
     """
     Load and preprocess data.
@@ -709,7 +709,7 @@ class Preprocess:
         site_combat_path = os.path.join(self.data_dir,f'MELD_{site_code}','distributed_combat')
         if not os.path.isdir(site_combat_path):
             os.makedirs(site_combat_path)
-        meld_combat_path = os.path.join(self.meld_dir,DISTRIBUTED_COMBAT)
+        meld_combat_path = os.path.join(self.meld_dir,'distributed_combat')
         listids = self.subject_ids    
         site_codes = np.zeros(len(listids))
         precombat_features=[]
@@ -838,6 +838,28 @@ class Preprocess:
             print('No data to combat harmonised')
             pass
     
+    def transfer_features_no_combat(self, feature_name):
+        # load combat parameters        
+        precombat_features = []
+        subjects_included=[]
+        for subject in self.subject_ids:
+            subj = MeldSubject(subject, cohort=self.cohort)
+            if subj.has_features(feature_name):
+                lh = subj.load_feature_values(feature_name, hemi="lh")[self.cohort.cortex_mask]
+                rh = subj.load_feature_values(feature_name, hemi="rh")[self.cohort.cortex_mask]
+                combined_hemis = np.hstack([lh, rh])
+                precombat_features.append(combined_hemis)
+                subjects_included.append(subject)
+        #if matrix empty, pass
+        if precombat_features:
+            precombat_features = np.array(precombat_features)
+            post_combat_feature_name = self.feat.combat_feat(feature_name)
+            print("Transfer finished \n Saving data")
+            self.save_cohort_features(post_combat_feature_name, precombat_features, np.array(subjects_included))
+        else:
+            print('No data to transfer')
+            pass
+                    
     def remove_isolated_subs(self, covars, precombat_features):
         """remove subjects where they are sole examples from the site (for FLAIR)"""
 

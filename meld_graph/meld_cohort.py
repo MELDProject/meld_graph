@@ -411,7 +411,7 @@ class MeldSubject:
 
     @property
     def site_code(self):
-        site_code = self.get_demographic_features('site code')
+        site_code = self.get_demographic_features('harmo code')
         return site_code
 
     def surf_dir_path(self, hemi):

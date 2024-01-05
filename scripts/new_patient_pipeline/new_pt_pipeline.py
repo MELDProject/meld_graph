@@ -33,10 +33,10 @@ if __name__ == "__main__":
                         help="File containing list of ids. Can be txt or csv with 'ID' column",
                         required=False,
                         )
-    parser.add_argument("-site",
-                        "--site_code",
-                        help="Site code",
-                        required=True,
+    parser.add_argument("-harmo_code","--harmo_code",
+                        default="noHarmo",
+                        help="Harmonisation code",
+                        required=False,
                         )
     parser.add_argument("--fastsurfer", 
                         help="use fastsurfer instead of freesurfer", 
@@ -49,12 +49,6 @@ if __name__ == "__main__":
                         required=False,
                         default=False,
                         action="store_true",
-                        )
-    parser.add_argument('-demos', '--demographic_file', 
-                        type=str, 
-                        help='provide the demographic files for the harmonisation',
-                        required=False,
-                        default=None,
                         )
     parser.add_argument('--harmo_only', 
                         action="store_true", 
@@ -99,16 +93,14 @@ if __name__ == "__main__":
     
     #---------------------------------------------------------------------------------
     ### CHECKS
-    if (args.harmo_only) & (args.demographic_file == None):
-        print('ERROR: Please provide a demographic file using the flag "-demos" to harmonise your data')
-        os.sys.exit(-1)
+    # TODO: check demographic file
 
     #---------------------------------------------------------------------------------
     ### SEGMENTATION ###
     if not args.skip_segmentation:
         print(get_m(f'Call script segmentation', None, 'SCRIPT 1'))
         result = run_script_segmentation(
-                            site_code = args.site_code,
+                            harmo_code = args.harmo_code,
                             list_ids=args.list_ids,
                             sub_id=args.id, 
                             use_parallel=args.parallelise, 
@@ -125,10 +117,9 @@ if __name__ == "__main__":
     ### PREPROCESSING ###
     print(get_m(f'Call script preprocessing', None, 'SCRIPT 2'))
     run_script_preprocessing(
-                    site_code=args.site_code,
+                    harmo_code=args.harmo_code,
                     list_ids=args.list_ids,
                     sub_id=args.id,
-                    demographic_file=args.demographic_file,
                     harmonisation_only = args.harmo_only,
                     )
 
@@ -137,7 +128,7 @@ if __name__ == "__main__":
     if not args.harmo_only:
         print(get_m(f'Call script prediction', None, 'SCRIPT 3'))
         result = run_script_prediction(
-                            site_code = args.site_code,
+                            harmo_code = args.harmo_code,
                             list_ids=args.list_ids,
                             sub_id=args.id,
                             no_prediction_nifti = args.no_nifti,

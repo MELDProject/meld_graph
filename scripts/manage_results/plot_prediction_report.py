@@ -2,7 +2,6 @@ from meld_graph.evaluation import Evaluator
 from meld_graph.experiment import Experiment
 from meld_graph.meld_cohort import MeldCohort, MeldSubject
 from meld_graph.meld_plotting import trim
-from meld_graph.confidence import get_confidence
 from meld_graph.paths import (
     NVERT,
     MELD_PARAMS_PATH,
@@ -10,7 +9,6 @@ from meld_graph.paths import (
     DK_ATLAS_FILE,
     EXPERIMENT_PATH, 
     MODEL_PATH,
-    MODEL_NAME,
     SURFACE_PARTIAL, 
     DEFAULT_HDF5_FILE_ROOT,
     SCRIPTS_DIR,
@@ -262,17 +260,17 @@ def get_subj_data(subject_id, eva):
 
     return list_clust, features_vals, predictions, threshold_text, saliencies, confidences
 
-def get_info_soft( subject_id):
+def get_info_soft( subject_id, exp):
     ''' Report information of softwares (e.g Freesurfer) '''
     from meld_graph import __version__
-    from meld_graph.paths import BASE_PATH
 
+    #find MELD version
     if __version__ != None:
         meld_version = __version__
     else:
         meld_version = "Unknown"
 
-
+    #find Freesurfer and Fastsurfer version
     fs_scripts = os.path.join(MELD_DATA_PATH, 'output','fs_outputs', subject_id, 'scripts')
     if os.path.isfile(os.path.join(fs_scripts,'build-stamp.txt')):
         with open(os.path.join(fs_scripts,'build-stamp.txt')) as f:
@@ -284,9 +282,13 @@ def get_info_soft( subject_id):
     else:
         FS_version = 'Unknown'
     
+    #find model used
+    model_name = exp.network_parameters['name']
+    
     text = "\n".join((
                 "Information about softwares:",
                 f"MELD package version: {meld_version}",
+                f"MELD model used: {model_name}",
                 f"Freesurfer version: {FS_version}",
                 f"Use of FastSurfer: {Fastsurfer_use}",
                 ))
@@ -366,7 +368,7 @@ def generate_prediction_report(
         mode="test",
         thresh_and_clust=True,
     )
-
+        
     for subject_id in subject_ids:
         # find subject directory containing T1
         subject = MeldSubject(subject_id, cohort=c)
@@ -590,7 +592,7 @@ def generate_prediction_report(
 
         footer_txt = "This report was created by Mathilde Ripart, Hannah Spitzer, Sophie Adler and Konrad Wagstyl on behalf of the MELD Project"
 
-        text_info_3 = get_info_soft(subject.subject_id)
+        text_info_3 = get_info_soft(subject.subject_id, exp)
         
         #### create main page with overview on inflated brain
         # add page
@@ -679,14 +681,25 @@ if __name__ == "__main__":
                     help='Subjects ID',
                     required=False,
                     default=None)
+    parser.add_argument("-harmo_code","--harmo_code",
+                        default="noHarmo",
+                        help="Harmonisation code",
+                        required=False,
+                        )
     args = parser.parse_args()
     fold=args.fold
     data_dir=args.data_dir
     output_dir=args.output_dir
     subject_ids = np.loadtxt(args.list_ids, dtype="str", ndmin=1)
+    harmo_code = str(args.harmo_code)
     experiment_path = os.path.join(MELD_DATA_PATH, args.experiment_folder)
     experiment_name=args.experiment_name
-    model_path = os.path.join(EXPERIMENT_PATH, MODEL_PATH)
+    
+    # initialise variables
+    if harmo_code == "noHarmo":
+        experiment_path = os.path.join(EXPERIMENT_PATH, MODEL_PATH.format('nocombat'))
+    else:
+        experiment_path = os.path.join(EXPERIMENT_PATH, MODEL_PATH.format('combat'))
 
     if args.list_ids:
         try:
@@ -707,7 +720,7 @@ if __name__ == "__main__":
         hdf_predictions = os.path.join(experiment_path, f"fold_{fold}", "results", f"predictions_{experiment_name}.hdf5")
        
     # Provide models parameter
-    exp = Experiment(experiment_path= model_path, experiment_name=experiment_name)
+    exp = Experiment(experiment_path= experiment_path, experiment_name=experiment_name)
 
     generate_prediction_report(
         subject_ids,
