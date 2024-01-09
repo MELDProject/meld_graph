@@ -568,6 +568,7 @@ class Evaluator:
                         raise ValueError("Could not successfully calculate predictions and thresholds for saliency calculation.")
             saliency_vert[subj_id] = {}
             mask_salient_vert[subj_id] = {}
+            pred_clust_salient = np.hstack([data_dict['cluster_thresholded']['left'][self.experiment.cohort.cortex_mask].T, data_dict['cluster_thresholded']['right'][self.experiment.cohort.cortex_mask].T]).T       
             for hemi in ['left', 'right']:
                 # calculate saliency for every cluster
                 for cl in np.unique(data_dict['cluster_thresholded'][hemi]):
@@ -613,6 +614,17 @@ class Evaluator:
                         dataset_str=f"mask_salient_{cl}",
                         suffix=save_prediction_suffix,
                     ) 
+                    
+                    # add salient vertices for each cluster to prediction clustered
+                    pred_clust_salient[(mask_salient_vert[subj_id][cl]>0).astype(bool)] = np.ones((mask_salient_vert[subj_id][cl]>0).sum())*cl*100
+            
+            #save clustered prediction + salient
+            self.save_prediction(
+                subj_id,
+                pred_clust_salient,
+                dataset_str=f"cluster_thresholded_salient",
+                suffix=save_prediction_suffix,
+                )
 
     
     def stat_subjects(self, suffix="", fold=None):

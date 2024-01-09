@@ -575,11 +575,24 @@ def generate_prediction_report(
                     draw_cross=True, radiological=True,
                     figure=fig3, axes=ax3, vmax=vmax
                 )
-                display.add_contours(prediction_file_lh, filled=True, alpha=0.7, levels=[0.5], colors="darkred")
-                display.add_contours(prediction_file_rh, filled=True, alpha=0.7, levels=[0.5], colors="darkred")
+                display.add_contours(prediction_file_lh, filled=True, alpha=0.7, threshold=cluster-0.5, levels=[0.5, 50], colors=["darkred", "yellow"])
+                display.add_contours(prediction_file_rh, filled=True, alpha=0.7, threshold=cluster-0.5, levels=[0.5, 50], colors=["darkred", "yellow"])
+                
+                # display.add_overlay(prediction_file_lh, cmap=plotting.cm.red_transparent, threshold=cluster-0.5, cbar_vmin=cluster-0.5, cbar_vmax=cluster+0.5)
+                # display.add_overlay(prediction_file_rh, cmap=plotting.cm.red_transparent, threshold=cluster-0.5, cbar_vmin=cluster-0.5, cbar_vmax=cluster+0.5)
+                # display.add_overlay(prediction_file_lh, cmap=plotting.cm.green_transparent, threshold=cluster*100-0.5, cbar_vmin=cluster*100-0.5, cbar_vmax=cluster*100+0.5)
+                # display.add_overlay(prediction_file_rh, cmap=plotting.cm.green_transparent, threshold=cluster*100-0.5, cbar_vmin=cluster*100-0.5, cbar_vmax=cluster*100+0.5)
+                
+                # display.add_overlay(prediction_file_rh, cmap=plotting.cm.purple_green)
                 # save figure for each cluster
                 #                 fig3.tight_layout()
+                for cut_ax in display.axes.values():
+                    slices_x = np.linspace(cut_ax.ax.get_xlim()[0], cut_ax.ax.get_xlim()[1],100)
+                    cut_ax.ax.set_xlim(slices_x[12], slices_x[-12])
+                    slices_y = np.linspace(cut_ax.ax.get_ylim()[0], cut_ax.ax.get_ylim()[1],100)
+                    cut_ax.ax.set_ylim(slices_y[15], slices_y[-15])
                 fig3.savefig(f"{output_dir_sub}/mri_{subject.subject_id}_{hemi}_c{int(cluster)}.png")
+
                 # Add info to df
                 df = pd.concat([df,pd.DataFrame([info_cl])])
         # Add information subject in text box

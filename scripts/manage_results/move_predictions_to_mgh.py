@@ -8,11 +8,11 @@ import argparse
 from meld_graph.tools_commands_prints import get_m
 
 
-def load_prediction(subject, hdf5):
+def load_prediction(subject, hdf5, prediction_name="prediction_clustered"):
     results = {}
     with h5py.File(hdf5, "r") as f:
         for hemi in ["lh", "rh"]:
-            results[hemi] = f[subject][hemi]["prediction_clustered"][:]
+            results[hemi] = f[subject][hemi][prediction_name][:]
     return results
 
 def save_mgh(filename, array, demo):
@@ -34,7 +34,7 @@ def move_predictions_to_mgh(subject_id, subjects_dir, prediction_file, verbose=F
     classifier_dir = os.path.join(subjects_dir, subject_id, "xhemi", "classifier")
     if not os.path.isdir(classifier_dir):
         os.mkdir(classifier_dir)
-    predictions = load_prediction(subject_id, prediction_file)
+    predictions = load_prediction(subject_id, prediction_file, prediction_name="cluster_thresholded_salient")
     for hemi in ["lh", "rh"]:
         prediction_h = predictions[hemi]
         overlay = np.zeros_like(c.cortex_mask, dtype=int)
