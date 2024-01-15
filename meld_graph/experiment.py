@@ -221,25 +221,6 @@ class Experiment:
         # build model using network_parameters
         network_type = self.network_parameters["network_type"]
         # build icosphere_params dict
-        icosphere_params = self.data_parameters['icosphere_parameters']
-        icosphere_params['combine_hemis'] = self.data_parameters['combine_hemis']
-        icosphere_params['conv_type'] = self.network_parameters['model_parameters']['conv_type']
-        if network_type == 'MoNet':
-            self.model = meld_graph.models.MoNet(**self.network_parameters['model_parameters'], num_features=num_features, 
-            icosphere_params=icosphere_params)
-        elif network_type == 'MoNetUnet':
-            self.model = meld_graph.models.MoNetUnet(
-                **self.network_parameters['model_parameters'], num_features=num_features, 
-                icosphere_params=icosphere_params, deep_supervision=self.network_parameters['training_parameters']
-                .get('deep_supervision', {})
-                .get('levels', []),
-                classification_head=self.network_parameters['training_parameters']['loss_dictionary']
-                .get('lesion_classification', {})
-                .get('apply_to_bottleneck', False),
-                object_detection_head=self.network_parameters['training_parameters']['loss_dictionary']
-                .get('object_detection', {})
-                .get('apply_to_bottleneck', False),
-            )
         icosphere_params = self.data_parameters["icosphere_parameters"]
         icosphere_params["combine_hemis"] = self.data_parameters["combine_hemis"]
         icosphere_params["conv_type"] = self.network_parameters["model_parameters"]["conv_type"]

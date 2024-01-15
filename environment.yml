@@ -23,12 +23,11 @@ dependencies:
     - progressbar2==4.2.0
     - statsmodels==0.14.1
     - seaborn==0.11.0
-    # - SimpleITK==2.1.1 # needed for fastsurfer
     - matplotlib_surface_plotting==0.10
-    # - lapy==0.6.0 # needed for fastsurfer
     - numpy==1.22.0
     - torch-scatter -f https://data.pyg.org/whl/torch-1.10.0+cu111.html
     - torch-sparse -f https://data.pyg.org/whl/torch-1.10.0+cu111.html
     - torch-geometric
-    # - torchvision==0.11.1 # needed for fastsurfer
-    
+    - torchvision==0.11.1 # needed for fastsurfer
+    - lapy==0.6.0 # needed for fastsurfer
+    - SimpleITK==2.1.1 # needed for fastsurfer

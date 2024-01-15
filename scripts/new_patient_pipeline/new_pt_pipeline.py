@@ -5,6 +5,7 @@ import time
 from scripts.new_patient_pipeline.run_script_segmentation import run_script_segmentation
 from scripts.new_patient_pipeline.run_script_preprocessing import run_script_preprocessing
 from scripts.new_patient_pipeline.run_script_prediction import run_script_prediction
+from meld_graph.paths import MELD_DATA_PATH
 from meld_graph.tools_commands_prints import get_m
 
 class Logger(object):
@@ -84,7 +85,7 @@ if __name__ == "__main__":
 
      
     #write terminal output in a log
-    file_path=os.path.join(os.path.abspath(os.getcwd()), 'MELD_pipeline_'+time.strftime('%Y-%m-%d-%H-%M-%S') + '.log')
+    file_path=os.path.join(MELD_DATA_PATH, 'logs','MELD_pipeline_'+time.strftime('%Y-%m-%d-%H-%M-%S') + '.log')
     sys.stdout = Logger(sys.stdout,file_path)
     sys.stderr = Logger(sys.stderr, file_path)
     
