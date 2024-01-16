@@ -1,0 +1,7 @@
+#command
+
+# to enter docker and run without sudo
+docker run -it --rm --gpus all --user "$(id -u):$(id -g)" --entrypoint /bin/bash -v '/home/mathilde/Documents/projects/MELD_graph/test_meld_graph_v1.0.0/meld_data_install':/data meld_graph
+
+# to run the command
+docker run -it --rm --gpus all --user "$(id -u):$(id -g)" -v '/home/mathilde/Documents/projects/MELD_graph/test_meld_graph_v1.0.0/meld_data_install':/data meld_graph [PARAMETERS]

@@ -26,8 +26,8 @@ dependencies:
     - matplotlib_surface_plotting==0.10
     - numpy==1.22.0
     - torch-scatter -f https://data.pyg.org/whl/torch-1.10.0+cu111.html
-    - torch-sparse -f https://data.pyg.org/whl/torch-1.10.0+cu111.html
-    - torch-geometric
+    # - torch-sparse -f https://data.pyg.org/whl/torch-1.10.0+cu111.html
+    - torch-geometric -f https://data.pyg.org/whl/torch-1.10.0+cu111.html
     - torchvision==0.11.1 # needed for fastsurfer
     - lapy==0.6.0 # needed for fastsurfer
     - SimpleITK==2.1.1 # needed for fastsurfer

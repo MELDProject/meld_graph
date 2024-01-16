@@ -23,28 +23,24 @@ RUN apt-get install -y build-essential \
 
 #Install freesurfer in /opt/freesurfer
 #TODO: need to get freesurfer from wget
-# RUN echo "Downloading FreeSurfer ..." \
-#    && mkdir -p /opt/freesurfer-7.2.0 \
-#    && curl -fL https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.2.0/freesurfer-linux-centos6_x86_64-7.2.0.tar.gz \
-#     | tar -xz -C /opt/freesurfer-7.2.0 --owner root --group root --no-same-owner --strip-components 1 \
-#          --exclude='average/mult-comp-cor' \
-#          --exclude='lib/cuda' \
-#          --exclude='lib/qt' \
-#          --exclude='subjects/V1_average' \
-#          --exclude='subjects/bert' \
-#          --exclude='subjects/cvs_avg35' \
-#          --exclude='subjects/cvs_avg35_inMNI152' \
-#          --exclude='subjects/fsaverage3' \
-#          --exclude='subjects/fsaverage4' \
-#          --exclude='subjects/fsaverage5' \
-#          --exclude='subjects/fsaverage6' \
-#          --exclude='subjects/fsaverage_sym' \
-#          --exclude='trctrain'
+RUN echo "Downloading FreeSurfer ..." \
+   && mkdir -p /opt/freesurfer-7.2.0 \
+   && curl -fL https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.2.0/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz \
+    | tar -xz -C /opt/freesurfer-7.2.0 --owner root --group root --no-same-owner --strip-components 1 \
+         --exclude='average/mult-comp-cor' \
+         --exclude='lib/cuda' \
+         --exclude='lib/qt' \
+         --exclude='subjects/V1_average' \
+         --exclude='subjects/bert' \
+         --exclude='subjects/cvs_avg35' \
+         --exclude='subjects/cvs_avg35_inMNI152' \
+         --exclude='subjects/fsaverage3' \
+         --exclude='subjects/fsaverage4' \
+         --exclude='subjects/fsaverage5' \
+         --exclude='subjects/fsaverage6' \
+         --exclude='trctrain'
 
-COPY /freesurfer/ /opt/freesurfer-7.2.0
-# RUN tar -xzf freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz \
-# && mv /freesurfer /opt/ \
-# && rm -f freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz
+RUN rm -f /opt/freesurfer-7.2.0/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz
 
 # #Modify the environment
 ENV PATH=/opt/freesurfer-7.2.0/bin:$PATH
@@ -98,8 +94,8 @@ RUN mkdir /data
 WORKDIR /app
 
 # Define the command to run script 
-# RUN conda run --no-capture-output -n meld_classifier /bin/bash -c " python3 /meld_classifier/scripts/prepare_classifier.py --skip-config"
-# RUN cd /meld_classifier && conda run --no-capture-output -n meld_classifier /bin/bash -c " pytest "
+# RUN conda run --no-capture-output -n meld_classifier /bin/bash -c "python scripts/prepare_classifier.py"
+# RUN cd /meld_classifier && conda run --no-capture-output -n meld_classifier /bin/bash -c "pytest"
 
-ENTRYPOINT ["python", "scripts/new_patient_pipeline/new_pt_pipeline.py"]
+ENTRYPOINT ["conda", "run", "-n", "meld_graph", "python", "scripts/new_patient_pipeline/new_pt_pipeline.py"]
 CMD ["-h"]
