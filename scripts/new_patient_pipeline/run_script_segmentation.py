@@ -281,43 +281,8 @@ def create_dataset_file(subjects, output_path):
     df['split']=['test' for subject in subjects]
     df.to_csv(output_path)
 
-def smooth_features_new_subjects(subject_ids, output_dir):
-    features = {
-        ".on_lh.thickness.mgh": 3,
-        ".on_lh.w-g.pct.mgh": 3,
-        ".on_lh.pial.K_filtered.sm20.mgh": None,
-        ".on_lh.sulc.mgh": 3,
-        ".on_lh.curv.mgh": 3,
-        ".on_lh.gm_FLAIR_0.25.mgh": 3,
-        ".on_lh.gm_FLAIR_0.5.mgh": 3,
-        ".on_lh.gm_FLAIR_0.75.mgh": 3,
-        ".on_lh.gm_FLAIR_0.mgh": 3,
-        ".on_lh.wm_FLAIR_0.5.mgh": 3,
-        ".on_lh.wm_FLAIR_1.mgh": 3,
-    }
-
-    print(get_m(f'Start smoothing features', subject_ids, 'STEP 3'))
-
-
-    if isinstance(subject_ids, str):
-        subject_ids=[subject_ids]
-
-    tmp = tempfile.NamedTemporaryFile(mode="w")
-    create_dataset_file(subject_ids, tmp.name)
-
-    c_raw = MeldCohort(hdf5_file_root="{site_code}_{group}_featurematrix.hdf5", dataset=tmp.name, data_dir=BASE_PATH)
-    smoothing = Preprocess(c_raw, write_output_file="{site_code}_{group}_featurematrix_smoothed.hdf5", data_dir=output_dir)
-    
-    #file to store subject with outliers vertices
-    outliers_file=opj(output_dir, 'list_subject_extreme_vertices.csv')
-    
-    for feature in np.sort(list(set(features))):
-        print(feature)
-        smoothing.smooth_data(feature, features[feature], clipping_params=CLIPPING_PARAMS_FILE, outliers_file=outliers_file)
-
-    tmp.close()
-    
-def run_subjects_segmentation_and_smoothing_parallel(subject_ids, num_procs=10, harmo_code="noHarmo", use_fastsurfer=False, verbose=False):
+ 
+def run_subjects_segmentation_parallel(subject_ids, num_procs=10, harmo_code="noHarmo", use_fastsurfer=False, verbose=False):
     # parallel version of the pipeline, finish each stage for all subjects first
 
     ### SEGMENTATION ###
@@ -397,19 +362,10 @@ def run_subjects_segmentation_and_smoothing_parallel(subject_ids, num_procs=10, 
             subject_ids_failed.append(subject_ids[i])
     subject_ids = list(set(subject_ids).difference(subject_ids_failed))
 
-    #### SMOOTH FEATURES #####
-    subject_ids_failed=[]
-    #TODO: parallelise here
-    for i,subject in enumerate(subject_ids):
-        result = smooth_features_new_subjects(subject, output_dir=output_dir)
-        if result==False:
-            print(get_m(f'Subject removed from futur process because a step in the pipeline failed', subject_ids[i], 'ERROR'))
-            subject_ids_failed.append(subject_ids[i])
-    subject_ids = list(set(subject_ids).difference(subject_ids_failed))
     return subject_ids
 
-def run_subject_segmentation_and_smoothing(subject_id, harmo_code="noHarmo", use_fastsurfer=False, verbose=False):
-    # pipeline to segment the brain, exract surface-based features and smooth features for 1 subject
+def run_subject_segmentation(subject_id, harmo_code="noHarmo", use_fastsurfer=False, verbose=False):
+    # pipeline to segment the brain, exract surface-based features for 1 subject
         
     ### SEGMENTATION ###
     ini_freesurfer = format("$FREESURFER_HOME/SetUpFreeSurfer.sh")
@@ -452,10 +408,6 @@ def run_subject_segmentation_and_smoothing(subject_id, harmo_code="noHarmo", use
     if result == False:
             return False
 
-    ### SMOOTH FEATURES ###
-    result = smooth_features_new_subjects(subject_id, output_dir=output_dir)
-    if result == False:
-            return False
 
 def run_script_segmentation(list_ids=None, sub_id=None, harmo_code='noHarmo', use_parallel=False, use_fastsurfer=False, verbose=False ):
     harmo_code = str(harmo_code)
@@ -480,7 +432,7 @@ def run_script_segmentation(list_ids=None, sub_id=None, harmo_code='noHarmo', us
     
     if subject_id != None:
         #launch segmentation and feature extraction for 1 subject
-        result = run_subject_segmentation_and_smoothing(subject_id,  harmo_code = harmo_code, use_fastsurfer = use_fastsurfer, verbose=verbose)
+        result = run_subject_segmentation(subject_id,  harmo_code = harmo_code, use_fastsurfer = use_fastsurfer, verbose=verbose)
         if result == False:
             print(get_m(f'One step of the pipeline has failed. Process has been aborted for this subject', subject_id, 'ERROR'))
             return False
@@ -488,7 +440,7 @@ def run_script_segmentation(list_ids=None, sub_id=None, harmo_code='noHarmo', us
         if use_parallel:
             #launch segmentation and feature extraction in parallel
             print(get_m(f'Run subjects in parallel', None, 'INFO'))
-            subject_ids_succeed = run_subjects_segmentation_and_smoothing_parallel(subject_ids, harmo_code = harmo_code, use_fastsurfer = use_fastsurfer, verbose=verbose)
+            subject_ids_succeed = run_subjects_segmentation_parallel(subject_ids, harmo_code = harmo_code, use_fastsurfer = use_fastsurfer, verbose=verbose)
             subject_ids_failed= list(set(subject_ids).difference(subject_ids_succeed))
             if len(subject_ids_failed):
                 print(get_m(f'One step of the pipeline has failed. Process has been aborted for subjects {subject_ids_failed}', None, 'ERROR'))
@@ -498,7 +450,7 @@ def run_script_segmentation(list_ids=None, sub_id=None, harmo_code='noHarmo', us
             print(get_m(f'Run subjects one after another', None, 'INFO'))
             subject_ids_failed=[]
             for subj in subject_ids:
-                result = run_subject_segmentation_and_smoothing(subj,  harmo_code = harmo_code, use_fastsurfer = use_fastsurfer, verbose=verbose)
+                result = run_subject_segmentation(subj,  harmo_code = harmo_code, use_fastsurfer = use_fastsurfer, verbose=verbose)
                 if result == False:
                     print(get_m(f'One step of the pipeline has failed. Process has been aborted for this subject', subj, 'ERROR'))
                     subject_ids_failed.append(subj)

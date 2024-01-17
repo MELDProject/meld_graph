@@ -23,6 +23,7 @@ from meld_graph.paths import (
                             MELD_DATA_PATH,
                             MELD_SITE_CODES, 
                             DEMOGRAPHIC_FEATURES_FILE,
+                            CLIPPING_PARAMS_FILE,
                             COMBAT_PARAMS_FILE,
                             NORM_CONTROLS_PARAMS_FILE, 
                             )   
@@ -105,6 +106,17 @@ def run_data_processing_new_subjects(subject_ids, harmo_code, combat_params_file
         if combat_params_file=='need_harmonisation':
             sys.exit(get_m(f'You need to compute the combat harmonisation parameters for this site before to run combat', None, 'ERROR'))
     
+    ### SMOOTHING ###
+    c_raw = MeldCohort(hdf5_file_root="{site_code}_{group}_featurematrix.hdf5", dataset=tmp.name, data_dir=BASE_PATH)
+    smoothing = Preprocess(c_raw, write_output_file="{site_code}_{group}_featurematrix_smoothed.hdf5", data_dir=output_dir)
+    
+    #file to store subject with outliers vertices
+    outliers_file=opj(output_dir, 'list_subject_extreme_vertices.csv')
+    
+    for feature in np.sort(list(set(features))):
+        print(feature)
+        smoothing.smooth_data(feature, features[feature], clipping_params=CLIPPING_PARAMS_FILE, outliers_file=outliers_file)
+
     ### REGRESS THICKNESS ###
     if (".on_lh.thickness" in "".join(features_smooth)) and (".on_lh.curv" in "".join(features_smooth)):
         print(get_m(f'Regress thickness with curvature', subject_ids, 'STEP'))
@@ -215,6 +227,17 @@ def new_site_harmonisation(subject_ids, harmo_code, demographic_file, output_dir
 
     check_demographic_file(demographic_file, subject_ids)
     
+    ### SMOOTHING ###
+    c_raw = MeldCohort(hdf5_file_root="{site_code}_{group}_featurematrix.hdf5", dataset=tmp.name, data_dir=BASE_PATH)
+    smoothing = Preprocess(c_raw, write_output_file="{site_code}_{group}_featurematrix_smoothed.hdf5", data_dir=output_dir)
+    
+    #file to store subject with outliers vertices
+    outliers_file=opj(output_dir, 'list_subject_extreme_vertices.csv')
+    
+    for feature in np.sort(list(set(features))):
+        print(feature)
+        smoothing.smooth_data(feature, features[feature], clipping_params=CLIPPING_PARAMS_FILE, outliers_file=outliers_file)
+
     ### REGRESS THICKNESS ###
     if (".on_lh.thickness" in "".join(features_smooth)) and (".on_lh.curv" in "".join(features_smooth)):
         print(get_m(f'Regress thickness with curvature', subject_ids, 'STEP'))
