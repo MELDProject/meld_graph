@@ -21,6 +21,10 @@ import argparse
 import numpy as np
 import nibabel as nb
 from nilearn import plotting, image
+from nilearn.image import new_img_like
+from nilearn._utils.numpy_conversions import as_ndarray
+from nilearn._utils.param_validation import check_threshold
+from nilearn._utils.extmath import fast_abs_percentile
 import pandas as pd
 import matplotlib_surface_plotting as msp
 import matplotlib.pyplot as plt
@@ -390,28 +394,15 @@ def generate_prediction_report(
         os.makedirs(os.path.join(output_dir_sub), exist_ok=True)
         # Open their MRI data if available
         t1_file = get_t1_file(subject_id, os.path.join(data_dir, subject_id))
-        prediction_file_lh = glob.glob(os.path.join(output_dir, subject_id, "predictions", "lh.prediction*"))[0]
-        prediction_file_rh = glob.glob(os.path.join(output_dir, subject_id, "predictions", "rh.prediction*"))[0]
+        prediction_file = glob.glob(os.path.join(output_dir, subject_id, "predictions", "prediction*"))[0]
         # load image
         imgs = {
             "anat": nb.load(t1_file),
-            "pred_left": nb.load(prediction_file_lh),
-            "pred_right": nb.load(prediction_file_rh),
+            "pred": nb.load(prediction_file),
         }
-        # Resample and move to same shape and affine than t1
-        imgs["pred_left"] = image.resample_img(
-            imgs["pred_left"],
-            target_affine=imgs["anat"].affine,
-            target_shape=imgs["anat"].shape,
-            interpolation="nearest",
-            copy=True,
-            order="F",
-            clip=False,
-            fill_value=0,
-            force_resample=False,
-        )
-        imgs["pred_right"] = image.resample_img(
-            imgs["pred_right"],
+        # # Resample and move to same shape and affine than t1
+        imgs["pred"] = image.resample_img(
+            imgs["pred"],
             target_affine=imgs["anat"].affine,
             target_shape=imgs["anat"].shape,
             interpolation="nearest",
@@ -449,9 +440,6 @@ def generate_prediction_report(
             ax.imshow(im1)
             ax.axis("off")
             title = 'Left hemisphere' if hemi=='left' else 'Right hemisphere'
-            ax.set_title(title, loc="left", fontsize=20)
-            ax = fig.add_subplot(gs1[i, 2])
-            ax.imshow(im2)
             ax.axis("off")
            # initiate params for saliencies
             prefixes = [".combat", ".inter_z.intra_z.combat", ".inter_z.asym.intra_z.combat"]
@@ -567,7 +555,7 @@ def generate_prediction_report(
                 ax3 = fig3.add_subplot(gs3[0])
                 min_v = cluster - 1
                 max_v = cluster + 1
-                mask = image.math_img(f"(img < {max_v}) & (img > {min_v})", img=imgs[f"pred_{hemi}"])
+                mask = image.math_img(f"(img < {max_v}) & (img > {min_v})", img=imgs[f"pred"])
                 coords = plotting.find_xyz_cut_coords(mask)
                 vmax = np.percentile(imgs["anat"].get_fdata(), 99)
                 display = plotting.plot_anat(
@@ -575,14 +563,28 @@ def generate_prediction_report(
                     draw_cross=True, radiological=True,
                     figure=fig3, axes=ax3, vmax=vmax
                 )
-                # display.add_contours(prediction_file_lh, filled=True, alpha=0.7, threshold=cluster-0.1, levels=[cluster-0.1, (cluster-0.1)*100], colors=["darkred", "yellow"])
-                # display.add_contours(prediction_file_rh, filled=True, alpha=0.7, threshold=cluster-0.1, levels=[cluster-0.1, (cluster-0.1)*100], colors=["darkred", "yellow"])
-                
-                display.add_overlay(prediction_file_lh, cmap=plotting.cm.red_transparent, threshold=0, cbar_vmin=cluster-0.4, cbar_vmax=cluster+0.4)
-                display.add_overlay(prediction_file_rh, cmap=plotting.cm.red_transparent, threshold=0, cbar_vmin=cluster-0.4, cbar_vmax=cluster+0.4)
-                display.add_overlay(prediction_file_lh, cmap=plotting.cm.green_transparent, threshold=0, cbar_vmin=(cluster-0.1)*100, cbar_vmax=(cluster+0.1)*100)
-                display.add_overlay(prediction_file_rh, cmap=plotting.cm.green_transparent, threshold=0, cbar_vmin=(cluster-0.1)*100, cbar_vmax=(cluster+0.1)*100)
-                
+                # display cluster
+                data = imgs["pred"].get_fdata()
+                map_img = new_img_like(imgs["pred"], as_ndarray((data==cluster) | (data==cluster*100)).astype(float), imgs["pred"].affine)
+                display.add_contours(
+                        map_img,
+                        levels=[0.5],
+                        colors=["red"],
+                        filled=True,
+                        alpha=0.7,
+                        linestyles="solid",
+                    )
+                # display cluster salient vertices
+                map_img = new_img_like(imgs["pred"], as_ndarray(data==cluster*100).astype(float), imgs["pred"].affine)
+                display.add_contours(
+                        map_img,
+                        levels=[0.5],
+                        colors=["yellow"],
+                        filled=True,
+                        alpha=0.7,
+                        linestyles="solid",
+                    )
+
                 for cut_ax in display.axes.values():
                     slices_x = np.linspace(cut_ax.ax.get_xlim()[0], cut_ax.ax.get_xlim()[1],100)
                     cut_ax.ax.set_xlim(slices_x[12], slices_x[-12])
