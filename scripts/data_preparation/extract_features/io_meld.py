@@ -80,7 +80,7 @@ def get_group_site(fs_id, csv_path):
         """
         Read demographic features from csv file and extract group, sex and scanner 
         """
-        features_name=["code", "group", "scanner"]
+        features_name=["Harmo code", "Group", "Scanner"]
         df = pd.read_csv(csv_path, header=0, encoding="latin")
         # get index column
         id_col = None

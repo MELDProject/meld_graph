@@ -387,31 +387,31 @@ class MeldSubject:
 
     @property
     def scanner(self):
-        scanner = self.get_demographic_features('scanner')
+        scanner = self.get_demographic_features('Scanner')
         if scanner in ("15T" , "1.5T" , "15t" , "1.5t" ):
             scanner="15T"
         elif scanner in ("3T" , "3t" ):
             scanner="3T"
         else:
             print(
-                f"Error: incorrect naming scheme used for {self.subject_id}. Unable to determine if scanner 15T or 3T "
+                f"Error: incorrect scanner for {self.subject_id}. Unable to determine if scanner 15T or 3T "
             )
             sys.exit()
         return scanner
 
     @property
     def group(self):
-        group = self.get_demographic_features('group')
+        group = self.get_demographic_features('Group')
         if (group != "patient") and (group != "control") :
             print(
-                f"Error: incorrect naming scheme used for {self.subject_id}. Unable to determine if patient or control."
+                f"Error: incorrect group for {self.subject_id}. Unable to determine if patient or control."
             )
             sys.exit()
         return group
 
     @property
     def site_code(self):
-        site_code = self.get_demographic_features('harmo code')
+        site_code = self.get_demographic_features('Harmo code')
         return site_code
 
     def surf_dir_path(self, hemi):
