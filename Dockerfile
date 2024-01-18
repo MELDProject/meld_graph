@@ -23,33 +23,34 @@ RUN apt-get install -y build-essential \
 
 #Install freesurfer in /opt/freesurfer
 #TODO: need to get freesurfer from wget
-RUN echo "Downloading FreeSurfer ..." \
-   && mkdir -p /opt/freesurfer-7.2.0 \
-   && curl -fL https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.2.0/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz \
-    | tar -xz -C /opt/freesurfer-7.2.0 --owner root --group root --no-same-owner --strip-components 1 \
-         --exclude='average/mult-comp-cor' \
-         --exclude='lib/cuda' \
-         --exclude='lib/qt' \
-         --exclude='subjects/V1_average' \
-         --exclude='subjects/bert' \
-         --exclude='subjects/cvs_avg35' \
-         --exclude='subjects/cvs_avg35_inMNI152' \
-         --exclude='subjects/fsaverage3' \
-         --exclude='subjects/fsaverage4' \
-         --exclude='subjects/fsaverage5' \
-         --exclude='subjects/fsaverage6' \
-         --exclude='trctrain'
+# RUN echo "Downloading FreeSurfer ..." \
+#    && mkdir -p /opt/freesurfer-7.2.0 \
+#    && curl -fL https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.2.0/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz \
+#     | tar -xz -C /opt/freesurfer-7.2.0 --owner root --group root --no-same-owner --strip-components 1 \
+#          --exclude='average/mult-comp-cor' \
+#          --exclude='lib/cuda' \
+#          --exclude='lib/qt' \
+#          --exclude='subjects/V1_average' \
+#          --exclude='subjects/bert' \
+#          --exclude='subjects/cvs_avg35' \
+#          --exclude='subjects/cvs_avg35_inMNI152' \
+#          --exclude='subjects/fsaverage3' \
+#          --exclude='subjects/fsaverage4' \
+#          --exclude='subjects/fsaverage5' \
+#          --exclude='subjects/fsaverage6' \
+#          --exclude='trctrain'
 
-RUN rm -f /opt/freesurfer-7.2.0/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz
+# RUN rm -f /opt/freesurfer-7.2.0/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz
 
 # #Modify the environment
 ENV PATH=/opt/freesurfer-7.2.0/bin:$PATH
 RUN echo "PATH=/opt/freesurfer-7.2.0/bin:$PATH" >> ~/.bashrc
 ENV FREESURFER_HOME=/opt/freesurfer-7.2.0
 RUN echo "FREESURFER_HOME=/opt/freesurfer-7.2.0" >> ~/.bashrc
+RUN echo "FS_LICENSE=/license.txt" >> ~/.bashrc
 
 # # #TODO: get license from somewhere else
-COPY license.txt ${FREESURFER_HOME}/license.txt
+# COPY license.txt ${FREESURFER_HOME}/license.txt
 
 # Install miniconda
 RUN wget --no-check-certificate -qO ~/miniconda.sh https://repo.continuum.io/miniconda/$CONDA_FILE  && \
@@ -81,21 +82,27 @@ COPY . /app/
 # RUN cd / && git clone https://github.com/MELDProject/meld_graph.git
 # update current conda base environment with packages for meld_graph 
 RUN cd /app/ && conda run -n base /bin/bash -c "conda env create -f environment.yml"
+# RUN cd /app/ && conda run -n base /bin/bash -c "conda install -f environment.yml"
+
 #activate environment with shell because not working wih conda
 SHELL ["conda", "run", "-n", "meld_graph", "/bin/bash", "-c"]
 # RUN cd /app/ && conda run -n base /bin/bash -c "conda activate meld_graph"
 #install meld_graph package
 RUN cd /app/ && conda run -n base /bin/bash -c "pip install -e ."
 
-
 #add data folder to docker
 RUN mkdir /data
 
 WORKDIR /app
+RUN chmod +x entrypoint.sh
+
+#activate the entrypoint
 
 # Define the command to run script 
-# RUN conda run --no-capture-output -n meld_classifier /bin/bash -c "python scripts/prepare_classifier.py"
-# RUN cd /meld_classifier && conda run --no-capture-output -n meld_classifier /bin/bash -c "pytest"
+# RUN conda run --no-capture-output -n meld_graph /bin/bash -c "python scripts/prepare_classifier.py"
+# RUN cd /meld_graph && conda run --no-capture-output -n meld_graph /bin/bash -c "pytest"
 
-ENTRYPOINT ["conda", "run", "-n", "meld_graph", "python", "scripts/new_patient_pipeline/new_pt_pipeline.py"]
-CMD ["-h"]
+# ENTRYPOINT ["python", "scripts/new_patient_pipeline/new_pt_pipeline.py"]
+# CMD ["-h"]
+
+ENTRYPOINT ["/bin/bash","entrypoint.sh"]
