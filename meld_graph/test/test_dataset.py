@@ -18,10 +18,10 @@ import numpy as np
 from copy import deepcopy
 
 
-@pytest.fixture(autouse=True)
-def setup_teardown_tests():
-    get_test_data()
-    yield
+# @pytest.fixture(autouse=True)
+# def setup_teardown_tests():
+#     get_test_data()
+#     yield
 
 
 @pytest.fixture(scope="session")

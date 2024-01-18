@@ -10,7 +10,7 @@ import meld_graph.data_preprocessing
 import meld_graph.evaluation
 
 from meld_graph.dataset import GraphDataset
-from meld_classifier.meld_cohort import MeldCohort
+from meld_graph.meld_cohort import MeldCohort
 
 import os
 from meld_graph.evaluation import Evaluator
