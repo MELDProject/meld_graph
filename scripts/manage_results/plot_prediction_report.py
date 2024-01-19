@@ -292,7 +292,6 @@ def get_info_soft( subject_id, harmo_code, exp):
     #use harmonisation
     if harmo_code == 'noHarmo':
         harmo = "No" 
-        harmo_code = "NaN"
     else:
         harmo = "Yes"
     

@@ -55,7 +55,7 @@ def check_demographic_file(demographic_file, subject_ids):
     #check demographic file has the right columns
     try:
         df = pd.read_csv(demographic_file)
-        if not any(ext in ';'.join(df.keys()) for ext in ['ID', 'Sex', 'Age at preoperative']):
+        if not any(ext in ';'.join(df.keys()) for ext in ['ID', 'Sex', 'Age at preoperative','Group', 'Harmo code','Scanner']):
             sys.exit(get_m(f'Error with column names', None, 'ERROR'))
     except Exception as e:
         sys.exit(get_m(f'Error with the demographic file provided for the harmonisation\n{e}', None, 'ERROR'))
