@@ -21,10 +21,10 @@ import tempfile
 import pandas as pd
 
 
-@pytest.fixture(autouse=True)
-def setup_teardown_tests():
-    get_test_data()
-    yield
+# @pytest.fixture(autouse=True)
+# def setup_teardown_tests():
+#     get_test_data()
+#     yield
 
 
 @pytest.mark.parametrize(

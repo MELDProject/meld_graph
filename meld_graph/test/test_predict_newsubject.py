@@ -18,13 +18,13 @@ from meld_graph.download_data import get_test_data
 
 def get_data_parameters():
     data_parameters = {
-        "subject": "sub-test0001",
+        "subject": "sub-test001",
         "harmo code" :"TEST",
-        "experiment_folder":"output/classifier_outputs", 
-        "expected_prediction_hdf5_file" : os.path.join("results", "predictions_ensemble_iteration_expected.hdf5"),
-        "prediction_hdf5_file" : os.path.join("results", "predictions_ensemble_iteration.hdf5"),
-        "expected_prediction_nii_file" : "{}.prediction_expected.nii",
-        "prediction_nii_file" : "{}.prediction.nii.gz"
+        "experiment_folder":"output/classifier_outputs/23-10-30_graph_nocombat/fold_all", 
+        "expected_prediction_hdf5_file" : os.path.join("results_best_model", "predictions_expected.hdf5"),
+        "prediction_hdf5_file" : os.path.join("results_best_model", "predictions.hdf5"),
+        "expected_prediction_nii_file" : "prediction_expected.nii.gz",
+        "prediction_nii_file" : "prediction.nii.gz"
     }
     return data_parameters
 
@@ -38,8 +38,8 @@ def load_prediction(subject,hdf5):
 
 @pytest.mark.slow
 def test_predict_newsubject():
-    # ensure test input data is present
-    get_test_data()
+    # # ensure test input data is present
+    # get_test_data()
     
     # initiate parameter
     data_parameters = get_data_parameters()
@@ -76,10 +76,9 @@ def test_predict_newsubject():
         assert diff_sum <= 350
 
     # compare prediction on mri native
-    for hemi in ['lh','rh']:
-        prediction_nii = nb.load(os.path.join(path_prediction_subject,data_parameters['prediction_nii_file'].format(hemi))).get_fdata()
-        expected_prediction_nii = nb.load(os.path.join(path_prediction_subject,data_parameters['expected_prediction_nii_file'].format(hemi))).get_fdata()
-        diff_sum = (np.abs(prediction_nii - expected_prediction_nii)).sum()
-        print(f'Test nifti results: Number of vertices different with expectation for {hemi} hemi : {diff_sum}')
-        assert diff_sum <= 350
+    prediction_nii = nb.load(os.path.join(path_prediction_subject,data_parameters['prediction_nii_file'])).get_fdata()
+    expected_prediction_nii = nb.load(os.path.join(path_prediction_subject,data_parameters['expected_prediction_nii_file'])).get_fdata()
+    diff_sum = (np.abs(prediction_nii - expected_prediction_nii)).sum()
+    print(f'Test nifti results: Number of vertices different with expectation : {diff_sum}')
+    assert diff_sum <= 350
  
