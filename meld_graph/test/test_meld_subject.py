@@ -55,9 +55,9 @@ def test_meldsubject_api(subj_id, hdf5_file_root):
     c = MeldCohort(hdf5_file_root=hdf5_file_root)
     subj = MeldSubject(subj_id, cohort=c)
 
-    subj.get_demographic_features("Age of onset")
+    subj.get_demographic_features("Age")
 
-    subj.load_feature_values(".inter_z.asym.on_lh.intra_z.gm_FLAIR_0.25.sm3.mgh")
+    subj.load_feature_values(".combat.on_lh.thickness.sm3.mgh")
 
     subj.get_lesion_area()
 
@@ -66,7 +66,7 @@ def test_meldsubject_api(subj_id, hdf5_file_root):
     len(subj.load_boundary_zone()) == 2 * len(c.cortex_label)
 
 
-@pytest.mark.parametrize("subj_id,hdf5_file_root", testdata[0])
+@pytest.mark.parametrize("subj_id,hdf5_file_root", testdata)
 def test_load_feature_lesion_data(subj_id, hdf5_file_root):
     # TODO also test on TEST site where we know the expected feature values?
     # get_test_data()

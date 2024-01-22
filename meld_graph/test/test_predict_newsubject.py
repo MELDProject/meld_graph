@@ -20,7 +20,7 @@ def get_data_parameters():
     data_parameters = {
         "subject": "sub-test001",
         "harmo code" :"TEST",
-        "experiment_folder":"output/classifier_outputs/23-10-30_graph_nocombat/fold_all", 
+        "experiment_folder":"output/classifier_outputs/23-10-30_graph_combat/fold_all", 
         "expected_prediction_hdf5_file" : os.path.join("results_best_model", "predictions_expected.hdf5"),
         "prediction_hdf5_file" : os.path.join("results_best_model", "predictions.hdf5"),
         "expected_prediction_nii_file" : "prediction_expected.nii.gz",

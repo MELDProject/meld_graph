@@ -285,6 +285,7 @@ def get_info_soft( subject_id, harmo_code, exp):
             Fastsurfer_use =  'False'
     else:
         FS_version = 'Unknown'
+        Fastsurfer_use =  'Unknown'
     
     #find model used
     model_name = exp.network_parameters['name']
