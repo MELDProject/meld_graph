@@ -19,14 +19,13 @@ install_native
 :hidden:
 :maxdepth: 2
 
-
-```
 pipeline_info
 prepare_data
 harmonisation
-run_pipeline
+run_prediction_pipeline
 interpret_results
 
+```
 
 ```{toctree}
 :caption: Other usage of MELD classifier
