@@ -1,4 +1,4 @@
-# Predict lesion on a new patient 
+# Predict FCD-lesion on MRI data
 
 The new MELD pipeline offers a unique command line to predict a FCD-like abnormalities from T1w (and FLAIR scan). 
 

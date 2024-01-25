@@ -1,4 +1,4 @@
-# Prepare data to run MELD pipeline
+# Prepare the data
 
 The MELD pipeline relies on the MRI data to be organised in the MELD or BIDS format. 
 

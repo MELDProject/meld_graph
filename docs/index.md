@@ -15,7 +15,7 @@ install_native
 
 
 ```{toctree}
-:caption: MELD pipeline
+:caption: MELD FCD prediction pipeline
 :hidden:
 :maxdepth: 2
 

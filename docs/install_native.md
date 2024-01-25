@@ -6,11 +6,12 @@ Note: This installation have been tested on Ubuntu 18.04.5 with CUDA Version: 11
 
 ## Prerequisites
 For preprocessing, MELD classifier requires Freesurfer. It is trained on data from versions 6 & v5.3, but compatible with Freesurfer **version up to V7.2**. Please follow instructions on [Freesurfer](https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall) to install FreeSurfer. WARNING: MELD pipeline has not been adapted for Freesurfer V7.3 and above. Please install Freesurfer V7.2 instead. \
+
 MELD pipeline is also working with FastSurfer (quicker version of Freesurfer). If you wish to use FastSurfer instead please follow instructions for the [native install of Fastsurfer V1.1.2](https://github.com/Deep-MI/FastSurfer.git) by running the below:
 ```bash
 git clone --branch v1.1.2 https://github.com/Deep-MI/FastSurfer.git
 ```
-Note that Fastsurfer requires to install Freesurfer V7.2 to works \
+Note that Fastsurfer requires to install Freesurfer V7.2 to works 
 
 You will need to ensure that Freesurfer is activated in your terminal (you should have some printed FREESURFER paths when opening the terminal). Otherwise you will need to manually activate Freesurfer on each new terminal by running : 
 ```bash
@@ -48,7 +49,7 @@ This script will ask you for the location of your **MELD data folder** and downl
 
 Note: You can also skip the downloading of the test data. For this, append the option `--skip-download-data` to the python call.
 
-### Verify installation
+## Verify installation
 We provide a test script to allow you to verify that you have installed all packages, set up paths correctly, and downloaded all data. This script will run the pipeline to predict the lesion classifier on a new patient. It takes approximately 15minutes to run.
 
 Note: Do not forget to activate Fressurfer as describe above before to run the test.
@@ -64,7 +65,7 @@ Note: If you run into errors at this stage and need help, you can re-run the com
   ```
   You will find this pytest_errors.log file in <path_to_meld_graph>. 
 
-### FAQs
-Please see our [FAQ](FAQs.md) for common installation problems.
+## FAQs
+Please see our [FAQ](/docs/FAQs.md) for common installation problems.
 
 

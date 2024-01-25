@@ -3,7 +3,7 @@
 ## Information about the harmonisation
 The MELD pipeline enables the harmonisation of your patient's features before prediction, if you are providing harmonisation parameters.
 
-Harmonisation of your patient data is not mandatory but recommended, to remove any bias induced by the scanner and sequence used. For more details on the MELD classifier performances with and without harmonisation please refers to our (paper)[]
+Harmonisation of your patient data is not mandatory but recommended, to remove any bias induced by the scanner and sequence used. For more details on the MELD FCD predictions performances with and without harmonisation please refers to our (paper)[]
 
 ## Compute the harmonisation paramaters 
 
