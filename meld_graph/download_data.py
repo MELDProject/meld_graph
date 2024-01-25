@@ -19,7 +19,7 @@ def download_test_data():
     """
     Download test data from figshare
     """
-    url = "https://figshare.com/ndownloader/files/38045313?private_link=256a8a952e2d1fd5a6fc"
+    url = "https://figshare.com/ndownloader/files/44229704?private_link=3b790cfb027f4036f19a"
     test_data_dir = MELD_DATA_PATH
     os.makedirs(test_data_dir, exist_ok=True)
     print('downloading test data to '+ test_data_dir)
@@ -35,7 +35,7 @@ def download_meld_params():
     """
     Download meld parameters file from figshare
     """
-    url = "https://figshare.com/ndownloader/files/36659463?private_link=dd245fc6b3c7642ed9e3"
+    url = "https://figshare.com/ndownloader/files/44229647?private_link=34b4a30c57a328a1e111"
     #print()
     meld_params_dir = MELD_DATA_PATH
     os.makedirs(meld_params_dir, exist_ok=True)
@@ -52,7 +52,7 @@ def download_models():
     """
     download pretrained ensemble models and return experiment_name and experiment_dir
     """
-    url = "https://figshare.com/ndownloader/files/31618988?private_link=2ed2d8cddbfdda5f00ae"
+    url = "https://figshare.com/ndownloader/files/44229677?private_link=7f983b7321bba527ffef"
     with tempfile.TemporaryDirectory() as tmpdirname:
         # download to tmpdir
         _fetch_url(url, os.path.join(tmpdirname, "models.tar.gz"))
@@ -66,7 +66,7 @@ def get_test_data(force_download=False):
     exists_patient = os.path.exists(os.path.join(test_data_dir, DEFAULT_HDF5_FILE_ROOT.format(site_code='TEST', group='patient')))
     exists_control = os.path.exists(os.path.join(test_data_dir, DEFAULT_HDF5_FILE_ROOT.format(site_code='TEST', group='control')))
     test_input_dir = os.path.join(MELD_DATA_PATH, "input")
-    exists_test_input = os.path.exists(os.path.join(test_input_dir,'MELD_TEST_3T_FCD_0011'))
+    exists_test_input = os.path.exists(os.path.join(test_input_dir,'sub-test001'))
     if exists_patient and exists_control and exists_test_input:
         if force_download:
             print("Overwriting existing test data.")
