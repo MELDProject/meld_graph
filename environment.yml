@@ -25,6 +25,7 @@ dependencies:
     - seaborn==0.11.0
     - matplotlib_surface_plotting==0.10
     - numpy==1.22.0
+    - pytest==6.2.3
     - torch-scatter -f https://data.pyg.org/whl/torch-1.10.0+cu111.html
     # - torch-sparse -f https://data.pyg.org/whl/torch-1.10.0+cu111.html
     - torch-geometric -f https://data.pyg.org/whl/torch-1.10.0+cu111.html
