@@ -123,16 +123,15 @@ def load_prediction(subject,hdf5):
 def create_surface_plots(surf,prediction,c, base_size=20):
     """plot and reload surface images"""
     cmap, colors =  load_cmap()
+    tmp_file = os.path.join(MELD_DATA_PATH,'tmp.png')
     msp.plot_surf(surf['coords'],
               surf['faces'],prediction,
               rotate=[90],
               mask=prediction==0,pvals=np.ones_like(c.cortex_mask),
               colorbar=False,vmin=1,vmax=len(colors) ,cmap=cmap,
               base_size=base_size,
-              filename='tmp.png'
-             );
-#    subprocess.call(f"convert ./tmp.png -trim ./tmp1.png", shell=True)
-    im = Image.open('tmp.png')
+              filename=tmp_file)
+    im = Image.open(tmp_file)
     im = trim(im)
     im = im.convert("RGBA")
     im1 = np.array(im)
@@ -142,14 +141,13 @@ def create_surface_plots(surf,prediction,c, base_size=20):
               mask=prediction==0,pvals=np.ones_like(c.cortex_mask),
               colorbar=False,vmin=1,vmax=len(colors),cmap=cmap,
               base_size=base_size,
-              filename='tmp.png'
-             );
- #   subprocess.call(f"convert ./tmp.png -trim ./tmp1.png", shell=True)
-    im = Image.open('tmp.png')
+              filename=tmp_file)
+    im = Image.open(tmp_file)
     im = trim(im)
     im = im.convert("RGBA")
     im2 = np.array(im)
     plt.close('all')
+    os.remove(tmp_file)
     return im1,im2
 
 def load_cluster(file, subject):

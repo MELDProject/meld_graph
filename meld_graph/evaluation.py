@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import sklearn.metrics as metrics
 import itertools
 import seaborn as sns
+from meld_graph.paths import MELD_DATA_PATH
 
 # for saliency - do not force people to have this
 try:
@@ -1088,22 +1089,22 @@ def create_surface_plots(coords, faces, overlay, flat_map=True, limits=None):
     else:
         vmin = limits[0]
         vmax = limits[1]
-    f = np.random.choice(np.arange(1000))
+    tmp_file = os.path.join(MELD_DATA_PATH,'tmp.png')
     msp.plot_surf(
         coords,
         faces,
         overlay,
         flat_map=flat_map,
         rotate=[90, 270],
-        filename="tmp{}.png".format(f),
+        filename=tmp_file,
         vmin=vmin,
         vmax=vmax,
     )
-    im = Image.open("tmp{}.png".format(f))
+    im = Image.open(tmp_file)
     im = trim(im)
     im = im.convert("RGBA")
     im1 = np.array(im)
-    os.remove("tmp{}.png".format(f))
+    os.remove(tmp_file)
     return im1
 
 
