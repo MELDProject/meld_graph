@@ -19,7 +19,6 @@ install_native
 :hidden:
 :maxdepth: 2
 
-pipeline_info
 prepare_data
 harmonisation
 run_prediction_pipeline
@@ -28,22 +27,13 @@ interpret_results
 ```
 
 ```{toctree}
-:caption: Other usage of MELD classifier
+:caption: Other usage
 :hidden:
 :maxdepth: 2
 
 figure_notebooks
 train_evaluate
-
-```
-
-
-
-```{toctree}
-:caption: Contributing
-:hidden:
-:maxdepth: 2
-
 contributing
+
 ```
 
