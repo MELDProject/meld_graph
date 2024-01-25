@@ -45,7 +45,6 @@ except (NoOptionError, NoSectionError) as e:
 
 # files with and without harmonisation
 CLIPPING_PARAMS_FILE='clip_params_MELD.json'
-COMBAT_PARAMS_FILE = 'Combat_parameters.hdf5'
 NORM_CONTROLS_PARAMS_FILE = 'Norm_controls_parameters_{}.hdf5'
 
 # pre-trained model path and name
@@ -54,7 +53,7 @@ MODEL_NAME = 'best_model'
     
     
 # qc-ed demographic features
-DEMOGRAPHIC_FEATURES_FILE = "demographics_file.csv"
+DEMOGRAPHIC_FEATURES_FILE = ".demographics_file.csv"
 
 #surface files
 CORTEX_LABEL_FILE = os.path.join("fsaverage_sym", "label", "lh.cortex.label")
@@ -73,7 +72,12 @@ NEWSUBJECTS_DATASET = "MELD_dataset_newSubjects.csv"
 # number of vertices per hemi
 NVERT = 163842
 
-#list of MELD sites
-MELD_SITE_CODES = [
-    "H2","H3","H4","H5","H6","H7","H9","H10","H11","H12","H14","H15","H16","H17","H18","H19","H21","H23","H24","H26",
-]
+def load_config(config_file):
+    """load config.py file and return config object"""
+    import importlib.machinery, importlib.util
+
+    loader = importlib.machinery.SourceFileLoader("config", config_file)
+    spec = importlib.util.spec_from_loader(loader.name, loader)
+    config = importlib.util.module_from_spec(spec)
+    loader.exec_module(config)
+    return config
