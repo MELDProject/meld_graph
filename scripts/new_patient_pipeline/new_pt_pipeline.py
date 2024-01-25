@@ -2,10 +2,13 @@ import os
 import argparse
 import sys
 import time
+import shutil
+import pandas as pd
+import numpy as np
 from scripts.new_patient_pipeline.run_script_segmentation import run_script_segmentation
 from scripts.new_patient_pipeline.run_script_preprocessing import run_script_preprocessing
 from scripts.new_patient_pipeline.run_script_prediction import run_script_prediction
-from meld_graph.paths import MELD_DATA_PATH
+from meld_graph.paths import MELD_DATA_PATH, DEMOGRAPHIC_FEATURES_FILE
 from meld_graph.tools_commands_prints import get_m
 
 class Logger(object):
@@ -21,6 +24,16 @@ class Logger(object):
     def flush(self):
         pass
 
+def create_demographic_file(subjects_ids, save_file, harmo_code='noHarmo'):
+        df = pd.DataFrame()
+        if  isinstance(subjects_ids, str):
+            subjects_ids=[subjects_ids]
+        df['ID']=subjects_ids
+        df['Harmo code']=[harmo_code for subject in subjects_ids]
+        df['Group']=['patient' for subject in subjects_ids]
+        df['Scanner']=['3T' for subject in subjects_ids]
+        df.to_csv(save_file)
+        
 if __name__ == "__main__":
     # parse commandline arguments
     parser = argparse.ArgumentParser(description="Main pipeline to predict on subject with MELD classifier")
@@ -51,13 +64,19 @@ if __name__ == "__main__":
                         default=False,
                         action="store_true",
                         )
+    parser.add_argument('-demos', '--demographic_file', 
+                        type=str, 
+                        help='provide the demographic files for the harmonisation',
+                        required=False,
+                        default=None,
+                        )
     parser.add_argument('--harmo_only', 
                         action="store_true", 
                         help='only compute the harmonisation combat parameters, no further process',
                         required=False,
                         default=False,
                         )
-    parser.add_argument('--skip_segmentation',
+    parser.add_argument('--skip_feature_extraction',
                         action="store_true",
                         help='Skip the segmentation and extraction of the MELD features',
                         )
@@ -70,11 +89,6 @@ if __name__ == "__main__":
                         action="store_true",
                         default=False,
                         help='Predict and map back into native T1. Does not produce report',)
-    parser.add_argument('--split',
-                        action="store_true",
-                        default=False,
-                        help='Split subjects list in chunk to avoid data overload',
-                        )
     parser.add_argument("--debug_mode", 
                         help="mode to debug error", 
                         required=False,
@@ -93,12 +107,35 @@ if __name__ == "__main__":
     print(args)
     
     #---------------------------------------------------------------------------------
-    ### CHECKS
-    # TODO: check demographic file
-
+    ### Create demographic file for prediction if not provided
+    demographic_file_tmp = os.path.join(MELD_DATA_PATH, DEMOGRAPHIC_FEATURES_FILE)
+    if args.demographic_file is None:
+        harmo_code = str(args.harmo_code)
+        subject_id=None
+        subject_ids=None
+        if args.list_ids != None:
+            list_ids=os.path.join(MELD_DATA_PATH, args.list_ids)
+            try:
+                sub_list_df=pd.read_csv(list_ids)
+                subject_ids=np.array(sub_list_df.ID.values)
+            except:
+                subject_ids=np.array(np.loadtxt(list_ids, dtype='str', ndmin=1)) 
+            else:
+                    sys.exit(get_m(f'Could not open {subject_ids}', None, 'ERROR'))             
+        elif args.id != None:
+            subject_id=args.id
+            subject_ids=np.array([args.id])
+        else:
+            print(get_m(f'No ids were provided', None, 'ERROR'))
+            print(get_m(f'Please specify both subject(s) and site_code ...', None, 'ERROR'))
+            sys.exit(-1) 
+        create_demographic_file(subject_ids, demographic_file_tmp, harmo_code=harmo_code)
+    else:
+        shutil.copy(args.demographic_file, demographic_file_tmp)
+    
     #---------------------------------------------------------------------------------
     ### SEGMENTATION ###
-    if not args.skip_segmentation:
+    if not args.skip_feature_extraction:
         print(get_m(f'Call script segmentation', None, 'SCRIPT 1'))
         result = run_script_segmentation(
                             harmo_code = args.harmo_code,
@@ -134,7 +171,6 @@ if __name__ == "__main__":
                             sub_id=args.id,
                             no_prediction_nifti = args.no_nifti,
                             no_report = args.no_report,
-                            split = args.split,
                             verbose = args.debug_mode
                             )
         if result == False:
@@ -144,3 +180,6 @@ if __name__ == "__main__":
         print(get_m(f'Skip script predition', None, 'SCRIPT 3'))
                 
     print(f'You can find a log of the pipeline at {file_path}')
+    
+    #delete demographic file
+    os.remove(demographic_file_tmp)
