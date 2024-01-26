@@ -1,22 +1,22 @@
 # MELD FCD 
 Graph based FCD lesion segmentation for the MELD project.
 
+This package offers a friendly user pipeline to segment FCD-lesions from MRI scans. 
+
 ![overview](https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/docs/images/overview.png)
 
 *Code Authors : Mathilde Ripart, Hannah Spitzer, Sophie Adler, Konrad Wagstyl*
 
 ## Notes
 
-This package comes with a friendly user pipeline to segment FCD-lesions from MRI scans. \
-
-It also comes with two pretrained graph based models trained, one model trained on harmonised features and the other trained on non harmonised features (more information on harmonisation [here](https://meld-graph.readthedocs.io/en/latest/harmonisation.html) \
+This package comes with two pretrained graph based models trained, one model trained on harmonised features and the other trained on non harmonised features.
 
 It also contains code for training and evaluating graph-based U-net lesion segmentation models operating on icosphere meshes. \
 In addition to lesion segmentation, the models also contain auxiliary distance regression and hemisphere classification losses.
 
 For more information check our manuscripts: 
-- the manuscript describing the [original MELD FCD pipeline and dataset](https://academic.oup.com/brain/advance-article/doi/10.1093/brain/awac224/6659752)
-- the manuscript describing the [updated graph-based model](https://arxiv.org/abs/2306.01375)
+- the manuscript describing the original MELD FCD pipeline and dataset[link](https://academic.oup.com/brain/advance-article/doi/10.1093/brain/awac224/6659752)
+- the manuscript describing the updated graph-based model [link](https://arxiv.org/abs/2306.01375)
 
 ## Disclaimer
 
@@ -26,15 +26,16 @@ The MELD surface-based graph FCD detection algorithm is intended for research pu
 
 ### Installations available 
 You can install and use the MELD FCD prediction pipeline with :
-- [**docker container (recommended).**](https://meld-graph.readthedocs.io/en/latest/install_docker.html) This method is recommended for easy installation and use of the pipeline as all the prerequisite packages are already embeded into the container. Note: Dockers are not working on High Performance Computing (HCP) systems.
-- [**native installation.**](https://meld-graph.readthedocs.io/en/latest/install_native.html) This method is recommended for more advance users that would like to be able to modify the codes and/or use the code to train/test their own classifier. 
-- **singularity container (COMING SOON)**: This method is not yet available but will enable to run a container on High Performance Computing (HCP) systems. 
+- [**docker container**](https://meld-graph.readthedocs.io/en/latest/install_docker.html) recommended for easy installation of the pipeline as all the prerequisite packages are already embeded into the container. Note: Dockers are not working on High Performance Computing (HCP) systems.
+- [**native installation**](https://meld-graph.readthedocs.io/en/latest/install_native.html) recommend for more advance users that would like to be able to modify the code and/or use the code to train/test their own classifier. 
+- **singularity container (COMING SOON)** enables to run a container on High Performance Computing (HCP) systems. 
 
 ### Running the pipeline 
 Once installed you will be able to use the MELD FCD prediction pipeline on your data following the steps:
 1. Prepare your data : [guidelines](https://meld-graph.readthedocs.io/en/latest/prepare_data.html)
 2. (OPTIONAL) Compute the harmonisation parameters : [guidelines](https://meld-graph.readthedocs.io/en/latest/harmonisation.html)
-3. Run the prediction pipeline: [guidelines](https:/meld-graph.readthedocs.io/en/latest/run_prediction_pipeline.html)
+3. Run the prediction pipeline: [guidelines](https://meld-graph.readthedocs.io/en/latest/run_prediction_pipeline.html)
+4. Interpret the results: [guidelines](https://meld-graph.readthedocs.io/en/latest/interpret_results.html)
 
 
 **What is the harmonisation process ?**
@@ -43,7 +44,7 @@ Scanners can induce a bias in the MRI data. The MELD pipeline offers the possibi
 
 Note: The MELD pipeline can also be run without harmonisation. 
 
-## Other guidelines
+## Additional information
 With the native installation of the MELD classifier you can reproduce the figures from our paper and train/evaluate your own models.
 For more details, check out the guides linked below:
 - [Notebooks to reproduce figures](https://meld-graph.readthedocs.io/en/latest/figure_notebooks.html)
