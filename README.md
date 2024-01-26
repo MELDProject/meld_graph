@@ -1,7 +1,7 @@
 # MELD FCD 
 Graph based FCD lesion segmentation for the MELD project.
 
-![overview](images/overview.png)
+![overview](/docs/images/overview.png)
 
 *Code Authors : Hannah Spitzer, Mathilde Ripart, Sophie Adler, Konrad Wagstyl*
 

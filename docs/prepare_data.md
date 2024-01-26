@@ -16,13 +16,13 @@ Place the T1 nifti file into the T1 folder.
 
 Place the FLAIR nifti file into the FLAIR folder.
 
-![example](/images/input_structure_meld_format.png)
+![example](/docs/images/input_structure_meld_format.png)
 
 ### BIDS format
 
 **TO UPDATE** The MELD pipeline now accept BIDS format as input data. For the BIDS format the data needs to be organised following ...
 
-![example](/images/input_structure_bids_format.png)
+![example](/docs/images/input_structure_bids_format.png)
 
 ## Prepare the demographic information (required only to compute the harmonisation parameters)
 
@@ -30,7 +30,7 @@ To compute the harmonisation parameters, you will need to provide a couple of in
 
 You can copy the *demographics_file.csv* that you can find in your <meld_data_folder> and create a new version of it with the harmonisation code *demographics_file_<harmo_code>.csv*. (e.g *demographics_file_H1.csv*)
 
-![example](/images/example_demographic_csv.png)
+![example](/docs/images/example_demographic_csv.png)
 
 - ID : subject ID  (this should be the same ID than the one used to create the MRI folder)
 - Harmo code: the harmonisation code associated with this subject scan (need to be the same for all the subjects used for the harmonisation) 
