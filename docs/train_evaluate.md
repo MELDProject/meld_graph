@@ -5,7 +5,7 @@ This package contains code for training and evaluating graph-based U-net lesion 
 
 *Code authors (alphabetical): Sophie Adler, Mathilde Ripart, Hannah Spitzer, Konrad Wagstyl*
 
-![nnunet](/images/nnunet_architecture.png)
+![nnunet](https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/images/nnunet_architecture.png)
 
 ## Installation
 
