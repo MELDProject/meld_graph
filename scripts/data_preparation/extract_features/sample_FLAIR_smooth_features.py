@@ -8,7 +8,7 @@ import numpy as np
 import nibabel as nb
 from scripts.data_preparation.extract_features import io_meld
 from scripts.data_preparation.extract_features.create_identity_reg import create_identity
-from meld_graph.tools_commands_prints import get_m
+from meld_graph.tools_pipeline import get_m
 
 def sample_flair_smooth_features(subject_id, subjects_dir, verbose=False):
     #TODO: rename function

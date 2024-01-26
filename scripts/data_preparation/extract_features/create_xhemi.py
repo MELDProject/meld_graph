@@ -9,7 +9,7 @@ import subprocess
 from subprocess import Popen
 from argparse import ArgumentParser
 import multiprocessing
-from meld_graph.tools_commands_prints import get_m
+from meld_graph.tools_pipeline import get_m
 
 def create_xhemi(subject_id, subjects_dir,template = 'fsaverage_sym', verbose=False):
     

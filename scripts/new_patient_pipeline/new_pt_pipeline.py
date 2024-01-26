@@ -9,7 +9,7 @@ from scripts.new_patient_pipeline.run_script_segmentation import run_script_segm
 from scripts.new_patient_pipeline.run_script_preprocessing import run_script_preprocessing
 from scripts.new_patient_pipeline.run_script_prediction import run_script_prediction
 from meld_graph.paths import MELD_DATA_PATH, DEMOGRAPHIC_FEATURES_FILE
-from meld_graph.tools_commands_prints import get_m
+from meld_graph.tools_pipeline import get_m
 
 class Logger(object):
     def __init__(self, sys_type=sys.stdout, filename='MELD_output.log'):

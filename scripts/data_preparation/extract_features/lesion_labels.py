@@ -3,7 +3,7 @@ import os
 import argparse
 import subprocess
 from subprocess import Popen
-from meld_graph.tools_commands_prints import  get_m
+from meld_graph.tools_pipeline import  get_m
 
 
 def lesion_labels(subject_id, subjects_dir, verbose=False):

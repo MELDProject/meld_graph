@@ -5,7 +5,7 @@ from meld_graph.meld_cohort import MeldCohort
 from meld_graph.paths import MELD_DATA_PATH
 import nibabel as nb
 import argparse
-from meld_graph.tools_commands_prints import get_m
+from meld_graph.tools_pipeline import get_m
 
 
 def load_prediction(subject, hdf5, prediction_name="prediction_clustered"):

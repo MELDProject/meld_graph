@@ -3,6 +3,7 @@ import os
 from configparser import ConfigParser, NoOptionError
 import sys
 import shutil
+import subprocess
 
 
 
@@ -64,8 +65,6 @@ def prepare_meld_config():
     with open(config_fname, "w") as configfile:
         config.write(configfile)
     print(f"Successfully changed MELD data folder to {meld_data_path}")
-
-    
 
 if __name__ == '__main__':
     # ensure that all data is downloaded

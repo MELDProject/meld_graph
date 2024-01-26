@@ -8,7 +8,7 @@ import nibabel as nb
 import argparse
 from scripts.data_preparation.extract_features.io_meld import save_subject
 from meld_graph.paths import MELD_DATA_PATH, DEMOGRAPHIC_FEATURES_FILE
-from meld_graph.tools_commands_prints import get_m
+from meld_graph.tools_pipeline import get_m
 import os
 
 def create_training_data_hdf5(subject, subject_dir, output_dir):

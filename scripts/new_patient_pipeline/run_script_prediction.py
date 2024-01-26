@@ -27,7 +27,7 @@ from meld_graph.meld_cohort import MeldCohort
 from scripts.manage_results.register_back_to_xhemi import register_subject_to_xhemi
 from scripts.manage_results.move_predictions_to_mgh import move_predictions_to_mgh
 from scripts.manage_results.plot_prediction_report import generate_prediction_report
-from meld_graph.tools_commands_prints import get_m
+from meld_graph.tools_pipeline import get_m
 
 def create_dataset_file(subjects_ids, save_file):
     df=pd.DataFrame()

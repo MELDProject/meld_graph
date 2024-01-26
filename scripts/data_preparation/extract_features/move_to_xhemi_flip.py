@@ -3,7 +3,7 @@ import argparse
 import shutil
 import subprocess
 from subprocess import Popen
-from meld_graph.tools_commands_prints import get_m
+from meld_graph.tools_pipeline import get_m
 
 
 def move_to_xhemi_flip(subject_id, subjects_dir, verbose=False):

@@ -24,9 +24,7 @@ import glob
 import pandas as pd
 from os.path import join as opj
 from meld_graph.paths import BASE_PATH, MELD_DATA_PATH, FS_SUBJECTS_PATH, CLIPPING_PARAMS_FILE
-from meld_graph.meld_cohort import MeldCohort
-from meld_graph.data_preprocessing import Preprocess
-from meld_graph.tools_commands_prints import get_m
+from meld_graph.tools_pipeline import get_m, get_anat_files
 from scripts.data_preparation.extract_features.create_xhemi import run_parallel_xhemi, create_xhemi
 from scripts.data_preparation.extract_features.create_training_data_hdf5 import create_training_data_hdf5
 from scripts.data_preparation.extract_features.sample_FLAIR_smooth_features import sample_flair_smooth_features
@@ -37,54 +35,6 @@ from scripts.data_preparation.extract_features.move_to_xhemi_flip import move_to
 def init(lock):
     global starting
     starting = lock
-
-def get_anat_files(subject_id):
-    ''' 
-    return path of T1 and FLAIR if BIDs format or MELD format
-    TODO : improve flexibility of BIDS
-    '''
-    subject_dir = opj(MELD_DATA_PATH, "input", subject_id)
-    subject_data = {}
-    subject_data['id'] = subject_id
-    t1_files_MELD = glob.glob(opj(subject_dir, "T1", "*.nii*"))
-    t1_files_bids = glob.glob(opj(subject_dir, "anat", "*T1*nii*"))
-    if len(t1_files_MELD)==1:
-        subject_data["t1_path"] = t1_files_MELD[0]
-        print(get_m(f'T1 file used : {subject_data["t1_path"]} ', subject_id, 'INFO'))
-        flair_files_MELD = glob.glob(opj(subject_dir, "FLAIR", "*.nii*"))
-        if len(flair_files_MELD)==1:
-            subject_data["flair_path"] = flair_files_MELD[0]
-            print(get_m(f'FLAIR file used : {subject_data["flair_path"]} ', subject_id, 'INFO'))
-        elif len(t1_files_MELD)>1:
-            print(get_m(f'Find too much volumes for FLAIR. Check and remove the additional volumes with same key name', subject_id, 'WARNING'))
-            return None
-        else:
-            print(get_m(f'No FLAIR found', subject_id, 'INFO'))
-            subject_data["flair_path"] = None
-    elif len(t1_files_MELD)>1:
-        print(get_m(f'Find too much volumes for T1. Check and remove the additional volumes with same key name', subject_id, 'WARNING'))
-        return None
-    elif len(t1_files_bids)==1:
-        subject_data["t1_path"] = t1_files_bids[0]
-        print(get_m(f'T1 file used : {subject_data["t1_path"]} ', subject_id, 'INFO'))
-        flair_files_bids = glob.glob(opj(subject_dir, "anat", "*FLAIR*nii*"))
-        if len(flair_files_bids)==1:
-            subject_data["flair_path"] = flair_files_bids[0]
-            print(get_m(f'FLAIR file used : {subject_data["flair_path"]} ', subject_id, 'INFO'))
-        elif len(flair_files_bids)>1:
-            print(get_m(f'Find too much volumes for FLAIR. Check and remove the additional volumes with same key name', subject_id, 'WARNING'))
-            return None
-        else:
-            print(get_m(f'No FLAIR found', subject_id, 'INFO'))
-            subject_data["flair_path"] = None
-    elif len(t1_files_bids)>1:
-        print(get_m(f'Find too much volumes for T1. Check and remove the additional volumes with same key name', subject_id, 'WARNING'))
-        return None
-    else:
-        print(get_m(f'Could not find any T1w nifti file. Please ensure your data are in MELD or BIDS format', subject_id, 'ERROR'))
-        return None
-    
-    return subject_data
 
 def check_FS_outputs(folder):
     FS_complete=True
@@ -104,7 +54,7 @@ def check_xhemi_outputs():
 def fastsurfer_subject(subject, fs_folder, verbose=False):
     # run fastsurfer segmentation on 1 subject
     subject_id = subject['id']
-    subject_t1_path = subject['t1_path']
+    subject_t1_path = subject['T1_path']
     
     # get subject folder
     # if freesurfer outputs already exist for this subject, continue running from where it stopped
@@ -152,7 +102,7 @@ def fastsurfer_flair(subject, fs_folder, verbose=False):
     #improve fastsurfer segmentation with FLAIR on 1 subject
 
     subject_id = subject['id']
-    subject_flair_path = subject['flair_path']
+    subject_flair_path = subject['FLAIR_path']
 
     if os.path.isfile(opj(fs_folder, subject_id, "mri", "FLAIR.mgz")):
         print(get_m(f'Freesurfer FLAIR reconstruction outputs already exists. FLAIRpial will be skipped', subject_id, 'STEP 1'))
@@ -181,8 +131,8 @@ def freesurfer_subject(subject, fs_folder, verbose=False):
     #run freesurfer recon-all segmentation on 1 subject
 
     subject_id = subject['id']
-    subject_t1_path = subject['t1_path']
-    subject_flair_path = subject['flair_path']
+    subject_t1_path = subject['T1_path']
+    subject_flair_path = subject['FLAIR_path']
 
     # get subject folder
     # If freesurfer outputs already exist for this subject, continue running from where it stopped

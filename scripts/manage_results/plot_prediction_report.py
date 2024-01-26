@@ -35,7 +35,7 @@ from PIL import Image
 import meld_graph.mesh_tools as mt
 from datetime import date
 from fpdf import FPDF
-from meld_graph.tools_commands_prints import get_m
+from meld_graph.tools_pipeline import get_m, get_anat_files
 
 class PDF(FPDF):    
     def lines(self):
@@ -391,7 +391,7 @@ def generate_prediction_report(
         output_dir_sub = os.path.join(output_dir, subject_id, "reports")
         os.makedirs(os.path.join(output_dir_sub), exist_ok=True)
         # Open their MRI data if available
-        t1_file = get_t1_file(subject_id, os.path.join(data_dir, subject_id))
+        t1_file = get_anat_files(subject_id)['T1_path']
         prediction_file = glob.glob(os.path.join(output_dir, subject_id, "predictions", "prediction*"))[0]
         # load image
         imgs = {

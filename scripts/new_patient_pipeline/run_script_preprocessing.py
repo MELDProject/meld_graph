@@ -16,7 +16,7 @@ import tempfile
 from os.path import join as opj
 from meld_graph.meld_cohort import MeldCohort
 from meld_graph.data_preprocessing import Preprocess, Feature
-from meld_graph.tools_commands_prints import get_m
+from meld_graph.tools_pipeline import get_m
 from meld_graph.paths import (
                             BASE_PATH, 
                             MELD_PARAMS_PATH, 

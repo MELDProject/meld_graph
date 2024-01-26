@@ -3,7 +3,7 @@ import shutil
 from os.path import join as opj
 import subprocess
 from subprocess import Popen
-from meld_graph.tools_commands_prints import get_m
+from meld_graph.tools_pipeline import get_m
 
 
 def register_subject_to_xhemi(subject_id, subjects_dir, output_dir, template = 'fsaverage_sym', verbose=False):
