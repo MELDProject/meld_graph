@@ -23,26 +23,26 @@ RUN apt-get install -y build-essential \
 
 #Install freesurfer in /opt/freesurfer
 #TODO: need to get freesurfer from wget
-# RUN echo "Downloading FreeSurfer ..." \
-#    && mkdir -p /opt/freesurfer-7.2.0 \
-#    && curl -fL https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.2.0/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz \
-#     | tar -xz -C /opt/freesurfer-7.2.0 --owner root --group root --no-same-owner --strip-components 1 \
-#          --exclude='average/mult-comp-cor' \
-#          --exclude='lib/cuda' \
-#          --exclude='lib/qt' \
-#          --exclude='subjects/V1_average' \
-#          --exclude='subjects/bert' \
-#          --exclude='subjects/cvs_avg35' \
-#          --exclude='subjects/cvs_avg35_inMNI152' \
-#          --exclude='subjects/fsaverage3' \
-#          --exclude='subjects/fsaverage4' \
-#          --exclude='subjects/fsaverage5' \
-#          --exclude='subjects/fsaverage6' \
-#          --exclude='trctrain'
+RUN echo "Downloading FreeSurfer ..." \
+   && mkdir -p /opt/freesurfer-7.2.0 \
+   && curl -fL https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.2.0/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz \
+    | tar -xz -C /opt/freesurfer-7.2.0 --owner root --group root --no-same-owner --strip-components 1 \
+         --exclude='average/mult-comp-cor' \
+         --exclude='lib/cuda' \
+         --exclude='lib/qt' \
+         --exclude='subjects/V1_average' \
+         --exclude='subjects/bert' \
+         --exclude='subjects/cvs_avg35' \
+         --exclude='subjects/cvs_avg35_inMNI152' \
+         --exclude='subjects/fsaverage3' \
+         --exclude='subjects/fsaverage4' \
+         --exclude='subjects/fsaverage5' \
+         --exclude='subjects/fsaverage6' \
+         --exclude='trctrain'
 
-# RUN rm -f /opt/freesurfer-7.2.0/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz
+RUN rm -f /opt/freesurfer-7.2.0/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz
 
-COPY freesurfer/ /opt/freesurfer-7.2.0
+# COPY freesurfer/ /opt/freesurfer-7.2.0
 
 # #Modify the environment with Freesurfer paths
 ENV PATH=/opt/freesurfer-7.2.0/bin:$PATH
@@ -74,8 +74,10 @@ RUN echo "FASTSURFER_HOME=/opt/fastsurfer-v1.1.2" >> ~/.bashrc
 
 # Activate SHELL
 SHELL ["/bin/bash", "-c"]
+
 # Add meld_graph code 
-COPY . /app/
+# COPY . /app/
+RUN cd /app/ && git clone --branch dev_docker https://github.com/MELDProject/meld_graph.git
 # Update current conda base environment with packages for meld_graph 
 RUN cd /app/ && conda run -n base /bin/bash -c "conda env create -f environment.yml"
 
@@ -90,6 +92,7 @@ RUN mkdir /data
 # Create a cache directory for fastsurfer, otherwise permission denied
 RUN mkdir /.cache
 RUN chmod -R 777 /.cache
+
 
 # Define working directory
 WORKDIR /app
