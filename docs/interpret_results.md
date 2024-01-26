@@ -28,7 +28,7 @@ The MELD pdf report and .png images of the predicted lesions are saved in the fo
 
 The first image is called inflatbrain_<subject_id>.png
 
-![inflated](images/inflatbrain_sub_id.png)
+![inflated](/images/inflatbrain_sub-test001.png)
 
 This image tells you the number of predicted clusters and shows on the inflated brain where the clusters are located.
 
@@ -36,7 +36,7 @@ The next images are mri_<subject_id>_<hemi>_c*.png
 
 E.g. 
 
-![mri](images/mri_sub_id_lh_c1.png)
+![mri](/images/mri_sub-test001_right_c1.png)
 
 These images show the cluster on the volumetric T1 image in red and the 20% most salient voxels (i.e. with high confidence) in orange. Each cluster has its own image e.g.  mri_<subject_id>_<hemi>_c1.png for cluster 1 and  mri_<subject_id>_<hemi>_c2.png for cluster 2.
 
@@ -45,7 +45,7 @@ These images show the cluster on the volumetric T1 image in red and the 20% most
   
 The next images are called saliency_<subject_id>_<hemi>_c*.png. Each cluster has a saliency image associated with it. E.g.
   
-![saliency](images/saliency_sub_id_lh_c1.png)
+![saliency](/images/saliency_sub-test001_right_c1.png)
   
 These detail:
 * The hemisphere the cluster is on
@@ -85,12 +85,12 @@ cd <path_to_meld_classifier>
 conda activate meld_classifier
 python scripts/new_patient_pipeline/new_pt_qc_script.py -id <subject_id>
 ```
-![qc_surface](images/qc_surface.png)
+![qc_surface](/images/qc_surface.png)
 
 This will open FreeView and load the T1 and FLAIR (where available) volumes as well as the classifier predictions on the left and right hemispheres. It will also load the FreeSurfer pial and white surfaces. It will look like this:
 
 You can scroll through and find the predicted clusters.
-![qc_surface](images/qc_cluster.png)
+![qc_surface](/images/qc_cluster.png)
 
 Example of a predicted cluster (orange) on the right hemisphere. It is overlaid on a T1 image, with the right hemisphere pial and white surfaces visualised. Red arrows point to the cluster. 
 
