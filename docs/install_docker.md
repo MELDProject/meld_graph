@@ -33,7 +33,7 @@ docker run -it \
     python scripts/prepare_classifier.py
 ```
 
-With <path_to_meld_data> being the path to where your meld data folder is stored, and <path_to_freesurfer_license> the path to where you have stored the license.txt from Freesurfer. See [installation](https:/meld-graph.readthedocs.io/en/latest/docs/install_docker.md) for more details
+With <path_to_meld_data> being the path to where your meld data folder is stored, and <path_to_freesurfer_license> the path to where you have stored the license.txt from Freesurfer. See [installation](https:/meld-graph.readthedocs.io/en/latest/install_docker.html) for more details
 
 NOTE: This script will ask you if you want to change the location for the MELD data folder, say "N" for no. 
 
@@ -59,5 +59,5 @@ Note: If you run into errors at this stage and need help, you can re-run by chan
   You will find this pytest_errors.log in the folder where you launched the command. 
 
 ## FAQs
-Please see our [FAQ](https:/meld-graph.readthedocs.io/en/latest/docs/FAQs.md) for common installation problems.
+Please see our [FAQ](https:/meld-graph.readthedocs.io/en/latest/FAQs.html) for common installation problems.
 

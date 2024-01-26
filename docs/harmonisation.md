@@ -13,13 +13,13 @@ Subjects can be controls and/or patients, but we advise to use ***at least 20 su
 Try to ensure the data are high quality (i.e no blurring, no artefacts, no cavities in the brain).
 Demographic information (e.g age and sex) will be required for this process.
 
-Once you have done the process once, you can follow the [general guidelines to predict on a new patient](https:/meld-graph.readthedocs.io/en/latest/docs/run_prediction_pipeline.md) 
+Once you have done the process once, you can follow the [general guidelines to predict on a new patient](https://meld-graph.readthedocs.io/en/latest/run_prediction_pipeline.html) 
 
 ## Before running
 
-- Ensure you have installed the MELD pipeline with [docker container](https:/meld-graph.readthedocs.io/en/latest/docs/install_docker.md) or [native installation](https:/meld-graph.readthedocs.io/en/latest/docs/install_native.md). 
+- Ensure you have installed the MELD pipeline with [docker container](https://meld-graph.readthedocs.io/en/latest/install_docker.html) or [native installation](https://meld-graph.readthedocs.io/en/latest/install_native.html). 
 - **Chose a harmonisation** code for this scanner starting by 'H' (e.g H1, H2, ..). This harmonisation code will be needed to organise your data and run the code as detailled below. 
-- Ensure you have [organised your MRI data](https:/meld-graph.readthedocs.io/en/latest/docs/prepare_data.md#prepare-the-mri-data-mandatory) and [provided demographic information](https:/meld-graph.readthedocs.io/en/latest/docs/prepare_data.md#prepare-the-demographic-information-required-only-to-compute-the-harmonisation-parameters) before running this pipeline. 
+- Ensure you have [organised your MRI data](https://meld-graph.readthedocs.io/en/latest/prepare_data.html#prepare-the-mri-data-mandatory) and [provided demographic information](https://meld-graph.readthedocs.io/en/latest/prepare_data.html#prepare-the-demographic-information-required-only-to-compute-the-harmonisation-parameters) before running this pipeline. 
 
 
 ## Run with Docker 
@@ -34,7 +34,7 @@ docker run -it \
     -e FS_LICENSE='/license.txt' \
     meld_graph new_pt_pipeline.py -harmo_code <harmo_code> -ids <subjects_list> -demos <demographic_file> --harmo_only
 ```
-With <path_to_meld_data> being the path to where your meld data folder is stored, and <path_to_freesurfer_license> the path to where you have stored the license.txt from Freesurfer. See [installation](https:/meld-graph.readthedocs.io/en/latest/docs/install_docker.md) for more details
+With <path_to_meld_data> being the path to where your meld data folder is stored, and <path_to_freesurfer_license> the path to where you have stored the license.txt from Freesurfer. See [installation](https://meld-graph.readthedocs.io/en/latest/install_docker.html) for more details
 
 The first 5th lines are arguments describing the docker. The last line is calling the MELD pipeline command. You can tune this command using the variables and flag describes further below. 
 
@@ -86,7 +86,7 @@ You can tune this command using additional variables and flags as detailed bello
 |-------|---|
 |```-harmo_code <harmo_code>```  |  The site code should start with H, e.g. H1. | 
 |```-ids <subjects_list>``` |  A text file containing the list of subjects. An example 'subjects_list.txt' is provided in the <meld_data_folder>. | 
-|```-demos <demographic_file>```| The name of the csv file containing the demographic information as detailled in the [guidelines](https:/meld-graph.readthedocs.io/en/latest/docs/prepare_data.md#prepare-the-demographic-information-required-only-to-compute-the-harmonisation-parameters). An example 'demographics_file.csv' is provided in the <meld_data_folder>.|
+|```-demos <demographic_file>```| The name of the csv file containing the demographic information as detailled in the [guidelines](https://meld-graph.readthedocs.io/en/latest/prepare_data.html#prepare-the-demographic-information-required-only-to-compute-the-harmonisation-parameters). An example 'demographics_file.csv' is provided in the <meld_data_folder>.|
 | **Optional variables** |
 |```--parallelise``` | use this flag to speed up the segmentation by running Freesurfer/FastSurfer on multiple subjects in parallel. |
 |```--fastsurfer``` | use this flag to use FastSurfer instead of Freesurfer. Requires FastSurfer installed. |
@@ -95,4 +95,4 @@ You can tune this command using additional variables and flags as detailed bello
 
 ## What's next ? 
 Once you have successfully computed the harmonisation parameters, they should be saved in your <meld_data_folder>. The file is called 'MELD_<site_code>_combat_parameters.hdf5' and is stored in 'output/preprocessed_surf_data/MELD_<site_code>/'.
-You can now refer to the guidelines [to predict a new patient](https:/meld-graph.readthedocs.io/en/latest/docs/run_prediction_pipeline.md) to predict lesion in patients from that same scanner.
+You can now refer to the guidelines [to predict a new patient](https://meld-graph.readthedocs.io/en/latest/run_prediction_pipeline.html) to predict lesion in patients from that same scanner.
