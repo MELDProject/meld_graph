@@ -30,4 +30,4 @@ that can be used as a drop-in task for the harder lesion segmentation.
 In `data_parameters`, set `lobe = True`, to train on this task.
 
 ### Evaluation
-Evaluation functions are found in `meld_graph/evaluation.py`. We have different scripts for saving predictions, running and ensamble of different fold and for plotting results. These are described in the [README](README.md#usage).
+Evaluation functions are found in `meld_graph/evaluation.py`. We have different scripts for saving predictions, running and ensemble of different fold and for plotting results. 
