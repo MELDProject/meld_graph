@@ -2,13 +2,13 @@
 
 The new MELD pipeline offers a unique command line to predict a FCD-like abnormalities from T1w (and FLAIR scan). 
 
-If you wish to use the harmonisation feature of the MELD pipeline, you will need to first have computed the harmonisation parameters for the scanner used to acquire the data and used the harmonisation code into the main pipeline command as described bellow. Please refer to our [guidelines to harmonise a new scanner](/docs/harmonisation.md). 
+If you wish to use the harmonisation feature of the MELD pipeline, you will need to first have computed the harmonisation parameters for the scanner used to acquire the data and used the harmonisation code into the main pipeline command as described bellow. Please refer to our [guidelines to harmonise a new scanner](https:/meld-graph.readthedocs.io/en/latest/docs/harmonisation.md). 
 
 ## Before running
 
-- Ensure you have installed the MELD pipeline with [docker container](/docs/install_docker.md) or [native installation](/docs/install_native.md). 
-- Ensure you have [organised your data](/docs/prepare_data.md) before running this pipeline
-- Ensure you have [computed the harmonisation parameters](/docs/harmonisation.md) if you want to use the harmonisation parameters 
+- Ensure you have installed the MELD pipeline with [docker container](https:/meld-graph.readthedocs.io/en/latest/docs/install_docker.md) or [native installation](https:/meld-graph.readthedocs.io/en/latest/docs/install_native.md). 
+- Ensure you have [organised your data](https:/meld-graph.readthedocs.io/en/latest/docs/prepare_data.md) before running this pipeline
+- Ensure you have [computed the harmonisation parameters](https:/meld-graph.readthedocs.io/en/latest/docs/harmonisation.md) if you want to use the harmonisation parameters 
 
 ## Run with Docker 
 
@@ -22,7 +22,7 @@ docker run -it \
     -e FS_LICENSE='/license.txt' \
     meld_graph new_pt_pipeline.py -id <subject_id> 
 ```
-With <path_to_meld_data> being the path to where your meld data folder is stored, and <path_to_freesurfer_license> the path to where you have stored the license.txt from Freesurfer. See [installation](/docs/install_docker.md) for more details
+With <path_to_meld_data> being the path to where your meld data folder is stored, and <path_to_freesurfer_license> the path to where you have stored the license.txt from Freesurfer. See [installation](https:/meld-graph.readthedocs.io/en/latest/docs/install_docker.md) for more details
 
 The first 5th lines are arguments describing the docker. The last line is calling the MELD pipeline command. You can tune this command using the variables and flag describes further bellow. 
 
@@ -57,7 +57,7 @@ You can tune the MELD pipeline command using additional variables and flags as d
 |either ```-id <subject_id>```  |  if you want to run the pipeline on 1 single subject. Needs to be in MELD format MELD\_<harmo\_code>\_<scanner\_field>\_FCD\_000X |  
 |or ```-ids <subjects_list>``` |  if you want to run the pipeline on more than 1 subject, you can pass the name of a text file containing the list of subjects. An example 'subjects_list.txt' is provided in the <meld_data_folder>. | 
 | **Optional variables** |
-| ```-harmo_code <harmo_code>```  | provide the harmonisation code if you want to harmonise your data before prediction. This requires to have [computed the harmonisation parameters](/docs/harmonisation.md) beforehand. The harmonisation code should start with H, e.g. H1. | 
+| ```-harmo_code <harmo_code>```  | provide the harmonisation code if you want to harmonise your data before prediction. This requires to have [computed the harmonisation parameters](https:/meld-graph.readthedocs.io/en/latest/docs/harmonisation.md) beforehand. The harmonisation code should start with H, e.g. H1. | 
 |```--parallelise``` | use this flag to speed up the segmentation by running Freesurfer/FastSurfer on multiple subjects in parallel. |
 |```--fastsurfer``` | use this flag to use FastSurfer instead of Freesurfer. (Requires FastSurfer installed for native installation). |
 |```--skip_feature_extraction``` | use this flag to skips the segmentation and features extraction (processes from script1). Usefull if you already have these outputs and you just want to run the preprocessing and the predictions (e.g: after harmonisation) |
@@ -68,7 +68,7 @@ You can tune the MELD pipeline command using additional variables and flags as d
 
 
 NOTES: 
-- Outputs of the pipeline (prediction back into the native nifti MRI and MELD reports) are stored in the folder ```output/predictions_reports/<subject_id>```. See [guidelines on how to interepret the results](/docs/interpret_results.md) for more details.
+- Outputs of the pipeline (prediction back into the native nifti MRI and MELD reports) are stored in the folder ```output/predictions_reports/<subject_id>```. See [guidelines on how to interepret the results](https:/meld-graph.readthedocs.io/en/latest/docs/interpret_results.md) for more details.
 
 ## Examples of use case: 
 

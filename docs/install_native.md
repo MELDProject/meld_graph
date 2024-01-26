@@ -2,7 +2,7 @@
 
 The native installation of the MELD graph enables more freedom to change the code and run your the scripts and notebook to train / evaluate your own classifier. 
 
-Note: This installation have been tested on Ubuntu 18.04.5 with CUDA Version: 11.4. As a [docker container](/docs/install_docker.md) is provided, the native installation won't be supported by the MELD team. 
+Note: This installation have been tested on Ubuntu 18.04.5 with CUDA Version: 11.4. As a [docker container](https:/meld-graph.readthedocs.io/en/latest/docs/install_docker.md) is provided, the native installation won't be supported by the MELD team. 
 
 ## Prerequisites
 For preprocessing, MELD classifier requires Freesurfer. It is trained on data from versions 6 & v5.3, but compatible with Freesurfer **version up to V7.2**. Please follow instructions on [Freesurfer](https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall) to install FreeSurfer. WARNING: MELD pipeline has not been adapted for Freesurfer V7.3 and above. Please install Freesurfer V7.2 instead. \
@@ -66,6 +66,6 @@ Note: If you run into errors at this stage and need help, you can re-run the com
   You will find this pytest_errors.log file in <path_to_meld_graph>. 
 
 ## FAQs
-Please see our [FAQ](/docs/FAQs.md) for common installation problems.
+Please see our [FAQ](https:/meld-graph.readthedocs.io/en/latest/docs/FAQs.md) for common installation problems.
 
 

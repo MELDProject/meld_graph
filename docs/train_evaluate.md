@@ -9,10 +9,10 @@ This package contains code for training and evaluating graph-based U-net lesion 
 
 ## Installation
 
-These scripts require the [native installation](/docs/install_native.md) of the package.
+These scripts require the [native installation](https:/meld-graph.readthedocs.io/en/latest/docs/install_native.md) of the package.
 
 ## Usage
-Basic commands to train and evaluate models are described below. For more details on the structure of the code and on configuration options, have a look at the [code structure guide](/docs/code_structure.md) and at the [example_experiment_config.py](scripts/config_files/example_experiment_config.py)
+Basic commands to train and evaluate models are described below. For more details on the structure of the code and on configuration options, have a look at the [code structure guide](https:/meld-graph.readthedocs.io/en/latest/docs/code_structure.md) and at the [example_experiment_config.py](scripts/config_files/example_experiment_config.py)
 
 ### Prepare files
 Before training, we need to prepare scaling (for z-scoring) and augmentation parameters and downscaled icospheres.
@@ -115,7 +115,7 @@ An example of json file can be found at *scripts/config_files/example_config_eva
 
 
 ## Contributing
-If you'd like to contribute to this code base, have a look at our [contribution guide](/docs/contributing.md)
+If you'd like to contribute to this code base, have a look at our [contribution guide](https:/meld-graph.readthedocs.io/en/latest/docs/contributing.md)
 
 ## Manuscript & Reproducibility
 Please check out our [manuscript](https://arxiv.org/abs/2306.01375) to learn more (accepted at MICCAI 2023). 
@@ -123,4 +123,4 @@ Please check out our [manuscript](https://arxiv.org/abs/2306.01375) to learn mor
 ## Reproducibility
 We ran all experiments and evaluations using version v1.0.0 of meld_graph.
 The config file `base_config.py` and variable config files `fold_var.py` and `fold_var_subsampling.py` contain all experiments we ran for the manuscript. 
-An overview of the notebooks that we used to create the figures can be found [here](/docs/figure_notebooks.md).
+An overview of the notebooks that we used to create the figures can be found [here](https:/meld-graph.readthedocs.io/en/latest/docs/figure_notebooks.md).
