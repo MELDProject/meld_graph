@@ -6,15 +6,13 @@ This package contains code for training and evaluating graph-based U-net lesion 
 
 ![nnunet](https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/docs/images/nnunet_architecture.png)
 
-## Installation
-
+## Notes
 These scripts require the [native installation](https://meld-graph.readthedocs.io/en/latest/docs/install_native.html) of the package.
 
-## Usage
 Basic commands to train and evaluate models are described below. For more details on the structure of the code and on configuration options, have a look at the [code structure guide](https://meld-graph.readthedocs.io/en/latest/docs/code_structure.html) and at the [example_experiment_config.py](https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/scripts/config_files/example_experiment_config.py)
 
 
-### Prepare files
+## Prepare files
 Before training, we need to prepare scaling (for z-scoring) and augmentation parameters and downscaled icospheres.
 These scripts only need to be run once, and will save parameter files in the `data` folder. A copy of the files we use is provided with this code. To reproduce these files, run:
 - `scripts/data_preparation/create_scaling_parameters.py`: calculates scaling params file.
@@ -22,7 +20,7 @@ These scripts only need to be run once, and will save parameter files in the `da
 - `scripts/data_preparation/calculate_feature_means_stds.py`: calculates mean and std of features for normalisation.
 - `scriptsdata_preparation/save_xx_parameters_icospheres.py`: save precomputed augmentations.
 
-### Training
+## Training
 To train a single model, run
 ```
 python train.py --config_file CONFIG_FILE
@@ -43,7 +41,7 @@ python create_config.py BASE_CONFIG VAR_CONFIG --save_dir DIR
 sbatch train_multiple.sh DIR
 ```
 
-### Evaluation
+## Evaluation
 
 **Cross validation experiments**
 
@@ -111,14 +109,6 @@ You will need to provide the path to the trained model for `--model_path` , and 
 - `save_dir`: a directory where to save the results. 
 
 An example of json file can be found at *scripts/config_files/example_config_evaluate_new_data.json*
-
-
-
-## Contributing
-If you'd like to contribute to this code base, have a look at our [contribution guide](https://meld-graph.readthedocs.io/en/latest/docs/contributing.md)
-
-## Manuscript & Reproducibility
-Please check out our [manuscript](https://arxiv.org/abs/2306.01375) to learn more (accepted at MICCAI 2023). 
 
 ## Reproducibility
 We ran all experiments and evaluations using version v1.0.0 of meld_graph.
