@@ -1,10 +1,14 @@
 # Notebooks to recreate figures
 
-- Figure 1. [notebook](notebooks/images_miccai_augmentations.ipynb)
-- Figure 2. 
-    - [panel a](notebooks/images_miccai_examples_prediction.ipynb)
-    - [panel b](notebooks/images_miccai_clusters_number.ipynb)
-- Table 1. 
-    - [runtimes](notebooks/get_runtime.ipynb)
+- Figures
+    - [confidence calibration](/notebooks/plot_confidence_calibration.ipynb.ipynb)
+    - [cluster number](/notebooks/plot_clusters_number.ipynb)
+    - [example prediction patients](/notebooks/plot_examples_prediction.ipynb)
+    - [object detection](/notebooks/plot_object_detection.ipynb)
+    - [umap analysis](/notebooks/plot_fingerprints_umap.ipynb)
 
-- Supplementary Figure 1. [notebook](notebooks/compare_experiments.ipynb)
+- Tables. 
+    - [demographic table](/notebooks/demographics_table.ipynb)
+    - [results MELD graph model vs MLP model](/notebooks/compare_results_graph_vs_MLP.ipynb)
+
+- Supplementary Figure
