@@ -32,3 +32,4 @@ dependencies:
     - torchvision==0.11.1 # needed for fastsurfer
     - lapy==0.6.0 # needed for fastsurfer
     - SimpleITK==2.1.1 # needed for fastsurfer
+    - pybids==0.16.4

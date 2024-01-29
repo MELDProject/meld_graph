@@ -76,8 +76,9 @@ RUN echo "FASTSURFER_HOME=/opt/fastsurfer-v1.1.2" >> ~/.bashrc
 SHELL ["/bin/bash", "-c"]
 
 # Add meld_graph code 
+RUN mkdir /app
 # COPY . /app/
-RUN cd /app/ && git clone --branch dev_docker https://github.com/MELDProject/meld_graph.git
+RUN cd /app/ && git clone --branch dev_docker https://github.com/MELDProject/meld_graph.git .
 # Update current conda base environment with packages for meld_graph 
 RUN cd /app/ && conda run -n base /bin/bash -c "conda env create -f environment.yml"
 
