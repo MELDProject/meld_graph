@@ -1,3 +1,5 @@
+# Script to create scaling parameters for the raw features
+
 from meld_classifier.paths import BASE_PATH
 from meld_classifier.meld_cohort import MeldCohort, MeldSubject
 from meld_graph.data_preprocessing import Preprocess

@@ -1,3 +1,5 @@
+## Script used to create the different icosphere used at different level of the unet
+
 from meld_classifier.meld_cohort import MeldCohort, MeldSubject
 import os
 import numpy as np

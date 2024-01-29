@@ -1,3 +1,6 @@
+## Script to calculate the mean and standard deviation of the MELD cohort surface-based features
+## Parameters are saved and used for normalisation
+
 from meld_graph.data_preprocessing import Preprocess as Prep
 from meld_classifier.meld_cohort import MeldCohort, MeldSubject
 import numpy as np
