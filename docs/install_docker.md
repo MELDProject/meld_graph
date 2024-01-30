@@ -4,14 +4,20 @@ The Docker container has all the prerequisites embedded on it which makes it eas
 
 Notes: 
 - Currently only tested on Linux
-- You will need ~14GB of space to install the container
+- The docker image contains Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0+cu111. The whole image is 13.5 GB.  
+- You will need **~14GB of space** to install the container
 - Docker does not work on HPC, a singularity container is coming for that. 
 
 ## Prerequisites
-You will need Docker (ADD INSTALLATION GUIDE)
 
-The docker image uses Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0+cu111. The whole image is 13 GB. 
+### Install Docker
+You will need have docker installed, for that you can follow the guidelines [here](https://docs.docker.com/engine/install/)
 
+## Enable GPUs
+If you wish to use the GPUs, you will need to get the [*nvidia container toolkit*](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+
+
+### Freesurfer licence
 You will need to download a Freesurfer license.txt by following [here](https://surfer.nmr.mgh.harvard.edu/fswiki/License)
 
 ## Pull the docker image
@@ -30,12 +36,12 @@ docker run -it \
     -v <path_to_freesurfer_license>:/license.txt:ro \
     -e FS_LICENSE='/license.txt' \
     meld_graph \
-    python scripts/prepare_classifier.py
+    python scripts/new_patient_pipeline/prepare_classifier.py
 ```
 
 With <path_to_meld_data> being the path to where your meld data folder is stored, and <path_to_freesurfer_license> the path to where you have stored the license.txt from Freesurfer. See [installation](https:/meld-graph.readthedocs.io/en/latest/install_docker.html) for more details
 
-NOTE: This script will ask you if you want to change the location for the MELD data folder, say "N" for no. 
+NOTE: This script will ask you if you want to change the location for the MELD data folder, **say "N"** for no. 
 
 Note: You can also skip the downloading of the test data. For this, append the option `--skip-download-data` to the python call.
 
