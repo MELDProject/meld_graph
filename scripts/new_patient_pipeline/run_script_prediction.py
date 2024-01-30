@@ -160,7 +160,7 @@ def run_script_prediction(list_ids=None, sub_id=None, harmo_code='noHarmo', no_p
             
         if not no_report:
             # Create individual reports of each identified cluster
-            print(get_m(f'Create pdf report', subject_ids, 'STEP 5'))
+            print(get_m(f'Create pdf report', subject_ids, 'STEP 4'))
             generate_prediction_report(
                 subject_ids = subject_ids,
                 data_dir = data_dir,
