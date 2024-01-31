@@ -58,3 +58,7 @@ If you'd like to contribute to this code base, have a look at our [contribution 
 
 We would like to thank the [MELD consortium](https://meldproject.github.io//docs/collaborator_list.pdf) for providing the data to train this classifier and their expertise to build this pipeline.\
 We would like to thank [Lennart Walger](https://github.com/1-w) and [Andrew Chen](https://github.com/andy1764), for their help testing and improving the MELD pipeline to v1.1.0
+
+## Contacts
+
+Contact the MELD team at `meld.study@gmail.com`

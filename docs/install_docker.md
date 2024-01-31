@@ -11,15 +11,19 @@ Notes:
 ## Prerequisites
 
 ### Install Docker
-You will need have docker installed, for that you can follow the guidelines [here](https://docs.docker.com/engine/install/)
+You will need to have docker installed. You can check if docker is installed on your computer by running:
+```bash
+docker
+```
+If this command display the instruction for docker, then it is already installed. If not, please follow the [guidelines](https://docs.docker.com/engine/install/) to install docker on your machine.
 
 
 ## Enable GPUs
-If you wish to use the GPUs, you will need to get the [*nvidia container toolkit*](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+If your computer has GPUs and you wish to use them to run the pipeline, you will need to get the [*nvidia container toolkit*](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html). Enabling the GPUs accelerate the brain segmentation when using Fastsurfer and the predictions. 
 
 
 ### Freesurfer licence
-You will need to download a Freesurfer license.txt by following [here](https://surfer.nmr.mgh.harvard.edu/fswiki/License)
+You will need to download a Freesurfer license.txt to enable Freesurfer/Fastsurfer to perform the segmentation. Please follow the [guidelines](https://surfer.nmr.mgh.harvard.edu/fswiki/License) to download the file and keep a record of the path where you saved it. 
 
 ## Pull the docker image
 
@@ -29,7 +33,7 @@ Pull the container, it will take time and 15GB of storage space. This will need 
 docker pull mathrip/meld_graph:latest
 ```
 
-Run the pipeline command print the help
+Run the pipeline command to print the help
  
 ```bash
 docker run -it --rm \
@@ -37,6 +41,7 @@ docker run -it --rm \
   python scripts/new_patient_pipeline/new_pt_pipeline.py -h 
 ```
 
+If you encounter any error, please contact the MELD team for support at `meld.study@gmail.com`
 
 ## Set up paths and download model
 Before being able to use the classifier on your data, some paths need to be set up and the pretrained model needs to be downloaded. 
