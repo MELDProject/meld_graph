@@ -15,16 +15,32 @@ If you wish to use the harmonisation feature of the MELD pipeline, you will need
 When running with Docker container, you just need to run the following command
 
 ```bash
-docker run -it \
-    --rm --gpus all --user "$(id -u):$(id -g)" \
-    -v <path_to_meld_data>:/data \
-    -v <path_to_freesurfer_license>:/license.txt:ro \
+docker run -it --rm \
+    --user "$(id -u):$(id -g)" \
+    -v <meld_data>:/data \
+    -v <freesurfer_license>:/license.txt:ro \
     -e FS_LICENSE='/license.txt' \
-    meld_graph new_pt_pipeline.py -id <subject_id> 
+    mathrip/meld_graph:latest \
+    python scripts/new_patient_pipeline/new_pt_pipeline.py -id <subject_id> 
 ```
-With <path_to_meld_data> being the path to where your meld data folder is stored, and <path_to_freesurfer_license> the path to where you have stored the license.txt from Freesurfer. See [installation](https://meld-graph.readthedocs.io/en/latest/install_docker.html) for more details
 
-The first 5th lines are arguments describing the docker. The last line is calling the MELD pipeline command. You can tune this command using the variables and flag describes further bellow. 
+You only need to change the variable and path that are given in between "<>". For example, change <meld_data> for the path to where your meld data folder is stored, and <freesurfer_license> for the path to where you have stored the license.txt from Freesurfer. See [installation](https://meld-graph.readthedocs.io/en/latest/install_docker.html) for more details
+
+The first 6th lines are arguments describing the docker. The last line is calling the MELD pipeline command. You can tune this command using the variables and flag describes further below. 
+
+You can run the pipeline with GPU by running the same command and adding the flag `--gpus all` in the docker command
+
+example :
+```bash
+docker run -it --rm \
+    --gpus all \
+    --user "$(id -u):$(id -g)" \
+    -v <meld_data>:/data \
+    -v <freesurfer_license>:/license.txt:ro \
+    -e FS_LICENSE='/license.txt' \
+    mathrip/meld_graph:latest \
+    python scripts/new_patient_pipeline/new_pt_pipeline.py -id <subject_id> 
+```
 
 ## Run with native installation
 
@@ -44,9 +60,9 @@ NOTES: MELD pipeline has only been tested and validated on Freesurfer up to V7.2
 
 **Main pipeline command**
 ```bash
-python scripts/new_patient_pipeline/new_pt_pipeline.py -harmo_code <harmo_code> -id <subject_id> 
+python scripts/new_patient_pipeline/new_pt_pipeline.py -id <subject_id> 
 ```
-You can tune this command using the variables and flag describes further bellow. 
+You can tune this command using the variables and flag describes further below. 
 
 ## Tune the command
 
@@ -54,7 +70,7 @@ You can tune the MELD pipeline command using additional variables and flags as d
 
 | **Mandatory variables**         |  Comment | 
 |-------|---|
-|either ```-id <subject_id>```  |  if you want to run the pipeline on 1 single subject. Needs to be in MELD format MELD\_<harmo\_code>\_<scanner\_field>\_FCD\_000X |  
+|either ```-id <subject_id>```  |  if you want to run the pipeline on 1 single subject.|  
 |or ```-ids <subjects_list>``` |  if you want to run the pipeline on more than 1 subject, you can pass the name of a text file containing the list of subjects. An example 'subjects_list.txt' is provided in the <meld_data_folder>. | 
 | **Optional variables** |
 | ```-harmo_code <harmo_code>```  | provide the harmonisation code if you want to harmonise your data before prediction. This requires to have [computed the harmonisation parameters](https://meld-graph.readthedocs.io/en/latest/harmonisation.html) beforehand. The harmonisation code should start with H, e.g. H1. | 
@@ -76,32 +92,38 @@ NOTES:
 
 To run the whole prediction pipeline on 1 subject using fastsurfer:
 ```bash
-docker run -it \
-    --rm --gpus all --user "$(id -u):$(id -g)" \
-    -v <path_to_meld_data>:/data \
-    -v <path_to_freesurfer_license>:/license.txt:ro \
+docker run -it --rm \
+    --gpus all \
+    --user "$(id -u):$(id -g)" \
+    -v <meld_data>:/data \
+    -v <freesurfer_license>:/license.txt:ro \
     -e FS_LICENSE='/license.txt' \
-    meld_graph new_pt_pipeline.py -id sub-001 --fastsurfer
+    mathrip/meld_graph:latest \
+    python scripts/new_patient_pipeline/new_pt_pipeline.py -id sub-001 --fastsurfer
 ```
 
 To run the whole prediction pipeline on 1 subject using harmonisation code H1:
 ```bash
-docker run -it \
-    --rm --gpus all --user "$(id -u):$(id -g)" \
-    -v <path_to_meld_data>:/data \
-    -v <path_to_freesurfer_license>:/license.txt:ro \
+docker run -it --rm \
+    --gpus all \
+     --user "$(id -u):$(id -g)" \
+    -v <meld_data>:/data \
+    -v <freesurfer_license>:/license.txt:ro \
     -e FS_LICENSE='/license.txt' \
-    meld_graph new_pt_pipeline.py -id sub-001 -harmo_code H1
+    mathrip/meld_graph:latest \
+    python scripts/new_patient_pipeline/new_pt_pipeline.pyy -id sub-001 -harmo_code H1
 ```
 
 To run the whole prediction pipeline on multiples subjects with parallelisation:
 ```bash
-docker run -it \
-    --rm --gpus all --user "$(id -u):$(id -g)" \
-    -v <path_to_meld_data>:/data \
-    -v <path_to_freesurfer_license>:/license.txt:ro \
+docker run -it --rm \
+    --gpus all \
+    --user "$(id -u):$(id -g)" \
+    -v <meld_data>:/data \
+    -v <freesurfer_license>:/license.txt:ro \
     -e FS_LICENSE='/license.txt' \
-    meld_graph new_pt_pipeline.py -ids list_subjects.txt --parallelise
+    mathrip/meld_graph:latest \
+    python scripts/new_patient_pipeline/new_pt_pipeline.py -ids list_subjects.txt --parallelise
 ```
 
 ### With native installation
@@ -123,7 +145,7 @@ python scripts/new_patient_pipeline/new_pt_pipeline.py -ids list_subjects.txt --
 ## Additional information about the pipeline
 
 The pipeline is split into 3 main scripts as illustrated below and detailed in the next sub-sections. 
-![pipeline_fig](images/tutorial_pipeline_fig.png)
+![pipeline_fig](https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/docs/images/tutorial_pipeline_fig.png)
 
 ### Script 1 - FreeSurfer reconstruction and smoothing
 
@@ -175,4 +197,4 @@ python scripts/new_patient_pipeline/run_script_prediction.py -h
 
 ## Interpretation of results
 
-Refer to our [guidelines](/documentation/Interpret_results.html) for details on how to read and interprete the MELD pipeline results
+Refer to our [guidelines](https://meld-graph.readthedocs.io/en/latest/documentation/Interpret_results.html) for details on how to read and interprete the MELD pipeline results

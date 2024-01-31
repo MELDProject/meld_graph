@@ -20,9 +20,35 @@ Place the FLAIR nifti file into the FLAIR folder.
 
 ### BIDS format
 
-**TO UPDATE** The MELD pipeline now accept BIDS format as input data. For the BIDS format the data needs to be organised following ...
+The MELD pipeline now accept BIDS format as input data. For more information about BIDS format, please refers to their [instructions](https://bids.neuroimaging.io/)
 
+The main key ingredients are : 
+- each subject has a folder following the structure : `sub-<subject_id>`
+- (optional) in each subject folder you can have a session folder, e.g. `ses-preop`. 
+- in each session folder / subject folder you will need to have a datatype folder called `anat` folder. 
+- in the anat folder your T1 and FLAIR nifti images should follow the structure : `sub-<subject_id>_<modality_suffix>.nii.gz` or `sub-<subject_id>_ses-<session>_<modality_suffix>.nii.gz` if you have a session.
+
+A simple example of the BIDS structure for patient sub-test001 is given below:\
 ![example](https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/docs/images/input_structure_bids_format.png)
+
+Additionally, you will need to have two json files in the `input` folder:
+- `meld_bids_config.json` containing the key words for session, datatype and modality suffix \
+    Example: 
+    ```json
+    {"T1": {"session": null, 
+           "datatype": "anat",
+           "suffix": "T1w"},
+    "FLAIR": {"session": null, 
+              "datatype": "anat",
+              "suffix": "FLAIR"}}
+    ```
+
+- `dataset_description.json` containing a description of the dataset \
+    Example:
+    ```json
+    {"Name": "Example dataset", 
+    "BIDSVersion": "1.0.2"}
+    ```
 
 ## Prepare the demographic information (required only to compute the harmonisation parameters)
 
