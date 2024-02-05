@@ -585,10 +585,13 @@ class Evaluator:
                     mean_saliencies = cur_saliency.mean(axis=1)
                     # extract 20% most salient vertices
                     thresh= np.percentile(mean_saliencies[np.array(mask)], 80)
-                    mask_salient = (mean_saliencies>thresh)
+                    mask_salient = np.zeros(len(mask)).astype('bool')
+                    mask_salient[mask] = (mean_saliencies[mask]>thresh)
                     # if 20% vertices < 125 vertices , take the first 125 vertices most salient one
                     if mask_salient.sum() < 125:
-                        vertices_salient = np.argsort(mean_saliencies)[::-1][0:125]
+                        vertices_sorted = np.argsort(mean_saliencies)[::-1]
+                        mask_sorted = mask[vertices_sorted]
+                        vertices_salient = vertices_sorted[mask_sorted][0:125]
                         mask_salient=np.zeros(len(mean_saliencies)).astype('bool')
                         mask_salient[vertices_salient]= True
                     #rearange saliencies and mask salient in whole brain - add empty hemi

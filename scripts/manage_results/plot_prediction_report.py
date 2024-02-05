@@ -438,6 +438,9 @@ def generate_prediction_report(
             ax.imshow(im1)
             ax.axis("off")
             title = 'Left hemisphere' if hemi=='left' else 'Right hemisphere'
+            ax.set_title(title, loc="left", fontsize=20)
+            ax = fig.add_subplot(gs1[i, 2])
+            ax.imshow(im2)
             ax.axis("off")
            # initiate params for saliencies
             prefixes = [".combat", ".inter_z.intra_z.combat", ".inter_z.asym.intra_z.combat"]
