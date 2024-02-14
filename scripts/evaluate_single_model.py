@@ -34,6 +34,7 @@ if __name__ == "__main__":
     threshold_file = os.path.join(exp.experiment_path, 
     f'results_{args.model_name}',f'two_thresholds.csv')
     thresh_and_clust = True
+    print(threshold_file)
     if not os.path.exists(threshold_file):
         print('Optimised two thresholds parameters not found')
         thresh_and_clust = False
