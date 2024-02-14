@@ -165,18 +165,21 @@ def cluster_calibration_plot(confidence, label, n_bins=10):
     freq = []
     acc = []
     conf = []
+    mask = []
     n = []
     for bin_idx in binned_lesion.keys():
         freq.append(binned_lesion[bin_idx].sum()/len(binned_lesion[bin_idx]))
         conf.append(binned_confidence[bin_idx].sum()/len(binned_lesion[bin_idx]))
+        # mask if number per bin is < 3
+        mask.append(binned_lesion[bin_idx].sum()>3)
         #acc.append((binned_prediction[bin_idx] == binned_lesion[bin_idx]).sum() / len(binned_lesion[bin_idx]))
         n.append(len(binned_confidence[bin_idx]) / sum([len(binned_confidence[i]) for i in binned_confidence.keys()]))
     # NOTE also calculate ECE as freq - conf, instead of using acc
     ece = np.nansum(np.abs(np.array(freq) - np.array(conf))*np.array(n))
-    #print('ECE: ', ece)
-        
+    #print('ECE: ', ece) 
+    mask=np.array(mask)  
     fig, ax = plt.subplots(1,1, figsize=(5,5))
-    ax.plot(bins[:-1] + (bins[1:]-bins[:-1])/2, freq, 'o-')
+    ax.plot((bins[:-1] + (bins[1:]-bins[:-1])/2)[mask], np.array(freq)[mask], 'o-')
     ax.bar(bins[:-1] + (bins[1:]-bins[:-1])/2, n, width=0.05, color='black', alpha=0.5)
     # plot line for perfect calibration
     ax.plot([0,1],[0,1], '--')
@@ -190,8 +193,9 @@ def cluster_calibration_plot(confidence, label, n_bins=10):
 def confidence_label_distplot(per_cluster_confidence, per_cluster_label):
     # quick check to see if this roughly makes sense - FP clusters should have low confidence
     fig, ax = plt.subplots(1,1)
-    sns.kdeplot(x=per_cluster_confidence[per_cluster_label==0], ax=ax, label='FP')
-    sns.kdeplot(x=per_cluster_confidence[per_cluster_label==1], ax=ax, label='TP')
+    sns.kdeplot(x=per_cluster_confidence[per_cluster_label==0], bw_adjust=0.8,  ax=ax, label='FP')
+    sns.kdeplot(x=per_cluster_confidence[per_cluster_label==1], bw_adjust=0.8, ax=ax, label='TP')
     plt.legend()
     ax.set_xlabel('confidence')
+    ax.set_xlim([0,1])
     return fig
