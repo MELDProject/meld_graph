@@ -566,6 +566,7 @@ class Evaluator:
                         raise ValueError("Could not successfully calculate predictions and thresholds for saliency calculation.")
             saliency_vert[subj_id] = {}
             mask_salient_vert[subj_id] = {}
+            pred_clust_salient = np.hstack([data_dict['cluster_thresholded']['left'][self.experiment.cohort.cortex_mask].T, data_dict['cluster_thresholded']['right'][self.experiment.cohort.cortex_mask].T]).T       
             for hemi in ['left', 'right']:
                 # calculate saliency for every cluster
                 for cl in np.unique(data_dict['cluster_thresholded'][hemi]):
@@ -581,14 +582,18 @@ class Evaluator:
                     mean_saliencies = cur_saliency.mean(axis=1)
                     # extract 20% most salient vertices
                     thresh= np.percentile(mean_saliencies[np.array(mask)], 80)
-                    mask_salient = (mean_saliencies>thresh)
+                    mask_salient = np.zeros(len(mask)).astype('bool')
+                    mask_salient[mask] = (mean_saliencies[mask]>thresh)
                     # if 20% vertices < 125 vertices , take the first 125 vertices most salient one
                     if mask_salient.sum() < 125:
-                        vertices_salient = np.argsort(mean_saliencies)[::-1][0:125]
+                        vertices_sorted = np.argsort(mean_saliencies)[::-1]
+                        mask_sorted = mask[vertices_sorted]
+                        vertices_salient = vertices_sorted[mask_sorted][0:125]
                         mask_salient=np.zeros(len(mean_saliencies)).astype('bool')
                         mask_salient[vertices_salient]= True
                     #rearange saliencies and mask salient in whole brain - add empty hemi
                     empty_hemi = np.zeros(cur_saliency.shape)
+                    
                     if hemi=='left':
                         saliency_vert[subj_id][cl] = np.hstack([cur_saliency[self.experiment.cohort.cortex_mask,:].T,empty_hemi[self.experiment.cohort.cortex_mask,:].T]).T
                         mask_salient_vert[subj_id][cl] = np.hstack([mask_salient[self.experiment.cohort.cortex_mask],empty_hemi[self.experiment.cohort.cortex_mask, 0]])
@@ -611,6 +616,17 @@ class Evaluator:
                         dataset_str=f"mask_salient_{cl}",
                         suffix=save_prediction_suffix,
                     ) 
+                    
+                    # add salient vertices for each cluster to prediction clustered
+                    pred_clust_salient[(mask_salient_vert[subj_id][cl]>0).astype(bool)] = np.ones((mask_salient_vert[subj_id][cl]>0).sum())*cl*100
+            
+            #save clustered prediction + salient
+            self.save_prediction(
+                subj_id,
+                pred_clust_salient,
+                dataset_str=f"cluster_thresholded_salient",
+                suffix=save_prediction_suffix,
+                )
 
     
     def stat_subjects(self, suffix="", fold=None):
