@@ -134,6 +134,8 @@ def calculate_per_cluster_confidence(results_dict, aggregation_fn='median', mask
                 conf  = np.mean(results_dict[subj]['confidence_lesion'][mask])
             elif aggregation_fn == 'median':
                 conf  = np.median(results_dict[subj]['confidence_lesion'][mask])
+            elif aggregation_fn == 'max':
+                conf  = np.max(results_dict[subj]['confidence_lesion'][mask])
             else:
                 raise NotImplementedError(f'aggregation function {aggregation_fn}')
             per_cluster_confidence.append(conf)
