@@ -1,25 +1,14 @@
-FROM ubuntu:jammy AS MELDgraph
+FROM continuumio/miniconda3 AS MELDgraph
 
 ENV DEBIAN_FRONTEND="noninteractive"
 ARG CONDA_FILE=Miniconda3-py38_4.11.0-Linux-x86_64.sh
 
+## Expensive calls that don't change go up top. See https://docs.docker.com/build/cache/
+
 #pdate the ubuntu.
 RUN apt-get -y update && apt-get -y upgrade
 
-#Install the prerequisite software
-RUN apt-get install -y build-essential \
-    apt-utils \
-    vim \
-    nano \
-    curl \
-    wget \
-    pip \ 
-    python3 \
-    git \
-    time \
-	csh \
-	tcsh \
-    bc
+RUN apt-get install -y build-essential apt-utils curl wget
 
 #Install freesurfer in /opt/freesurfer
 #TODO: need to get freesurfer from wget
@@ -51,11 +40,33 @@ ENV FREESURFER_HOME=/opt/freesurfer-7.2.0
 RUN echo "FREESURFER_HOME=/opt/freesurfer-7.2.0" >> ~/.bashrc
 RUN echo "FS_LICENSE=/license.txt" >> ~/.bashrc
 
-# Install miniconda
-RUN wget --no-check-certificate -qO ~/miniconda.sh https://repo.continuum.io/miniconda/$CONDA_FILE  && \
-     chmod +x ~/miniconda.sh && \
-     ~/miniconda.sh -b -p /opt/conda && \
-     rm ~/miniconda.sh 
+# Install Fastsurfer
+RUN mkdir -p /fastsurfer \
+&& git clone --branch v1.1.2 https://github.com/Deep-MI/FastSurfer.git /opt/fastsurfer-v1.1.2 
+RUN echo "export PYTHONPATH=\"\${PYTHONPATH}:$PWD\"" >> ~/.bashrc
+ENV FASTSURFER_HOME=/opt/fastsurfer-v1.1.2
+RUN echo "FASTSURFER_HOME=/opt/fastsurfer-v1.1.2" >> ~/.bashrc
+
+#Install the prerequisite software
+RUN apt-get install -y build-essential \
+    apt-utils \
+#     vim \
+#     nano \
+    curl \
+    wget \
+#     pip \ 
+#     python3 \
+    git \
+    time \
+# 	csh \
+# 	tcsh \
+    bc
+
+# # Install miniconda
+# RUN wget --no-check-certificate -qO ~/miniconda.sh https://repo.continuum.io/miniconda/$CONDA_FILE  && \
+#      chmod +x ~/miniconda.sh && \
+#      ~/miniconda.sh -b -p /opt/conda && \
+#      rm ~/miniconda.sh 
 
 # Add conda to path
 ENV CONDA_DIR /opt/conda
@@ -65,27 +76,35 @@ ENV PATH=$CONDA_DIR/bin:$PATH
 RUN conda update -n base -c defaults conda
 RUN conda init bash
 
-# Install Fastsurfer
-RUN mkdir -p /fastsurfer \
-&& git clone --branch v1.1.2 https://github.com/Deep-MI/FastSurfer.git /opt/fastsurfer-v1.1.2 
-RUN echo "export PYTHONPATH=\"\${PYTHONPATH}:$PWD\"" >> ~/.bashrc
-ENV FASTSURFER_HOME=/opt/fastsurfer-v1.1.2
-RUN echo "FASTSURFER_HOME=/opt/fastsurfer-v1.1.2" >> ~/.bashrc
-
 # Activate SHELL
 SHELL ["/bin/bash", "-c"]
 
 # Add meld_graph code 
 RUN mkdir /app
-# COPY . /app/
-RUN cd /app/ && git clone --branch dev_docker https://github.com/MELDProject/meld_graph.git .
+COPY ./data /app/data
+COPY ./notebooks /app/notebooks
+COPY ./meld_graph /app/meld_graph
+COPY ./entrypoint.sh /app/
+COPY ./meld_config.ini /app/
+COPY ./environment.yml /app/
+COPY ./MELD_logo.png /app/
+COPY ./pyproject.toml /app/
+COPY ./pytest.ini /app/
+COPY ./setup.py /app/
+
+# Define working directory
+WORKDIR /app
+
+# RUN cd /app/ && git clone --branch dev_docker https://github.com/MELDProject/meld_graph.git .
 # Update current conda base environment with packages for meld_graph 
-RUN cd /app/ && conda run -n base /bin/bash -c "conda env create -f environment.yml"
+RUN --mount=type=cache,target=/opt/conda/pkgs conda env create -f environment.yml
 
 # Activate environment with shell because not working wih conda
 SHELL ["conda", "run", "-n", "meld_graph", "/bin/bash", "-c"]
 # Install meld_graph package
-RUN cd /app/ && conda run -n meld_graph /bin/bash -c "pip install -e ."
+RUN conda run -n meld_graph /bin/bash -c "pip install -e ."
+
+COPY ./scripts /app/scripts
 
 # Add data folder to docker
 RUN mkdir /data
@@ -93,10 +112,6 @@ RUN mkdir /data
 # Create a cache directory for fastsurfer, otherwise permission denied
 RUN mkdir /.cache
 RUN chmod -R 777 /.cache
-
-
-# Define working directory
-WORKDIR /app
 
 # Set permissions for the entrypoint
 RUN chmod +x entrypoint.sh
