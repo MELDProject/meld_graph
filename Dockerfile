@@ -54,19 +54,11 @@ RUN apt-get install -y build-essential \
 #     nano \
     curl \
     wget \
-#     pip \ 
-#     python3 \
     git \
     time \
 # 	csh \
 # 	tcsh \
     bc
-
-# # Install miniconda
-# RUN wget --no-check-certificate -qO ~/miniconda.sh https://repo.continuum.io/miniconda/$CONDA_FILE  && \
-#      chmod +x ~/miniconda.sh && \
-#      ~/miniconda.sh -b -p /opt/conda && \
-#      rm ~/miniconda.sh 
 
 # Add conda to path
 ENV CONDA_DIR /opt/conda
@@ -81,21 +73,22 @@ SHELL ["/bin/bash", "-c"]
 
 # Add meld_graph code 
 RUN mkdir /app
-COPY ./data /app/data
-COPY ./notebooks /app/notebooks
-COPY ./meld_graph /app/meld_graph
-COPY ./entrypoint.sh /app/
-COPY ./meld_config.ini /app/
-COPY ./environment.yml /app/
-COPY ./MELD_logo.png /app/
-COPY ./pyproject.toml /app/
-COPY ./pytest.ini /app/
-COPY ./setup.py /app/
+
+# COPY ./data /app/data
+# COPY ./notebooks /app/notebooks
+# COPY ./meld_graph /app/meld_graph
+# COPY ./entrypoint.sh /app/
+# COPY ./meld_config.ini /app/
+# COPY ./environment.yml /app/
+# COPY ./MELD_logo.png /app/
+# COPY ./pyproject.toml /app/
+# COPY ./pytest.ini /app/
+# COPY ./setup.py /app/
 
 # Define working directory
 WORKDIR /app
 
-# RUN cd /app/ && git clone --branch dev_docker https://github.com/MELDProject/meld_graph.git .
+RUN git clone --branch dev_docker https://github.com/MELDProject/meld_graph.git .
 # Update current conda base environment with packages for meld_graph 
 RUN --mount=type=cache,target=/opt/conda/pkgs conda env create -f environment.yml
 
@@ -104,7 +97,7 @@ SHELL ["conda", "run", "-n", "meld_graph", "/bin/bash", "-c"]
 # Install meld_graph package
 RUN conda run -n meld_graph /bin/bash -c "pip install -e ."
 
-COPY ./scripts /app/scripts
+# COPY ./scripts /app/scripts
 
 # Add data folder to docker
 RUN mkdir /data
