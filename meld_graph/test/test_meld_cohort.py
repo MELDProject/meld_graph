@@ -19,13 +19,14 @@ import warnings
 from meld_graph.download_data import get_test_data
 import tempfile
 import pandas as pd
-
+from meld_graph.test.utils import create_test_demos
 
 # @pytest.fixture(autouse=True)
 # def setup_teardown_tests():
 #     get_test_data()
 #     yield
 
+create_test_demos()
 
 @pytest.mark.parametrize(
     "hdf5_file_root", [DEFAULT_HDF5_FILE_ROOT]

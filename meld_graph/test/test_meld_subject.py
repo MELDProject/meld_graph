@@ -15,7 +15,9 @@ from meld_graph.meld_cohort import MeldCohort, MeldSubject
 import numpy as np
 from meld_graph.download_data import get_test_data
 from meld_graph.paths import DEFAULT_HDF5_FILE_ROOT
+from meld_graph.test.utils import create_test_demos
 
+create_test_demos()
 
 def test_subject_parse():
     """

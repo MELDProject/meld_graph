@@ -14,6 +14,7 @@ from meld_graph.meld_cohort import MeldSubject, MeldCohort
 import pytest
 from meld_graph.paths import NVERT, DEFAULT_HDF5_FILE_ROOT
 # from meld_graph.network_tools import build_model
+from meld_graph.test.utils import create_test_demos
 import numpy as np
 from copy import deepcopy
 
@@ -65,13 +66,14 @@ def data_parameters():
         "smooth_labels": False,
         "preprocessing_parameters": {
             "scaling": None,
-            "zscore": "feature_means_combat.json"
+            "zscore": "feature_means_nocombat.json"
             },
     }
     return data_parameters
 
 # Dataset class tests
 def test_dataset_flags(data_parameters):
+    create_test_demos()
     c = MeldCohort(hdf5_file_root=data_parameters["hdf5_file_root"])
 
     subject_ids = c.get_subject_ids(**data_parameters)
