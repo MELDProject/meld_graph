@@ -19,7 +19,7 @@ def download_test_data():
     """
     Download test data from figshare
     """
-    url = "https://figshare.com/ndownloader/files/44329562?private_link=3b790cfb027f4036f19a"
+    url = "https://figshare.com/ndownloader/files/46176933?private_link=3b790cfb027f4036f19a"
     test_data_dir = MELD_DATA_PATH
     os.makedirs(test_data_dir, exist_ok=True)
     print('downloading test data to '+ test_data_dir)
@@ -35,7 +35,7 @@ def download_meld_params():
     """
     Download meld parameters file from figshare
     """
-    url = "https://figshare.com/ndownloader/files/44229647?private_link=34b4a30c57a328a1e111"
+    url = "https://figshare.com/ndownloader/files/46176921?private_link=34b4a30c57a328a1e111"
     #print()
     meld_params_dir = MELD_DATA_PATH
     os.makedirs(meld_params_dir, exist_ok=True)
@@ -52,7 +52,7 @@ def download_models():
     """
     download pretrained ensemble models and return experiment_name and experiment_dir
     """
-    url = "https://figshare.com/ndownloader/files/44229677?private_link=7f983b7321bba527ffef"
+    url = "https://figshare.com/ndownloader/files/46176927?private_link=7f983b7321bba527ffef"
     with tempfile.TemporaryDirectory() as tmpdirname:
         # download to tmpdir
         _fetch_url(url, os.path.join(tmpdirname, "models.zip"))
