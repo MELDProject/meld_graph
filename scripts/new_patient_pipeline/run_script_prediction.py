@@ -112,10 +112,7 @@ def run_script_prediction(list_ids=None, sub_id=None, harmo_code='noHarmo', no_p
         sys.exit(-1) 
     
     # initialise variables
-    if harmo_code == "noHarmo":
-        model_name = MODEL_PATH.format('nocombat')
-    else:
-        model_name = MODEL_PATH.format('combat')
+    model_name = MODEL_PATH
     experiment_path = os.path.join(EXPERIMENT_PATH, model_name)
     subjects_dir = FS_SUBJECTS_PATH
     classifier_output_dir = opj(MELD_DATA_PATH,'output','classifier_outputs', model_name)

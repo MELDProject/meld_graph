@@ -48,7 +48,7 @@ CLIPPING_PARAMS_FILE='clip_params_MELD.json'
 NORM_CONTROLS_PARAMS_FILE = 'Norm_controls_parameters_{}.hdf5'
 
 # pre-trained model path and name
-MODEL_PATH = '23-10-30_graph_{}/fold_all'
+MODEL_PATH = '23-10-30_LVHZ_dcp/fold_all'
 MODEL_NAME = 'best_model'
     
     

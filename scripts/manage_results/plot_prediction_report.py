@@ -257,7 +257,7 @@ def get_subj_data(subject_id, eva):
     
         for cl in list_clust[hemi]:
             mask_salient = saliencies[f'mask_salient_{cl}'][hemi].astype(bool)
-            confidence_cl_salient = data_dictionary['result'][hemi][mask_salient].mean()
+            confidence_cl_salient = data_dictionary['result'][hemi][mask_salient].max()
             confidences[f'confidence_{cl}'] =  confidence_cl_salient
 
     return list_clust, features_vals, predictions, threshold_text, saliencies, confidences
@@ -526,7 +526,7 @@ def generate_prediction_report(
                 location = get_cluster_location(predictions[hemi] == cluster)
                 info_cl['location'] = location
                 # get confidence
-                confidence = round(confidences[f'confidence_{cluster}'].mean(),2)
+                confidence = round(confidences[f'confidence_{cluster}'],2)
                 info_cl['confidence'] = confidence
                 info_cl['high_low_threshold']=threshold_text
                 # plot info in text box in upper left in axes coords
