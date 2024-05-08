@@ -3,23 +3,30 @@
 The Docker container has all the prerequisites embedded on it which makes it easier to install and compatible with most of the OS systems. 
 
 Notes: 
-- Currently only tested on Linux
-- The docker image contains Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0+cu111. The whole image is 13.5 GB.  
+- Currently only tested on **Linux and Windows** (Mac and HPC Singularity coming soon)
 - You will need **~14GB of space** to install the container
-- Docker does not work on HPC, a singularity container is coming for that. 
+- The docker image contains Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0+cu111. The whole image is 13.5 GB.  
 
 ## Prerequisites
 
 ### Install Docker
 You will need to have docker installed. You can check if docker is installed on your computer by running:
 ```bash
-docker
+docker --version
 ```
-If this command display the instruction for docker, then it is already installed. If not, please follow the [guidelines](https://docs.docker.com/engine/install/) to install docker on your machine.
+If this command displays the docker version, then it is already installed. If not, please follow the [guidelines](https://docs.docker.com/engine/install/) to install docker on your machine.
 
 
 ## Enable GPUs
-If your computer has GPUs and you wish to use them to run the pipeline, you will need to get the [*nvidia container toolkit*](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html). Enabling the GPUs accelerate the brain segmentation when using Fastsurfer and the predictions. 
+
+Enabling your computer's GPUs for running the pipeline accelerates the brain segmentation when using Fastsurfer and the predictions. Follow instructions for your operating system to install.
+
+### Linux 
+
+[*nvidia container toolkit*](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html). 
+
+### Windows
+[*NVIDIA CUDA for WSL2](https://learn.microsoft.com/en-us/windows/ai/directml/gpu-cuda-in-wsl). If you already have recent NVIDIA, this is likely already installed.
 
 
 ### Freesurfer licence
@@ -27,7 +34,11 @@ You will need to download a Freesurfer license.txt to enable Freesurfer/Fastsurf
 
 ## Pull the docker image
 
-Pull the container, it will take time and 15GB of storage space. This will need to be run only once
+Make sure you have 15GB of storage space available and pull the docker image. This will need to be run only once.
+
+:::{warning}
+It can take a couple hours, so please leave it running.
+:::
 
 ```bash
 docker pull mathrip/meld_graph:latest
@@ -44,11 +55,12 @@ docker run -it --rm \
 If you encounter any error, please contact the MELD team for support at `meld.study@gmail.com`
 
 ## Set up paths and download model
-Before being able to use the classifier on your data, some paths need to be set up and the pretrained model needs to be downloaded. 
+Before being able to use the classifier on your data, data paths need to be set up and the pretrained model needs to be downloaded. 
 
-First, create the <meld_data> folder where you want to download the meld data structure and save the outputs
+1. Create the <meld_data> folder where you want to download the meld data structure and save the outputs. It should typically take a couple GB of space.
 
-Then run:
+2. Run:
+
 
 ```bash
 docker run -it --rm \
@@ -57,14 +69,24 @@ docker run -it --rm \
     mathrip/meld_graph:latest \
     python scripts/new_patient_pipeline/prepare_classifier.py
 ```
-With `<meld_data>` being the path to where your meld data folder is stored.
 
-This script will ask you if you want to change the location for the MELD data folder, say **"N"** for no and wait until the downloading is finished.
+:::{note}
+Append `--skip-download-data` to the python call to skip downloading the test data.
+:::
 
-Note: You can also skip the downloading of the test data. For this, append the option `--skip-download-data` to the python call.
+In this command and the following ones, replace `<meld_data>` with the path to your meld data folder.
+
+:::{caution} Windows
+`"$(id -u):$(id -g)"` is not needed on Windows for this command or any following one.
+
+Windows docker uses unix style paths with named drives. E.g. `C:\Users\ada` becomes `/c/Users/ada`.
+:::
+
+3. This script will ask you if you want to change the location for the MELD data folder, say **"N"** for no and wait until the downloading is finished.
+
 
 ## Verify installation
-We provide a test script to allow you to verify that you have installed all packages, set up paths correctly, and downloaded all data. This script will run the pipeline to predict the lesion classifier on a new patient. It takes approximately 15minutes to run.
+To verify that you have installed all packages, set up paths correctly, and downloaded all data, this verification script will run the pipeline to predict the lesion classifier on a new patient. It takes approximately 15 minutes to run.
 
 ```bash
 docker run -it --rm \
@@ -75,13 +97,24 @@ docker run -it --rm \
     mathrip/meld_graph:latest \
     pytest
 ```
-With `<meld_data>` being the path to where your meld data folder is stored and <freesurfer_license> for the path to where you have stored the license.txt from Freesurfer. See [installation](https://meld-graph.readthedocs.io/en/latest/install_docker.html) for more details
 
-Note: If you run into errors at this stage and need help, you can re-run by changing the last line of the command by the command below to save the terminal outputs in a txt file, and send it to us. We can then work with you to solve any problems.
-  ```bash
-  pytest -s | tee pytest_errors.log
-  ```
-  You will find this pytest_errors.log in the folder where you launched the command. 
+In this command and the following ones, replace <freesurfer_license> with the path to where you have stored the license.txt from Freesurfer. See [installation](https://meld-graph.readthedocs.io/en/latest/install_docker.html) for more details
+
+:::{error} Errors
+If you run into errors at this stage and need help, you can re-run by changing the last line of the command by the command below to save the terminal outputs in a txt file, and send it to us. We can then work with you to solve any problems.
+
+Linux:
+```bash
+pytest -s | tee pytest_errors.log
+```
+
+Windows:
+```bash
+pytest -s | tee -filepath .\pytest_errors.log
+```
+
+You will find this pytest_errors.log in the folder where you launched the command. 
+:::
 
 ## Test GPU
 
