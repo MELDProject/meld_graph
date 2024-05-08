@@ -25,9 +25,9 @@ def download_test_data():
     print('downloading test data to '+ test_data_dir)
     with tempfile.TemporaryDirectory() as tmpdirname:
         # download to tmpdir
-        _fetch_url(url, os.path.join(tmpdirname, "test_data.tar.gz"))
+        _fetch_url(url, os.path.join(tmpdirname, "test_data.zip"))
         # unpack
-        shutil.unpack_archive(os.path.join(tmpdirname, "test_data.tar.gz"), test_data_dir)
+        shutil.unpack_archive(os.path.join(tmpdirname, "test_data.zip"), test_data_dir)
     print(f"\nunpacked data to {test_data_dir}")
     return test_data_dir
 
@@ -42,9 +42,9 @@ def download_meld_params():
     print('downloading meld parameters to '+ meld_params_dir)
     with tempfile.TemporaryDirectory() as tmpdirname:
         # download to tmpdir
-        _fetch_url(url, os.path.join(tmpdirname, "meld_params.tar.gz"))
+        _fetch_url(url, os.path.join(tmpdirname, "meld_params.zip"))
         # unpack
-        shutil.unpack_archive(os.path.join(tmpdirname, "meld_params.tar.gz"), meld_params_dir)
+        shutil.unpack_archive(os.path.join(tmpdirname, "meld_params.zip"), meld_params_dir)
     print(f"\nunpacked data to {meld_params_dir}")
     return meld_params_dir
 
@@ -55,9 +55,9 @@ def download_models():
     url = "https://figshare.com/ndownloader/files/44229677?private_link=7f983b7321bba527ffef"
     with tempfile.TemporaryDirectory() as tmpdirname:
         # download to tmpdir
-        _fetch_url(url, os.path.join(tmpdirname, "models.tar.gz"))
+        _fetch_url(url, os.path.join(tmpdirname, "models.zip"))
         # unpack
-        shutil.unpack_archive(os.path.join(tmpdirname, "models.tar.gz"), os.path.dirname(EXPERIMENT_PATH))
+        shutil.unpack_archive(os.path.join(tmpdirname, "models.zip"), os.path.dirname(EXPERIMENT_PATH))
     print(f"\ndownloaded models to {EXPERIMENT_PATH}")
 
 # --- return path to data (and optionally download) --
