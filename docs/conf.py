@@ -34,6 +34,7 @@ extensions = [
     "sphinxarg.ext",
     "myst_parser",
     "sphinxcontrib.asciinema",
+    "sphinx_design"
 ]
 
 
@@ -45,7 +46,7 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
-myst_enable_extensions = ['html_image','dollarmath','amsmath']
+myst_enable_extensions = ['html_image','dollarmath','amsmath','colon_fence']
 myst_heading_anchors = 3
 
 master_doc = 'index'
