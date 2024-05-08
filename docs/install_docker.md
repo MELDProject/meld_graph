@@ -3,7 +3,7 @@
 The Docker container has all the prerequisites embedded on it which makes it easier to install and compatible with most of the OS systems. 
 
 Notes: 
-- Currently only tested on **Linux and Windows (WSL2)** (Mac and HPC Singularity coming soon)
+- Currently only tested on **Linux and Windows** (Mac and HPC Singularity coming soon)
 - You will need **~14GB of space** to install the container
 - The docker image contains Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0+cu111. The whole image is 13.5 GB.  
 
