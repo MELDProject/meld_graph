@@ -12,7 +12,6 @@ RUN --mount=type=cache,target=/var/cache/apt apt-get -y update && apt-get instal
 #TODO: need to get freesurfer from wget
 RUN echo "Downloading FreeSurfer..."
 RUN mkdir -p /opt/freesurfer-7.2.0
-RUN --mount=type=cache,target=/cache/download --mount=type=cache,target=/opt/freesurfer-7.2.0 cp -f /opt/freesurfer-7.2.0/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz /cache/download
 RUN --mount=type=cache,target=/cache/download wget -c -O /cache/download/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz --progress=bar:force https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.2.0/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz
 RUN --mount=type=cache,target=/cache/download tar -xzf /cache/download/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz -C /opt/freesurfer-7.2.0 --owner root --group root --no-same-owner --strip-components 1 \
          --exclude='average/mult-comp-cor' \
@@ -48,14 +47,14 @@ RUN echo "FASTSURFER_HOME=/opt/fastsurfer-v1.1.2" >> ~/.bashrc
 #Install the prerequisite software
 RUN --mount=type=cache,target=/var/cache/apt apt-get install -y build-essential \
     apt-utils \
-     pip \
-     python3 \
-     time \
+    pip \
+    python3 \
+    time \
+    tcsh \
+    vim \
+ 	  csh \
     bc
-#     vim \
 #     nano \
-#  	csh \
-# 	tcsh \
 
 # Add conda to path
 ENV CONDA_DIR /opt/conda
@@ -68,38 +67,44 @@ RUN wget --no-check-certificate -qO ~/miniconda.sh https://repo.continuum.io/min
      ~/miniconda.sh -b -p /opt/conda && \
      rm ~/miniconda.sh 
 
-# Update conda
-RUN conda update -n base -c defaults conda
-RUN conda init bash
-
 # Activate SHELL
 SHELL ["/bin/bash", "-c"]
 
 # Add meld_graph code 
 RUN mkdir /app
 
-# COPY ./data /app/data
-# COPY ./notebooks /app/notebooks
-# COPY ./meld_graph /app/meld_graph
-# COPY ./entrypoint.sh /app/
-# COPY ./meld_config.ini /app/
-# COPY ./environment.yml /app/
-# COPY ./MELD_logo.png /app/
-# COPY ./pyproject.toml /app/
-# COPY ./pytest.ini /app/
-# COPY ./setup.py /app/
+# Update conda
+RUN --mount=type=cache,target=/opt/conda/pkgs conda update -n base -c defaults conda
+RUN conda init bash
+RUN --mount=type=cache,target=/opt/conda/pkgs conda install -n base conda-libmamba-solver
+RUN conda config --set solver libmamba
+
 
 # Define working directory
 WORKDIR /app
+
+# COPY ./environment.yml .
 
 RUN git clone --branch dev_docker https://github.com/MELDProject/meld_graph.git .
 # Update current conda base environment with packages for meld_graph 
 RUN --mount=type=cache,target=/opt/conda/pkgs conda env create -f environment.yml
 
+# COPY ./data data
+# COPY ./notebooks notebooks
+# COPY ./entrypoint.sh .
+# COPY ./meld_config.ini .
+# COPY ./MELD_logo.png .
+# COPY ./pyproject.toml .
+# COPY ./pytest.ini .
+# COPY ./setup.py .
+
 # Activate environment with shell because not working wih conda
 SHELL ["conda", "run", "-n", "meld_graph", "/bin/bash", "-c"]
+
+# COPY ./meld_graph /app/meld_graph
+
 # Install meld_graph package
-RUN conda run -n meld_graph /bin/bash -c "pip install -e ."
+RUN --mount=type=cache,target=/root/.cache conda run -n meld_graph /bin/bash -c "pip install -e ."
 
 # COPY ./scripts /app/scripts
 
