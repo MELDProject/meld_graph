@@ -13,7 +13,7 @@ RUN --mount=type=cache,target=/var/cache/apt apt-get -y update && apt-get instal
 RUN echo "Downloading FreeSurfer..."
 RUN mkdir -p /opt/freesurfer-7.2.0
 RUN --mount=type=cache,target=/cache/download wget -N -O /cache/download/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz --progress=bar:force https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.2.0/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz
-RUN --mount=type=cache,target=/cache/download tar -xzf /cache/download/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz -C /opt/freesurfer-7.2.0 --owner root --group root --no-same-owner --strip-components 1 \
+RUN --mount=type=cache,target=/cache/download tar -xzf /cache/download/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz -C /opt/freesurfer-7.2.0 --owner root --group root --no-same-owner --strip-components 1 --keep-newer-files \
          --exclude='average/mult-comp-cor' \
          --exclude='lib/cuda' \
          --exclude='lib/qt' \
