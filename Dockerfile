@@ -5,7 +5,7 @@ ARG CONDA_FILE=Miniconda3-py38_4.11.0-Linux-x86_64.sh
 
 ## Expensive calls that don't change go up top. See https://docs.docker.com/build/cache/
 
-#pdate the ubuntu.
+#Update the ubuntu.
 RUN --mount=type=cache,target=/var/cache/apt apt-get -y update && apt-get install -y build-essential apt-utils curl wget git
 
 #Install freesurfer in /opt/freesurfer
