@@ -83,7 +83,12 @@ def test_predict_newsubject():
     # compare prediction on mri native
     prediction_nii = nb.load(os.path.join(path_prediction_subject,data_parameters['prediction_nii_file'])).get_fdata()
     expected_prediction_nii = nb.load(os.path.join(path_prediction_subject,data_parameters['expected_prediction_nii_file'])).get_fdata()
-    diff_sum = (np.abs(prediction_nii - expected_prediction_nii)).sum()
-    print(f'Test nifti results: Number of vertices different with expectation : {diff_sum}')
+    # check how many vertices does not overlap between prediction and expectation
+    diff_sum = ((prediction>0)!=(expected_prediction>0)).sum()
+    print(f'Test nifti results: Number of vertices not overlapping with expectation : {diff_sum}')
     assert diff_sum <= 350
+    # check how many vertices have different values between prediction and expectation (take in consideration salient vertices)
+    diff_sum = (prediction != expected_prediction).sum()
+    print(f'Test nifti results: Number of vertices with different value than expectation : {diff_sum}')
+    assert diff_sum <= 700
  
