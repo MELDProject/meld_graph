@@ -27,7 +27,6 @@ RUN  tar -xzf freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz -C /opt/freesurfer-7.
           --exclude='trctrain'
 
 
-# micromamba stage
 
 FROM  debian:12-slim AS meld_git
 
@@ -38,17 +37,12 @@ WORKDIR /meld_graph
 RUN git clone --branch dev_docker https://github.com/MELDProject/meld_graph.git .
 
 
-# freesurfer stage 
-FROM mambaorg/micromamba:latest AS micromamba
+# micromamba stage
+FROM continuumio/miniconda3:4.11.0 AS conda
 USER root
-
-ENV MAMBA_ROOT_PREFIX="/opt/conda"
-ENV MAMBA_EXE="/bin/micromamba"
 
 #Update the ubuntu.
 RUN apt-get -y update && apt-get install --no-install-recommends -y wget gcc g++ && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-
 
 RUN mkdir /tmp/pkg
 WORKDIR /tmp
@@ -56,12 +50,12 @@ WORKDIR /tmp
 RUN wget https://github.com/MELDProject/meld_graph/raw/dev_docker/environment.yml
 
 # RUN --mount=type=cache,target=/opt/conda/pkgs \
-RUN micromamba create -y -f environment.yml \
-    && micromamba clean -afy
+RUN conda env create -f environment.yml \
+    && conda clean -afy
 
 
 # meld graph stage
-FROM python:3.9-slim AS MELDgraph
+FROM continuumio/miniconda3:4.11.0 AS MELDgraph
 RUN mkdir -p /opt/freesurfer-7.2.0
 COPY --from=freesurfer /opt/freesurfer-7.2.0 /opt/freesurfer-7.2.0
 
@@ -103,13 +97,14 @@ RUN echo "FASTSURFER_HOME=/opt/fastsurfer-v1.1.2" >> ~/.bashrc
 
 # Add conda to path
 ENV CONDA_DIR /opt/conda
-ENV PATH=$CONDA_DIR/bin:$PATH
 
 
 # COPY ./environment.yml .
 
-COPY --from=micromamba /bin/micromamba /bin/micromamba
-COPY --from=micromamba /opt/conda/envs/meld_graph /opt/conda/envs/meld_graph
+COPY --from=conda /opt/conda/envs/meld_graph /opt/conda/envs/meld_graph
+COPY --from=conda /opt/conda/bin /opt/conda/bin
+
+ENV PATH=$CONDA_DIR/bin:$PATH
 
 # Add meld_graph code 
 RUN mkdir /app
@@ -119,11 +114,11 @@ WORKDIR /app
 
 COPY --from=meld_git /meld_graph .
 
-ENV MAMBA_ROOT_PREFIX="/opt/conda"
-ENV MAMBA_EXE="/bin/micromamba"
-RUN micromamba run -n meld_graph /bin/bash -c "pip install -e ." \
-    && micromamba shell init -s bash \
-    && echo "micromamba activate meld_graph" >> ~/.bashrc
+
+RUN conda update -n base -c defaults conda \
+  && conda init bash \
+  && conda run -n meld_graph /bin/bash -c "pip install -e ." \
+  && echo "conda activate meld_graph" >> ~/.bashrc
 
 # COPY ./data data
 # COPY ./notebooks notebooks
