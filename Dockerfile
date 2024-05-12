@@ -53,7 +53,9 @@ RUN apt-get -y update && apt-get install --no-install-recommends -y wget gcc g++
 RUN mkdir /tmp/pkg
 WORKDIR /tmp
 
-RUN wget https://github.com/MELDProject/meld_graph/raw/dev_docker/environment.yml
+COPY environment.yml .
+
+ARG CACHEBUST=1
 
 # RUN --mount=type=cache,target=/opt/conda/pkgs \
 RUN micromamba create -y -f environment.yml \
