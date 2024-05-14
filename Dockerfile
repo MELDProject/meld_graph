@@ -10,8 +10,8 @@ RUN apt-get -y update && apt-get install --no-install-recommends -y wget && apt-
 RUN echo "Downloading FreeSurfer..."
 RUN mkdir -p /opt/freesurfer-7.2.0
 
-# RUN wget -N -O freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz --progress=bar:force https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.2.0/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && \
-COPY freesurfer.tar.gz freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz
+RUN wget -N -O --no-check-certificate freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz --progress=bar:force https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.2.0/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && \
+# COPY freesurfer.tar.gz freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz
 RUN  tar -xzf freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz -C /opt/freesurfer-7.2.0 --owner root --group root --no-same-owner --strip-components 1 --keep-newer-files \
           --exclude='average/mult-comp-cor' \
           --exclude='lib/cuda' \
@@ -48,14 +48,12 @@ ENV MAMBA_EXE="/bin/micromamba"
 #Update the ubuntu.
 RUN apt-get -y update && apt-get install --no-install-recommends -y wget gcc g++ && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-
-
 RUN mkdir /tmp/pkg
 WORKDIR /tmp
 
-COPY environment.yml .
 
-ARG CACHEBUST=1
+RUN wget https://github.com/MELDProject/meld_graph/raw/dev_docker/environment.yml
+# COPY environment.yml .
 
 # RUN --mount=type=cache,target=/opt/conda/pkgs \
 RUN micromamba create -y -f environment.yml \
