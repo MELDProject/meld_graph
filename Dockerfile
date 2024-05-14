@@ -10,7 +10,7 @@ RUN apt-get -y update && apt-get install --no-install-recommends -y wget && apt-
 RUN mkdir -p /opt/freesurfer-7.2.0
 
 # Download freesurfer
-RUN wget -N -O --no-check-certificate freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz --progress=bar:force https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.2.0/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && \
+RUN wget -N -O freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz --no-check-certificate --progress=bar:force https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.2.0/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && \
     tar -xzf freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz -C /opt/freesurfer-7.2.0 --owner root --group root --no-same-owner --strip-components 1 --keep-newer-files \
     --exclude='average/mult-comp-cor' \
     --exclude='lib/cuda' \
