@@ -42,6 +42,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Test
+        env: 
+          LICENSE_TEXT: ${{ secrets.FS_LICENSE }}
         run: |
-          docker run --rm ${{ env.TEST_TAG }} pytest
+          mkdir data
+          echo $LICENSE_TEXT >> ./data/license.txt
+          docker run -v ./data:/data -v ./data/license.txt:/license.txt -e FS_LICENSE=/license.txt --rm ${{ env.TEST_TAG }} python scripts/new_patient_pipeline/prepare_classifier.py
+          docker run -v ./data:/data -v ./data/license.txt:/license.txt -e FS_LICENSE=/license.txt --rm ${{ env.TEST_TAG }} pytest
 
