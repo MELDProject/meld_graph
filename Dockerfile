@@ -70,6 +70,7 @@ RUN apt-get -y update && \
     bzip2 \
     ca-certificates \
     bc \
+    python3 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
