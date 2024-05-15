@@ -31,7 +31,7 @@ RUN micromamba create -y -f environment.yml \
 
 
 # meld graph stage
-FROM debian-12:slim AS MELDgraph
+FROM debian:12-slim AS MELDgraph
 RUN mkdir -p /opt/freesurfer-7.2.0
 
 #Update ubuntu.
