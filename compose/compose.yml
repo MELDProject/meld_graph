@@ -1,0 +1,13 @@
+services:
+  meld_graph:
+    image: meld_graph:prod
+    volumes:
+      - ./data:/data
+    environment: 
+      - FS_LICENSE=/run/secrets/license.txt
+    secrets:
+      - license.txt
+
+secrets:
+  license.txt:
+    file: ./license.txt
