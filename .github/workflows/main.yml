@@ -45,8 +45,8 @@ jobs:
         env: 
           LICENSE_TEXT: ${{ secrets.FS_LICENSE }}
         run: |
-          mkdir data
-          echo $LICENSE_TEXT >> ./data/license.txt
-          docker run -v ./data:/data -v ./data/license.txt:/license.txt -e FS_LICENSE=/license.txt --rm ${{ env.TEST_TAG }} python scripts/new_patient_pipeline/prepare_classifier.py
-          docker run -v ./data:/data -v ./data/license.txt:/license.txt -e FS_LICENSE=/license.txt --rm ${{ env.TEST_TAG }} pytest
+          mkdir docker-data
+          echo $LICENSE_TEXT >> ./docker-data/license.txt
+          docker run -v ./docker-data:/data -v ./data/license.txt:/license.txt -e FS_LICENSE=/license.txt --rm ${{ env.TEST_TAG }} python scripts/new_patient_pipeline/prepare_classifier.py
+          docker run -v ./docker-data:/data -v ./data/license.txt:/license.txt -e FS_LICENSE=/license.txt --rm ${{ env.TEST_TAG }} pytest
 
