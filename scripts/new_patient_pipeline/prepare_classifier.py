@@ -51,7 +51,7 @@ def prepare_meld_config():
                 print("Exiting without setting up meld_config.ini.")
                 sys.exit()
         print(f'The current MELD data folder path is {config.get("DEFAULT", "meld_data_path")}. Would you like to change it? (y/n)')
-        if not get_yn_input():
+        if os.environ["KEEP_DATA_PATH"] or not get_yn_input():
             print("Leaving MELD data folder unchanged.")
             return
     else:

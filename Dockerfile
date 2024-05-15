@@ -123,4 +123,6 @@ RUN chmod -R 777 /.cache
 # Set permissions for the entrypoint
 RUN chmod +x entrypoint.sh
 
+ENV KEEP_DATA_PATH=1
+
 ENTRYPOINT ["/bin/bash","entrypoint.sh"]
