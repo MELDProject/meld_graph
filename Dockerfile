@@ -117,8 +117,9 @@ ENV MAMBA_ROOT_PREFIX="/opt/conda"
 ENV MAMBA_EXE="/bin/micromamba"
 RUN micromamba run -n meld_graph /bin/bash -c "pip install -e ." \
     && micromamba shell init -s bash \
-    && echo "micromamba activate meld_graph" >> ~/.bashrc
+    && echo "micromamba activate meld_graph" >> $HOME/.bashrc
 
+ENV PATH="/opt/conda/envs/meld_graph/bin:$PATH"
 
 # Add data folder to docker
 RUN mkdir /data
