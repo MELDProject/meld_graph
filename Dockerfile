@@ -7,7 +7,7 @@ FROM  debian:12-slim AS meld_git
 RUN apt-get -y update && apt-get install --no-install-recommends -y git ca-certificates && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 WORKDIR /meld_graph
-RUN git clone --branch dev_docker https://github.com/MELDProject/meld_graph.git .
+RUN git clone --branch dev_docker https://github.com/MELDProject/meld_graph.git . && rm -rf ./.git
 
 
 # freesurfer stage 
