@@ -1,15 +1,5 @@
 ## Expensive calls that don't change go up top. See https://docs.docker.com/build/cache/
 
-# fetch source stage
-FROM  debian:12-slim AS meld_git
-
-#Update the ubuntu.
-RUN apt-get -y update && apt-get install --no-install-recommends -y git ca-certificates && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-WORKDIR /meld_graph
-RUN git clone --branch dev_docker https://github.com/MELDProject/meld_graph.git . && rm -rf ./.git
-
-
 # freesurfer stage 
 FROM mambaorg/micromamba:latest AS micromamba
 USER root
@@ -103,7 +93,7 @@ RUN mkdir /app
 WORKDIR /app
 
 # Add meld_graph code 
-COPY --from=meld_git /meld_graph .
+COPY . .
 
 ENV MAMBA_ROOT_PREFIX="/opt/conda"
 ENV MAMBA_EXE="/bin/micromamba"
