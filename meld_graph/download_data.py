@@ -10,8 +10,9 @@ import tempfile
 def _fetch_url(url, fname):
     def dlProgress(count, blockSize, totalSize):
         percent = int(count*blockSize*100/totalSize)
-        sys.stdout.write("\r" + url + "...%d%%" % percent)
-        sys.stdout.flush()
+        if not os.environ["SILENT"]:
+            sys.stdout.write("\r" + url + "...%d%%" % percent)
+            sys.stdout.flush()
     return urllib.request.urlretrieve(url, fname, reporthook=dlProgress)
 
 

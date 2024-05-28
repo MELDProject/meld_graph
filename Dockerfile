@@ -1,42 +1,6 @@
 ## Expensive calls that don't change go up top. See https://docs.docker.com/build/cache/
 
 # freesurfer stage 
-FROM debian:12-slim AS freesurfer
-
-#Update the ubuntu.
-RUN apt-get -y update && apt-get install --no-install-recommends -y wget && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-#Install freesurfer in /opt/freesurfer
-RUN mkdir -p /opt/freesurfer-7.2.0
-
-# Download freesurfer
-RUN wget -N -O freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz --no-check-certificate --progress=bar:force https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.2.0/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && \
-    tar -xzf freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz -C /opt/freesurfer-7.2.0 --owner root --group root --no-same-owner --strip-components 1 --keep-newer-files \
-    --exclude='average/mult-comp-cor' \
-    --exclude='lib/cuda' \
-    --exclude='lib/qt' \
-    --exclude='subjects/V1_average' \
-    --exclude='subjects/bert' \
-    --exclude='subjects/cvs_avg35' \
-    --exclude='subjects/cvs_avg35_inMNI152' \
-    --exclude='subjects/fsaverage3' \
-    --exclude='subjects/fsaverage4' \
-    --exclude='subjects/fsaverage5' \
-    --exclude='subjects/fsaverage6' \
-    --exclude='trctrain' && \
-    rm freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz
-
-# fetch source stage
-FROM  debian:12-slim AS meld_git
-
-#Update the ubuntu.
-RUN apt-get -y update && apt-get install --no-install-recommends -y git ca-certificates && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-WORKDIR /meld_graph
-RUN git clone --branch dev_docker https://github.com/MELDProject/meld_graph.git .
-
-
-# freesurfer stage 
 FROM mambaorg/micromamba:latest AS micromamba
 USER root
 
@@ -57,11 +21,28 @@ RUN micromamba create -y -f environment.yml \
 
 
 # meld graph stage
-FROM python:3.9-slim AS MELDgraph
+FROM debian:12-slim AS MELDgraph
 RUN mkdir -p /opt/freesurfer-7.2.0
 
-# Copy over freesurfer from the freesurfer stage without the apt packages and tar file
-COPY --from=freesurfer /opt/freesurfer-7.2.0 /opt/freesurfer-7.2.0
+#Update ubuntu.
+RUN apt-get -y update && apt-get install --no-install-recommends -y wget && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Download freesurfer
+RUN wget -N -O freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz --no-check-certificate --progress=bar:force https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.2.0/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && \
+    tar -xzf freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz -C /opt/freesurfer-7.2.0 --owner root --group root --no-same-owner --strip-components 1 --keep-newer-files \
+    --exclude='average/mult-comp-cor' \
+    --exclude='lib/cuda' \
+    --exclude='lib/qt' \
+    --exclude='subjects/V1_average' \
+    --exclude='subjects/bert' \
+    --exclude='subjects/cvs_avg35' \
+    --exclude='subjects/cvs_avg35_inMNI152' \
+    --exclude='subjects/fsaverage3' \
+    --exclude='subjects/fsaverage4' \
+    --exclude='subjects/fsaverage5' \
+    --exclude='subjects/fsaverage6' \
+    --exclude='trctrain' && \
+    rm freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz
 
 ENV DEBIAN_FRONTEND="noninteractive"
 
@@ -79,6 +60,7 @@ RUN apt-get -y update && \
     bzip2 \
     ca-certificates \
     bc \
+    python3 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -111,7 +93,7 @@ RUN mkdir /app
 WORKDIR /app
 
 # Add meld_graph code 
-COPY --from=meld_git /meld_graph .
+COPY . .
 
 ENV MAMBA_ROOT_PREFIX="/opt/conda"
 ENV MAMBA_EXE="/bin/micromamba"
@@ -130,5 +112,8 @@ RUN chmod -R 777 /.cache
 
 # Set permissions for the entrypoint
 RUN chmod +x entrypoint.sh
+
+ENV KEEP_DATA_PATH=1
+ENV SILENT=1
 
 ENTRYPOINT ["/bin/bash","entrypoint.sh"]
