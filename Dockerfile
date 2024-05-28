@@ -114,5 +114,6 @@ RUN chmod -R 777 /.cache
 RUN chmod +x entrypoint.sh
 
 ENV KEEP_DATA_PATH=1
+ENV SILENT=1
 
 ENTRYPOINT ["/bin/bash","entrypoint.sh"]
