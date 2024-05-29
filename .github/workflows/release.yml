@@ -1,0 +1,23 @@
+name: ci
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: create directory
+        run: |
+          mkdir docker-data
+          zip meld_graph.zip docker-data compose.yml
+      - name: release
+        uses: softprops/action-gh-release@v2
+        if: startswith(github.ref, 'refs/tags/')
+        with:
+          files: meld_graph.zip
+
