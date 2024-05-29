@@ -1,8 +1,8 @@
 services:
   meld_graph:
-    image: meld_graph:prod
+    image: meldproject/meld_graph:latest
     volumes:
-      - ./data:/data
+      - ./docker-data:/data
     environment: 
       - FS_LICENSE=/run/secrets/license.txt
     secrets:
