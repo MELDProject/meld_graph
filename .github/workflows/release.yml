@@ -14,13 +14,10 @@ jobs:
       - name: create directory
         run:
           mkdir docker-data
-          touch docker-data/empty
+          zip meld_graph.zip docker-data compose.yml
       - name: release
         uses: softprops/action-gh-release@v2
         if: startswith(github.ref, 'refs/tags/')
         with:
-          files: |
-            docker-data/
-            compose.yml
-            license
+          files: meld_graph.zip
 
