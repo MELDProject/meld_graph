@@ -12,7 +12,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
       - name: create directory
-        run:
+        run: |
           mkdir docker-data
           zip meld_graph.zip docker-data compose.yml
       - name: release
