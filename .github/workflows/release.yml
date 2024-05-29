@@ -14,12 +14,13 @@ jobs:
       - name: create directory
         run:
           mkdir docker-data
+          touch docker-data/empty
       - name: release
         uses: softprops/action-gh-release@v2
         if: startswith(github.ref, 'refs/tags/')
         with:
           files: |
-            docker-data
+            docker-data/
             compose.yml
             license
 
