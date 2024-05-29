@@ -6,17 +6,17 @@ on:
       - "dev_docker"
 
 env:
-  LATEST_TAG: meldproject/
+  latest_tag: meldproject/
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Free Disk Space (Ubuntu)
+      - name: free disk space (ubuntu)
         uses: jlumbroso/free-disk-space@main
         with:
           # this might remove tools that are actually needed,
-          # if set to "true" but frees about 6 GB
+          # if set to "true" but frees about 6 gb
           tool-cache: false
           
           # all of these default to true, but feel free to set to
@@ -27,38 +27,21 @@ jobs:
           large-packages: true
           docker-images: true
           swap-storage: true
-      - name: Checkout
+      - name: checkout
         uses: actions/checkout@v4
-      - name: Log in to Docker Hub
+      - name: log in to docker hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Set up Docker Buildx
+          username: ${{ secrets.dockerhub_username }}
+          password: ${{ secrets.dockerhub_token }}
+      - name: set up docker buildx
         uses: docker/setup-buildx-action@v3
-      - name: Build and push
+      - name: build and push
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/meld_graph:latest
+          file: ./dockerfile
+          tags: ${{ secrets.dockerhub_username }}/meld_graph:latest
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-  release:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Create directory
-        run:
-          mkdir docker-data
-      - name: Release
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: |
-            docker-data
-            compose.yml
-            LICENSE
-

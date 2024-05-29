@@ -1,0 +1,25 @@
+name: ci
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: create directory
+        run:
+          mkdir docker-data
+      - name: release
+        uses: softprops/action-gh-release@v2
+        if: startswith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            docker-data
+            compose.yml
+            license
+
