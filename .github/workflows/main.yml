@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - "dev_docker"
+    paths-ignore:
+      - 'docs/**'
 
 env:
   LATEST_TAG: meldproject/
