@@ -13,7 +13,7 @@ services:
         reservations:
           devices:
             - capabilities: [gpu]
-              count: all
+              count: 0
 
 secrets:
   license.txt:
