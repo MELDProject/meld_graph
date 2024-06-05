@@ -45,118 +45,51 @@ Follow the instructions for [*enabling NVIDIA CUDA on WSL*](https://learn.micros
 ## Freesurfer licence
 You will need to download a Freesurfer license.txt to enable Freesurfer/Fastsurfer to perform the segmentation. Please follow the [guidelines](https://surfer.nmr.mgh.harvard.edu/fswiki/License) to download the file and keep a record of the path where you saved it. 
 
-## Pull the docker image
+## Configuration
+In order to run the docker, you'll need to configure a couple of files
 
-Make sure you have 15GB of storage space available and pull the docker image. This will need to be run only once.
-
-```bash
-docker pull mathrip/meld_graph:latest
+1. Download `meld_graph.zip` from the [latest github release](https://github.com/MELDProject/meld_graph/releases/tag/v2.0) and extract it.
+2. Copy the freesurfer `license.txt` into the extracted folder
+3. (optional) Create the meld_data folder, if it doesn't exist already, and edit the compose.yml `volumes` line before the `:` to point to it. For example, if you wanted the folder to be on a mounted drive in Linux it might be:
+```
+    volumes:
+      - /mnt/datadrive/meld-data:/data
 ```
 
-:::{warning}
-It can take a couple hours, so please leave it running.
-:::
+:::{admonition} Windows
+:class: tip
 
-To test it's installed, run the pipeline command that prints the help
- 
-::::{tab-set}
-
-:::{tab-item} Linux
-:sync: linux
-```bash
-docker run -it --rm \
-  mathrip/meld_graph:latest \
-  python scripts/new_patient_pipeline/new_pt_pipeline.py -h 
+On windows, if you're using absolute paths, use forward slashes and quotes:
+```
+    volumes:
+      - "C:/Users/John/Desktop/meld-data:/data"
 ```
 :::
-
-:::{tab-item} Windows
-:sync: windows
-```bash
-docker run -it --rm `
-  mathrip/meld_graph:latest `
-  python scripts/new_patient_pipeline/new_pt_pipeline.py -h 
-```
-:::
-::::
 
 ## Set up paths and download model
 Before being able to use the classifier on your data, data paths need to be set up and the pretrained model needs to be downloaded. 
 
-1. Create the `<meld_data>` folder where you want to download the meld data structure and save the outputs. It should typically take a couple GB of space.
+1. Make sure you have 15GB of storage space available for the docker, and 2GB available for the meld data.
 
-2. Run:
+2. Run this command to download the docker image and the training data
 
-
-::::{tab-set}
-
-:::{tab-item} Linux
-:sync: linux
 ```bash
-docker run -it --rm \
-    --user "$(id -u):$(id -g)" \
-    -v <meld_data>:/data \
-    mathrip/meld_graph:latest \
-    python scripts/new_patient_pipeline/prepare_classifier.py
+docker-compose run meld_graph python scripts/new_patient_pipeline/prepare_classifier.py
 ```
-:::
-
-:::{tab-item} Windows
-:sync: windows
-```bash
-docker run -it --rm `
-    -v <meld_data>:/data `
-    mathrip/meld_graph:latest `
-    python scripts/new_patient_pipeline/prepare_classifier.py
-```
-
-Windows docker uses unix style paths with named drives. E.g. `C:\Users\ada` becomes `/c/Users/ada`.
-:::
-
-::::
 
 :::{note}
 Append `--skip-download-data` to the python call to skip downloading the test data.
 :::
 
-In this command and the following ones, replace `<meld_data>` with the path to your meld data folder.
-
-3. This script will ask you if you want to change the location for the MELD data folder, say **"N"** for no and wait until the downloading is finished.
+3. This script will ask you if you want to change the location for the MELD data folder, say **"N"** for no and wait until the download is finished.
 
 
 ## Verify installation
 To verify that you have installed all packages, set up paths correctly, and downloaded all data, this verification script will run the pipeline to predict the lesion classifier on a new patient. It takes approximately 15 minutes to run.
 
-::::{tab-set}
-
-:::{tab-item} Linux
-:sync: linux
 ```bash
-docker run -it --rm \
-    --user "$(id -u):$(id -g)" \
-    -v <meld_data>:/data \
-    -v <freesurfer_license>:/license.txt:ro \
-    -e FS_LICENSE='/license.txt' \colon_fence
-    mathrip/meld_graph:latest \
-    pytest
+docker-compose run meld_graph pytest
 ```
-:::
-
-:::{tab-item} Windows
-:sync: windows
-```bash
-docker run -it --rm `
-    -v <meld_data>:/data `
-    -v <freesurfer_license>:/license.txt:ro `
-    -e FS_LICENSE='/license.txt' `
-    mathrip/meld_graph:latest `
-    pytest
-```
-:::
-::::
-
-In this command and the following ones, replace <freesurfer_license> with the path to where you have stored the license.txt from Freesurfer. See [the freesurfer licence section](#freesurfer-licence) for more details
-colon_fence
 
 ### Errors
 If you run into errors at this stage and need help, you can re-run by changing the last line of the command by the command below to save the terminal outputs in a txt file. Please send `pytest_errors.log` to us so we can work with you to solve any problems. [How best to reach us.](#contact)
@@ -166,14 +99,14 @@ If you run into errors at this stage and need help, you can re-run by changing t
 :::{tab-item} Linux
 :sync: linux
 ```bash
-pytest -s | tee pytest_errors.log
+docker-compose run meld_graph pytest -s | tee pytest_errors.log
 ```
 :::
 
 :::{tab-item} Windows
 :sync: windows
 ```bash
-pytest -s | tee -filepath ./pytest_errors.log
+docker-compose run meld_graph pytest -s | tee -filepath ./pytest_errors.log
 ```
 :::
 
@@ -183,37 +116,18 @@ You will find `pytest_errors.log` in the folder where you launched the command.
 
 ## Test GPU
 
-You can test that the pipeline is working well with your GPU by running the same command and adding the flag `--gpus all`
+You can test that the pipeline is working well with your GPU by changing `count` to `all` in the `compose.yml` file. The `deploy` section should look like this to enable gpus:
 
-::::{tab-set}
-
-:::{tab-item} Linux
-:sync: linux
-```bash
-docker run -it --rm \
-    --gpus all \
-    --user "$(id -u):$(id -g)" \
-    -v <meld_data>:/data \
-    -v <freesurfer_license>:/license.txt:ro \
-    -e FS_LICENSE='/license.txt' \
-    mathrip/meld_graph:latest \
-    pytest
 ```
-:::
-
-:::{tab-item} Windows
-:sync: windows
-```bash
-docker run -it --rm `
-    --gpus all `
-    -v <meld_data>:/data `
-    -v <freesurfer_license>:/license.txt:ro `
-    -e FS_LICENSE='/license.txt' `
-    mathrip/meld_graph:latest `
-    pytest
+deploy:
+  resources:
+    reservations:
+      devices:
+        - capabilities: [gpu]
+          count: all
 ```
-:::
-::::
+
+To disable gpus, change it back to `0`.
 
 ## FAQs
 Please see our {doc}`FAQs` for common installation problems.
