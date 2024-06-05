@@ -48,6 +48,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 myst_enable_extensions = ['html_image','dollarmath','amsmath','colon_fence']
 myst_heading_anchors = 3
+myst_links_external_new_tab = True
 
 master_doc = 'index'
 

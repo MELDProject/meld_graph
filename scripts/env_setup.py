@@ -18,6 +18,9 @@ def setup():
         if os.path.exists(f"{MELD_DATA_PATH}/license.txt"):
             print("setting license" + f"{MELD_DATA_PATH}/license.txt")
             os.environ["FS_LICENSE"] = f"{MELD_DATA_PATH}/license.txt"
+        elif os.path.exists(f"{os.getcwd()}/license.txt"):
+            print("setting license" + f"{os.getcwd()}/license.txt")
+            os.environ["FS_LICENSE"] = f"{os.getcwd()}/license.txt"
         else:
-            print("Couldn't find Freesurfer license file. Please copy license.txt to the meld data folder or set FS_LICENSE manually")
+            print("Couldn't find Freesurfer license file. Please copy license.txt to the meld folder or set FS_LICENSE manually")
             sys.exit(-1)
