@@ -35,6 +35,9 @@ def create_demographic_file(subjects_ids, save_file, harmo_code='noHarmo'):
         df.to_csv(save_file)
         
 if __name__ == "__main__":
+    import scripts.env_setup
+    scripts.env_setup.setup()
+    
     # parse commandline arguments
     parser = argparse.ArgumentParser(description="Main pipeline to predict on subject with MELD classifier")
     parser.add_argument("-id","--id",

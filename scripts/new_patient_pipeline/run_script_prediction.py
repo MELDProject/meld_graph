@@ -11,6 +11,8 @@
 
 import os
 import sys
+import subprocess
+import json
 import numpy as np
 import pandas as pd
 import argparse
@@ -173,6 +175,8 @@ def run_script_prediction(list_ids=None, sub_id=None, harmo_code='noHarmo', no_p
         return False
 
 if __name__ == '__main__':
+    import scripts.env_setup
+    scripts.env_setup.setup()
 
     #parse commandline arguments 
     parser = argparse.ArgumentParser(description='')

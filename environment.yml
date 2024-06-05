@@ -5,14 +5,19 @@ channels:
   - conda-forge
 dependencies:
   - python=3.9
+  - pytorch=1.10.0
+  - cpuonly
   - pytest=7.0.1
   - jupyterlab=3.2.9
   - h5py=3.6.0
   - fpdf=1.7.2
   - scikit-image=0.18
   - pip=23.3.1
-  - pytorch=1.10.0
-  - cpuonly
+  - libopenblas=0.3.15
+  - clang_osx-arm64 
+  - clangxx_osx-arm64 
+  - gfortran_osx-arm64
+  - libtiff
   - pip:
     - potpourri3d==0.0.6
     - captum==0.6.0
@@ -28,10 +33,14 @@ dependencies:
     - matplotlib_surface_plotting==0.10
     - numpy==1.22.0
     - pytest==6.2.3
-    - torch-scatter -f https://data.pyg.org/whl/torch-1.10.0+cu111.html
+    - torch-scatter -f https://data.pyg.org/whl/torch-1.10.0+cpu.html
     # - torch-sparse -f https://data.pyg.org/whl/torch-1.10.0+cu111.html
-    - torch-geometric -f https://data.pyg.org/whl/torch-1.10.0+cu111.html
-    - torchvision==0.11.1 # needed for fastsurfer
-    - lapy==0.6.0 # needed for fastsurfer
-    - SimpleITK==2.1.1 # needed for fastsurfer
+    - torch-geometric #-f https://data.pyg.org/whl/torch-1.10.0+cpu.html
+    # - torchvision==0.11.2 # needed for fastsurfer
+    # - lapy==0.6.0 # needed for fastsurfer
+    # - SimpleITK==2.1.1 # needed for fastsurfer
     - pybids==0.16.4
+# variables:
+#   - MACOSX_DEPLOYMENT_TARGET: "12.5"
+#   - CC: clang
+#   - CXX: clang++
