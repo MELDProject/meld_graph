@@ -145,7 +145,7 @@ python scripts/new_patient_pipeline/new_pt_pipeline.py -ids list_subjects.txt --
 ## Additional information about the pipeline
 
 The pipeline is split into 3 main scripts as illustrated below and detailed in the next sub-sections. 
-![pipeline_fig](https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/docs/images/tutorial_pipeline_fig.png)
+![pipeline_fig](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/tutorial_pipeline_fig.png)
 
 ### Script 1 - FreeSurfer reconstruction and smoothing
 

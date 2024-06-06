@@ -4,12 +4,12 @@ This package contains code for training and evaluating graph-based U-net lesion 
 
 *Code authors (alphabetical): Sophie Adler, Mathilde Ripart, Hannah Spitzer, Konrad Wagstyl*
 
-![nnunet](https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/docs/images/nnunet_architecture.png)
+![nnunet](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/nnunet_architecture.png)
 
 ## Notes
 These scripts require the [native installation](https://meld-graph.readthedocs.io/en/latest/docs/install_native.html) of the package.
 
-Basic commands to train and evaluate models are described below. For more details on the structure of the code and on configuration options, have a look at the [code structure guide](https://meld-graph.readthedocs.io/en/latest/docs/code_structure.html) and at the [example_experiment_config.py](https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/scripts/config_files/example_experiment_config.py)
+Basic commands to train and evaluate models are described below. For more details on the structure of the code and on configuration options, have a look at the [code structure guide](https://meld-graph.readthedocs.io/en/latest/docs/code_structure.html) and at the [example_experiment_config.py](https://raw.githubusercontent.com//MELDProject/meld_graph/main/scripts/config_files/example_experiment_config.py)
 
 
 ## Prepare files
@@ -50,8 +50,8 @@ For establishing the best hyperparameters, we use cross-validation.
 python scripts/classifier/cross_val_aucs.py --experiment_path PATH_TO_EXPERIMENT --split val
 ```
 This calculates and saves aucs for each fold in the experiment. 
-The notebook [auc_comparisons.ipynb](https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/notebooks/auc_comparisons.ipynb) can be used to compare these aucs for multiple models.
-The notebook [compare_experiments.ipynb](https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/scripts/compare_experiments.ipynb) can be used for a quick check of model training curves for individual folds and per-vertex aucs (as opposed to subject-level sensitivity+specificity aucs) on the val sets.
+The notebook [auc_comparisons.ipynb](https://raw.githubusercontent.com//MELDProject/meld_graph/main/notebooks/auc_comparisons.ipynb) can be used to compare these aucs for multiple models.
+The notebook [compare_experiments.ipynb](https://raw.githubusercontent.com//MELDProject/meld_graph/main/scripts/compare_experiments.ipynb) can be used for a quick check of model training curves for individual folds and per-vertex aucs (as opposed to subject-level sensitivity+specificity aucs) on the val sets.
 
 **Testing experiments**
 ```
