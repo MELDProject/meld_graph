@@ -1,4 +1,4 @@
-<img style="float: right;" src="https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/docs/images/meld_logo.png">
+<img style="float: right;" src="https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/docs/images/MELD_logo.png">
 # MELD Graph 
 Graph based FCD lesion segmentation for the [MELD project](https://meldproject.github.io/).
 
