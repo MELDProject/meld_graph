@@ -22,35 +22,6 @@ Once you have done the process once, you can follow the [general guidelines to p
 - Ensure you have [organised your MRI data](https://meld-graph.readthedocs.io/en/latest/prepare_data.html#prepare-the-mri-data-mandatory) and [provided demographic information](https://meld-graph.readthedocs.io/en/latest/prepare_data.html#prepare-the-demographic-information-required-only-to-compute-the-harmonisation-parameters) before running this pipeline. 
 
 
-::::{tab-set}
-
-:::{tab-item} Docker
-:sync: docker
-Open a terminal and `cd` to where you extracted the release zip.
-
-```bash
-docker compose run meld_graph scripts/new_patient_pipeline/new_pt_pipeline.py -harmo_code <harmo_code> -ids <subjects_list> -demos <demographic_file> --harmo_only
-```
-
-This calls the MELD pipeline command. You can tune this command using the variables and flag describes further below. 
-:::
-
-:::{tab-item} Native
-:sync: native
-```bash
-./meldgraph.sh new_pt_pipeline -harmo_code <harmo_code> -id <subject_id> 
-```
-
-You can tune this command using the variables and flag describes further bellow. 
-
-NOTES: MELD pipeline has only been tested and validated on Freesurfer up to V7.2. Please do not use higher version than V7.2.0 \
-
-:::
-::::
-
-Note: This command will segment the brain using Freesurfer, extract the features and compute the harmonisation parameters, for the subjects provided in the subjects list. If you wish to also get the predictions on these subjects you can remove the flag '--harmo_only'. 
-
-
 ### Second step : Run the pipeline to get the harmonisation parameters
 
 
@@ -65,18 +36,15 @@ docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipelin
 :::
 :::{tab-item} Native
 :sync: native
-You will need to make sure you are in the folder containing the MELD classifier scripts
-```bash
-  cd <path_to_meld_classifier_folder>
-```
+Open a terminal and `cd` to the meld graph folder.
 
-To compute the harmonisation parameters for your new site you can use the pipeline below:
 ```bash
 ./meldgraph.sh new_pt_pipeline -harmo_code <harmo_code> -ids <subjects_list> -demos <demographic_file> --harmo_only
 ```
 :::
-
 ::::
+
+This calls the MELD pipeline command. You can tune this command using the variables and flag describes further below. 
 
 Note: This command will segment the brain using Freesurfer, extract the features and compute the harmonisation parameters, for the subjects provided in the subjects list. If you wish to also get the predictions on these subjects you can remove the flag '--harmo_only'. 
 
