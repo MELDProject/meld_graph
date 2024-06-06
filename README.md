@@ -1,5 +1,7 @@
-<img style="float: right;" src="https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/docs/images/MELD_logo.png">
+<img src="https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/docs/images/MELD_logo.png" alt="MELD logo" width="100" align="left"/> 
+
 # MELD Graph 
+
 Graph based FCD lesion segmentation for the [MELD project](https://meldproject.github.io/).
 
 This package offers a friendly user pipeline to segment FCD-lesions from MRI scans. 
