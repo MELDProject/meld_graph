@@ -88,59 +88,56 @@ NOTES:
 
 ## Examples of use case: 
 
-### With Docker
-
 To run the whole prediction pipeline on 1 subject using fastsurfer:
+::::{tab-set}
+:::{tab-item} Docker
+:sync: docker
 ```bash
-docker run -it --rm \
-    --gpus all \
-    --user "$(id -u):$(id -g)" \
-    -v <meld_data>:/data \
-    -v <freesurfer_license>:/license.txt:ro \
-    -e FS_LICENSE='/license.txt' \
-    mathrip/meld_graph:latest \
-    python scripts/new_patient_pipeline/new_pt_pipeline.py -id sub-001 --fastsurfer
+docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -id sub-001 --fastsurfer
 ```
+:::
+
+:::{tab-item} Native
+:sync: native
+```bash
+./meldgraph.sh new_pt_pipeline -id sub-001 --fastsurfer
+```
+:::
+::::
 
 To run the whole prediction pipeline on 1 subject using harmonisation code H1:
+::::{tab-set}
+:::{tab-item} Docker
+:sync: docker
 ```bash
-docker run -it --rm \
-    --gpus all \
-     --user "$(id -u):$(id -g)" \
-    -v <meld_data>:/data \
-    -v <freesurfer_license>:/license.txt:ro \
-    -e FS_LICENSE='/license.txt' \
-    mathrip/meld_graph:latest \
-    python scripts/new_patient_pipeline/new_pt_pipeline.pyy -id sub-001 -harmo_code H1
+docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.pyy -id sub-001 -harmo_code H1
 ```
+:::
+
+:::{tab-item} Native
+:sync: native
+```bash
+./meldgraph.sh new_pt_pipeline -id sub-001 -harmo_code H1
+```
+:::
+::::
 
 To run the whole prediction pipeline on multiples subjects with parallelisation:
+::::{tab-set}
+:::{tab-item} Docker
+:sync: docker
 ```bash
-docker run -it --rm \
-    --gpus all \
-    --user "$(id -u):$(id -g)" \
-    -v <meld_data>:/data \
-    -v <freesurfer_license>:/license.txt:ro \
-    -e FS_LICENSE='/license.txt' \
-    mathrip/meld_graph:latest \
-    python scripts/new_patient_pipeline/new_pt_pipeline.py -ids list_subjects.txt --parallelise
+docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -ids list_subjects.txt --parallelise
 ```
+:::
 
-### With native installation
-To run the whole prediction pipeline on 1 subject using fastsurfer:
+:::{tab-item} Native
+:sync: native
 ```bash
-python scripts/new_patient_pipeline/new_pt_pipeline.py -id sub-001 --fastsurfer
+./meldgraph.sh new_pt_pipeline -ids list_subjects.txt --parallelise
 ```
-
-To run the whole prediction pipeline on 1 subject using harmonisation code H1:
-```bash
-python scripts/new_patient_pipeline/new_pt_pipeline.py -id sub-001 -harmo_code H1
-```
-
-To run the whole prediction pipeline on multiples subjects with parallelisation:
-```bash
-python scripts/new_patient_pipeline/new_pt_pipeline.py -ids list_subjects.txt --parallelise
-```
+:::
+::::
 
 ## Additional information about the pipeline
 
