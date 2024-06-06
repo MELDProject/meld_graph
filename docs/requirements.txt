@@ -1,0 +1,7 @@
+docutils==0.17
+sphinx-argparse
+sphinx_rtd_theme>=1.0.0
+snakebids>=0.4.0
+myst-parser
+sphinxcontrib.asciinema
+sphinx-design

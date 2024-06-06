@@ -2,7 +2,7 @@ import os
 import numpy as np
 import nibabel as nb
 from scipy import sparse
-import meld_classifier.mesh_tools as mt
+import meld_graph.mesh_tools as mt
 import torch
 from math import pi
 import logging
@@ -29,7 +29,7 @@ class IcoSpheres:
 
     def __init__(
         self,
-        icosphere_path="../data/icospheres/",
+        icosphere_path="data/icospheres/",
         distance_type="pseudo",
         conv_type="GMMConv",
         **kwargs,

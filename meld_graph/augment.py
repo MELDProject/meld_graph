@@ -4,7 +4,7 @@ import nibabel as nb
 import copy
 import time
 from scipy import sparse
-import meld_classifier.mesh_tools as mt
+import meld_graph.mesh_tools as mt
 import torch
 from math import pi
 import logging

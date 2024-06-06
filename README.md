@@ -1,103 +1,69 @@
-# MELD Graph
-Graph based lesion segmentation for the MELD project.
+<img src="https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/docs/images/MELD_logo.png" alt="MELD logo" width="100" align="left"/> 
 
-This package contains code for training and evaluating graph-based U-net lesion segmentation models operating on icosphere meshes. In addition to lesion segmentation, the models also contain auxiliary distance regression and hemisphere classification losses. For more information see our [manuscript](https://arxiv.org/abs/2306.01375).
+# MELD Graph 
 
-Please note that this code is not yet ready to be used with new subjects that are not a part of the MELD cohort. For this, please use [meld_classifier](https://github.com/MELDProject/meld_classifier). 
+Graph based FCD lesion segmentation for the [MELD project](https://meldproject.github.io/).
 
-*Code authors (alphabetical): Sophie Adler, Mathilde Ripart, Hannah Spitzer, Konrad Wagstyl*
+This package offers a friendly user pipeline to segment FCD-lesions from MRI scans. 
 
-![overview](overview.png)
+![overview](https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/docs/images/Fig1_pipeline.jpg)
 
-## Installation
+*Code Authors : Mathilde Ripart, Hannah Spitzer, Sophie Adler, Konrad Wagstyl*
 
-This package requires pytorch, pytorch_geometric, [meld_classifier](https://github.com/MELDProject/meld_classifier).
+## Notes
 
-Basic installation steps are:
-- create the `meld_graph` environment using `environment.yml`: 
-    ```
-    conda env create -f environment.yml
-    conda activate meld_graph
-    ```
-- install `pytorch_geometric` (concrete command might differ depending on your OS and CUDA):
-    ```
-    conda install pyg -c pyg
-    ```
-- download and install `meld_classifier`: Follow instructions [here](https://github.com/MELDProject/meld_classifier)
-- install `meld_graph`: 
-    ```
-    git clone https://github.com/mathrip/meld_classifier_GDL.git
-    cd meld_classifier_GDL
-    pip install -e .
-    ```
-- register your EXPERIMENT_PATH in `meld_graph/paths.py`
+This package comes with a pretrained graph based model, trained on harmonised features. New users are advised to follow the guidelines to harmonise the data from their site, but the model will still produce predictions on new, unharmonised subjects.
 
-More installation hints, including how to install on HPC and Macs, can be found [here](install.md)
+It also contains code for training and evaluating graph-based U-net lesion segmentation models operating on icosphere meshes. \
+In addition to lesion segmentation, the models also contain auxiliary distance regression and hemisphere classification losses.
 
-## Usage
-Basic commands to train and evaluate models are described below. For more details on the structure of the code and on configuration options, have a look at the [code structure guide](code_structure.md) and at the [example_experiment_config.py](scripts/config_files/example_experiment_config.py)
+For more information check our papers: 
+- [Spitzer, Ripart et al., 2022 Brain - the original MELD FCD pipeline and dataset](https://academic.oup.com/brain/advance-article/doi/10.1093/brain/awac224/6659752)
+- [Spitzer et al., 2023 MICCAI - the updated graph-based model architecture](https://arxiv.org/abs/2306.01375)
+- [Ripart et al., 2024 preprint - MELD Graph evaluation and interpretable reports](todo)
 
-### Prepare files
-Before training, we need to prepare scaling (for z-scoring) and augmentation parameters and downscaled icospheres.
-These scripts only need to be run once, and will save parameter files in the `data` folder. A copy of the files we use is provided with this code. To reproduce these files, run:
-- `prepare/create_scaling_parameters.py`: calculates scaling params file.
-- `prepare/create_icospheres.py`: creates downsampled icospheres.
-- `prepare/calculate_feature_means_stds.py`: calculates mean and std of features for normalisation.
-- `prepare/save_xx_parameters_icospheres/nearest.py`: save precomputed augmentations.
+## Disclaimer
 
-### Training
-To train a single model, run
-```
-python train.py --config_file CONFIG_FILE
-```
+The MELD surface-based graph FCD detection algorithm is intended for research purposes only and has not been reviewed or approved by the Medicines and Healthcare products Regulatory Agency (MHRA), European Medicine Agency (EMA) or by any other agency. Any clinical application of the software is at the sole risk of the party engaged in such application. There is no warranty of any kind that the software will produce useful results in any way. Use of the software is at the recipient's own risk.
 
-We can also train multiple models at once using a special config listing all config elements that should change over the runs. An example of this variable config can be found in `config_files/fold_var.py`.
+## Installation & Use of the MELD FCD prediction pipeline
 
-Structure of this file:
-- `base_name`: base name of the models. Used for experiment names and names of config files
-- `parallel`: list of configs that should be run in parallel. Each entry of a list should be a dictionary with keys 'network_parameters' and 'data_parameters'. NOTE that if you change an element of a dictionary, this does NOT delete the other elements of this dictionary. Eg, if the base config contains multiple losses, changing one loss in the var config does not delete the other losses.
-- `sequential`: list of configs that should be run sequentially. These models will be finetuned from each the best model of the previous entry in the sequential list. For every parallel model, all sequential models will be run. 
+### Installations available 
+You can install and use the MELD FCD prediction pipeline with :
+- [**docker container**](https://meld-graph.readthedocs.io/en/latest/install_docker.html) recommended for easy installation of the pipeline as all the prerequisite packages are already embeded into the container. Note: Dockers are not working on High Performance Computing (HCP) systems.
+- [**native installation**](https://meld-graph.readthedocs.io/en/latest/install_native.html) recommended for more advance users that want to modify the code and/or use the code to train/test their own classifier. 
+- **singularity container (COMING SOON)** enables to run a container on High Performance Computing (HCP) systems. 
 
-How to run multiple models:
-```
-# create all configs and save them to DIR
-python create_config.py BASE_CONFIG VAR_CONFIG --save_dir DIR
-# start training for all configs, with sequential models in sequence and parallel models in parallel
-sbatch train_multiple.sh DIR
-```
+### Running the pipeline 
+Once installed you will be able to use the MELD FCD prediction pipeline on your data following the steps:
+1. Prepare your data : [guidelines](https://meld-graph.readthedocs.io/en/latest/prepare_data.html)
+2. (OPTIONAL) Compute the harmonisation parameters : [guidelines](https://meld-graph.readthedocs.io/en/latest/harmonisation.html)
+3. Run the prediction pipeline: [guidelines](https://meld-graph.readthedocs.io/en/latest/run_prediction_pipeline.html)
+4. Interpret the results: [guidelines](https://meld-graph.readthedocs.io/en/latest/interpret_results.html)
 
-### Evaluation
 
-**Cross validation experiments**
+**What is the harmonisation process ?**
 
-For establishing the best hyperparameters, we use cross-validation. 
-```
-python cross_val_aucs.py --experiment_path PATH_TO_EXPERIMENT --split val
-```
-This calculates and saves aucs for each fold in the experiment. 
-The notebook [auc_comparisons.ipynb](notebooks/auc_comparisons.ipynb) can be used to compare these aucs for multiple models.
-The notebook [compare_experiments.ipynb](notebooks/compare_experiments.ipynb) can be used for a quick check of model training curves for individual folds and per-vertex aucs (as opposed to subject-level sensitivity+specificity aucs) on the val sets.
+Scanners can induce a bias in the MRI data. The MELD pipeline recommends adjusting for these scanners differences by running a preliminary harmonisation step to compute the harmonisation parameters for that specific scanner. Note: this step needs to be run only once, and requires data from at least 20 subjects acquired on the same scanner and demographic information (e.g age and sex). See [harmonisation instructions](https://meld-graph.readthedocs.io/en/latest/harmonisation.html) for more details. 
 
-**Testing experiments**
-```
-python cross_val_aucs.py --experiment_path PATH_TO_EXPERIMENT --split test
-```
-This runs on the test set and saves out the predictions for the test set for each of the folds. These then need to be ensembled and thresholded to compare experiments. 
+Note: The MELD pipeline can also be run without harmonisation, with a small drop in performance.
 
-**Ensemble final model**
-To compare final performance of ensemble models, update the model paths in `ensemble.py` script and run 
-```
-python ensemble.py
-```
-This will produce a table of ensembled results on the model and a bootstrapped ensemble model for statsitics. The data tables and figures can be found in data/ and imgs/ inside the experiment folder.
+## Additional information
+With the native installation of the MELD classifier you can reproduce the figures from our paper and train/evaluate your own models.
+For more details, check out the guides linked below:
+- [Notebooks to reproduce figures](https://meld-graph.readthedocs.io/en/latest/figure_notebooks.html)
+- [Train and evaluate models](https://meld-graph.readthedocs.io/en/latest/train_evaluate.html)
 
-## Contributing
-If you'd like to contribute to this code base, have a look at our [contribution guide](CONTRIBUTING.md)
+## Contribute
+If you'd like to contribute to this code base, have a look at our [contribution guide](https://meld-graph.readthedocs.io/en/latest/contributing.html)
 
-## Manuscript & Reproducibility
-Please check out our [manuscript](https://arxiv.org/abs/2306.01375) to learn more (accepted at MICCAI 2023). 
 
-## Reproducibility
-We ran all experiments and evaluations using version v1.0.0 of meld_graph.
-The config file `base_config.py` and variable config files `fold_var.py` and `fold_var_subsampling.py` contain all experiments we ran for the manuscript. 
-An overview of the notebooks that we used to create the figures can be found [here](figure_notebooks.md).
+## Acknowledgments
+
+We would like to thank the [MELD consortium](https://meldproject.github.io//docs/collaborator_list.pdf) for providing the data to train this classifier and their expertise to build this pipeline.\
+We would like to thank [Lennart Walger](https://github.com/1-w) and [Andrew Chen](https://github.com/andy1764), for their help testing and improving the MELD pipeline to v1.1.0. \
+We would like to thank [Ulysses Popple](https://github.com/ulyssesdotcodes) for his help building the docs and dockers.
+
+## Contacts
+
+Contact the MELD team at `meld.study@gmail.com`

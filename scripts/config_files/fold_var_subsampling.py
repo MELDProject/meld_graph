@@ -352,9 +352,15 @@ losses = [
 from copy import deepcopy
 
 for loss in losses:
+<<<<<<< HEAD
+    for fold in np.arange(5):
+        if 'data_parameters' in loss.keys():
+            loss['data_parameters']['fold_n'] =fold
+=======
     for fold in np.arange(1):
         if "data_parameters" in loss.keys():
             loss["data_parameters"]["fold_n"] = fold
+>>>>>>> de2692f1a214d48b8bacdf071f922206f1229de1
         else:
             loss["data_parameters"] = {"fold_n": fold}
         parallel.append(deepcopy(loss))

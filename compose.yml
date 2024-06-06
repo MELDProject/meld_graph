@@ -1,0 +1,20 @@
+services:
+  meld_graph:
+    image: meldproject/meld_graph:latest
+    platform: "linux/amd64"
+    volumes:
+      - ./docker-data:/data
+    environment: 
+      - FS_LICENSE=/run/secrets/license.txt
+    secrets:
+      - license.txt
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+              count: 0
+
+secrets:
+  license.txt:
+    file: ./license.txt
