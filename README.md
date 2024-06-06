@@ -15,9 +15,9 @@ It also contains code for training and evaluating graph-based U-net lesion segme
 In addition to lesion segmentation, the models also contain auxiliary distance regression and hemisphere classification losses.
 
 For more information check our manuscripts: 
-- the manuscript describing the original MELD FCD pipeline and dataset [link](https://academic.oup.com/brain/advance-article/doi/10.1093/brain/awac224/6659752)
-- the manuscript describing the updated graph-based model [link](https://arxiv.org/abs/2306.01375)
-- the preprint describing MELD Graph performance and interpretable reports [link](todo)
+- [Spitzer, Ripart et al., 2022 Brain paper describing the original MELD FCD pipeline and dataset](https://academic.oup.com/brain/advance-article/doi/10.1093/brain/awac224/6659752)
+- [Spitzer et al., 2023 MICCAI paper describing the updated graph-based model](https://arxiv.org/abs/2306.01375)
+- [Ripart et al., 2024 preprint describing MELD Graph performance and interpretable reports](todo)
 
 ## Disclaimer
 
