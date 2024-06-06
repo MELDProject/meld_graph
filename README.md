@@ -1,4 +1,4 @@
-# MELD FCD 
+# MELD Graph 
 Graph based FCD lesion segmentation for the MELD project.
 
 This package offers a friendly user pipeline to segment FCD-lesions from MRI scans. 
@@ -15,8 +15,9 @@ It also contains code for training and evaluating graph-based U-net lesion segme
 In addition to lesion segmentation, the models also contain auxiliary distance regression and hemisphere classification losses.
 
 For more information check our manuscripts: 
-- the manuscript describing the original MELD FCD pipeline and dataset[link](https://academic.oup.com/brain/advance-article/doi/10.1093/brain/awac224/6659752)
+- the manuscript describing the original MELD FCD pipeline and dataset [link](https://academic.oup.com/brain/advance-article/doi/10.1093/brain/awac224/6659752)
 - the manuscript describing the updated graph-based model [link](https://arxiv.org/abs/2306.01375)
+- the preprint describing MELD Graph performance and interpretable reports [link](todo)
 
 ## Disclaimer
 
