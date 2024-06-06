@@ -1,5 +1,5 @@
 # MELD Graph 
-Graph based FCD lesion segmentation for the MELD project.
+Graph based FCD lesion segmentation for the [MELD project](https://meldproject.github.io/).
 
 This package offers a friendly user pipeline to segment FCD-lesions from MRI scans. 
 
