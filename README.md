@@ -9,7 +9,7 @@ This package offers a friendly user pipeline to segment FCD-lesions from MRI sca
 
 ## Notes
 
-This package comes with two pretrained graph based models trained, one model trained on harmonised features and the other trained on non harmonised features.
+This package comes with a pretrained graph based model, trained on harmonised features. New users are advised to follow the guidelines to harmonise the data from their site, but the model will still produce predictions on new, unharmonised subjects.
 
 It also contains code for training and evaluating graph-based U-net lesion segmentation models operating on icosphere meshes. \
 In addition to lesion segmentation, the models also contain auxiliary distance regression and hemisphere classification losses.
@@ -58,6 +58,7 @@ If you'd like to contribute to this code base, have a look at our [contribution 
 
 We would like to thank the [MELD consortium](https://meldproject.github.io//docs/collaborator_list.pdf) for providing the data to train this classifier and their expertise to build this pipeline.\
 We would like to thank [Lennart Walger](https://github.com/1-w) and [Andrew Chen](https://github.com/andy1764), for their help testing and improving the MELD pipeline to v1.1.0
+We would like to thank [Ulysses Popple](https://github.com/ulyssesdotcodes) for his help building the docs and dockers.
 
 ## Contacts
 
