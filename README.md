@@ -14,10 +14,10 @@ This package comes with a pretrained graph based model, trained on harmonised fe
 It also contains code for training and evaluating graph-based U-net lesion segmentation models operating on icosphere meshes. \
 In addition to lesion segmentation, the models also contain auxiliary distance regression and hemisphere classification losses.
 
-For more information check our manuscripts: 
-- [Spitzer, Ripart et al., 2022 Brain paper describing the original MELD FCD pipeline and dataset](https://academic.oup.com/brain/advance-article/doi/10.1093/brain/awac224/6659752)
-- [Spitzer et al., 2023 MICCAI paper describing the updated graph-based model](https://arxiv.org/abs/2306.01375)
-- [Ripart et al., 2024 preprint describing MELD Graph performance and interpretable reports](todo)
+For more information check our papers: 
+- [Spitzer, Ripart et al., 2022 Brain - the original MELD FCD pipeline and dataset](https://academic.oup.com/brain/advance-article/doi/10.1093/brain/awac224/6659752)
+- [Spitzer et al., 2023 MICCAI - the updated graph-based model architecture](https://arxiv.org/abs/2306.01375)
+- [Ripart et al., 2024 preprint - MELD Graph evaluation and interpretable reports](todo)
 
 ## Disclaimer
 
