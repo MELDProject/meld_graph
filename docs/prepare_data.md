@@ -16,7 +16,7 @@ Place the T1 nifti file into the T1 folder.
 
 Place the FLAIR nifti file into the FLAIR folder.
 
-![example](https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/docs/images/input_structure_meld_format.png)
+![example](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/input_structure_meld_format.png)
 
 ### BIDS format
 
@@ -29,7 +29,7 @@ The main key ingredients are :
 - in the anat folder your T1 and FLAIR nifti images should follow the structure : `sub-<subject_id>_<modality_suffix>.nii.gz` or `sub-<subject_id>_ses-<session>_<modality_suffix>.nii.gz` if you have a session.
 
 A simple example of the BIDS structure for patient sub-test001 is given below:\
-![example](https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/docs/images/input_structure_bids_format.png)
+![example](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/input_structure_bids_format.png)
 
 Additionally, you will need to have two json files in the `input` folder:
 - `meld_bids_config.json` containing the key words for session, datatype and modality suffix \
@@ -56,7 +56,7 @@ To compute the harmonisation parameters, you will need to provide a couple of in
 
 You can copy the *demographics_file.csv* that you can find in your <meld_data_folder> and create a new version of it with the harmonisation code *demographics_file_<harmo_code>.csv*. (e.g *demographics_file_H1.csv*)
 
-![example](https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/docs/images/example_demographic_csv.png)
+![example](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/example_demographic_csv.png)
 
 - ID : subject ID  (this should be the same ID than the one used to create the MRI folder)
 - Harmo code: the harmonisation code associated with this subject scan (need to be the same for all the subjects used for the harmonisation) 
