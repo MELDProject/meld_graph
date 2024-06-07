@@ -48,7 +48,7 @@ You will need to download a Freesurfer license.txt to enable Freesurfer/Fastsurf
 ## Configuration
 In order to run the docker, you'll need to configure a couple of files
 
-1. Download `meld_graph.zip` from the [latest github release](https://github.com/MELDProject/meld_graph/releases/tag/v2.0) and extract it.
+1. Download `meld_graph.zip` from the [latest github release](https://github.com/MELDProject/meld_graph/releases/latest) and extract it.
 2. Copy the freesurfer `license.txt` into the extracted folder
 3. (optional) Create the meld_data folder, if it doesn't exist already, and edit the compose.yml `volumes` line before the `:` to point to it. For example, if you wanted the folder to be on a mounted drive in Linux it might be:
 ```
