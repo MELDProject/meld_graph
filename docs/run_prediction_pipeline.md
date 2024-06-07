@@ -32,7 +32,7 @@ Open a terminal and `cd` to the meld graph folder.
 
 You only need to change the variable and path that are given in between "<>". For example, change <meld_data> for the path to where your meld data folder is stored, and <freesurfer_license> for the path to where you have stored the license.txt from Freesurfer. See [installation](https://meld-graph.readthedocs.io/en/latest/install_docker.html) for more details
 
-The first 6th lines are arguments describing the docker. The last line is calling the MELD pipeline command. You can tune this command using the variables and flag describes further below. 
+
 ## Tune the command
 
 You can tune the MELD pipeline command using additional variables and flags as detailed bellow:
@@ -125,9 +125,23 @@ This script:
    
 
 To know more about the script and how to use it on its own:
+::::{tab-set}
+:::{tab-item} Docker
+:sync: docker
 ```bash
-python scripts/new_patient_pipeline/run_script_segmentation.py -h
+docker compose run meld_graph python scripts/new_patient_pipeline/run_script_segmentation.py -h
 ```
+:::
+
+:::{tab-item} Native
+:sync: native
+```bash
+./meldgraph.sh run_script_segmentation.py -h
+```
+:::
+::::
+
+
 
 ### Script 2 - Feature Preprocessing
 
@@ -142,9 +156,21 @@ This script :
   - (optional): this script can also be called to harmonise your data for new harmonisation code but will need to pass a file containing demographics information.
 
 To know more about the script and how to use it on its own:
+::::{tab-set}
+:::{tab-item} Docker
+:sync: docker
 ```bash
-python scripts/new_patient_pipeline/run_script_preprocessing.py -h
+docker compose run meld_graph python scripts/new_patient_pipeline/run_script_preprocessing.py -h
 ```
+:::
+
+:::{tab-item} Native
+:sync: native
+```bash
+./meldgraph.sh run_script_preprocessing.py -h
+```
+:::
+::::
 
 ### Script 3 - Lesions prediction & MELD reports
 
@@ -157,9 +183,21 @@ Notes:
 - Features need to have been processed using script 2 and Freesurfer outputs need to be available for each subject
 
 To know more about the script and how to use it on its own:
+::::{tab-set}
+:::{tab-item} Docker
+:sync: docker
 ```bash
-python scripts/new_patient_pipeline/run_script_prediction.py -h
+docker compose run meld_graph python scripts/new_patient_pipeline/run_script_prediction.py -h
 ```
+:::
+
+:::{tab-item} Native
+:sync: native
+```bash
+./meldgraph.sh run_script_prediction.py -h
+```
+:::
+::::
 
 ## Interpretation of results
 
