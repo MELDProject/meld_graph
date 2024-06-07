@@ -16,7 +16,7 @@ The predictions are saved as NIFTI files in the folder:
 
 *For native installation only*: You can merge the MELD predictions onto the T1 nifti file using the command below. Note that you will need to have [FSL](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation) installed on your machine. 
 ```bash
-python scripts/new_patient_pipeline/merge_predictions_t1.py -id <subject_id> -t1 <path_to_t1_nifti> -pred <path_to_meld_prediction_nifti> -output_dir <where_to_save_output>
+./meldgraph.sh merge_predictions_t1.py -id <subject_id> -t1 <path_to_t1_nifti> -pred <path_to_meld_prediction_nifti> -output_dir <where_to_save_output>
 ```
 The command will create the file predictions_merged_t1.nii.gz which corresponds to the predictions masks merged with T1 in RGB format. It can be viewed on RGB viewer or used to transfert on PACS system.
 
@@ -74,16 +74,11 @@ The information hereabove mentioned about each cluster are summarised into the c
 
 It is important to check that the clusters detected are not due to obvious FreeSurfer reconstruction errors, scan artifacts etc.
 
-Run with docker:  
-```bash
-
-```
+Note: The following commands works only with a native installation. Guidelines for docker and singularity users will come soon.  
 
 Run with native installation: 
 ```bash
-cd <path_to_meld_classifier>
-conda activate meld_classifier
-python scripts/new_patient_pipeline/new_pt_qc_script.py -id <subject_id>
+./meldgraph.sh new_pt_qc_script.py -id <subject_id>
 ```
 ![qc_surface](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/qc_surface.png)
 

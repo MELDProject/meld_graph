@@ -19,7 +19,7 @@ Note: Windows native installation has not been tested. The MELD team highly reco
 ::::
 
 ## Prerequisites
-For preprocessing, MELD classifier requires Freesurfer. It is trained on data from versions 6 & v5.3, but compatible with Freesurfer **version up to V7.2**. You must already have a freesurfer `license.txt` that was obtained by [following the instructions on their wiki].
+For preprocessing, MELD classifier requires Freesurfer. It is trained on data from versions 6 & v5.3, but compatible with Freesurfer **version up to V7.2**. You must already have a freesurfer `license.txt` that was obtained by [following the instructions on their wiki](https://surfer.nmr.mgh.harvard.edu/fswiki/License).
 
 :::{warning}
 MELD will not work on Freesurfer v7.3 and above
@@ -69,6 +69,8 @@ Download the MELD classifier:
 
 Take note of the path - this is the path that should be used wherever `<path_to_meld_graph>` appears in the rest of these docs.
 :::
+
+Then activate your environment by running the following:
 
 :::{tab-item} Git
 ```bash
