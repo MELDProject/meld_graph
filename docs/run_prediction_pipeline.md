@@ -4,66 +4,35 @@ The new MELD pipeline offers a unique command line to predict a FCD-like abnorma
 
 If you wish to use the harmonisation feature of the MELD pipeline, you will need to first have computed the harmonisation parameters for the scanner used to acquire the data and used the harmonisation code into the main pipeline command as described bellow. Please refer to our [guidelines to harmonise a new scanner](https://meld-graph.readthedocs.io/en/latest/harmonisation.html). 
 
-## Before running
+## Running
 
 - Ensure you have installed the MELD pipeline with [docker container](https://meld-graph.readthedocs.io/en/latest/install_docker.html) or [native installation](https://meld-graph.readthedocs.io/en/latest/install_native.html). 
 - Ensure you have [organised your data](https://meld-graph.readthedocs.io/en/latest/prepare_data.html) before running this pipeline
 - Ensure you have [computed the harmonisation parameters](https://meld-graph.readthedocs.io/en/latest/harmonisation.html) if you want to use the harmonisation parameters 
 
-## Run with Docker
-
-When running with Docker container, you just need to run the following command
+::::{tab-set}
+:::{tab-item} Docker
+:sync: docker
+Open a terminal and `cd` to where you extracted the release zip.
 
 ```bash
-docker run -it --rm \
-    --user "$(id -u):$(id -g)" \
-    -v <meld_data>:/data \
-    -v <freesurfer_license>:/license.txt:ro \
-    -e FS_LICENSE='/license.txt' \
-    mathrip/meld_graph:latest \
-    python scripts/new_patient_pipeline/new_pt_pipeline.py -id <subject_id> 
+docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -id <subject_id> 
 ```
+:::
+
+:::{tab-item} Native
+:sync: native
+Open a terminal and `cd` to the meld graph folder.
+
+```bash
+./meldgraph.sh new_pt_pipeline -id <subject_id> 
+```
+:::
+::::
 
 You only need to change the variable and path that are given in between "<>". For example, change <meld_data> for the path to where your meld data folder is stored, and <freesurfer_license> for the path to where you have stored the license.txt from Freesurfer. See [installation](https://meld-graph.readthedocs.io/en/latest/install_docker.html) for more details
 
 The first 6th lines are arguments describing the docker. The last line is calling the MELD pipeline command. You can tune this command using the variables and flag describes further below. 
-
-You can run the pipeline with GPU by running the same command and adding the flag `--gpus all` in the docker command
-
-example :
-```bash
-docker run -it --rm \
-    --gpus all \
-    --user "$(id -u):$(id -g)" \
-    -v <meld_data>:/data \
-    -v <freesurfer_license>:/license.txt:ro \
-    -e FS_LICENSE='/license.txt' \
-    mathrip/meld_graph:latest \
-    python scripts/new_patient_pipeline/new_pt_pipeline.py -id <subject_id> 
-```
-
-## Run with native installation
-
-When running with native installation, you will need to first ensure the following:
-- 1. You have activate the meld_graph environment : 
-```bash
-conda activate meld_graph
-```
-- 2. Freesurfer is activated in your terminal (you should have some printed FREESURFER paths when opening the terminal). Otherwise you will need to manually activate Freesurfer on each new terminal by running : 
-```bash
-export FREESURFER_HOME=<freesurfer_installation_directory>/freesurfer
-source $FREESURFER_HOME/SetUpFreeSurfer.sh
-```
-with `<freesurfer_installation_directory>` being the path to where your Freesurfer has been installed.
-
-NOTES: MELD pipeline has only been tested and validated on Freesurfer up to V7.2. Please do not use higher version than V7.2.0 \
-
-**Main pipeline command**
-```bash
-python scripts/new_patient_pipeline/new_pt_pipeline.py -id <subject_id> 
-```
-You can tune this command using the variables and flag describes further below. 
-
 ## Tune the command
 
 You can tune the MELD pipeline command using additional variables and flags as detailed bellow:
@@ -88,59 +57,56 @@ NOTES:
 
 ## Examples of use case: 
 
-### With Docker
-
 To run the whole prediction pipeline on 1 subject using fastsurfer:
+::::{tab-set}
+:::{tab-item} Docker
+:sync: docker
 ```bash
-docker run -it --rm \
-    --gpus all \
-    --user "$(id -u):$(id -g)" \
-    -v <meld_data>:/data \
-    -v <freesurfer_license>:/license.txt:ro \
-    -e FS_LICENSE='/license.txt' \
-    mathrip/meld_graph:latest \
-    python scripts/new_patient_pipeline/new_pt_pipeline.py -id sub-001 --fastsurfer
+docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -id sub-001 --fastsurfer
 ```
+:::
+
+:::{tab-item} Native
+:sync: native
+```bash
+./meldgraph.sh new_pt_pipeline -id sub-001 --fastsurfer
+```
+:::
+::::
 
 To run the whole prediction pipeline on 1 subject using harmonisation code H1:
+::::{tab-set}
+:::{tab-item} Docker
+:sync: docker
 ```bash
-docker run -it --rm \
-    --gpus all \
-     --user "$(id -u):$(id -g)" \
-    -v <meld_data>:/data \
-    -v <freesurfer_license>:/license.txt:ro \
-    -e FS_LICENSE='/license.txt' \
-    mathrip/meld_graph:latest \
-    python scripts/new_patient_pipeline/new_pt_pipeline.pyy -id sub-001 -harmo_code H1
+docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.pyy -id sub-001 -harmo_code H1
 ```
+:::
+
+:::{tab-item} Native
+:sync: native
+```bash
+./meldgraph.sh new_pt_pipeline -id sub-001 -harmo_code H1
+```
+:::
+::::
 
 To run the whole prediction pipeline on multiples subjects with parallelisation:
+::::{tab-set}
+:::{tab-item} Docker
+:sync: docker
 ```bash
-docker run -it --rm \
-    --gpus all \
-    --user "$(id -u):$(id -g)" \
-    -v <meld_data>:/data \
-    -v <freesurfer_license>:/license.txt:ro \
-    -e FS_LICENSE='/license.txt' \
-    mathrip/meld_graph:latest \
-    python scripts/new_patient_pipeline/new_pt_pipeline.py -ids list_subjects.txt --parallelise
+docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -ids list_subjects.txt --parallelise
 ```
+:::
 
-### With native installation
-To run the whole prediction pipeline on 1 subject using fastsurfer:
+:::{tab-item} Native
+:sync: native
 ```bash
-python scripts/new_patient_pipeline/new_pt_pipeline.py -id sub-001 --fastsurfer
+./meldgraph.sh new_pt_pipeline -ids list_subjects.txt --parallelise
 ```
-
-To run the whole prediction pipeline on 1 subject using harmonisation code H1:
-```bash
-python scripts/new_patient_pipeline/new_pt_pipeline.py -id sub-001 -harmo_code H1
-```
-
-To run the whole prediction pipeline on multiples subjects with parallelisation:
-```bash
-python scripts/new_patient_pipeline/new_pt_pipeline.py -ids list_subjects.txt --parallelise
-```
+:::
+::::
 
 ## Additional information about the pipeline
 
