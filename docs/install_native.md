@@ -70,8 +70,6 @@ Download the MELD classifier:
 Take note of the path - this is the path that should be used wherever `<path_to_meld_graph>` appears in the rest of these docs.
 :::
 
-Then activate your environment by running the following:
-
 :::{tab-item} Git
 ```bash
 # checkout and install the github repo 
@@ -82,6 +80,8 @@ cd meld_graph
 ```
 :::
 ::::
+
+Then activate your environment by running the following:
 
 ::::{tab-set}
 :::{tab-item} Mac
