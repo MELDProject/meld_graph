@@ -109,7 +109,8 @@ Before being able to use the classifier on your data, some paths need to be set 
 ./meldgraph.sh prepare_classifier
 ```
 
-This script will ask you for the location of your **MELD data folder** and download the pretrained model and test data to a folder inside your MELD data folder. Please provide the path to where you would like to store MRI data to run the classifier on.
+This script will ask you if you want to change the path to the data folder, answer **'y'** for yes. \
+Then, it will ask for the the location of your **MELD data folder** and download the pretrained model and test data to a folder inside your MELD data folder. Please provide the path to where you would like to store MRI data to run the classifier on.
 
 
 Note: You can also skip the downloading of the test data. For this, append the option `--skip-download-data` to the call.
