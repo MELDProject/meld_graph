@@ -106,10 +106,11 @@ pip install -e .
 ## Set up paths and download model
 Before being able to use the classifier on your data, some paths need to be set up and the pretrained model needs to be downloaded. For this, run:
 ```bash
-./meld_graph.sh prepare_classifier
+./meldgraph.sh prepare_classifier
 ```
 
-This script will ask you for the location of your **MELD data folder** and download the pretrained model and test data to a folder inside your MELD data folder. Please provide the path to where you would like to store MRI data to run the classifier on.
+This script will ask you if you want to change the path to the data folder, answer **'y'** for yes. \
+Then, it will ask for the the location of your **MELD data folder** and download the pretrained model and test data to a folder inside your MELD data folder. Please provide the path to where you would like to store MRI data to run the classifier on.
 
 
 Note: You can also skip the downloading of the test data. For this, append the option `--skip-download-data` to the call.
@@ -119,13 +120,13 @@ We provide a test script to allow you to verify that you have installed all pack
 
 ```bash
 cd <path_to_meld_graph>
-./meld_graph.sh pytest
+./meldgraph.sh pytest
 ```
 :::{warning}
 If you run into errors at this stage and need help, you can re-run the command below to save the terminal outputs in a txt file, and send it to us. We can then work with you to solve any problems.
 
 ```bash
-./meld_graph.sh pytest -s | tee pytest_errors.log
+./meldgraph.sh pytest -s | tee pytest_errors.log
 ```
 You will find this pytest_errors.log file in <path_to_meld_graph>. 
 :::
