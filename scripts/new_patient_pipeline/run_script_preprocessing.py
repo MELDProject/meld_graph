@@ -13,10 +13,11 @@ import argparse
 import pandas as pd
 import numpy as np
 import tempfile
+import shutil
 from os.path import join as opj
 from meld_graph.meld_cohort import MeldCohort
 from meld_graph.data_preprocessing import Preprocess, Feature
-from meld_graph.tools_pipeline import get_m
+from meld_graph.tools_pipeline import get_m, create_demographic_file
 from meld_graph.paths import (
                             BASE_PATH, 
                             MELD_PARAMS_PATH, 
@@ -303,6 +304,33 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
     print(args)
+    
+    ### Create demographic file for prediction if not provided
+    demographic_file_tmp = os.path.join(MELD_DATA_PATH, DEMOGRAPHIC_FEATURES_FILE)
+    if args.demographic_file is None:
+        harmo_code = str(args.harmo_code)
+        subject_id=None
+        subject_ids=None
+        if args.list_ids != None:
+            list_ids=os.path.join(MELD_DATA_PATH, args.list_ids)
+            try:
+                sub_list_df=pd.read_csv(list_ids)
+                subject_ids=np.array(sub_list_df.ID.values)
+            except:
+                subject_ids=np.array(np.loadtxt(list_ids, dtype='str', ndmin=1)) 
+            else:
+                    sys.exit(get_m(f'Could not open {subject_ids}', None, 'ERROR'))             
+        elif args.id != None:
+            subject_id=args.id
+            subject_ids=np.array([args.id])
+        else:
+            print(get_m(f'No ids were provided', None, 'ERROR'))
+            print(get_m(f'Please specify both subject(s) and site_code ...', None, 'ERROR'))
+            sys.exit(-1) 
+        create_demographic_file(subject_ids, demographic_file_tmp, harmo_code=harmo_code)
+    else:
+        shutil.copy(args.demographic_file, demographic_file_tmp)
+       
 
     run_script_preprocessing(
                     harmo_code=args.harmo_code,
