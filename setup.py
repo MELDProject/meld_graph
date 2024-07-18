@@ -5,7 +5,7 @@ try:
 except ImportError:
     __author__ = __maintainer__ = "MELD development team"
     __email__ = "meld.study@gmail.com"
-    __version__ = "1.0.0"
+    __version__ = "2.1.0"
 
 setup(
     name="meld_graph",
