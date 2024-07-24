@@ -61,6 +61,7 @@ RUN apt-get -y update && \
     ca-certificates \
     bc \
     python3 \
+    procps \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
