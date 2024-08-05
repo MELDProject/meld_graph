@@ -428,7 +428,7 @@ def generate_prediction_report(
             # prepare grid plot
             gs1 = GridSpec(2, 3, width_ratios=[1, 1, 1], wspace=0.1, hspace=0.1)
             gs2 = GridSpec(2, 4, height_ratios=[1, 3], width_ratios=[1, 1, 0.5, 2], wspace=0.1)
-            gs3 = GridSpec(1, 1)
+            gs3 = GridSpec(2, 1, hspace=0)
             # plot predictions on inflated brain
             im1, im2 = create_surface_plots(surf, prediction=predictions[hemi], c=c)
             if hemi == "right":
@@ -444,9 +444,8 @@ def generate_prediction_report(
             ax.axis("off")
            # initiate params for saliencies
             prefixes = [".combat", ".inter_z.intra_z.combat", ".inter_z.asym.intra_z.combat"]
-            lims = 50   
-            norm = mpl.colors.Normalize(vmin=-lims, vmax=lims)
-            norm = mpl.colors.Normalize(vmin=-lims, vmax=lims)
+            # lims = 50
+            # norm = mpl.colors.Normalize(vmin=-lims, vmax=lims)
             cmap = mpl.colors.LinearSegmentedColormap.from_list(
                 "grpr",
                 colors=[
@@ -455,7 +454,6 @@ def generate_prediction_report(
                     "#8E0152",
                 ],
             )
-            m = cm.ScalarMappable(norm=norm, cmap=cmap)
             labels = ["Harmonised", "Normalised", "Asymmetry"]
             hatching = ["\\\\", "//", "--"]
             # loop over clusters
@@ -465,10 +463,14 @@ def generate_prediction_report(
                 # get and plot saliencies
                 saliencies_cl = saliencies[f'saliencies_{cluster}'][hemi]
                 saliencies_cl = saliencies_cl * (NVERT/2)
-                 # plot prediction and salient vertices
+                # plot prediction and salient vertices
                 mask = np.array([predictions[hemi] == cluster])[0]
                 mask_salient = saliencies[f'mask_salient_{cluster}'][hemi].astype(bool)
-                mask_comb = mask.astype(int)+mask_salient.astype(int)                
+                mask_comb = mask.astype(int)+mask_salient.astype(int)
+                #get max and mean saliencies
+                lims_saliencies_cl = 1.1*np.max([np.max(np.mean(saliencies_cl[mask_salient], axis=0)),-np.min(np.mean(saliencies_cl[mask_salient], axis=0))])
+                norm = mpl.colors.Normalize(vmin=-lims_saliencies_cl, vmax=lims_saliencies_cl)
+                m = cm.ScalarMappable(norm=norm, cmap=cmap)            
                 im1, im2 = create_surface_plots(surf, prediction=mask_comb, c=c, base_size=10)
                 if hemi == "right":
                     im1 = im1[:, ::-1]
@@ -509,13 +511,18 @@ def generate_prediction_report(
                         label=labels[pr],
                         color=m.to_rgba(saliency_data),
                     )
-                ax2.set_xlim([-8, 8])
-                ax2.set_xticks([])
+                limvals = np.max([np.max(cur_data+cur_err),-np.min(cur_data-cur_err)])+0.5
+                ax2.set_xlim([-limvals, limvals])
+                # add z-scores = 2 dash lines
+                # ax2.plot([-2,-2],[-1,len(base_features)], '--', color='red')
+                # ax2.plot([2,2],[-1,len(base_features)], '--', color='red')
+                # ax2.set_xlim([-8, 8])
+                # ax2.set_xticks([])
                 ax2.set_yticks(np.array(range(len(base_features))) - 0.23)
                 ax2.set_yticklabels(feature_names, fontsize=16)
                 ax2.set_xlabel("Z score", fontsize=16)
                 ax2.legend(loc="upper center", bbox_to_anchor=(0.5, 1.17), fontsize=16)
-                fig2.colorbar(m, ax=ax2, ticks=[-50, -25, 0, 25, 50]).set_label(label='Saliency',size=18,weight='bold')
+                fig2.colorbar(m, ax=ax2,).set_label(label='Saliency',size=18,weight='bold')
                 ax2.set_autoscale_on(True)
                 ## display info cluster
                 # get size
@@ -551,23 +558,25 @@ def generate_prediction_report(
                 ax2.axis("off")
                 #                 fig2.tight_layout()
                 fig2.savefig(f"{output_dir_sub}/saliency_{subject.subject_id}_{hemi}_c{int(cluster)}.png")
-                # plot cluster on anat MRI volume
-                fig3 = plt.figure(figsize=(15, 8))
+                
+                # display MRI images
+                fig3 = plt.figure(figsize=(12, 6))
                 ax3 = fig3.add_subplot(gs3[0])
                 min_v = cluster - 1
                 max_v = cluster + 1
                 mask = image.math_img(f"(img < {max_v}) & (img > {min_v})", img=imgs[f"pred"])
                 coords = plotting.find_xyz_cut_coords(mask)
                 vmax = np.percentile(imgs["anat"].get_fdata(), 99)
-                display = plotting.plot_anat(
+                
+                # display cluster on MRI volume
+                display3 = plotting.plot_anat(
                     t1_file, colorbar=False, cut_coords=coords, 
-                    draw_cross=True, radiological=True,
+                    draw_cross=True, radiological=True, annotate=True,
                     figure=fig3, axes=ax3, vmax=vmax
                 )
-                # display cluster
                 data = imgs["pred"].get_fdata()
                 map_img = new_img_like(imgs["pred"], as_ndarray((data==cluster) | (data==cluster*100)).astype(float), imgs["pred"].affine)
-                display.add_contours(
+                display3.add_contours(
                         map_img,
                         levels=[0.5],
                         colors=["red"],
@@ -577,7 +586,7 @@ def generate_prediction_report(
                     )
                 # display cluster salient vertices
                 map_img = new_img_like(imgs["pred"], as_ndarray(data==cluster*100).astype(float), imgs["pred"].affine)
-                display.add_contours(
+                display3.add_contours(
                         map_img,
                         levels=[0.5],
                         colors=["yellow"],
@@ -585,14 +594,26 @@ def generate_prediction_report(
                         alpha=0.7,
                         linestyles="solid",
                     )
-
-                for cut_ax in display.axes.values():
-                    slices_x = np.linspace(cut_ax.ax.get_xlim()[0], cut_ax.ax.get_xlim()[1],100)
-                    cut_ax.ax.set_xlim(slices_x[12], slices_x[-12])
-                    slices_y = np.linspace(cut_ax.ax.get_ylim()[0], cut_ax.ax.get_ylim()[1],100)
-                    cut_ax.ax.set_ylim(slices_y[15], slices_y[-15])
+                # display just raw MRI
+                ax4 = fig3.add_subplot(gs3[1])
+                display4 = plotting.plot_anat(
+                    t1_file, colorbar=False, cut_coords=coords, 
+                    draw_cross=False, radiological=True, annotate=False,
+                    figure=fig3, axes=ax4, vmax=vmax
+                )
+                
+                for display in [display3, display4]:
+                    for cut_ax in display.axes.values():
+                        slices_x = np.linspace(cut_ax.ax.get_xlim()[0], cut_ax.ax.get_xlim()[1],100)
+                        cut_ax.ax.set_xlim(slices_x[12], slices_x[-12])
+                        slices_y = np.linspace(cut_ax.ax.get_ylim()[0], cut_ax.ax.get_ylim()[1],100)
+                        cut_ax.ax.set_ylim(slices_y[15], slices_y[-15])
+                fig3.tight_layout()
                 fig3.savefig(f"{output_dir_sub}/mri_{subject.subject_id}_{hemi}_c{int(cluster)}.png")
-
+                im = Image.open(f"{output_dir_sub}/mri_{subject.subject_id}_{hemi}_c{int(cluster)}.png")
+                im1 = trim(im)
+                im2 = im1.convert("RGBA")
+                im2.save(f"{output_dir_sub}/mri_{subject.subject_id}_{hemi}_c{int(cluster)}.png")
                 # Add info to df
                 df = pd.concat([df,pd.DataFrame([info_cl])])
         # Add information subject in text box
