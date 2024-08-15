@@ -147,7 +147,7 @@ def calculate_per_cluster_confidence(results_dict, aggregation_fn='median', mask
     return results_df
 
 
-def cluster_calibration_plot(confidence, label, n_bins=10):
+def cluster_calibration_plot(confidence, label, n_bins=10,ax=None):
     """
     calculate ECE as described in literature
     calclulate calibration plot as calculated by sklearn.calibration
@@ -180,24 +180,29 @@ def cluster_calibration_plot(confidence, label, n_bins=10):
     ece = np.nansum(np.abs(np.array(freq) - np.array(conf))*np.array(n))
     #print('ECE: ', ece) 
     mask=np.array(mask)  
-    fig, ax = plt.subplots(1,1, figsize=(5,5))
-    ax.plot((bins[:-1] + (bins[1:]-bins[:-1])/2)[mask], np.array(freq)[mask], 'o-')
+    if ax is None:
+        fig, ax = plt.subplots(1,1, figsize=(5,5))
+    #ax.plot((bins[:-1] + (bins[1:]-bins[:-1])/2)[mask], np.array(freq)[mask], 'o-')
     ax.bar(bins[:-1] + (bins[1:]-bins[:-1])/2, n, width=0.05, color='black', alpha=0.5)
+    #changes
+    #ax.scatter((bins[:-1] + (bins[1:]-bins[:-1])/2)[mask], np.array(freq)[mask], 'o')
+    sns.regplot(x=bins[:-1] + (bins[1:]-bins[:-1])/2, y=freq, ax=ax,  scatter_kws={'s': 10})
     # plot line for perfect calibration
     ax.plot([0,1],[0,1], '--')
     ax.set_ylim(0,1)
     ax.set_xlim(0,1)
-    ax.set_xlabel('confidence')
-    ax.set_ylabel('frequency of TPs')
+    ax.set_xlabel('Confidence')
+    ax.set_ylabel('Frequency of TPs')
     ax.set_title('Per cluster confidence (ECE: {:.2f})'.format(ece))
-    return fig
+    return ax
 
-def confidence_label_distplot(per_cluster_confidence, per_cluster_label):
+def confidence_label_distplot(per_cluster_confidence, per_cluster_label,ax=None):
     # quick check to see if this roughly makes sense - FP clusters should have low confidence
-    fig, ax = plt.subplots(1,1)
-    sns.kdeplot(x=per_cluster_confidence[per_cluster_label==0], bw_adjust=0.8,  ax=ax, label='FP')
-    sns.kdeplot(x=per_cluster_confidence[per_cluster_label==1], bw_adjust=0.8, ax=ax, label='TP')
-    plt.legend()
-    ax.set_xlabel('confidence')
+    if ax is None:
+        fig, ax = plt.subplots(1,1)
+    sns.kdeplot(x=per_cluster_confidence[per_cluster_label==0], bw_adjust=0.5,  ax=ax, label='False Positives')
+    sns.kdeplot(x=per_cluster_confidence[per_cluster_label==1], bw_adjust=0.5, ax=ax, label='True Positives')
+    ax.legend()
+    ax.set_xlabel('Confidence')
     ax.set_xlim([0,1])
-    return fig
+    return ax
