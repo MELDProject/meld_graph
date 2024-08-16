@@ -17,7 +17,7 @@ from meld_graph.evaluation import Evaluator
 import numpy as np
 import json
 import os
-
+import sys
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="""
@@ -28,16 +28,24 @@ if __name__ == "__main__":
     parser.add_argument("--saliency", action='store_true', default=False, help="calculate integrated gradients saliency")
     parser.add_argument("--new_data", help="json file containing new data parameters", default=None)
     parser.add_argument("--model_name", default="best_model", help="name of the model to load")
+    parser.add_argument("--threshold", default="two_threshold", help="threshold type, can be two_threshold, multi_threshold, max_threshold")
+    
     args = parser.parse_args()
+    
+    # initialise experiment
     exp = meld_graph.experiment.Experiment.from_folder(args.model_path)
-    #check optimised sigmoid parameters are present
-    threshold_file = os.path.join(exp.experiment_path, 
-    f'results_{args.model_name}',f'two_thresholds.csv')
+    
+    # get threshold parameters in function of threshold type
+    # if two_threshold, need to run function to get optimised parameters 
+    if args.threshold == 'two_threshold':
+        threshold_file = os.path.join(exp.experiment_path, 
+                                      f'results_{args.model_name}',f'two_thresholds.csv')
+        print(threshold_file)
+        if not os.path.exists(threshold_file):
+            print('Optimised two thresholds parameters not found')
+            sys.exit()
+    
     thresh_and_clust = True
-    print(threshold_file)
-    if not os.path.exists(threshold_file):
-        print('Optimised two thresholds parameters not found')
-        thresh_and_clust = False
     if args.new_data != None:
         args.split = 'test'
         new_data_params = json.load(open(args.new_data))
@@ -65,8 +73,8 @@ if __name__ == "__main__":
                 hdf5_file_root=exp.data_parameters["hdf5_file_root"],
                 dataset=exp.data_parameters["dataset"],
             )
-    ## TODO: to remove
-    # subjects=subjects[0:5]
+    
+    # create new directory to save prediction on new data
     if args.new_data != None:
         save_dir = new_data_params['save_dir']
         print(save_dir)
@@ -76,7 +84,7 @@ if __name__ == "__main__":
         save_dir = args.model_path
     dataset = GraphDataset(subjects, cohort, exp.data_parameters, mode="test")
 
-    
+    # launch evaluation
     eva = Evaluator(
         experiment=exp,
         checkpoint_path=args.model_path,
@@ -88,11 +96,12 @@ if __name__ == "__main__":
         mode="test",
         saliency=args.saliency,
         model_name=args.model_name,
-        threshold='two_threshold',
+        threshold=args.threshold,
         thresh_and_clust=thresh_and_clust,
 
     )
-   
+    
+
     # only save predictions on test, no need on vals but instead calculate ROCs
     if args.split == "test":
         save_prediction = True
