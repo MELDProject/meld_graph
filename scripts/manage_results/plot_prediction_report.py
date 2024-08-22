@@ -562,8 +562,8 @@ def generate_prediction_report(
                 # display MRI images
                 fig3 = plt.figure(figsize=(12, 6))
                 ax3 = fig3.add_subplot(gs3[0])
-                min_v = cluster - 1
-                max_v = cluster + 1
+                min_v = cluster*100 - 1
+                max_v = cluster*100 + 1
                 mask = image.math_img(f"(img < {max_v}) & (img > {min_v})", img=imgs[f"pred"])
                 coords = plotting.find_xyz_cut_coords(mask)
                 vmax = np.percentile(imgs["anat"].get_fdata(), 99)
