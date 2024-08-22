@@ -128,36 +128,36 @@ def run_script_prediction(list_ids=None, sub_id=None, harmo_code='noHarmo', no_p
     print(get_m(f'Run predictions', subject_ids, 'STEP 1'))
     
     #predict on new subjects 
-    # predict_subjects(subject_ids=subject_ids, 
-    #                 output_dir=classifier_output_dir,  
-    #                 plot_images=True, 
-    #                 saliency=True,
-    #                 experiment_path=experiment_path, 
-    #                 hdf5_file_root= DEFAULT_HDF5_FILE_ROOT)
+    predict_subjects(subject_ids=subject_ids, 
+                    output_dir=classifier_output_dir,  
+                    plot_images=True, 
+                    saliency=True,
+                    experiment_path=experiment_path, 
+                    hdf5_file_root= DEFAULT_HDF5_FILE_ROOT)
     
     if not no_prediction_nifti:        
-    #     #Register predictions to native space
-    #     for i, subject_id in enumerate(subject_ids):
-    #         print(get_m(f'Move predictions into volume', subject_id, 'STEP 2'))
-    #         result = move_predictions_to_mgh(subject_id=subject_id, 
-    #                             subjects_dir=subjects_dir, 
-    #                             prediction_file=prediction_file,
-    #                             verbose=verbose)
-    #         if result == False:
-    #             print(get_m(f'One step of the pipeline has failed. Process has been aborted for this subject', subject_id, 'ERROR'))
-    #             subject_ids_failed.append(subject_id)
-    #             continue
+        #Register predictions to native space
+        for i, subject_id in enumerate(subject_ids):
+            print(get_m(f'Move predictions into volume', subject_id, 'STEP 2'))
+            result = move_predictions_to_mgh(subject_id=subject_id, 
+                                subjects_dir=subjects_dir, 
+                                prediction_file=prediction_file,
+                                verbose=verbose)
+            if result == False:
+                print(get_m(f'One step of the pipeline has failed. Process has been aborted for this subject', subject_id, 'ERROR'))
+                subject_ids_failed.append(subject_id)
+                continue
             
-    #         #Register prediction back to nifti volume
-    #         print(get_m(f'Move prediction back to native space', subject_id, 'STEP 3'))
-    #         result = register_subject_to_xhemi(subject_id=subject_id, 
-    #                                     subjects_dir=subjects_dir, 
-    #                                     output_dir=predictions_output_dir, 
-    #                                     verbose=verbose)
-    #         if result == False:
-    #             print(get_m(f'One step of the pipeline has failed. Process has been aborted for this subject', subject_id, 'ERROR'))
-    #             subject_ids_failed.append(subject_id)
-    #             continue
+            #Register prediction back to nifti volume
+            print(get_m(f'Move prediction back to native space', subject_id, 'STEP 3'))
+            result = register_subject_to_xhemi(subject_id=subject_id, 
+                                        subjects_dir=subjects_dir, 
+                                        output_dir=predictions_output_dir, 
+                                        verbose=verbose)
+            if result == False:
+                print(get_m(f'One step of the pipeline has failed. Process has been aborted for this subject', subject_id, 'ERROR'))
+                subject_ids_failed.append(subject_id)
+                continue
             
         if not no_report:
             # Create individual reports of each identified cluster
@@ -247,7 +247,7 @@ if __name__ == '__main__':
             sys.exit(-1) 
         create_demographic_file(subject_ids, demographic_file_tmp, harmo_code=harmo_code)
     else:
-        shutil.copy(args.demographic_file, demographic_file_tmp)
+        shutil.copy(os.path.join(MELD_DATA_PATH,args.demographic_file), demographic_file_tmp)
        
 
     run_script_prediction(

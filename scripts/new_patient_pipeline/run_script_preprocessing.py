@@ -329,7 +329,7 @@ if __name__ == '__main__':
             sys.exit(-1) 
         create_demographic_file(subject_ids, demographic_file_tmp, harmo_code=harmo_code)
     else:
-        shutil.copy(args.demographic_file, demographic_file_tmp)
+        shutil.copy(os.path.join(MELD_DATA_PATH,args.demographic_file), demographic_file_tmp)
        
 
     run_script_preprocessing(
