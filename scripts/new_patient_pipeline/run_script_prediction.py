@@ -72,7 +72,7 @@ def predict_subjects(subject_ids, output_dir, plot_images = False, saliency=Fals
         save_dir=output_dir,
         mode="test",
         model_name="best_model",
-        threshold='two_threshold',
+        threshold='slope_threshold',
         thresh_and_clust=True,
         saliency=saliency,
         make_images=plot_images,

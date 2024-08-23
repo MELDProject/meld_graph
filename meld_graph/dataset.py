@@ -150,6 +150,7 @@ class GraphDataset(torch_geometric.data.Dataset):
         for s_i, subj_id in enumerate(self.subject_ids):
             # load in (control) data
             # features are appended to list in order: left, right
+            print(subj_id)
             subject_data_list = self.prep.get_data_preprocessed(
                 subject=subj_id,
                 features=params["features"],
