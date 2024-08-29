@@ -4,6 +4,7 @@ import glob
 import json
 import os
 import bids.layout
+import pandas as pd
 from subprocess import Popen
 from meld_graph.paths import MELD_DATA_PATH
 
@@ -98,3 +99,13 @@ def run_command(command, verbose=False):
     # if (proc.stdout) and (verbose):
     #     print(get_m("Result: {}".format(proc.stdout.decode('utf-8')), None, 'COMMAND'))
     return proc
+
+def create_demographic_file(subjects_ids, save_file, harmo_code='noHarmo'):
+    df = pd.DataFrame()
+    if  isinstance(subjects_ids, str):
+        subjects_ids=[subjects_ids]
+    df['ID']=subjects_ids.astype(str)
+    df['Harmo code']=[str(harmo_code) for subject in subjects_ids]
+    df['Group']=['patient' for subject in subjects_ids]
+    df['Scanner']=['3T' for subject in subjects_ids]
+    df.to_csv(save_file)

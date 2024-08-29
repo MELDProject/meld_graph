@@ -9,7 +9,7 @@ from scripts.new_patient_pipeline.run_script_segmentation import run_script_segm
 from scripts.new_patient_pipeline.run_script_preprocessing import run_script_preprocessing
 from scripts.new_patient_pipeline.run_script_prediction import run_script_prediction
 from meld_graph.paths import MELD_DATA_PATH, DEMOGRAPHIC_FEATURES_FILE
-from meld_graph.tools_pipeline import get_m
+from meld_graph.tools_pipeline import get_m, create_demographic_file
 
 class Logger(object):
     def __init__(self, sys_type=sys.stdout, filename='MELD_output.log'):
@@ -23,16 +23,6 @@ class Logger(object):
     
     def flush(self):
         pass
-
-def create_demographic_file(subjects_ids, save_file, harmo_code='noHarmo'):
-        df = pd.DataFrame()
-        if  isinstance(subjects_ids, str):
-            subjects_ids=[subjects_ids]
-        df['ID']=subjects_ids.astype(str)
-        df['Harmo code']=[str(harmo_code) for subject in subjects_ids]
-        df['Group']=['patient' for subject in subjects_ids]
-        df['Scanner']=['3T' for subject in subjects_ids]
-        df.to_csv(save_file)
         
 if __name__ == "__main__":
     import scripts.env_setup
@@ -135,7 +125,7 @@ if __name__ == "__main__":
             sys.exit(-1) 
         create_demographic_file(subject_ids, demographic_file_tmp, harmo_code=harmo_code)
     else:
-        shutil.copy(args.demographic_file, demographic_file_tmp)
+        shutil.copy(os.path.join(MELD_DATA_PATH,args.demographic_file), demographic_file_tmp)
     
     #---------------------------------------------------------------------------------
     ### SEGMENTATION ###

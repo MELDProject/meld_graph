@@ -43,7 +43,7 @@ class Evaluator:
         checkpoint_path=None,
         make_images=False,
         thresh_and_clust=True,
-        threshold="two_threshold",
+        threshold="slope_threshold",
         min_area_threshold=100,
         dataset=None,
         cohort=None,
@@ -143,6 +143,22 @@ class Evaluator:
                 else:
                     print(f"Could not find an optimised threshold file at {threshold_file}. You need to run script optimise_sigmoid_trainval.py")
                     return
+            elif threshold == "multi_threshold":
+                self.threshold_mode = 'multi_threshold'
+                self.threshold = list([0.01, 0.1, 0.2, 0.3, 0.4, 0.5])
+                self.log.info("Evaluation {}, min area threshold={}, prediction thresholds={})".format(
+                                self.mode,self.min_area_threshold, self.threshold))
+            elif threshold == "max_threshold":
+                self.threshold_mode = 'max_threshold'
+                self.threshold = {'min_thresh':0.01, 'max_thresh':0.5, 'margin': 0.25}
+                self.log.info("Evaluation {}, min area threshold={}, prediction thresholds={})".format(
+                                self.mode,self.min_area_threshold, self.threshold))
+            elif threshold == "slope_threshold":
+                self.threshold_mode = 'slope_threshold'
+                self.threshold = {'min_thresh':0.01, 'max_thresh':0.5, 'slope': 0.2}
+                self.log.info("Evaluation {}, min area threshold={}, prediction threshold={})".format(
+                                self.mode,self.min_area_threshold, self.threshold))
+            
             elif isinstance(threshold, float):
                 self.threshold_mode = 'threshold'
                 self.threshold = threshold
@@ -382,7 +398,7 @@ class Evaluator:
                 "specificity": np.zeros(len(self.thresholds)),
             }
         return self._roc_dictionary
-
+    
     def threshold_and_cluster(self, data_dictionary=None, save_prediction=True, save_prediction_suffix=""):
         # helper fn getting the clustered and thresholded data for a given threshold
         def get_cluster_thresholded(predictions, threshold_subj):
@@ -410,18 +426,67 @@ class Evaluator:
                 threshold_subj = self.threshold
             
             predictions = self.experiment.cohort.split_hemispheres(data["result"])
-            if self.threshold_mode == 'two_threshold':
+            if self.threshold_mode == 'multi_threshold':
+                #list of multiple thresholds fixed
+                # initialise best threshold to be the smallest one
+                thresholds = np.sort(threshold_subj)[::-1] 
+                best_threshold = thresholds[-1]
+                # loop over descending thresholds and keep the highest threshold that give a prediction 
+                for threshold in thresholds:
+                    if data["result"].max() > threshold:
+                        cluster_thresholded = get_cluster_thresholded(predictions, threshold)
+                        if cluster_thresholded.sum() > 0 :
+                            best_threshold = threshold
+                            break
+                cluster_thresholded = get_cluster_thresholded(predictions, best_threshold)
+                print(f"threshold_subj = {best_threshold}")
+                data["threshold"] = best_threshold
+                data["cluster_thresholded"] = cluster_thresholded
+            if self.threshold_mode == 'max_threshold':
+                # Threshold = max_thresh if max(predictions) > max_thresh
+                # else Threshold = max(max(predictions)-margin,min_thresh)
+                best_threshold = 0
+                if data["result"].max() > threshold_subj['max_thresh']:
+                    threshold = threshold_subj['max_thresh']
+                    cluster_thresholded = get_cluster_thresholded(predictions, threshold)
+                    if cluster_thresholded.sum() > 0 :
+                        best_threshold = threshold
+                if best_threshold==0:
+                    threshold =  max((min(threshold_subj['max_thresh']-threshold_subj['margin'], data["result"].max() - threshold_subj['margin'])), threshold_subj['min_thresh'])
+                    threshold = min(threshold_subj['max_thresh']/2, max(data["result"].max()/2, 0.01))
+                    cluster_thresholded = get_cluster_thresholded(predictions, threshold)
+                    if cluster_thresholded.sum() > 0 :
+                        best_threshold = threshold
+                if best_threshold==0:
+                    best_threshold = 0.01
+                cluster_thresholded = get_cluster_thresholded(predictions, best_threshold)
+                print(f"threshold_subj = {best_threshold}")
+                data["threshold"] = best_threshold
+                data["cluster_thresholded"] = cluster_thresholded
+            if self.threshold_mode == 'slope_threshold':
+                m = data["result"].max()
+                if (data["result"]>=threshold_subj['max_thresh']).sum()>100:
+                    best_threshold = threshold_subj['max_thresh']
+                else:
+                    best_threshold = np.max([data["result"].max()*threshold_subj['slope'],threshold_subj['min_thresh']])
+                cluster_thresholded = get_cluster_thresholded(predictions, best_threshold)
+                print(f"threshold_subj = {best_threshold}")
+                data["threshold"] = best_threshold
+                data["cluster_thresholded"] = cluster_thresholded
+            elif self.threshold_mode == 'two_threshold':
+                #thresholds are optimised from the trainval
                 print(f'using thresholds {threshold_subj}')
                 pred_low_confidence = get_cluster_thresholded(predictions, threshold_subj[0])
                 pred_high_confidence = get_cluster_thresholded(predictions, threshold_subj[1])
                 data["cluster_thresholded_low_conf"] = pred_low_confidence
                 data["cluster_thresholded_high_conf"] = pred_high_confidence
-                #data["cluster_thresholded"] = pred_high_confidence if data["result"].max() > threshold_subj[1] else pred_low_confidence
                 data["cluster_thresholded"] = pred_high_confidence if pred_high_confidence.sum()>0 else pred_low_confidence
                 if data["result"].max() > threshold_subj[1]:
                     print(f"threshold_subj = {threshold_subj[1]}")
+                    data["threshold"] = threshold_subj[1]
                 else:
                     print(f"threshold_subj = {threshold_subj[0]}")
+                    data["threshold"] = threshold_subj[0]   
             else:
                 data["cluster_thresholded"] = get_cluster_thresholded(predictions, threshold_subj)
             if save_prediction:
@@ -596,6 +661,7 @@ class Evaluator:
                         mask_salient[vertices_salient]= True
                     #rearange saliencies and mask salient in whole brain - add empty hemi
                     empty_hemi = np.zeros(cur_saliency.shape)
+                    
                     if hemi=='left':
                         saliency_vert[subj_id][cl] = np.hstack([cur_saliency[self.experiment.cohort.cortex_mask,:].T,empty_hemi[self.experiment.cohort.cortex_mask,:].T]).T
                         mask_salient_vert[subj_id][cl] = np.hstack([mask_salient[self.experiment.cohort.cortex_mask],empty_hemi[self.experiment.cohort.cortex_mask, 0]])
@@ -634,9 +700,6 @@ class Evaluator:
     def stat_subjects(self, suffix="", fold=None):
         """calculate stats for each subjects"""
         suffix = f"{suffix}{self.dropout_suffix}"
-        # TODO: need to add boundaries 
-        # boundary_label = MeldSubject(subject, self.experiment.cohort).load_boundary_zone(max_distance=20)
-
         # calculate stats on thresholded and clustered predictions
         for subject in self.data_dictionary.keys():
             # use prediction clustered
