@@ -41,17 +41,19 @@ MELD pipeline also works with FastSurfer (quicker version of Freesurfer). If you
 ```bash
 git clone --branch v1.1.2 https://github.com/Deep-MI/FastSurfer.git
 ```
+:::
+::::
+
 Note that Fastsurfer requires to install Freesurfer V7.2 to works 
 
 You will need to ensure that Freesurfer is activated in your terminal (you should have some printed FREESURFER paths when opening the terminal). Otherwise you will need to manually activate Freesurfer on each new terminal by running: 
 ```bash
-export FREESURFER_HOME=<freesurfer_installation_directory>/freesurfer
+export FREESURFER_HOME=<freesurfer_installation_directory>
 source $FREESURFER_HOME/SetUpFreeSurfer.sh
 ```
 
 with `<freesurfer_installation_directory>` being the path to where your Freesurfer has been installed.
-:::
-::::
+
 
 ## Conda installation
 We use [anaconda](https://docs.anaconda.com/anaconda/install/mac-os/) to manage the environment and dependencies. Please follow instructions on [anaconda](https://docs.anaconda.com/anaconda/install/mac-os/) to install Anaconda.
