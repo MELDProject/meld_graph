@@ -22,8 +22,16 @@ docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipelin
 
 :::{tab-item} Native
 :sync: native
+
 Open a terminal and `cd` to the meld graph folder.
 
+You will need to first activate FreeSurfer
+```bash
+export FREESURFER_HOME=<freesurfer_installation_directory>
+source $FREESURFER_HOME/SetUpFreeSurfer.sh
+```
+
+Then run the command
 ```bash
 ./meldgraph.sh new_pt_pipeline -id <subject_id> 
 ```
