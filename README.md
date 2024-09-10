@@ -4,6 +4,9 @@
 
 **Full documentation: [here](https://meld-graph.readthedocs.io/en/latest/index.html)**
 
+## ! The code is still undergoing development and review. 
+## ! Please DO NOT INSTALL yet
+
 Graph based FCD lesion segmentation for the [MELD project](https://meldproject.github.io/).
 
 This package is a pipeline to segment FCD-lesions from MRI scans. 
