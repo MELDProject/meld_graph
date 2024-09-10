@@ -24,7 +24,7 @@ def create_training_data_hdf5(subject, subject_dir, output_dir):
                           features = features,
                           medial_wall = medial_wall, 
                           subject_dir = subject_dir,
-                          demographic_file=os.path.join(MELD_DATA_PATH, DEMOGRAPHIC_FEATURES_FILE),
+                          demographic_file=DEMOGRAPHIC_FEATURES_FILE,
                           output_dir=output_dir)
     if failed == True:
         print(get_m(f'Features not saved. Something went wrong', subject, 'ERROR'))

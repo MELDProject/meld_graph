@@ -186,10 +186,7 @@ def run_data_processing_new_subjects(subject_ids, harmo_code, compute_harmonisat
         #create cohort to normalise
         c_combat = MeldCohort(hdf5_file_root='{site_code}_{group}_featurematrix_combat.hdf5', dataset=tmp.name)
         # provide mean and std parameter for normalisation by controls
-        if harmo_code == 'noHarmo':
-            param_norms_file = os.path.join(MELD_PARAMS_PATH, NORM_CONTROLS_PARAMS_FILE.format('nocombat'))
-        else:
-            param_norms_file = os.path.join(MELD_PARAMS_PATH, NORM_CONTROLS_PARAMS_FILE.format('combat'))
+        param_norms_file = os.path.join(MELD_PARAMS_PATH, NORM_CONTROLS_PARAMS_FILE.format('nocombat'))
         # create object normalisation
         norm = Preprocess(c_combat,
                             write_output_file='{site_code}_{group}_featurematrix_combat.hdf5',
@@ -229,7 +226,7 @@ def run_script_preprocessing(list_ids=None, sub_id=None, harmo_code='noHarmo', o
         if combat_params_file=='None':
             print(get_m(f'New harmonisation code. Compute the harmonisation parameters for {harmo_code} with subjects {subject_ids}', None, 'INFO'))
             #check that demographic file exist and is adequate
-            demographic_file = os.path.join(MELD_DATA_PATH, DEMOGRAPHIC_FEATURES_FILE) 
+            demographic_file = DEMOGRAPHIC_FEATURES_FILE
             if os.path.isfile(demographic_file):
                 print(get_m(f'Use demographic file {demographic_file}', None, 'INFO'))
                 demographic_file = check_demographic_file(demographic_file, subject_ids)
@@ -306,7 +303,7 @@ if __name__ == '__main__':
     print(args)
     
     ### Create demographic file for prediction if not provided
-    demographic_file_tmp = os.path.join(MELD_DATA_PATH, DEMOGRAPHIC_FEATURES_FILE)
+    demographic_file_tmp = DEMOGRAPHIC_FEATURES_FILE
     if args.demographic_file is None:
         harmo_code = str(args.harmo_code)
         subject_id=None

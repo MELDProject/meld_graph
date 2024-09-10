@@ -537,8 +537,8 @@ class Preprocess:
                     print("skipping ", ids)
                     
     def load_covars(self, subject_ids=None, demographic_file=DEMOGRAPHIC_FEATURES_FILE):
-        if not os.path.isfile(demographic_file):
-            demographic_file = os.path.join(self.data_dir,demographic_file)
+        # if not os.path.isfile(demographic_file):
+        # demographic_file = os.path.join(self.data_dir,demographic_file)
         if subject_ids is None:
             subject_ids = self.subject_ids
         covars = pd.DataFrame()

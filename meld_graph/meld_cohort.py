@@ -479,12 +479,12 @@ class MeldSubject:
         Returns:
             list of features, matching structure of feature_names
         """
-        csv_path = os.path.join(MELD_DATA_PATH, csv_file)
+        # csv_path = os.path.join(MELD_DATA_PATH, csv_file)
         return_single = False
         if isinstance(feature_names, str):
             return_single = True
             feature_names = [feature_names]
-        df = pd.read_csv(csv_path, header=0, encoding="latin")
+        df = pd.read_csv(csv_file, header=0, encoding="latin")
         # get index column
         id_col = None
         for col in df.keys():
