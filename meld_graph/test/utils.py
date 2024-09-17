@@ -13,7 +13,7 @@ def create_test_demos():
     "Scanner":{"0":"3T","1":"15T","2":"15T","3":"15T","4":"15T","5":"15T","6":"3T","7":"3T","8":"3T","9":"3T","10":"3T","11":"15T","12":"15T","13":"15T","14":"15T","15":"15T","16":"3T","17":"3T","18":"3T","19":"3T","20":"3T"}}
 
     df = pd.DataFrame(data)
-    df.to_csv(os.path.join(MELD_DATA_PATH,'.demographics_file.csv'))
+    df.to_csv(os.path.join(MELD_DATA_PATH,'/tmp/demographics_file.csv'))
 
 def create_test_data():
     """

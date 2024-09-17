@@ -3,9 +3,9 @@
 The Docker container has all the prerequisites embedded on it which makes it easier to install and compatible with most of the OS systems. 
 
 Notes: 
-- Currently only tested on **Linux and Windows** (HPC Singularity coming soon, Mac M chip computers have to do a {doc}`install_native`)
-- You will need **~14GB of space** to install the container
-- The docker image contains Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0+cu111. The whole image is 13.5 GB.  
+- Currently only tested on **Linux and Windows** (HPC Singularity coming soon, Mac M chip computers have to do a [install_native](https://meld-graph.readthedocs.io/en/latest/install_native.html)
+- You will need **~12GB of space** to install the container
+- The docker image contains Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0+cu111. The whole image is 11.4 GB.  
 
 ## Prerequisites
 
@@ -41,7 +41,6 @@ Follow the instructions for [*enabling NVIDIA CUDA on WSL*](https://learn.micros
 
 ::::
 
-
 ## Freesurfer licence
 You will need to download a Freesurfer license.txt to enable Freesurfer/Fastsurfer to perform the segmentation. Please follow the [guidelines](https://surfer.nmr.mgh.harvard.edu/fswiki/License) to download the file and keep a record of the path where you saved it. 
 
@@ -65,30 +64,33 @@ On windows, if you're using absolute paths, use forward slashes and quotes:
       - "C:/Users/John/Desktop/meld-data:/data"
 ```
 :::
+4. In order to use docker as a non-root user, the compose.yml file pass the current user ID to the docker. For that we recommand to add a DOCKER_USER variable in your bashrc file by running:
+```
+echo 'export DOCKER_USER="$(id -u):$(id -g)"' >> ~/.bashrc
+```
+Alternatively, you can export this variable everytime you are using the docker 
 
 ## Set up paths and download model
 Before being able to use the classifier on your data, data paths need to be set up and the pretrained model needs to be downloaded. 
 
-1. Make sure you have 15GB of storage space available for the docker, and 2GB available for the meld data.
+1. Make sure you have 12GB of storage space available for the docker, and 2GB available for the meld data.
 
 2. Run this command to download the docker image and the training data
 
 ```bash
-docker-compose run meld_graph python scripts/new_patient_pipeline/prepare_classifier.py
+docker compose run meld_graph python scripts/new_patient_pipeline/prepare_classifier.py
 ```
 
 :::{note}
 Append `--skip-download-data` to the python call to skip downloading the test data.
 :::
 
-3. This script will ask you if you want to change the location for the MELD data folder, say **"N"** for no and wait until the download is finished.
-
 
 ## Verify installation
 To verify that you have installed all packages, set up paths correctly, and downloaded all data, this verification script will run the pipeline to predict the lesion classifier on a new patient. It takes approximately 15 minutes to run.
 
 ```bash
-docker-compose run meld_graph pytest
+docker compose run meld_graph pytest
 ```
 
 ### Errors
@@ -99,14 +101,14 @@ If you run into errors at this stage and need help, you can re-run by changing t
 :::{tab-item} Linux
 :sync: linux
 ```bash
-docker-compose run meld_graph pytest -s | tee pytest_errors.log
+docker compose run meld_graph pytest -s | tee pytest_errors.log
 ```
 :::
 
 :::{tab-item} Windows
 :sync: windows
 ```bash
-docker-compose run meld_graph pytest -s | tee -filepath ./pytest_errors.log
+docker compose run meld_graph pytest -s | tee -filepath ./pytest_errors.log
 ```
 :::
 
@@ -130,7 +132,7 @@ deploy:
 To disable gpus, change it back to `0`.
 
 ## FAQs
-Please see our {doc}`FAQs` for common installation problems.
+Please see our [FAQ](https://meld-graph.readthedocs.io/en/latest/FAQs.html) for common installation problems.
 
 ## Contact
 

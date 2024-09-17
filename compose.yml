@@ -8,6 +8,7 @@ services:
       - FS_LICENSE=/run/secrets/license.txt
     secrets:
       - license.txt
+    user: $DOCKER_USER
     deploy:
       resources:
         reservations:

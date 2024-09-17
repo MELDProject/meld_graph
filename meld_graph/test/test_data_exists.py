@@ -11,6 +11,7 @@ import pytest
 from meld_graph.meld_cohort import MeldCohort, MeldSubject
 import numpy as np
 import warnings
+from meld_graph.test.utils import create_test_demos
 
 sites = [
     "H1",
@@ -36,6 +37,9 @@ sites = [
     "H26",
 ]
 hdf5_file_roots = ["{site_code}_{group}_featurematrix.hdf5", DEFAULT_HDF5_FILE_ROOT]
+
+#create demo tmp
+create_test_demos()
 
 @pytest.mark.data
 @pytest.mark.parametrize("hdf5_file_root", hdf5_file_roots)
