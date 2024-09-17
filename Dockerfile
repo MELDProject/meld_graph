@@ -57,7 +57,7 @@ RUN apt-get -y update && \
     tcsh \
     vim \
     csh \
-procps \
+    procps \
     bzip2 \
     ca-certificates \
     bc \
