@@ -25,7 +25,7 @@ In addition to lesion segmentation, the models also contain auxiliary distance r
 For more information check our papers: 
 - [Spitzer, Ripart et al., 2022 Brain - the original MELD FCD pipeline and dataset](https://academic.oup.com/brain/advance-article/doi/10.1093/brain/awac224/6659752)
 - [Spitzer et al., 2023 MICCAI - the updated graph-based model architecture](https://arxiv.org/abs/2306.01375)
-- [Ripart et al., 2024 preprint - MELD Graph evaluation and interpretable reports](todo)
+- Ripart et al., under revisions at JAMA Neurology -  Detection of epileptogenic focal cortical dysplasia using graph neural networks: a MELD study
 
 ## Disclaimer
 
