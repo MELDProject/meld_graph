@@ -57,6 +57,7 @@ RUN apt-get -y update && \
     tcsh \
     vim \
     csh \
+procps \
     bzip2 \
     ca-certificates \
     bc \
@@ -109,6 +110,10 @@ RUN mkdir /data
 # Create a cache directory for fastsurfer, otherwise permission denied
 RUN mkdir /.cache
 RUN chmod -R 777 /.cache
+
+# Create a cache directory for freesurfer, otherwise permission denied
+RUN mkdir /matlab
+RUN chmod -R 777 /matlab
 
 # Set permissions for the entrypoint
 RUN chmod +x entrypoint.sh
