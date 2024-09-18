@@ -44,7 +44,7 @@ git clone --branch v1.1.2 https://github.com/Deep-MI/FastSurfer.git
 :::
 ::::
 
-Note that Fastsurfer requires to install Freesurfer V7.2 to works 
+Note that Fastsurfer requires to install Freesurfer V7.2 to work 
 
 You will need to ensure that Freesurfer is activated in your terminal (you should have some printed FREESURFER paths when opening the terminal). Otherwise you will need to manually activate Freesurfer on each new terminal by running: 
 ```bash
@@ -58,7 +58,7 @@ with `<freesurfer_installation_directory>` being the path to where your Freesurf
 ## Conda installation
 We use [anaconda](https://docs.anaconda.com/anaconda/install/mac-os/) to manage the environment and dependencies. Please follow instructions on [anaconda](https://docs.anaconda.com/anaconda/install/mac-os/) to install Anaconda.
 
-Download the MELD classifier:
+## Download the MELD classifier:
 ::::{tab-set}
 
 :::{tab-item} Download
@@ -79,6 +79,9 @@ git clone https://github.com/MELDProject/meld_graph.git
 
 # enter the meld_graph directory
 cd meld_graph
+
+# copy freesurfer license.txt into the meld directory
+cp $FREESURFER_HOME/license.txt ./
 ```
 :::
 ::::

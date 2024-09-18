@@ -7,8 +7,24 @@ If you wish to use the harmonisation feature of the MELD pipeline, you will need
 ## Running
 
 - Ensure you have installed the MELD pipeline with [docker container](https://meld-graph.readthedocs.io/en/latest/install_docker.html) or [native installation](https://meld-graph.readthedocs.io/en/latest/install_native.html). 
-- Ensure you have [organised your data](https://meld-graph.readthedocs.io/en/latest/prepare_data.html) before running this pipeline
+- Ensure you have [organised your data](https://meld-graph.readthedocs.io/en/latest/prepare_data.html) into MELD or BIDS format before running this pipeline
 - Ensure you have [computed the harmonisation parameters](https://meld-graph.readthedocs.io/en/latest/harmonisation.html) if you want to use the harmonisation parameters 
+
+<div style="display: flex; justify-content: space-between;">
+
+<div style="flex: 1; margin-right: 10px;">
+<strong>MELD format:</strong><br>
+<img src="https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/input_structure_meld_format.png" alt="MELD format">
+</div>
+
+<div style="flex: 1; margin-left: 10px;">
+<strong>BIDS format:</strong><br>
+<img src="https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/input_structure_bids_format.png" alt="BIDS format">
+</div>
+
+</div>
+
+
 
 ::::{tab-set}
 :::{tab-item} Docker

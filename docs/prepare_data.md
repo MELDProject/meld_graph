@@ -6,7 +6,7 @@ If you are preparing the data for the harmonisation step, you will also need to 
 
 ## Prepare the MRI data (Mandatory)
 
-In the 'input' folder where your meld data has / is going to be stored, create a folder for each patient with the id of the subject. 
+In the 'input' folder where your meld data has/is going to be stored, create a folder for each patient with the ID of the subject. 
 
 ### MELD format
 
