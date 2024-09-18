@@ -50,10 +50,15 @@ def prepare_meld_config():
             else:
                 print("Exiting without setting up meld_config.ini.")
                 sys.exit()
-        print(f'The current MELD data folder path is {config.get("DEFAULT", "meld_data_path")}. Would you like to change it? (y/n)')
-        if ("KEEP_DATA_PATH" in os.environ) or (not get_yn_input()):
-            print("Leaving MELD data folder unchanged.")
-            return
+        current_data_path = config.get("DEFAULT", "meld_data_path")
+        #default path /data doesn't work on mac, so ensure they reset if it doesn't exist.
+        if not os.path.isdir(current_data_path) and not ("KEEP_DATA_PATH" in os.environ):
+            print(f'The current MELD data folder path, {config.get("DEFAULT", "meld_data_path")} does not exist. Please reset it now.')
+        else:
+            print(f'The current MELD data folder path is {config.get("DEFAULT", "meld_data_path")}. Would you like to change it? (y/n)')
+            if ("KEEP_DATA_PATH" in os.environ) or (not get_yn_input()):
+                print("Leaving MELD data folder unchanged.")
+                return
     else:
         copy_config()
 
