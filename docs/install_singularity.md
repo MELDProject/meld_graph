@@ -10,18 +10,18 @@ Notes:
 ## Prerequisites
 
 ### Install Singularity
-You will need to have Singularity installed. Most of the HPC will already have Singularity installed. You can check if singularity is installed on your computer by running:
+You will need to have Singularity installed. Most of the HPC will already have Singularity installed or Apptainer. You can check if Singularity/Apptainer is installed on your computer by running:
 ```bash
 singularity --version
 ```
-If this command displays the singularity or apptainer version then it is already installed. If not, please follow the [guidelines](https://docs.sylabs.io/guides/3.0/user-guide/installation.html) to install singularity on your machine.
+If this command displays the singularity or apptainer version already installed. If not, please follow the [guidelines](https://docs.sylabs.io/guides/3.0/user-guide/installation.html) to install singularity on your machine.
 
 
 ## Freesurfer licence
 You will need to download a Freesurfer license.txt to enable Freesurfer/Fastsurfer to perform the segmentation. Please follow the [guidelines](https://surfer.nmr.mgh.harvard.edu/fswiki/License) to download the file and keep a record of the path where you saved it. 
 
 ## Configuration
-In order to run the singularity image, you'll need to  Build the singularity image from the meld_graph docker image. This will create a singularity image called meld_graph.sif where you ran the command. 
+In order to run the singularity image, you'll need to build the singularity image from the meld_graph docker image. This will create a singularity image called meld_graph.sif where you ran the command. 
 
 Make sure you have 20GB of storage space available for the docker
 
@@ -41,7 +41,10 @@ Before being able to use the classifier on your data, data paths need to be set 
 export SINGULARITY_BINDPATH=/<path_to_meld_data_folder>:/data,<path_to_FS_license>/license.txt:/license.txt:ro
 export SINGULARITYENV_FS_LICENSE=/license.txt
 ```
-
+OR with Apptainer
+```bash
+export APPTAINER_BINDPATH=/<path_to_meld_data_folder>:/data,<path_to_FS_license>/license.txt:/license.txt:ro
+export APPTAINERENV_FS_LICENSE=/license.txt
 3. Run this command to download the data folder 
 
 ```bash
