@@ -598,7 +598,7 @@ def generate_prediction_report(
                 ax4 = fig3.add_subplot(gs3[1])
                 display4 = plotting.plot_anat(
                     t1_file, colorbar=False, cut_coords=coords, 
-                    draw_cross=False, radiological=True, annotate=False,
+                    draw_cross=False, radiological=True, annotate=True,
                     figure=fig3, axes=ax4, vmax=vmax
                 )
                 
