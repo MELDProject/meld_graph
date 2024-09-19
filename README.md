@@ -17,15 +17,24 @@ This package is a pipeline to segment FCD-lesions from MRI scans.
 
 ## Notes
 
-This package comes with a pretrained graph based model, trained on harmonised features. New users are advised to follow the guidelines to harmonise the data from their site, but the model will still produce predictions on new, unharmonised subjects.
+This package is intented to be used as a research tool to segment FCD lesions in patients with focal epilepsy where a FCD is suspected. It can be run on 1.5T or 3T MRI data. A 3D T1 is required and it is optional but advised to include the 3D FLAIR. 
 
-It also contains code for training and evaluating graph-based U-net lesion segmentation models operating on icosphere meshes. \
-In addition to lesion segmentation, the models also contain auxiliary distance regression and hemisphere classification losses.
+It is not appropriate to use this algorithm on patients with:
+- suspected hippocampal sclerosis
+- hypothalamic hamartoma
+- periventricular nodular heterotopia
+- other focal epilepsy pathologies
 
-For more information check our papers: 
+** Harmonisation ** - MRI data from different MRI scanners looks subtly different. This means that feature measurements, e.g. cortical thickness measurements, differ depending on which MRI scanner a patient was scanned on. We harmonise features (using NeuroCombat) to adust for site based differences. We advise new users to harmonise data from their MRI scanner to the MELD graph dataset. Please follow the guidelines to harmonise the data from your site. Note: the model will still produce predictions on new, unharmonised subjects but the number of false positive predictions is higher if the data is not harmonised.
+
+This package also contains code for training and evaluating graph-based U-net lesion segmentation models operating on icosphere meshes. \
+In addition to lesion segmentation, the model also contain auxiliary distance regression and hemisphere classification losses.
+
+For more information on how the algorithm was developed and expected performance - check our papers: 
+- Ripart et al., under revisions at JAMA Neurology -  Detection of epileptogenic focal cortical dysplasia using graph neural networks: a MELD study
 - [Spitzer, Ripart et al., 2022 Brain - the original MELD FCD pipeline and dataset](https://academic.oup.com/brain/advance-article/doi/10.1093/brain/awac224/6659752)
 - [Spitzer et al., 2023 MICCAI - the updated graph-based model architecture](https://arxiv.org/abs/2306.01375)
-- Ripart et al., under revisions at JAMA Neurology -  Detection of epileptogenic focal cortical dysplasia using graph neural networks: a MELD study
+
 
 ## Disclaimer
 
