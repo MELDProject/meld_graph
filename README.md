@@ -17,7 +17,7 @@ This package is a pipeline to segment FCD-lesions from MRI scans.
 
 ## Notes
 
-This package is intented to be used as a research tool to segment FCD lesions in patients with focal epilepsy where a FCD is suspected. It can be run on 1.5T or 3T MRI data. A 3D T1 is required and it is optional but advised to include the 3D FLAIR. 
+This package is intended to be used as a research tool to segment FCD lesions in patients with focal epilepsy where a FCD is suspected. It can be run on 1.5T or 3T MRI data. A 3D T1 is required and it is optional but advised to include the 3D FLAIR. 
 
 It is not appropriate to use this algorithm on patients with:
 - suspected hippocampal sclerosis
