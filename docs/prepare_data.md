@@ -1,12 +1,12 @@
 # Prepare the data
 
-The MELD pipeline relies on the MRI data to be organised in the MELD or BIDS format. 
+The MELD pipeline relies on the MRI data being organised in a specific format. The pipeline will accept data in either MELD or BIDS format. 
 
 If you are preparing the data for the harmonisation step, you will also need to prepare the demographic information. 
 
 ## Prepare the MRI data (Mandatory)
 
-In the 'input' folder where your meld data has/is going to be stored, create a folder for each patient with the ID of the subject. 
+In the 'input' folder where your meld data is going to be stored, create a folder for each patient with the ID of the subject. 
 
 ### MELD format
 
@@ -20,7 +20,7 @@ Place the FLAIR nifti file into the FLAIR folder.
 
 ### BIDS format
 
-The MELD pipeline now accept BIDS format as input data. For more information about BIDS format, please refers to their [instructions](https://bids.neuroimaging.io/)
+The MELD pipeline now accepts MRI data in BIDS format. For more information about BIDS format, please refer to their [instructions](https://bids.neuroimaging.io/)
 
 The main key ingredients are : 
 - each subject has a folder following the structure : `sub-<subject_id>`
@@ -52,7 +52,7 @@ Additionally, you will need to have two json files in the `input` folder:
 
 ## Prepare the demographic information (required only to compute the harmonisation parameters)
 
-To compute the harmonisation parameters, you will need to provide a couple of information about the subjects into a csv file. 
+To compute the harmonisation parameters, you will need to provide some information about the subjects into a csv file. 
 
 You can copy the *demographics_file.csv* that you can find in your <meld_data_folder> and create a new version of it with the harmonisation code *demographics_file_<harmo_code>.csv*. (e.g *demographics_file_H1.csv*)
 
@@ -65,6 +65,6 @@ You can copy the *demographics_file.csv* that you can find in your <meld_data_fo
 - Sex: 1 if male, 0 if female
 - Scanner: the scanner strenght associated with the MRI data ('3T' for 3 Tesla or '15T' for 1.5 Tesla)
 
-Note: please ensure to not change the name of the columns and to have completed the files with the appropriate values, otherwise the pipeline will fail. 
+Note: please do NOT change the name of the columns and ensure that you have completed the .csv file with the appropriate values, otherwise the pipeline will fail. 
 
 

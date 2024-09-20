@@ -13,7 +13,7 @@ Basic commands to train and evaluate models are described below. For more detail
 
 
 ## Prepare files
-Before training, we need to prepare scaling (for z-scoring) and augmentation parameters and downscaled icospheres.
+Before training, you will need to prepare scaling (for z-scoring) and augmentation parameters and downscaled icospheres.
 These scripts only need to be run once, and will save parameter files in the `data` folder. A copy of the files we use is provided with this code. To reproduce these files, run:
 - `scripts/data_preparation/create_scaling_parameters.py`: calculates scaling params file.
 - `scripts/data_preparation/create_icospheres.py`: creates downsampled icospheres.

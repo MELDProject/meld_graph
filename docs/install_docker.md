@@ -1,9 +1,12 @@
 # Docker container
 
-The Docker container has all the prerequisites embedded on it which makes it easier to install and compatible with most of the OS systems. 
+The Docker container has all the prerequisites embedded in it. This makes it easier to install and compatible with most of the OS systems. 
 
 Notes: 
-- Currently only tested on **Linux and Windows** (HPC Singularity coming soon, Mac M chip computers have to do a [install_native](https://meld-graph.readthedocs.io/en/latest/install_native.html)
+- Currently only tested on **Linux** 
+- Windows (untested) instructions available
+- HPC Singularity coming soon! 
+- Mac M chip computers need to do a [install_native](https://meld-graph.readthedocs.io/en/latest/install_native.html)
 - You will need **~12GB of space** to install the container
 - The docker image contains Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0+cu111. The whole image is 11.4 GB.  
 
@@ -14,7 +17,7 @@ You will need to have docker installed. You can check if docker is installed on 
 ```bash
 docker --version
 ```
-If this command displays the docker version then it is already installed. If not, please follow the [guidelines](https://docs.docker.com/engine/install/) to install docker on your machine.
+If this command displays the docker version, then it is already installed. If not, please follow the [guidelines](https://docs.docker.com/engine/install/) to install docker on your machine.
 
 :::{admonition} Windows
 :class: tip
@@ -64,7 +67,7 @@ On windows, if you're using absolute paths, use forward slashes and quotes:
       - "C:/Users/John/Desktop/meld-data:/data"
 ```
 :::
-4. In order to use docker as a non-root user, the compose.yml file pass the current user ID to the docker. For that we recommand to add a DOCKER_USER variable in your bashrc file by running:
+4. In order to use docker as a non-root user, the compose.yml file will pass the current user ID to the docker. To enable this, we recommend that you add a DOCKER_USER variable in your bashrc file by running:
 ```
 echo 'export DOCKER_USER="$(id -u):$(id -g)"' >> ~/.bashrc
 ```
@@ -87,14 +90,14 @@ Append `--skip-download-data` to the python call to skip downloading the test da
 
 
 ## Verify installation
-To verify that you have installed all packages, set up paths correctly, and downloaded all data, this verification script will run the pipeline to predict the lesion classifier on a new patient. It takes approximately 15 minutes to run.
+To verify that you have installed all packages, set up paths correctly, and downloaded all data, this verification script will run the pipeline to predict the lesion on a test patient. It takes approximately 15 minutes to run.
 
 ```bash
 docker compose run meld_graph pytest
 ```
 
 ### Errors
-If you run into errors at this stage and need help, you can re-run by changing the last line of the command by the command below to save the terminal outputs in a txt file. Please send `pytest_errors.log` to us so we can work with you to solve any problems. [How best to reach us.](#contact)
+If you run into errors at this stage and need help, you can re-run the test by changing the last line of the command to the command below. This will save the terminal outputs in a txt file. Please send `pytest_errors.log` to us so we can work with you to solve any problems. [How best to reach us.](#contact)
 
 ::::{tab-set}
 
@@ -129,7 +132,7 @@ deploy:
           count: all
 ```
 
-To disable gpus, change it back to `0`.
+To disable gpus, change count back from `all` to `0`.
 
 ## FAQs
 Please see our [FAQ](https://meld-graph.readthedocs.io/en/latest/FAQs.html) for common installation problems.

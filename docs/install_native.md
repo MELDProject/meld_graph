@@ -1,6 +1,7 @@
 # Native installation 
 
-The native installation of the MELD graph enables more freedom to change the code and run your the scripts and notebook to train / evaluate your own classifier.
+The native installation of MELD graph is recommended for Mac users. 
+It is also recommended for users that want to change/ edit the code to train / evaluate their own classifiers or to run the notebooks to regenerate the figures from the paper. 
 
 ::::{tab-set}
 :::{tab-item} Mac
@@ -19,7 +20,7 @@ Note: Windows native installation has not been tested. The MELD team highly reco
 ::::
 
 ## Prerequisites
-For preprocessing, MELD classifier requires Freesurfer. It is trained on data from versions 6 & v5.3, but compatible with Freesurfer **version up to V7.2**. You must already have a freesurfer `license.txt` that was obtained by [following the instructions on their wiki](https://surfer.nmr.mgh.harvard.edu/fswiki/License).
+For preprocessing, the MELD classifier requires Freesurfer. It is trained on data from versions 6 & v5.3, but compatible with Freesurfer **version up to V7.2**. You must already have a freesurfer `license.txt` that was obtained by [following the instructions on their wiki](https://surfer.nmr.mgh.harvard.edu/fswiki/License).
 
 :::{warning}
 MELD will not work on Freesurfer v7.3 and above
@@ -121,7 +122,7 @@ Then, it will ask for the the location of your **MELD data folder** and download
 Note: You can also skip the downloading of the test data. For this, append the option `--skip-download-data` to the call.
 
 ## Verify installation
-We provide a test script to allow you to verify that you have installed all packages, set up paths correctly, and downloaded all data. This script will run the pipeline to predict the lesion classifier on a new patient. It takes approximately 15minutes to run.
+We provide a test script to allow you to verify that you have installed all packages, set up paths correctly, and downloaded all data. This script will run the pipeline to predict the lesion on a test patient. It takes approximately 15 minutes to run.
 
 ```bash
 cd <path_to_meld_graph>

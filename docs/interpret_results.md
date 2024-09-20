@@ -1,24 +1,23 @@
 # Interpretation of the MELD pipeline results
 
-The precalculated .png images of predicted lesions and their associated saliencies can be used to look at the predicted clusters and why they were detected by the classifier. The MELD pdf report provides a summary of all the prediction for a subject.
+The precalculated .png images of predicted lesions and their associated saliencies can be used to look at the predicted clusters and why they were detected by the classifier. The MELD pdf report provides a summary of all the predictions for a subject.
 
-After viewing these images, we recommend then viewing the predictions superimposed on the T1 volume. This will enable:
+After viewing the PDF report, we recommend viewing the predictions superimposed on the T1 volume. This will enable:
 - Re-review of the T1 /FLAIR at the predicted cluster locations to see if an FCD can now be seen
 - Performing quality control
-- Viewing the .png images of predicted lesions
 
 #### Main outputs
 
 The predictions are saved as NIFTI files in the folder: 
 /output/predictions_reports/<subject_id>/predictions
-- prediction.nii.gz corresponds to the prediction mask for the whole brain
-- lh.prediction.nii.gz and rh.prediction.nii.gz correspond to the predictions masks for left and right hemispheres
+- prediction.nii.gz corresponds to all the prediction across the whole brain
+- lh.prediction.nii.gz and rh.prediction.nii.gz correspond to the predictions masks for left and right hemispheres separately
 
 *For native installation only*: You can merge the MELD predictions onto the T1 nifti file using the command below. Note that you will need to have [FSL](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation) installed on your machine. 
 ```bash
 ./meldgraph.sh merge_predictions_t1.py -id <subject_id> -t1 <path_to_t1_nifti> -pred <path_to_meld_prediction_nifti> -output_dir <where_to_save_output>
 ```
-The command will create the file predictions_merged_t1.nii.gz which corresponds to the predictions masks merged with T1 in RGB format. It can be viewed on RGB viewer or used to transfert on PACS system.
+The command will create the file predictions_merged_t1.nii.gz which corresponds to the predictions masks merged with T1 in RGB format. It can be viewed on RGB viewer or used to transfer onto the PACS system.
 
 
 #### Viewing the predicted clusters
@@ -26,7 +25,7 @@ The MELD pdf report and .png images of the predicted lesions are saved in the fo
  /output/predictions_reports/<subject_id>/reports
  
 
-The first image is called inflatbrain_<subject_id>.png
+The first image on the report is called inflatbrain_<subject_id>.png
 
 ![inflated](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/inflatbrain_sub-test001.png)
 
@@ -38,7 +37,7 @@ E.g.
 
 ![mri](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/mri_sub-test001_right_c1.png)
 
-These images show the cluster on the volumetric T1 image in red and the 20% most salient voxels (i.e. with high confidence) in orange. Each cluster has its own image e.g.  mri_<subject_id>_<hemi>_c1.png for cluster 1 and  mri_<subject_id>_<hemi>_c2.png for cluster 2.
+These images show each cluster on the volumetric T1 image in red. The 20% most salient voxels (i.e. the most important voxels to the classifiers prediction and those with the highest confidence of being leisonal) are in orange. Each cluster has its own image e.g.  mri_<subject_id>_<hemi>_c1.png for cluster 1 and  mri_<subject_id>_<hemi>_c2.png for cluster 2.
 
   
 #### Saliency
@@ -55,7 +54,7 @@ These detail:
 * The z-scores of the patient’s cortical features averaged within the cluster. In this example, the most abnormal features are the intrinsic curvature (folding measure) and the sulcal depth.
 * The saliency of each feature to the network - if a feature is brighter pink, that feature was more important to the network. In this example, the intrinsic curvature is most important to the network’s prediction
 
-On the surfaces plot, the predicted cluster are plotted in red and the 20% most salient vertices of this cluster are plotted in orange. 
+On the surfaces plot, the predicted cluster is plotted in red and the 20% most salient vertices of this cluster are plotted in orange. 
 
 The features that are included in the saliency image are:
 * **Grey-white contrast**: indicative of blurring at the grey-white matter boundary, lower z-scores indicate more blurring
@@ -72,9 +71,9 @@ The information hereabove mentioned about each cluster are summarised into the c
 
 #### Viewing the predictions on the T1 and quality control
 
-It is important to check that the clusters detected are not due to obvious FreeSurfer reconstruction errors, scan artifacts etc.
+It is important to check that the clusters detected are not due to obvious FreeSurfer reconstruction errors, scan artefacts etc.
 
-Note: The following commands works only with a native installation. Guidelines for docker and singularity users will come soon.  
+Note: The following commands only work with a native installation. Guidelines for docker and singularity users will come soon.  
 
 Run with native installation: 
 ```bash
@@ -91,10 +90,10 @@ Example of a predicted cluster (orange) on the right hemisphere. It is overlaid 
 
 **Things to check for each predicted cluster:**
 
-1. Are there any artifacts in the T1 or FLAIR data that could have caused the classifier to predict that area?
+1. Are there any artefacts in the T1 or FLAIR data that could have caused the classifier to predict that area?
 
 2. Check the .pial and .white surfaces at the locations of any predicted clusters. 
-Are they following the grey-white matter boundary and pial surface? If not, you need to try and establish if this is just a reconstruction error or if the error is due to the presence of an FCD. If it is just an error or due to an artifact, exclude this prediction. If it is due to an FCD, be aware that the centroid  / extent of the lesion may have been missed due to the reconstruction error and that some of the lesion may be adjacent to the predicted cluster. 
+Are they following the grey-white matter boundary and pial surface? If not, you need to try and establish if this is just a reconstruction error or if the error is due to the presence of an FCD. If it is just an error or due to an artefact, exclude this prediction. If it is due to an FCD, be aware that the centroid  / extent of the lesion may have been missed due to the reconstruction error and that some of the lesion may be adjacent to the predicted cluster. 
 
 Note: the classifier is only able to predict areas within the pial and white surfaces.
 
@@ -103,6 +102,6 @@ Note: the classifier is only able to predict areas within the pial and white sur
 **Limitations to be aware of:**
 
 * If there is a reconstruction error due to an FCD, the classifier will only be able to detect areas within the pial and white surfaces and may miss areas of the lesion that are not correctly segmented by FreeSurfer
-* There will be false positive clusters. You will need to look at the predicted clusters with an experienced radiologist to identify the significance of detected areas
+* There may be false positive clusters. You will need to look at the predicted clusters with an experienced radiologist to identify the significance of detected areas
 * The classifier has only been trained on FCD lesions and we do not have data on its ability to detect other pathologies e.g. DNET / ganglioglioma / polymicrogyria. As such, the research tool should only be applied to patients with FCD / suspected FCD
 * Performance of the classifier varies according to MRI field strength, data available (e.g. T1 or T1 and FLAIR) and histopathological subtype. For more details of how the classifier performs in different cohorts, see [our paper](https://arxiv.org/abs/2306.01375).

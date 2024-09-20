@@ -1,6 +1,6 @@
 # Singularity container
 
-The Singularity container has been created to be used on HPC supporting Linux as they do not work with Docker container. If you are not working on a HPC, we recommend to install the docker version of container. 
+The Singularity container has been created to be used on HPCs supporting Linux as HPCs do not work with Docker container. If you are not working on a HPC, we recommend to install the docker version of the container. 
 
 Notes: 
 - The Singularity image is built from the Docker container. 
@@ -10,7 +10,7 @@ Notes:
 ## Prerequisites
 
 ### Install Singularity
-You will need to have Singularity installed. Most of the HPC will already have Singularity installed. You can check if singularity is installed on your computer by running:
+You will need to have Singularity installed. Most HPCs will already have Singularity installed. You can check if singularity is installed on your computer by running:
 ```bash
 singularity --version
 ```
@@ -50,7 +50,7 @@ singularity exec meld_graph.sif /bin/bash -c "cd /app && python scripts/new_pati
 It will download the data in the meld_data folder you set up in step 2. 
 
 ## Verify installation
-To verify that you have installed all packages, set up paths correctly, and downloaded all data, this verification script will run the pipeline to predict the lesion classifier on a new patient. It takes approximately 15 minutes to run.
+To verify that you have installed all packages, set up paths correctly, and downloaded all data, this verification script will run the pipeline to predict the lesion on a test patient. It takes approximately 15 minutes to run.
 
 ```bash
 singularity exec meld_graph.sif /bin/bash -c "cd /app && pytest -s"
