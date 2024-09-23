@@ -74,7 +74,7 @@ def data_parameters():
 # Dataset class tests
 def test_dataset_flags(data_parameters):
     create_test_demos()
-    c = MeldCohort(hdf5_file_root=data_parameters["hdf5_file_root"])
+    c = MeldCohort(hdf5_file_root=data_parameters["hdf5_file_root"], dataset='/tmp/dataset_test.csv')
 
     subject_ids = c.get_subject_ids(**data_parameters)
     subject_ids = subject_ids[0:5]

@@ -21,10 +21,6 @@ import tempfile
 import pandas as pd
 from meld_graph.test.utils import create_test_demos
 
-# @pytest.fixture(autouse=True)
-# def setup_teardown_tests():
-#     get_test_data()
-#     yield
 
 create_test_demos()
 
@@ -33,7 +29,7 @@ create_test_demos()
 )
 def test_features_overlap_with_list(hdf5_file_root):
     """test if computed full_feature_list overlaps with manual feature list"""
-    c = MeldCohort(hdf5_file_root=hdf5_file_root)
+    c = MeldCohort(hdf5_file_root=hdf5_file_root, dataset='/tmp/dataset_test.csv')
     if len(c.get_subject_ids()) == 0:
         warnings.warn("hdf5_file_root {hdf5_file_root} does not seem to exist on this system. Skipping this test.")
         return
@@ -98,7 +94,7 @@ def test_features_overlap_with_list(hdf5_file_root):
 
 def test_features_consistent():
     """test that all subjects in cohort have same features"""
-    c = MeldCohort(hdf5_file_root=DEFAULT_HDF5_FILE_ROOT)
+    c = MeldCohort(hdf5_file_root=DEFAULT_HDF5_FILE_ROOT, dataset='/tmp/dataset_test.csv')
     features = c.full_feature_list
     for subj_id in c.get_subject_ids():
         for hemi in ["lh", "rh"]:
@@ -108,13 +104,13 @@ def test_features_consistent():
 
 
 def test_get_sites():
-    c = MeldCohort(hdf5_file_root=DEFAULT_HDF5_FILE_ROOT)
+    c = MeldCohort(hdf5_file_root=DEFAULT_HDF5_FILE_ROOT, dataset='/tmp/dataset_test.csv')
     # TEST must be in sites, because we just created test data
     assert "TEST" in c.get_sites()
 
 
 def test_cortex_label():
-    c = MeldCohort(hdf5_file_root=DEFAULT_HDF5_FILE_ROOT)
+    c = MeldCohort(hdf5_file_root=DEFAULT_HDF5_FILE_ROOT, dataset='/tmp/dataset_test.csv')
     # check that cortex is ordered list
     assert ((c.cortex_label[1:] - c.cortex_label[:-1]) > 0).all()
 
@@ -124,7 +120,7 @@ def test_get_subject_ids():
     tests MeldCohort.get_subject_ids
     ensure that returned subjects are filtered correctly
     """
-    c = MeldCohort(hdf5_file_root=DEFAULT_HDF5_FILE_ROOT)
+    c = MeldCohort(hdf5_file_root=DEFAULT_HDF5_FILE_ROOT, dataset='/tmp/dataset_test.csv')
 
     # test site_codes flag
     all_subjects = c.get_subject_ids(site_codes="TEST")
@@ -139,7 +135,7 @@ def test_get_subject_ids():
     assert len(all_subjects) == len(patients) + len(controls)
 
     # test subject_features_to_exclude flag
-    flair_subjects = c.get_subject_ids(site_codes="H2", subject_features_to_exclude=["FLAIR"])
+    flair_subjects = c.get_subject_ids(site_codes="TEST", subject_features_to_exclude=["FLAIR"])
     _, flair_features = c._filter_features(features_to_exclude=["FLAIR"], return_excluded=True)
     for subj_id in flair_subjects:
         # does this subject have flair features?
@@ -154,7 +150,7 @@ def test_get_subject_ids():
 
 
 def test_get_subject_ids_with_dataset():
-    c = MeldCohort(hdf5_file_root=DEFAULT_HDF5_FILE_ROOT)
+    c = MeldCohort(hdf5_file_root=DEFAULT_HDF5_FILE_ROOT,  dataset='/tmp/dataset_test.csv')
     ds_site_codes = ["TEST"]
 
     # create temp dataset file
@@ -176,7 +172,7 @@ def test_get_subject_ids_with_dataset():
 
 
 def test_split_hemispheres():
-    c = MeldCohort(hdf5_file_root=DEFAULT_HDF5_FILE_ROOT)
+    c = MeldCohort(hdf5_file_root=DEFAULT_HDF5_FILE_ROOT, dataset='/tmp/dataset_test.csv')
     # test that splits data correctly
     # create data with ones for left hemi, twoes for right hemi
     input_data = np.concatenate([np.ones(len(c.cortex_label)), np.ones(len(c.cortex_label)) * 2])

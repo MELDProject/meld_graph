@@ -5,7 +5,7 @@
 #   load_feature_lesion_data
 #   other MeldSubject functions (just syntax)
 # NOTE:
-#   these tests require a test dataset, that is created with get_test_data()
+#   these tests require a test dataset, that is downloaded with prepare_classifier.py
 #   executing this function may take a while the first time (while the test data is being created)
 # MISSING TESTS:
 # - more extensive tests for functions tested in test_meldsubject_api (just tests for syntax)
@@ -23,7 +23,7 @@ def test_subject_parse():
     """
     test if MeldSubject.site_code, .group, .scanner work as expected
     """
-    c = MeldCohort(hdf5_file_root=DEFAULT_HDF5_FILE_ROOT)
+    c = MeldCohort(hdf5_file_root=DEFAULT_HDF5_FILE_ROOT, dataset='/tmp/dataset_test.csv')
     subj = MeldSubject("MELD_TEST_15T_FCD_0002", c)
     assert subj.site_code == "TEST"
     assert subj.scanner == "15T"
@@ -31,7 +31,7 @@ def test_subject_parse():
 
 
 def test_get_lesion_hemisphere():
-    c = MeldCohort(hdf5_file_root=DEFAULT_HDF5_FILE_ROOT)
+    c = MeldCohort(hdf5_file_root=DEFAULT_HDF5_FILE_ROOT,  dataset='/tmp/dataset_test.csv')
     # ensure that patients have a lesional hemisphere
     patients = c.get_subject_ids(site_codes="TEST", group="patient", lesional_only=True)
     for subj_id in patients:
@@ -54,7 +54,7 @@ def test_meldsubject_api(subj_id, hdf5_file_root):
     """
     # get_test_data()
 
-    c = MeldCohort(hdf5_file_root=hdf5_file_root)
+    c = MeldCohort(hdf5_file_root=hdf5_file_root,  dataset='/tmp/dataset_test.csv')
     subj = MeldSubject(subj_id, cohort=c)
 
     subj.get_demographic_features("Age")
@@ -73,7 +73,7 @@ def test_load_feature_lesion_data(subj_id, hdf5_file_root):
     # TODO also test on TEST site where we know the expected feature values?
     # get_test_data()
 
-    c = MeldCohort(hdf5_file_root=hdf5_file_root)
+    c = MeldCohort(hdf5_file_root=hdf5_file_root,  dataset='/tmp/dataset_test.csv')
     subj = MeldSubject(subj_id, cohort=c)
     lesion_hemi = subj.get_lesion_hemisphere()
     for hemi in ["lh", "rh"]:
