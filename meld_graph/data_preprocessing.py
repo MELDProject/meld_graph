@@ -508,7 +508,7 @@ class Preprocess:
                     )
         
     def make_boundary_zones(self, smoothing=0, boundary_feature_name=".on_lh.boundary_zone.mgh"):
-        import pp3d
+        import potpourri3d as pp3d
         # preload geodesic distance solver
         solver = pp3d.MeshHeatMethodDistanceSolver(self.cohort.surf["coords"], self.cohort.surf["faces"])
 
