@@ -24,8 +24,9 @@ It is not appropriate to use this algorithm on patients with:
 - hypothalamic hamartoma
 - periventricular nodular heterotopia
 - other focal epilepsy pathologies
+- previous resection cavities
 
-** Harmonisation ** - MRI data from different MRI scanners looks subtly different. This means that feature measurements, e.g. cortical thickness measurements, differ depending on which MRI scanner a patient was scanned on. We harmonise features (using NeuroCombat) to adust for site based differences. We advise new users to harmonise data from their MRI scanner to the MELD graph dataset. Please follow the guidelines to harmonise the data from your site. Note: the model will still produce predictions on new, unharmonised subjects but the number of false positive predictions is higher if the data is not harmonised.
+**Harmonisation** - MRI data from different MRI scanners looks subtly different. This means that feature measurements, e.g. cortical thickness measurements, differ depending on which MRI scanner a patient was scanned on. We harmonise features (using NeuroCombat) to adust for site based differences. We advise new users to harmonise data from their MRI scanner to the MELD graph dataset. Please follow the guidelines to harmonise the data from your site. Note: the model will still produce predictions on new, unharmonised subjects but the number of false positive predictions is higher if the data is not harmonised.
 
 This package also contains code for training and evaluating graph-based U-net lesion segmentation models operating on icosphere meshes. \
 In addition to lesion segmentation, the model also contain auxiliary distance regression and hemisphere classification losses.
