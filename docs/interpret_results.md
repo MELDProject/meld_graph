@@ -77,7 +77,7 @@ Note: The following commands only work with a native installation. Guidelines fo
 
 Run with native installation: 
 ```bash
-./meldgraph.sh new_pt_qc_script.py -id <subject_id>
+./meldgraph.sh new_pt_qc_script -id <subject_id>
 ```
 ![qc_surface](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/qc_surface.png)
 
