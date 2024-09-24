@@ -2,16 +2,23 @@ import os,sys,json,subprocess
 
 def setup():
     from meld_graph.paths import MELD_DATA_PATH
+    # Should only be run on mac
     if not "FREESURFER_HOME" in os.environ:
         if sys.platform == "darwin":
             if os.path.exists("/Applications/freesurfer/7.2.0"):
                 os.environ["FREESURFER_HOME"] = "/Applications/freesurfer/7.2.0"
-        
+
+    # check if FREESURFER_HOME is set up correctly
     freesurfercheck = subprocess.run(['/bin/bash', '-c', "which freeview"], capture_output=True)
+    # Load freesurfer environment variables. This is equivalent to running the source command in a shell then running python, but for ease of use we set it up in process. 
     if freesurfercheck.returncode > 0:
+        # A command that sources freesurfer
         source = 'source /Applications/freesurfer/7.2.0/SetUpFreeSurfer.sh'
+        # Grab all of the environment variables 
         dump = 'python -c "import os,json;print(json.dumps(dict(os.environ)))"'
+        # Source freesufer then grab all of the environment variables and store in penv
         penv = subprocess.run(["/bin/bash", "-c", f"{source} && {dump}"], stdout=subprocess.PIPE)
+        # Load the environment variables in this process
         env = json.loads(penv.stdout)
         os.environ.update(env)
     if not "FS_LICENSE" in os.environ:
