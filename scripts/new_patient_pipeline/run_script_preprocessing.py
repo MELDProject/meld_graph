@@ -17,7 +17,7 @@ import shutil
 from os.path import join as opj
 from meld_graph.meld_cohort import MeldCohort
 from meld_graph.data_preprocessing import Preprocess, Feature
-from meld_graph.tools_pipeline import get_m, create_demographic_file
+from meld_graph.tools_pipeline import get_m, create_demographic_file, create_dataset_file
 from meld_graph.paths import (
                             BASE_PATH, 
                             MELD_PARAMS_PATH, 
@@ -27,14 +27,6 @@ from meld_graph.paths import (
                             NORM_CONTROLS_PARAMS_FILE, 
                             )   
 
-
-def create_dataset_file(subjects_ids, save_file):
-    df=pd.DataFrame()
-    if  isinstance(subjects_ids, str):
-        subjects_ids=[subjects_ids]
-    df['subject_id']=subjects_ids
-    df['split']=['test' for subject in subjects_ids]
-    df.to_csv(save_file)
 
 def which_combat_file(harmo_code):
     file_site=os.path.join(BASE_PATH, f'MELD_{harmo_code}', f'{harmo_code}_combat_parameters.hdf5')

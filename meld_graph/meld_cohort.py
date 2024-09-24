@@ -236,7 +236,7 @@ class MeldCohort:
         else:
             groups = [kwargs.get("group", "both")]
         # get sites
-        site_codes = kwargs.get("harmo code", self.get_sites())
+        site_codes = kwargs.get("site_codes", self.get_sites())
         if isinstance(site_codes, str):
             site_codes = [site_codes]
         # get scanners

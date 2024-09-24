@@ -224,14 +224,6 @@ def extract_features(subject_id, fs_folder, output_dir, verbose=False):
     result = create_training_data_hdf5(subject_id, fs_folder, output_dir  )
     if result == False:
         return False
-
-def create_dataset_file(subjects, output_path):
-    df=pd.DataFrame()
-    subjects_id = [subject for subject in subjects]
-    df['subject_id']=subjects_id
-    df['split']=['test' for subject in subjects]
-    df.to_csv(output_path)
-
  
 def run_subjects_segmentation_parallel(subject_ids, num_procs=10, harmo_code="noHarmo", use_fastsurfer=False, verbose=False):
     # parallel version of the pipeline, finish each stage for all subjects first

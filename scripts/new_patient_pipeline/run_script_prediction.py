@@ -31,15 +31,8 @@ from meld_graph.meld_cohort import MeldCohort
 from scripts.manage_results.register_back_to_xhemi import register_subject_to_xhemi
 from scripts.manage_results.move_predictions_to_mgh import move_predictions_to_mgh
 from scripts.manage_results.plot_prediction_report import generate_prediction_report
-from meld_graph.tools_pipeline import get_m, create_demographic_file
+from meld_graph.tools_pipeline import get_m, create_demographic_file, create_dataset_file
 
-def create_dataset_file(subjects_ids, save_file):
-    df=pd.DataFrame()
-    if  isinstance(subjects_ids, str):
-        subjects_ids=[subjects_ids]
-    df['subject_id']=subjects_ids
-    df['split']=['test' for subject in subjects_ids]
-    df.to_csv(save_file)
 
 def predict_subjects(subject_ids, output_dir, plot_images = False, saliency=False,
     experiment_path=EXPERIMENT_PATH, hdf5_file_root= DEFAULT_HDF5_FILE_ROOT,):       

@@ -109,3 +109,11 @@ def create_demographic_file(subjects_ids, save_file, harmo_code='noHarmo'):
     df['Group']=['patient' for subject in subjects_ids]
     df['Scanner']=['3T' for subject in subjects_ids]
     df.to_csv(save_file)
+    
+def create_dataset_file(subjects_ids, save_file):
+    df=pd.DataFrame()
+    if  isinstance(subjects_ids, str):
+        subjects_ids=[subjects_ids]
+    df['subject_id']=subjects_ids
+    df['split']=['test' for subject in subjects_ids]
+    df.to_csv(save_file)
