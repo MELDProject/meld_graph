@@ -45,8 +45,9 @@ OR with Apptainer
 ```bash
 export APPTAINER_BINDPATH=/<path_to_meld_data_folder>:/data,<path_to_FS_license>/license.txt:/license.txt:ro
 export APPTAINERENV_FS_LICENSE=/license.txt
-3. Run this command to download the data folder 
+```
 
+3. Run this command to download the data folder 
 ```bash
 singularity exec meld_graph.sif /bin/bash -c "cd /app && python scripts/new_patient_pipeline/prepare_classifier.py "
 ```

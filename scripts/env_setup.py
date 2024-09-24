@@ -7,10 +7,8 @@ def setup():
         if sys.platform == "darwin":
             if os.path.exists("/Applications/freesurfer/7.2.0"):
                 os.environ["FREESURFER_HOME"] = "/Applications/freesurfer/7.2.0"
-
-    # check if FREESURFER_HOME is set up correctly
-    freesurfercheck = subprocess.run(['/bin/bash', '-c', "which freeview"], capture_output=True)
-    # Load freesurfer environment variables. This is equivalent to running the source command in a shell then running python, but for ease of use we set it up in process. 
+        
+    freesurfercheck = subprocess.run(['/bin/bash', '-c', "type freeview"], capture_output=True)
     if freesurfercheck.returncode > 0:
         # A command that sources freesurfer
         source = 'source /Applications/freesurfer/7.2.0/SetUpFreeSurfer.sh'
@@ -25,7 +23,7 @@ def setup():
         if os.path.exists(f"{MELD_DATA_PATH}/license.txt"):
             print("setting license" + f"{MELD_DATA_PATH}/license.txt")
             os.environ["FS_LICENSE"] = f"{MELD_DATA_PATH}/license.txt"
-        elif os.path.exists(f"{os.getcwd()}/license.txt"):
+        if os.path.exists(f"{os.getcwd()}/license.txt"):
             print("setting license" + f"{os.getcwd()}/license.txt")
             os.environ["FS_LICENSE"] = f"{os.getcwd()}/license.txt"
         else:
