@@ -584,7 +584,7 @@ def generate_prediction_report(
                         alpha=0.7,
                         linestyles="solid",
                     )
-                # display cluster salient vertices
+                # display cluster salient vertices 
                 map_img = new_img_like(imgs["pred"], as_ndarray(data==cluster*100).astype(float), imgs["pred"].affine)
                 display3.add_contours(
                         map_img,
