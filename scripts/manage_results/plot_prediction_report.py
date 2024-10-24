@@ -175,11 +175,15 @@ def define_atlas():
     return rois, vertex_i, rois_prop
 
 def get_cluster_location(cluster_array):
-    cluster_array = np.array(cluster_array)
+    ''' Find centre of mass of prediction
+        Return ROI from desikan kiliany atlas'''
+    verts,faces=nb.freesurfer.io.read_geometry(os.path.join(MELD_PARAMS_PATH,
+                                                    'fsaverage_sym','surf','lh.sphere'))
+    cluster_array = np.array(cluster_array).astype(bool)
+    center_coords= np.mean(verts[cluster_array],axis=0)
+    center_vert = np.argsort((np.abs(verts-center_coords).mean(axis=1)))[0]
     rois, vertex_i, rois_prop = define_atlas()
-    pred_rois = list(vertex_i[cluster_array])
-    pred_rois = np.array([[x, pred_rois.count(x)] for x in set(pred_rois) if x != 0])
-    ind = pred_rois[np.where(pred_rois == pred_rois[:,1].max())[0]][0][0]
+    ind = vertex_i[center_vert]
     location = get_key(rois,ind)
     return location
 
