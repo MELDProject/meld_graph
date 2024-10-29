@@ -53,7 +53,7 @@ MODEL_NAME = 'best_model'
     
     
 # qc-ed demographic features
-DEMOGRAPHIC_FEATURES_FILE = "/tmp/demographics_file.csv"
+DEMOGRAPHIC_FEATURES_FILE = f"/tmp/demographics_file_{os.getpid()}.csv"
 
 #surface files
 CORTEX_LABEL_FILE = os.path.join("fsaverage_sym", "label", "lh.cortex.label")
