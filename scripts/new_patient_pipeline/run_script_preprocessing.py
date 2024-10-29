@@ -165,7 +165,7 @@ def run_data_processing_new_subjects(subject_ids, harmo_code, compute_harmonisat
                                data_dir=output_dir)
             #features names
             for feature in features_smooth:
-                print(get_m(f' Smoothing feature {feature}', None, 'STEP'))
+                print(get_m(f'Combat feature {feature}', None, 'STEP'))
                 combat.combat_new_subject(feature, combat_params_file)
         else:
             #transfer smoothed features as combat features
