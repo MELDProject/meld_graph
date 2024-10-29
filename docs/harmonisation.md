@@ -39,7 +39,7 @@ docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipelin
 Open a terminal and `cd` to the meld graph folder.
 
 ```bash
-./meldgraph.sh new_pt_pipeline -harmo_code <harmo_code> -ids <subjects_list> -demos <demographic_file> --harmo_only
+./meldgraph.sh new_pt_pipeline.py -harmo_code <harmo_code> -ids <subjects_list> -demos <demographic_file> --harmo_only
 ```
 :::
 ::::

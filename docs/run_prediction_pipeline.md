@@ -49,7 +49,7 @@ source $FREESURFER_HOME/SetUpFreeSurfer.sh
 
 Then run the command
 ```bash
-./meldgraph.sh new_pt_pipeline -id <subject_id> 
+./meldgraph.sh new_pt_pipeline.py -id <subject_id> 
 ```
 :::
 ::::
@@ -93,7 +93,7 @@ docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipelin
 :::{tab-item} Native
 :sync: native
 ```bash
-./meldgraph.sh new_pt_pipeline -id sub-001 --fastsurfer
+./meldgraph.sh new_pt_pipeline.py -id sub-001 --fastsurfer
 ```
 :::
 ::::
@@ -103,14 +103,14 @@ To run the whole prediction pipeline on 1 subject using harmonisation code H1:
 :::{tab-item} Docker
 :sync: docker
 ```bash
-docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.pyy -id sub-001 -harmo_code H1
+docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -id sub-001 -harmo_code H1
 ```
 :::
 
 :::{tab-item} Native
 :sync: native
 ```bash
-./meldgraph.sh new_pt_pipeline -id sub-001 -harmo_code H1
+./meldgraph.sh new_pt_pipeline.py -id sub-001 -harmo_code H1
 ```
 :::
 ::::
@@ -127,7 +127,7 @@ docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipelin
 :::{tab-item} Native
 :sync: native
 ```bash
-./meldgraph.sh new_pt_pipeline -ids list_subjects.txt --parallelise
+./meldgraph.sh new_pt_pipeline.py -ids list_subjects.txt --parallelise
 ```
 :::
 ::::
@@ -147,6 +147,22 @@ This script:
     * Moves the features to the template surface
     * Write feature in hdf5
    
+Example to use it on one patient without harmonisation:
+::::{tab-set}
+:::{tab-item} Docker
+:sync: docker
+```bash
+docker compose run meld_graph python scripts/new_patient_pipeline/run_script_segmentation.py -id sub-001
+```
+:::
+
+:::{tab-item} Native
+:sync: native
+```bash
+./meldgraph.sh run_script_preprocessing.py -id run_script_segmentation-001
+```
+:::
+::::
 
 To know more about the script and how to use it on its own:
 ::::{tab-set}
@@ -179,6 +195,23 @@ This script :
   - Features need to have been extracted using script 1. 
   - (optional): this script can also be called to harmonise your data for new harmonisation code but will need to pass a file containing demographics information.
 
+Example to use it on one patient without harmonisation:
+::::{tab-set}
+:::{tab-item} Docker
+:sync: docker
+```bash
+docker compose run meld_graph python scripts/new_patient_pipeline/run_script_preprocessing.py -id sub-001
+```
+:::
+
+:::{tab-item} Native
+:sync: native
+```bash
+./meldgraph.sh run_script_preprocessing.py -id sub-001
+```
+:::
+::::
+
 To know more about the script and how to use it on its own:
 ::::{tab-set}
 :::{tab-item} Docker
@@ -205,6 +238,23 @@ This script :
 
 Notes: 
 - Features need to have been processed using script 2 and Freesurfer outputs need to be available for each subject
+
+Example to use it on one patient without harmonisation:
+::::{tab-set}
+:::{tab-item} Docker
+:sync: docker
+```bash
+docker compose run meld_graph python scripts/new_patient_pipeline/run_script_prediction.py -id sub-001
+```
+:::
+
+:::{tab-item} Native
+:sync: native
+```bash
+./meldgraph.sh run_script_prediction.py -id sub-001
+```
+:::
+::::
 
 To know more about the script and how to use it on its own:
 ::::{tab-set}

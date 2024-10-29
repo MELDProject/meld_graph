@@ -111,7 +111,7 @@ pip install -e .
 ## Set up paths and download model
 Before being able to use the classifier on your data, some paths need to be set up and the pretrained model needs to be downloaded. For this, run:
 ```bash
-./meldgraph.sh prepare_classifier
+./meldgraph.sh prepare_classifier.py
 ```
 
 This script will ask you if you want to change the path to the data folder, answer **'y'** for yes. \
