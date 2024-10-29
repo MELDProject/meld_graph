@@ -1,9 +1,11 @@
 # Docker container
 
+**WARNING: Installation and use not yet tested on Windows. Please do let us know if you are succeeding / failing to use the docker container on Windows**
+
 The Docker container has all the prerequisites embedded on it which makes it easier to install and compatible with most of the OS systems. 
 
 Notes: 
-- Currently only tested on **Linux and Windows** (HPC Singularity coming soon, Mac M chip computers have to do a [install_native](https://meld-graph.readthedocs.io/en/latest/install_native.html)
+- Currently only tested on **Linux** (Not yet tested on Windows, HPC users should use the [Singularity version (not tested yet)](https://meld-graph.readthedocs.io/en/latest/install_singularity.html), Mac M chip computers have to do a [install_native](https://meld-graph.readthedocs.io/en/latest/install_native.html))
 - You will need **~12GB of space** to install the container
 - The docker image contains Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0+cu111. The whole image is 11.4 GB.  
 
