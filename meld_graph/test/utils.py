@@ -2,8 +2,10 @@ import os
 import h5py
 import numpy as np
 import pandas as pd
-from meld_graph.paths import BASE_PATH, DEFAULT_HDF5_FILE_ROOT, MELD_DATA_PATH
+from meld_graph.paths import BASE_PATH, DEFAULT_HDF5_FILE_ROOT, MELD_DATA_PATH, DEMOGRAPHIC_FEATURES_FILE
 from meld_graph.tools_pipeline import create_dataset_file
+
+print(DEMOGRAPHIC_FEATURES_FILE)
 
 def create_test_demos():
     data = {"ID":{"0":"sub-test001","1":"MELD_TEST_15T_C_0001","2":"MELD_TEST_15T_C_0002","3":"MELD_TEST_15T_C_0003","4":"MELD_TEST_15T_C_0004","5":"MELD_TEST_15T_C_0005","6":"MELD_TEST_3T_C_0001","7":"MELD_TEST_3T_C_0002","8":"MELD_TEST_3T_C_0003","9":"MELD_TEST_3T_C_0004","10":"MELD_TEST_3T_C_0005","11":"MELD_TEST_15T_FCD_0002","12":"MELD_TEST_15T_FCD_0003","13":"MELD_TEST_15T_FCD_0004","14":"MELD_TEST_15T_FCD_0005","15":"MELD_TEST_15T_FCD_0006","16":"MELD_TEST_3T_FCD_0002","17":"MELD_TEST_3T_FCD_0003","18":"MELD_TEST_3T_FCD_0004","19":"MELD_TEST_3T_FCD_0005","20":"MELD_TEST_3T_FCD_0006"},
@@ -14,7 +16,7 @@ def create_test_demos():
     "Scanner":{"0":"3T","1":"15T","2":"15T","3":"15T","4":"15T","5":"15T","6":"3T","7":"3T","8":"3T","9":"3T","10":"3T","11":"15T","12":"15T","13":"15T","14":"15T","15":"15T","16":"3T","17":"3T","18":"3T","19":"3T","20":"3T"},}
 
     df = pd.DataFrame(data)
-    df.to_csv(os.path.join(MELD_DATA_PATH,'/tmp/demographics_file.csv'))
+    df.to_csv(os.path.join(MELD_DATA_PATH, DEMOGRAPHIC_FEATURES_FILE))
 
     create_dataset_file(df['ID'].values, '/tmp/dataset_test.csv')
 
