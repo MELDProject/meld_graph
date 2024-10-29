@@ -87,7 +87,7 @@ class PDF(FPDF):
         self.multi_cell(w=190, h=5, txt=txt , border=1, align='L', fill=True)
         
     def info_box_clust(self, txt):
-        self.ln(40)
+        self.ln(30)
         # set font
         self.set_font('Arial', 'I', 10)
         #set box color
@@ -97,7 +97,7 @@ class PDF(FPDF):
     
     def disclaimer_box(self, txt):
         # set font
-        self.set_font('Arial', 'I', 6)
+        self.set_font('Arial', 'I', 9)
         #set box color
         self.set_fill_color(240,128,128)
         # add texte box info
@@ -336,7 +336,22 @@ def get_t1_file(subject_id, subject_dir):
         print(get_m(f'Could not find any T1w nifti file. Please ensure your data are in MELD or BIDS format', subject_id, 'ERROR'))
         return None
     return t1_path
-      
+
+def return_ith(num):
+    if num > 9:
+        secondToLastDigit = str(num)[-2]
+        if secondToLastDigit == '1':
+            return f'{int(num)}th'
+    lastDigit = num % 10
+    if (lastDigit == 1):
+        return f'{int(num)}st'
+    elif (lastDigit == 2):
+        return f'{int(num)}nd'
+    elif (lastDigit == 3):
+        return f'{int(num)}rd'
+    else:
+        return f'{int(num)}th'
+    
 def generate_prediction_report(
     subject_ids, data_dir, prediction_path, output_dir, harmo_code="noHarmo",
     experiment_path=EXPERIMENT_PATH, hdf5_file_root=DEFAULT_HDF5_FILE_ROOT, dataset=None):
@@ -430,20 +445,20 @@ def generate_prediction_report(
         # Loop over hemi
         for i, hemi in enumerate(["left", "right"]):
             # prepare grid plot
-            gs1 = GridSpec(2, 3, width_ratios=[1, 1, 1], wspace=0.1, hspace=0.1)
-            gs2 = GridSpec(2, 4, height_ratios=[1, 3], width_ratios=[1, 1, 0.5, 2], wspace=0.1)
+            gs1 = GridSpec(2, 4, width_ratios=[1, 0.2, 1, 1], wspace=0.1, hspace=0.1)
+            gs2 = GridSpec(2, 4, height_ratios=[1, 3], width_ratios=[1, 1, 0.8, 2], wspace=0.1)
             gs3 = GridSpec(2, 1, hspace=0)
             # plot predictions on inflated brain
             im1, im2 = create_surface_plots(surf, prediction=predictions[hemi], c=c)
             if hemi == "right":
                 im1 = im1[:, ::-1]
                 im2 = im2[:, ::-1]
-            ax = fig.add_subplot(gs1[i, 1])
+            ax = fig.add_subplot(gs1[i, 2])
             ax.imshow(im1)
             ax.axis("off")
             title = 'Left hemisphere' if hemi=='left' else 'Right hemisphere'
             ax.set_title(title, loc="left", fontsize=20)
-            ax = fig.add_subplot(gs1[i, 2])
+            ax = fig.add_subplot(gs1[i, 3])
             ax.imshow(im2)
             ax.axis("off")
            # initiate params for saliencies
@@ -537,13 +552,13 @@ def generate_prediction_report(
                 location = get_cluster_location(predictions[hemi] == cluster)
                 info_cl['location'] = location
                 # get confidence
-                confidence = round(confidences[f'confidence_{cluster}'],2) * 100
+                confidence = round(confidences[f'confidence_{cluster}']* 100,2) 
                 info_cl['confidence'] = confidence
                 info_cl['high_low_threshold']=threshold_text
                 # plot info in text box in upper left in axes coords
                 textstr = "\n".join(
                     (
-                        f" Cluster {int(cluster)} on the {hemi} hemisphere",
+                        f" Cluster on the {hemi} hemisphere",
                         " ",
                         f" Cluster size = {size_clust} cm2",
                         " ",
@@ -551,16 +566,14 @@ def generate_prediction_report(
                         " ",
                         f" Confidence score =  {confidence}%",
                         " ",
-                        f"-{threshold_text}",
-                        
-                        
+                        f" Label on NIfTI = {int(cluster)} & {int(cluster)*100} (salient)",
                     )
                 )
                 props = dict(boxstyle="round", facecolor=colors[int(cluster)], alpha=0.5)
                 ax2 = fig2.add_subplot(gs2[0, 0:2])
                 ax2.text(0.05, 0.95, textstr, transform=ax2.transAxes, fontsize=18, verticalalignment="top", bbox=props)
                 ax2.axis("off")
-                #                 fig2.tight_layout()
+                #fig2.tight_layout()
                 fig2.savefig(f"{output_dir_sub}/saliency_{subject.subject_id}_{hemi}_c{int(cluster)}.png")
                 
                 # display MRI images
@@ -640,11 +653,11 @@ def generate_prediction_report(
 
         logo = os.path.join(SCRIPTS_DIR, "MELD_logo.png")
 
-        text_info_1 = "Information: \n The MRI data of this patient has been processed through the MELD Graph surface-based FCD detection algorithm. \n Page 1 of this report will show all detected clusters on an inflated view of the brain. \n Subsequent pages characterise individual predicted clusters. \n The last page summarises the software version used to create this report."
+        text_info_1 = "Information: \n The MRI data of this patient has been processed through the MELD Graph surface-based FCD detection algorithm. \n Page 1 of this report will show all detected clusters on an inflated view of the brain. \n Subsequent pages characterise individual predicted clusters sorted in descending confidence. \n The last page summarises the software version used to create this report."
         
-        text_info_2 = "The following pages characterise each cluster according to: \n   -The hemisphere the cluster is on \n   -The cortical surface area of the cluster \n   -The cortical region in which the cluster-centre is located \n  -MELD Graph's confidence in the cluster prediction \n  -The average abnormality score - Z-score - of cortical morphological features within the cluster. \n   -The saliency of each feature to the network - if a feature is brighter pink, that feature was more important to the network. \n \n For more information, please read the Guide to using the MELD Graph surface-based FCD detection."
+        text_info_2 = "The following pages characterise each cluster according to: \n   -The hemisphere the cluster is on \n   -The cortical surface area of the cluster \n   -The cortical region in which the cluster-centre is located \n   -MELD Graph's confidence in the cluster prediction \n   -The average abnormality score - Z-score - of cortical morphological features within the cluster. \n   -The saliency of each feature to the network - if a feature is brighter pink, that feature was more important to the network. \n \n For more information, please read the Guide to using the MELD Graph surface-based FCD detection."
 
-        disclaimer = "Disclaimer: The MELD Graph surface-based FCD detection algorithm is intended for research purposes only and has not been reviewed or approved by the Medicines and Healthcare products Regulatory Agency (MHRA),European Medicine Agency (EMA) or by any other agency. Any clinical application of the software is at the sole risk of the party engaged in such application. \nThere is no warranty of any kind that the software will produce useful results in any way. Use of the software is at the recipient's own risk."
+        disclaimer = "Disclaimer: The MELD Graph surface-based FCD detection algorithm is intended for research purposes only and has not been reviewed or approved by the Medicines and Healthcare products Regulatory Agency (MHRA),European Medicine Agency (EMA) or by any other agency. Any clinical application of the software is at the sole risk of the party engaged in such application. There is no warranty of any kind that the software will produce useful results in any way. Use of the software is at the recipient's own risk."
 
         footer_txt = "This report was automatically generated by software by Mathilde Ripart, Hannah Spitzer, Sophie Adler and Konrad Wagstyl on behalf of the MELD Project"
 
@@ -664,25 +677,28 @@ def generate_prediction_report(
         # add image
         pdf.subtitle_inflat()
         im_inflat = os.path.join(output_dir_sub, f"inflatbrain_{subject.subject_id}.png")
-        pdf.image(im_inflat, 5, 110, link='', type='', w=190, h=297/3)
+        pdf.image(im_inflat, 5, 100, link='', type='', w=190, h=297/3)
         # add info cluster analysis 
         pdf.info_box_clust(text_info_2)
         # add footer date
         pdf.custom_footer(footer_txt)
 
-        clusters = range(1, n_clusters + 1)
+        #### order display in function of confidence
+        clusters = np.array(range(1, n_clusters + 1))
+        confidences_order = np.array(np.argsort([confidences[f'confidence_{float(cl)}'] for cl in clusters]))
+        clusters = clusters[confidences_order[::-1]]
         #### Create page for each cluster with MRI view and saliencies
-        for cluster in clusters:
+        for i, cluster in enumerate(clusters):
             # add page
             pdf.add_page()
             # add line contours
             pdf.lines()
             # add header
-            pdf.custom_header(logo, txt1="MRI view & saliencies", txt2=f"Cluster {cluster}")
+            pdf.custom_header(logo, txt1="MRI view & saliencies", txt2=f"{return_ith(i+1)} higher confident cluster")
             # add image
             im_mri = glob.glob(os.path.join(output_dir_sub, f"mri_{subject.subject_id}_*_c{cluster}.png"))[0]
             # pdf.imagey(im_mri, 50)
-              #add segmentation figure left
+            #add segmentation figure left
             pdf.image(im_mri, 5, 50, link='', type='', w=190, h=297/3)
             # add image
             im_sal = glob.glob(os.path.join(output_dir_sub, f"saliency_{subject.subject_id}_*_c{cluster}.png"))[0]
