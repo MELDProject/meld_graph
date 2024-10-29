@@ -1197,7 +1197,7 @@ class Preprocess:
                                                                params_norm=params_norm)
             else:
                 if params_norm is not None:
-                    print(f'Use normalisation parameter from {params_norm}')
+                    print(f'Use precomputed normalisation parameters')
                     params = self.read_norm_combat_parameters(feature, params_norm)
                     mean_c = params['mean']
                     std_c = params['std']
