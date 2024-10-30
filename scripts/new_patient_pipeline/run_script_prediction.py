@@ -33,6 +33,8 @@ from scripts.manage_results.move_predictions_to_mgh import move_predictions_to_m
 from scripts.manage_results.plot_prediction_report import generate_prediction_report
 from meld_graph.tools_pipeline import get_m, create_demographic_file, create_dataset_file
 
+import warnings
+warnings.filterwarnings("ignore")
 
 def predict_subjects(subject_ids, output_dir, plot_images = False, saliency=False,
     experiment_path=EXPERIMENT_PATH, hdf5_file_root= DEFAULT_HDF5_FILE_ROOT,):       

@@ -32,7 +32,7 @@ If you wish to use the harmonisation feature of the MELD pipeline, you will need
 Open a terminal and `cd` to where you extracted the release zip.
 
 ```bash
-docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -id <subject_id> 
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -id <subject_id> 
 ```
 :::
 
@@ -49,7 +49,7 @@ source $FREESURFER_HOME/SetUpFreeSurfer.sh
 
 Then run the command
 ```bash
-./meldgraph.sh new_pt_pipeline -id <subject_id> 
+./meldgraph.sh new_pt_pipeline.py -id <subject_id> 
 ```
 :::
 ::::
@@ -86,14 +86,14 @@ To run the whole prediction pipeline on 1 subject using fastsurfer:
 :::{tab-item} Docker
 :sync: docker
 ```bash
-docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -id sub-001 --fastsurfer
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -id sub-001 --fastsurfer
 ```
 :::
 
 :::{tab-item} Native
 :sync: native
 ```bash
-./meldgraph.sh new_pt_pipeline -id sub-001 --fastsurfer
+./meldgraph.sh new_pt_pipeline.py -id sub-001 --fastsurfer
 ```
 :::
 ::::
@@ -103,14 +103,14 @@ To run the whole prediction pipeline on 1 subject using harmonisation code H1:
 :::{tab-item} Docker
 :sync: docker
 ```bash
-docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.pyy -id sub-001 -harmo_code H1
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -id sub-001 -harmo_code H1
 ```
 :::
 
 :::{tab-item} Native
 :sync: native
 ```bash
-./meldgraph.sh new_pt_pipeline -id sub-001 -harmo_code H1
+./meldgraph.sh new_pt_pipeline.py -id sub-001 -harmo_code H1
 ```
 :::
 ::::
@@ -120,14 +120,14 @@ To run the whole prediction pipeline on multiples subjects with parallelisation:
 :::{tab-item} Docker
 :sync: docker
 ```bash
-docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -ids list_subjects.txt --parallelise
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -ids list_subjects.txt --parallelise
 ```
 :::
 
 :::{tab-item} Native
 :sync: native
 ```bash
-./meldgraph.sh new_pt_pipeline -ids list_subjects.txt --parallelise
+./meldgraph.sh new_pt_pipeline.py -ids list_subjects.txt --parallelise
 ```
 :::
 ::::
@@ -147,13 +147,29 @@ This script:
     * Moves the features to the template surface
     * Write feature in hdf5
    
+Example to use it on one patient without harmonisation:
+::::{tab-set}
+:::{tab-item} Docker
+:sync: docker
+```bash
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/run_script_segmentation.py -id sub-001
+```
+:::
+
+:::{tab-item} Native
+:sync: native
+```bash
+./meldgraph.sh run_script_preprocessing.py -id run_script_segmentation-001
+```
+:::
+::::
 
 To know more about the script and how to use it on its own:
 ::::{tab-set}
 :::{tab-item} Docker
 :sync: docker
 ```bash
-docker compose run meld_graph python scripts/new_patient_pipeline/run_script_segmentation.py -h
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/run_script_segmentation.py -h
 ```
 :::
 
@@ -179,12 +195,29 @@ This script :
   - Features need to have been extracted using script 1. 
   - (optional): this script can also be called to harmonise your data for new harmonisation code but will need to pass a file containing demographics information.
 
+Example to use it on one patient without harmonisation:
+::::{tab-set}
+:::{tab-item} Docker
+:sync: docker
+```bash
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/run_script_preprocessing.py -id sub-001
+```
+:::
+
+:::{tab-item} Native
+:sync: native
+```bash
+./meldgraph.sh run_script_preprocessing.py -id sub-001
+```
+:::
+::::
+
 To know more about the script and how to use it on its own:
 ::::{tab-set}
 :::{tab-item} Docker
 :sync: docker
 ```bash
-docker compose run meld_graph python scripts/new_patient_pipeline/run_script_preprocessing.py -h
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/run_script_preprocessing.py -h
 ```
 :::
 
@@ -206,12 +239,29 @@ This script :
 Notes: 
 - Features need to have been processed using script 2 and Freesurfer outputs need to be available for each subject
 
+Example to use it on one patient without harmonisation:
+::::{tab-set}
+:::{tab-item} Docker
+:sync: docker
+```bash
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/run_script_prediction.py -id sub-001
+```
+:::
+
+:::{tab-item} Native
+:sync: native
+```bash
+./meldgraph.sh run_script_prediction.py -id sub-001
+```
+:::
+::::
+
 To know more about the script and how to use it on its own:
 ::::{tab-set}
 :::{tab-item} Docker
 :sync: docker
 ```bash
-docker compose run meld_graph python scripts/new_patient_pipeline/run_script_prediction.py -h
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/run_script_prediction.py -h
 ```
 :::
 

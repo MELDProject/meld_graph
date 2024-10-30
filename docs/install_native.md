@@ -111,11 +111,11 @@ pip install -e .
 ## Set up paths and download model
 Before being able to use the classifier on your data, some paths need to be set up and the pretrained model needs to be downloaded. For this, run:
 ```bash
-./meldgraph.sh prepare_classifier
+./meldgraph.sh prepare_classifier.py
 ```
 
 This script will ask you if you want to change the path to the data folder, answer **'y'** for yes. \
-Then, it will ask for the the location of your **MELD data folder** and download the pretrained model and test data to a folder inside your MELD data folder. Please provide the path to where you would like to store MRI data to run the classifier on.
+Then, it will ask for the the location of your **MELD data folder**, where you would like to store MRI data to run the classifier. Create the **MELD data folder**, if it doesn't exist, and provide the path. It will download the pretrained model and test data to a folder inside your MELD data folder
 
 
 Note: You can also skip the downloading of the test data. For this, append the option `--skip-download-data` to the call.

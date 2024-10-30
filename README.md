@@ -4,9 +4,6 @@
 
 **Full documentation: [here](https://meld-graph.readthedocs.io/en/latest/index.html)**
 
-## ! The code is still undergoing development and review. 
-## ! Please DO NOT INSTALL yet
-
 Graph based FCD lesion segmentation for the [MELD project](https://meldproject.github.io/).
 
 This package is a pipeline to segment FCD-lesions from MRI scans. 
@@ -45,9 +42,9 @@ The MELD surface-based graph FCD detection algorithm is intended for research pu
 
 ### Installations available 
 You can install and use the MELD FCD prediction pipeline with :
-- [**docker container**](https://meld-graph.readthedocs.io/en/latest/install_docker.html) (STILL IN PROGRESS) recommended for easy installation of the pipeline as all the prerequisite packages are already embeded into the container. Note: Dockers are not working on High Performance Computing (HCP) systems.
+- [**docker container**](https://meld-graph.readthedocs.io/en/latest/install_docker.html) (STILL IN PROGRESS) recommended for easy installation of the pipeline as all the prerequisite packages are already embeded into the container. Note: Dockers are not working on High Performance Computing (HCP) systems ; Not tested on Windows 
 - [**native installation**](https://meld-graph.readthedocs.io/en/latest/install_native.html) recommended for Mac and users that want to modify the code and/or use the code to train/test their own classifier. 
-- **singularity container (COMING SOON)** enables to run a container on High Performance Computing (HCP) systems. 
+- [**singularity container (Not tested yet)**](https://meld-graph.readthedocs.io/en/latest/install_singularity.html) enables to run a container on High Performance Computing (HCP) systems. 
 
 ### Running the pipeline 
 Once installed you will be able to use the MELD FCD prediction pipeline on your data following the steps:

@@ -50,10 +50,14 @@ def check_demographic_file(demographic_file, subject_ids):
         return demographic_file
     else:
         sys.exit(get_m(f'Missing subject in the demographic file', None, 'ERROR'))
-
-
+    #check variance in age, otherwise combat fails
+    df = pd.read_csv(demographic_file)
+    ages = df['Age at preoperative (in years)']
+    if len(np.unique(ages))<=1:
+        sys.exit(get_m(f'There is no variance in the ages provided. Harmonisation will fail', None, 'ERROR'))
+    
 def run_data_processing_new_subjects(subject_ids, harmo_code, compute_harmonisation = False, harmonisation_only = False, demographic_file=None,  output_dir=BASE_PATH, withoutflair=False):
- 
+
     # Set features and smoothed values
     if withoutflair:
         features = {
@@ -89,13 +93,16 @@ def run_data_processing_new_subjects(subject_ids, harmo_code, compute_harmonisat
 
     ### SMOOTHING ###
     c_raw = MeldCohort(hdf5_file_root="{site_code}_{group}_featurematrix.hdf5", dataset=tmp.name, data_dir=BASE_PATH)
-    smoothing = Preprocess(c_raw, write_output_file="{site_code}_{group}_featurematrix_smoothed.hdf5", data_dir=output_dir)
+    smoothing = Preprocess(c_raw, 
+                           site_codes=[harmo_code],
+                           write_output_file="{site_code}_{group}_featurematrix_smoothed.hdf5", 
+                           data_dir=output_dir)
     
     #file to store subject with outliers vertices
     outliers_file=opj(output_dir, 'list_subject_extreme_vertices.csv')
     
     for feature in np.sort(list(set(features))):
-        print(feature)
+        print(get_m(f'Smoothing feature {feature}', None, 'STEP'))
         smoothing.smooth_data(feature, features[feature], clipping_params=CLIPPING_PARAMS_FILE, outliers_file=outliers_file)
 
     ### REGRESS THICKNESS ###
@@ -105,8 +112,9 @@ def run_data_processing_new_subjects(subject_ids, harmo_code, compute_harmonisat
         c_smooth = MeldCohort(hdf5_file_root='{site_code}_{group}_featurematrix_smoothed.hdf5', dataset=tmp.name)
         #create object combat
         regress =Preprocess(c_smooth,
-                        write_output_file='{site_code}_{group}_featurematrix_smoothed.hdf5',
-                        data_dir=output_dir)
+                            site_codes=[harmo_code],
+                            write_output_file='{site_code}_{group}_featurematrix_smoothed.hdf5',
+                            data_dir=output_dir)
         #features names
         feature = [feat for feat in features_smooth if ".on_lh.thickness" in feat][0]
         curv_feature = [feat for feat in features_smooth if ".on_lh.curv" in feat][0]
@@ -138,7 +146,7 @@ def run_data_processing_new_subjects(subject_ids, harmo_code, compute_harmonisat
                             data_dir=output_dir)
         #features names
         for feature in features_smooth:
-            print(feature)
+            print(get_m(f'Compute combat parameters feature {feature}', None, 'STEP'))
             combat.get_combat_new_site_parameters(feature, demographic_file)
 
     if not harmonisation_only:
@@ -152,11 +160,12 @@ def run_data_processing_new_subjects(subject_ids, harmo_code, compute_harmonisat
             c_smooth = MeldCohort(hdf5_file_root='{site_code}_{group}_featurematrix_smoothed.hdf5', dataset=tmp.name)
             #create object combat
             combat =Preprocess(c_smooth,
-                            write_output_file='{site_code}_{group}_featurematrix_combat.hdf5',
-                            data_dir=output_dir)
+                               site_codes=[harmo_code],
+                               write_output_file='{site_code}_{group}_featurematrix_combat.hdf5',
+                               data_dir=output_dir)
             #features names
             for feature in features_smooth:
-                print(feature)
+                print(get_m(f'Combat feature {feature}', None, 'STEP'))
                 combat.combat_new_subject(feature, combat_params_file)
         else:
             #transfer smoothed features as combat features
@@ -165,11 +174,12 @@ def run_data_processing_new_subjects(subject_ids, harmo_code, compute_harmonisat
             c_smooth = MeldCohort(hdf5_file_root='{site_code}_{group}_featurematrix_smoothed.hdf5', dataset=tmp.name)
             #create object no combat
             nocombat =Preprocess(c_smooth,
-                            write_output_file='{site_code}_{group}_featurematrix_combat.hdf5',
-                            data_dir=output_dir)
+                                 site_codes=[harmo_code],
+                                 write_output_file='{site_code}_{group}_featurematrix_combat.hdf5',
+                                 data_dir=output_dir)
             #features names
             for feature in features_smooth:
-                print(feature)
+                print(get_m(f'Transfer feature {feature}', None, 'STEP'))
                 nocombat.transfer_features_no_combat(feature)
 
         ###  INTRA, INTER & ASYMETRY ###
@@ -181,11 +191,12 @@ def run_data_processing_new_subjects(subject_ids, harmo_code, compute_harmonisat
         param_norms_file = os.path.join(MELD_PARAMS_PATH, NORM_CONTROLS_PARAMS_FILE.format('nocombat'))
         # create object normalisation
         norm = Preprocess(c_combat,
-                            write_output_file='{site_code}_{group}_featurematrix_combat.hdf5',
-                            data_dir=output_dir)
+                          site_codes=[harmo_code],
+                          write_output_file='{site_code}_{group}_featurematrix_combat.hdf5',
+                          data_dir=output_dir)
         # call functions to normalise data
         for feature in features_combat:
-            print(feature)
+            print(get_m(f'Normalise feature {feature}', None, 'STEP'))
             norm.intra_inter_subject(feature, params_norm = param_norms_file)
             norm.asymmetry_subject(feature, params_norm = param_norms_file )
 

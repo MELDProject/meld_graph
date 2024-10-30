@@ -1,9 +1,11 @@
 # Docker container
 
+**WARNING: Installation and use not yet tested on Windows. Please do let us know if you are succeeding / failing to use the docker container on Windows**
+
 The Docker container has all the prerequisites embedded on it which makes it easier to install and compatible with most of the OS systems. 
 
 Notes: 
-- Currently only tested on **Linux and Windows** (HPC Singularity coming soon, Mac M chip computers have to do a [install_native](https://meld-graph.readthedocs.io/en/latest/install_native.html)
+- Currently only tested on **Linux** (Not yet tested on Windows, HPC users should use the [Singularity version (not tested yet)](https://meld-graph.readthedocs.io/en/latest/install_singularity.html), Mac M chip computers have to do a [install_native](https://meld-graph.readthedocs.io/en/latest/install_native.html))
 - You will need **~12GB of space** to install the container
 - The docker image contains Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0+cu111. The whole image is 11.4 GB.  
 
@@ -49,7 +51,8 @@ In order to run the docker, you'll need to configure a couple of files
 
 1. Download `meld_graph.zip` from the [latest github release](https://github.com/MELDProject/meld_graph/releases/latest) and extract it.
 2. Copy the freesurfer `license.txt` into the extracted folder
-3. Create the meld_data folder, if it doesn't exist already, and edit the compose.yml `volumes` line before the `:` to point to it. For example, if you wanted the folder to be on a mounted drive in Linux it might be:
+3. Create the meld_data folder, if it doesn't exist already. This folder is where you would like to store MRI data to run the classifier
+4. Edit the compose.yml `volumes` line before the `:` to point to it. For example, if you wanted the folder to be on a mounted drive in Linux it might be:
 ```
     volumes:
       - /mnt/datadrive/meld-data:/data
@@ -64,11 +67,7 @@ On windows, if you're using absolute paths, use forward slashes and quotes:
       - "C:/Users/John/Desktop/meld-data:/data"
 ```
 :::
-4. In order to use docker as a non-root user, the compose.yml file pass the current user ID to the docker. For that we recommand to add a DOCKER_USER variable in your bashrc file by running:
-```
-echo 'export DOCKER_USER="$(id -u):$(id -g)"' >> ~/.bashrc
-```
-Alternatively, you can export this variable everytime you are using the docker 
+
 
 ## Set up paths and download model
 Before being able to use the classifier on your data, data paths need to be set up and the pretrained model needs to be downloaded. 
@@ -77,9 +76,23 @@ Before being able to use the classifier on your data, data paths need to be set 
 
 2. Run this command to download the docker image and the training data
 
+::::{tab-set}
+
+:::{tab-item} Linux
+:sync: linux
+```bash
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/prepare_classifier.py
+```
+:::
+
+:::{tab-item} Windows
+:sync: windows
 ```bash
 docker compose run meld_graph python scripts/new_patient_pipeline/prepare_classifier.py
 ```
+:::
+
+::::
 
 :::{note}
 Append `--skip-download-data` to the python call to skip downloading the test data.
@@ -89,9 +102,24 @@ Append `--skip-download-data` to the python call to skip downloading the test da
 ## Verify installation
 To verify that you have installed all packages, set up paths correctly, and downloaded all data, this verification script will run the pipeline to predict the lesion classifier on a new patient. It takes approximately 15 minutes to run.
 
+::::{tab-set}
+
+:::{tab-item} Linux
+:sync: linux
+```bash
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph pytest
+```
+:::
+
+:::{tab-item} Windows
+:sync: windows
 ```bash
 docker compose run meld_graph pytest
 ```
+:::
+
+::::
+
 
 ### Errors
 If you run into errors at this stage and need help, you can re-run by changing the last line of the command by the command below to save the terminal outputs in a txt file. Please send `pytest_errors.log` to us so we can work with you to solve any problems. [How best to reach us.](#contact)
@@ -101,7 +129,7 @@ If you run into errors at this stage and need help, you can re-run by changing t
 :::{tab-item} Linux
 :sync: linux
 ```bash
-docker compose run meld_graph pytest -s | tee pytest_errors.log
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph pytest -s | tee pytest_errors.log
 ```
 :::
 

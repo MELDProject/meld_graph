@@ -1,5 +1,7 @@
 # Singularity container
 
+**WARNING: Installation and use not yet tested. Please do let us know if you are succeeding / failing to use the singularity container on HPC**
+
 The Singularity container has been created to be used on HPC supporting Linux as they do not work with Docker container. If you are not working on a HPC, we recommend to install the docker version of container. 
 
 Notes: 
@@ -33,9 +35,9 @@ singularity build meld_graph.sif docker://meldproject/meld_graph:latest
 Before being able to use the classifier on your data, data paths need to be set up and the pretrained model needs to be downloaded. 
 
 1. Make sure you have 2GB available for the meld data.
-
+2. Create the **meld_data** folder, if it doesn't exist already. This folder is where where you would like to store MRI data to run the classifier. 
 2. Run this command to set the paths needed:
--  <path_to_meld_data_folder> : folder where the data containing the MELD Graph model should be saved and where the output of the pipeline will be saved
+-  <path_to_meld_data_folder> : Add the path to meld_data folder
 - <path_to_FS_license>: path where the license.txt has been saved
 ```bash
 export SINGULARITY_BINDPATH=/<path_to_meld_data_folder>:/data,<path_to_FS_license>/license.txt:/license.txt:ro

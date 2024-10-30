@@ -9,9 +9,10 @@ Harmonisation of your patient data is not mandatory but recommended, to remove a
 
 The harmonisation parameters are computed using [Distributed Combat](https://doi.org/10.1016/j.neuroimage.2021.118822).
 To get these parameters you will need a cohort of subjects acquired from the same scanner and under the same protocol (sequence, parameters, ...).
-Subjects can be controls and/or patients, but we advise to use ***at least 20 subjects*** to enable an accurate harmonisation. 
+Subjects can be controls and/or patients, but we advise to use ***at least 20 subjects*** to enable an accurate harmonisation (see (paper)[]). 
 Try to ensure the data are high quality (i.e no blurring, no artefacts, no cavities in the brain).
-Demographic information (e.g age and sex) will be required for this process.
+Demographic information (e.g age and sex) will be required for this process. 
+WARNING: zero variance in the demographics information (e.g. having the same age for all subjects) will lead to Combat failures or errors. 
 
 Once you have done the process once, you can follow the [general guidelines to predict on a new patient](https://meld-graph.readthedocs.io/en/latest/run_prediction_pipeline.html) 
 
@@ -31,7 +32,7 @@ Once you have done the process once, you can follow the [general guidelines to p
 Open a terminal and `cd` to where you extracted the release zip.
 
 ```bash
-docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -harmo_code <harmo_code> -ids <subjects_list> -demos <demographic_file> --harmo_only
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -harmo_code <harmo_code> -ids <subjects_list> -demos <demographic_file> --harmo_only
 ```
 :::
 :::{tab-item} Native
@@ -39,7 +40,7 @@ docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipelin
 Open a terminal and `cd` to the meld graph folder.
 
 ```bash
-./meldgraph.sh new_pt_pipeline -harmo_code <harmo_code> -ids <subjects_list> -demos <demographic_file> --harmo_only
+./meldgraph.sh new_pt_pipeline.py -harmo_code <harmo_code> -ids <subjects_list> -demos <demographic_file> --harmo_only
 ```
 :::
 ::::
