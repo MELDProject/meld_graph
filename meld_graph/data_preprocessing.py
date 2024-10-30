@@ -1192,7 +1192,7 @@ class Preprocess:
             else:
                 included_subjects[k] = False
                 controls_subjects[k] = False
-        print(f"INFO: exlude subjects {self.subject_ids[~included_subjects]}")
+        print(f"INFO: exlude subjects {np.array(self.subject_ids)[~included_subjects]}")
         if vals_array:
             vals_array = np.array(vals_array)
             # remove exclude subjects
@@ -1255,7 +1255,7 @@ class Preprocess:
             else:
                 included_subjects[k] = False
                 controls_subjects[k] = False
-            print(f"INFO: exlude subjects {self.subject_ids[~included_subjects]}")
+            print(f"INFO: exlude subjects {np.array(self.subject_ids)[~included_subjects]}")
         if vals_asym_array :
             vals_asym_array = np.array(vals_asym_array)
             # remove exclude subjects
