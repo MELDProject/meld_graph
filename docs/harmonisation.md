@@ -12,7 +12,7 @@ To get these parameters you will need a cohort of subjects acquired from the sam
 Subjects can be controls and/or patients, but we advise to use ***at least 20 subjects*** to enable an accurate harmonisation (see (paper)[]). 
 Try to ensure the data are high quality (i.e no blurring, no artefacts, no cavities in the brain).
 Demographic information (e.g age and sex) will be required for this process. 
-WARNING: no variance in the demographics information (e.g. having the same age for all subjects) will lead to Combat failures or errors. 
+WARNING: zero variance in the demographics information (e.g. having the same age for all subjects) will lead to Combat failures or errors. 
 
 Once you have done the process once, you can follow the [general guidelines to predict on a new patient](https://meld-graph.readthedocs.io/en/latest/run_prediction_pipeline.html) 
 
