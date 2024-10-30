@@ -32,7 +32,7 @@ If you wish to use the harmonisation feature of the MELD pipeline, you will need
 Open a terminal and `cd` to where you extracted the release zip.
 
 ```bash
-docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -id <subject_id> 
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -id <subject_id> 
 ```
 :::
 
@@ -86,7 +86,7 @@ To run the whole prediction pipeline on 1 subject using fastsurfer:
 :::{tab-item} Docker
 :sync: docker
 ```bash
-docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -id sub-001 --fastsurfer
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -id sub-001 --fastsurfer
 ```
 :::
 
@@ -103,7 +103,7 @@ To run the whole prediction pipeline on 1 subject using harmonisation code H1:
 :::{tab-item} Docker
 :sync: docker
 ```bash
-docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -id sub-001 -harmo_code H1
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -id sub-001 -harmo_code H1
 ```
 :::
 
@@ -120,7 +120,7 @@ To run the whole prediction pipeline on multiples subjects with parallelisation:
 :::{tab-item} Docker
 :sync: docker
 ```bash
-docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -ids list_subjects.txt --parallelise
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -ids list_subjects.txt --parallelise
 ```
 :::
 
@@ -152,7 +152,7 @@ Example to use it on one patient without harmonisation:
 :::{tab-item} Docker
 :sync: docker
 ```bash
-docker compose run meld_graph python scripts/new_patient_pipeline/run_script_segmentation.py -id sub-001
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/run_script_segmentation.py -id sub-001
 ```
 :::
 
@@ -169,7 +169,7 @@ To know more about the script and how to use it on its own:
 :::{tab-item} Docker
 :sync: docker
 ```bash
-docker compose run meld_graph python scripts/new_patient_pipeline/run_script_segmentation.py -h
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/run_script_segmentation.py -h
 ```
 :::
 
@@ -200,7 +200,7 @@ Example to use it on one patient without harmonisation:
 :::{tab-item} Docker
 :sync: docker
 ```bash
-docker compose run meld_graph python scripts/new_patient_pipeline/run_script_preprocessing.py -id sub-001
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/run_script_preprocessing.py -id sub-001
 ```
 :::
 
@@ -217,7 +217,7 @@ To know more about the script and how to use it on its own:
 :::{tab-item} Docker
 :sync: docker
 ```bash
-docker compose run meld_graph python scripts/new_patient_pipeline/run_script_preprocessing.py -h
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/run_script_preprocessing.py -h
 ```
 :::
 
@@ -244,7 +244,7 @@ Example to use it on one patient without harmonisation:
 :::{tab-item} Docker
 :sync: docker
 ```bash
-docker compose run meld_graph python scripts/new_patient_pipeline/run_script_prediction.py -id sub-001
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/run_script_prediction.py -id sub-001
 ```
 :::
 
@@ -261,7 +261,7 @@ To know more about the script and how to use it on its own:
 :::{tab-item} Docker
 :sync: docker
 ```bash
-docker compose run meld_graph python scripts/new_patient_pipeline/run_script_prediction.py -h
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/run_script_prediction.py -h
 ```
 :::
 

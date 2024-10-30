@@ -67,11 +67,7 @@ On windows, if you're using absolute paths, use forward slashes and quotes:
       - "C:/Users/John/Desktop/meld-data:/data"
 ```
 :::
-4. In order to use docker as a non-root user, the compose.yml file pass the current user ID to the docker. For that we recommand to add a DOCKER_USER variable in your bashrc file by running:
-```
-echo 'export DOCKER_USER="$(id -u):$(id -g)"' >> ~/.bashrc
-```
-Alternatively, you can export this variable everytime you are using the docker 
+
 
 ## Set up paths and download model
 Before being able to use the classifier on your data, data paths need to be set up and the pretrained model needs to be downloaded. 
@@ -80,9 +76,23 @@ Before being able to use the classifier on your data, data paths need to be set 
 
 2. Run this command to download the docker image and the training data
 
+::::{tab-set}
+
+:::{tab-item} Linux
+:sync: linux
+```bash
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/prepare_classifier.py
+```
+:::
+
+:::{tab-item} Windows
+:sync: windows
 ```bash
 docker compose run meld_graph python scripts/new_patient_pipeline/prepare_classifier.py
 ```
+:::
+
+::::
 
 :::{note}
 Append `--skip-download-data` to the python call to skip downloading the test data.
@@ -92,9 +102,24 @@ Append `--skip-download-data` to the python call to skip downloading the test da
 ## Verify installation
 To verify that you have installed all packages, set up paths correctly, and downloaded all data, this verification script will run the pipeline to predict the lesion classifier on a new patient. It takes approximately 15 minutes to run.
 
+::::{tab-set}
+
+:::{tab-item} Linux
+:sync: linux
+```bash
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph pytest
+```
+:::
+
+:::{tab-item} Windows
+:sync: windows
 ```bash
 docker compose run meld_graph pytest
 ```
+:::
+
+::::
+
 
 ### Errors
 If you run into errors at this stage and need help, you can re-run by changing the last line of the command by the command below to save the terminal outputs in a txt file. Please send `pytest_errors.log` to us so we can work with you to solve any problems. [How best to reach us.](#contact)
@@ -104,7 +129,7 @@ If you run into errors at this stage and need help, you can re-run by changing t
 :::{tab-item} Linux
 :sync: linux
 ```bash
-docker compose run meld_graph pytest -s | tee pytest_errors.log
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph pytest -s | tee pytest_errors.log
 ```
 :::
 

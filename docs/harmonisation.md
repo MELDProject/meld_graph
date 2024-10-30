@@ -32,7 +32,7 @@ Once you have done the process once, you can follow the [general guidelines to p
 Open a terminal and `cd` to where you extracted the release zip.
 
 ```bash
-docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -harmo_code <harmo_code> -ids <subjects_list> -demos <demographic_file> --harmo_only
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -harmo_code <harmo_code> -ids <subjects_list> -demos <demographic_file> --harmo_only
 ```
 :::
 :::{tab-item} Native
