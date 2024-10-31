@@ -66,8 +66,8 @@ You can copy the *demographics_file.csv* that you can find in your <meld_data_fo
 - Scanner: the scanner strenght associated with the MRI data ('3T' for 3 Tesla or '15T' for 1.5 Tesla)
 
 Note: 
-- please ensure to not change the name of the columns and to have completed the files with the appropriate values, otherwise the pipeline will fail.
+- please ensure the column names are unchanged and completed with the appropriate values, otherwise the pipeline will fail.
 
 WARNING: for harmonisation 
-- please ensure to add the appropriate age and sex of the patients. Adding dummy information can lead to suboptimal harmonisation. 
-- please ensure that there is variance in the age of your subjects. Similar age for all subjects will lead to harmonisation failure. If your patients have the same age, please add randomly +- 0.01 to all age to introduce variance.   
+- please make sure you add the appropriate age and sex of the patients. Adding dummy information can lead to suboptimal harmonisation. 
+- please ensure that there is non-zero variance in the age of your subjects. Similar age for all subjects will lead to harmonisation failure. If your patients have the same age, please add randomly +- 0.01 to all age to introduce variance.   

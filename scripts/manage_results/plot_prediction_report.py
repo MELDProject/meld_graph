@@ -566,7 +566,7 @@ def generate_prediction_report(
                         " ",
                         f" Confidence score =  {confidence}%",
                         " ",
-                        f" Label on NIfTI = {int(cluster)} & {int(cluster)*100} (salient)",
+                        f" Voxel value on NIfTI = {int(cluster)} & {int(cluster)*100} (salient)",
                     )
                 )
                 props = dict(boxstyle="round", facecolor=colors[int(cluster)], alpha=0.5)
@@ -694,7 +694,7 @@ def generate_prediction_report(
             # add line contours
             pdf.lines()
             # add header
-            pdf.custom_header(logo, txt1="MRI view & saliencies", txt2=f"{return_ith(i+1)} higher confident cluster")
+            pdf.custom_header(logo, txt1="MRI view & saliencies", txt2=f"{return_ith(i+1)} cluster")
             # add image
             im_mri = glob.glob(os.path.join(output_dir_sub, f"mri_{subject.subject_id}_*_c{cluster}.png"))[0]
             # pdf.imagey(im_mri, 50)
