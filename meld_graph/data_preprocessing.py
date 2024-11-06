@@ -22,6 +22,7 @@ from meld_graph.meld_cohort import MeldSubject, MeldCohort
 from neuroCombat import neuroCombat, neuroCombatFromTraining
 import meld_graph.distributedCombat as dc
 import meld_graph.mesh_tools as mt
+import meld_graph.meld_plotting as mpt
 
 class Preprocess:
     """
@@ -118,7 +119,31 @@ class Preprocess:
             pass
         return vals
 
-
+    def plot_subject_features(self, features_to_plot):
+        """plot subject features in a given output folder"""
+        for subj_id in self.subject_ids:
+            subj = MeldSubject(subj_id, self.cohort)
+            
+            if not subj.has_flair:
+                features_to_plot_subj = [feature for feature in features_to_plot if not 'FLAIR' in feature]
+            else:
+                features_to_plot_subj = features_to_plot
+            # create output folder if does not exist
+            os.makedirs(os.path.join(BASE_PATH, f'MELD_{subj.site_code}', "images"), exist_ok=True)
+            
+            hemis = ["lh", "rh"]
+            for hemi in hemis:
+                features_values = []
+                for feature in features_to_plot_subj:
+                    feature_values = subj.load_feature_values(feature, hemi=hemi)
+                    features_values.append(feature_values)
+                mpt.plot_single_subject(
+                    features_values,
+                    lesion=None,
+                    feature_names=features_to_plot_subj,
+                    out_filename=os.path.join(BASE_PATH, f'MELD_{subj.site_code}', "images", f"qc_features_{subj_id}_{hemi}.jpeg"),
+                )
+            
     def get_data_preprocessed(
         self,
         subject,
@@ -1371,7 +1396,7 @@ def surface_regression(metric_in, remove):
         metric_out = metric_in - regress_scaled
         return metric_out
     
-    
+  
 class Feature:
     def __init__(self):
         """Class to define feature name"""
