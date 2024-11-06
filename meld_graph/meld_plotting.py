@@ -68,7 +68,7 @@ def plot_single_subject(data_to_plots, lesion, feature_names=None, out_filename=
                 f_name = feature_names[k]
                 base = np.array(im.convert("RGBA"))
             else:
-                f_name = feature_names[k][35:-9]
+                f_name = feature_names[k][35:-1]
         draw = ImageDraw.Draw(im)
         draw.text((100, 0), f_name, (255, 0, 0), font=fnt)
         arr_im = np.array(im.convert("RGBA"))
