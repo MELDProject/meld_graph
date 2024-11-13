@@ -202,19 +202,19 @@ def run_data_processing_new_subjects(subject_ids, harmo_code, compute_harmonisat
             norm.intra_inter_subject(feature, params_norm = param_norms_file)
             norm.asymmetry_subject(feature, params_norm = param_norms_file )
 
-    ### PLOT FEATURES FOR QC
-    #-----------------------------------------------------------------
-    features_to_plot = [ ".inter_z.asym.intra_z" + feature for feature in features_combat] 
-    c_norm = MeldCohort(hdf5_file_root="{site_code}_{group}_featurematrix_combat.hdf5", dataset=tmp.name, data_dir=BASE_PATH)
-    plot = Preprocess(c_norm, 
-                    site_codes=[harmo_code],
-                    write_output_file=None, 
-                    data_dir=output_dir)
-            
-    print(get_m(f'Plot features to QC', None, 'STEP'))
-    plot.plot_subject_features(features_to_plot)
-    
-    tmp.close()
+        ### PLOT FEATURES FOR QC
+        #-----------------------------------------------------------------
+        features_to_plot = [ ".inter_z.asym.intra_z" + feature for feature in features_combat] 
+        c_norm = MeldCohort(hdf5_file_root="{site_code}_{group}_featurematrix_combat.hdf5", dataset=tmp.name, data_dir=BASE_PATH)
+        plot = Preprocess(c_norm, 
+                        site_codes=[harmo_code],
+                        write_output_file=None, 
+                        data_dir=output_dir)
+                
+        print(get_m(f'Plot features to QC', None, 'STEP'))
+        plot.plot_subject_features(features_to_plot)
+        
+        tmp.close()
 
 def run_script_preprocessing(list_ids=None, sub_id=None, harmo_code='noHarmo', output_dir=BASE_PATH, demographic_file=None, harmonisation_only=False, withoutflair=False, verbose=False):
     harmo_code = str(harmo_code)
