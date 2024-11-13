@@ -575,10 +575,17 @@ class Preprocess:
             subj = MeldSubject(subject, cohort=self.cohort)
             a, s = subj.get_demographic_features(["Age at preop", "Sex"], csv_file = demographic_file)
             ages.append(a)
-            sex.append(s)
+            if s=='male':
+                sex.append(1)
+            elif s == 'female':
+                sex.append(0)
+            elif (s==0) or (s==1):
+                sex.append(s)
+            else:
+                print(f'ERROR: There is an issue with the coded sex of subject {subject}')
             group.append(subj.is_patient)
             sites_scanners.append(subj.site_code + "_" + subj.scanner)
-
+            
         covars["ages"] = ages
         covars["sex"] = sex
         covars["group"] = group
