@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/docs/images/MELD_logo.png" alt="MELD logo" width="100" align="left"/> 
+<img src="https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/MELD_logo.png" alt="MELD logo" width="100" align="left"/> 
 
 # MELD Graph 
 
@@ -8,7 +8,7 @@ Graph based FCD lesion segmentation for the [MELD project](https://meldproject.g
 
 This package is a pipeline to segment FCD-lesions from MRI scans. 
 
-![overview](https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/docs/images/Fig1_pipeline.jpg)
+![overview](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/Fig1_pipeline.jpg)
 
 *Code Authors : Mathilde Ripart, Hannah Spitzer, Sophie Adler, Konrad Wagstyl*
 
