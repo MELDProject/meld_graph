@@ -39,6 +39,14 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 :sync: native
 Open a terminal and `cd` to the meld graph folder.
 
+You will need to first activate FreeSurfer
+```bash
+export FREESURFER_HOME=<freesurfer_installation_directory>
+source $FREESURFER_HOME/SetUpFreeSurfer.sh
+```
+
+Then run: 
+
 ```bash
 ./meldgraph.sh new_pt_pipeline.py -harmo_code <harmo_code> -ids <subjects_list> -demos <demographic_file> --harmo_only
 ```
