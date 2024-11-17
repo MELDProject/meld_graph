@@ -7,7 +7,7 @@ After viewing these images, we recommend then viewing the predictions superimpos
 - Performing quality control
 - Viewing the .png images of predicted lesions
 
-#### Main outputs
+## Main outputs
 
 The predictions are saved as NIFTI files in the folder: 
 /output/predictions_reports/<subject_id>/predictions
@@ -21,14 +21,14 @@ The predictions are saved as NIFTI files in the folder:
 The command will create the file predictions_merged_t1.nii.gz which corresponds to the predictions masks merged with T1 in RGB format. It can be viewed on RGB viewer or used to transfert on PACS system.
 
 
-#### Viewing the predicted clusters
+## Viewing the predicted clusters
 The MELD pdf report and .png images of the predicted lesions are saved in the folder:
  /output/predictions_reports/<subject_id>/reports
  
 
 The first image is called inflatbrain_<subject_id>.png
 
-![inflated](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/inflatbrain_sub-test001.png)
+![inflated](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/inflatbrain_sub-00003.png)
 
 This image tells you the number of predicted clusters and shows on the inflated brain where the clusters are located.
 
@@ -36,22 +36,23 @@ The next images are mri_<subject_id>_<hemi>_c*.png
 
 E.g. 
 
-![mri](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/mri_sub-test001_right_c1.png)
+![mri](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/mri_sub-00003_right_c1.png)
 
 These images show the cluster on the volumetric T1 image in red and the 20% most salient voxels (i.e. with high confidence) in orange. Each cluster has its own image e.g.  mri_<subject_id>_<hemi>_c1.png for cluster 1 and  mri_<subject_id>_<hemi>_c2.png for cluster 2.
 
   
-#### Saliency
+## Saliency
   
 The next images are called saliency_<subject_id>_<hemi>_c*.png. Each cluster has a saliency image associated with it. E.g.
   
-![saliency](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/saliency_sub-test001_right_c1.png)
+![saliency](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/saliency_sub-00003_right_c1.png)
   
 These detail:
 * The hemisphere the cluster is on
-* The surface area of the cluster (across the cortical surface)
-* The cortical region in which the cluster is located
-* The confidence score of the predicted cluster (between 0 and 1)
+* The surface area of the cluster (across the cortical surface) in cm2
+* The cortical region in which the cluster mass centre is located
+* The confidence score of the predicted cluster (in %)
+* The integers values used to labelled this cluster and its salient vertices on the NIfTI prediction file.
 * The z-scores of the patient’s cortical features averaged within the cluster. In this example, the most abnormal features are the intrinsic curvature (folding measure) and the sulcal depth.
 * The saliency of each feature to the network - if a feature is brighter pink, that feature was more important to the network. In this example, the intrinsic curvature is most important to the network’s prediction
 
@@ -70,21 +71,56 @@ If you only provide a T1 image, the FLAIR features will not be included in the s
 
 The information hereabove mentioned about each cluster are summarised into the csv file info_clusters_<subject_id>.csv
 
-#### Viewing the predictions on the T1 and quality control
+## Viewing the predictions on the T1 and quality control
 
 It is important to check that the clusters detected are not due to obvious FreeSurfer reconstruction errors, scan artifacts etc.
 
-Note: The following commands works only with a native installation. Guidelines for docker and singularity users will come soon.  
+::::{tab-set}
+:::{tab-item} Docker
+:sync: docker
 
-Run with native installation: 
+Note: Docker does not allow GUI interface, therefore to run the QC you will need to have a stand alone installation of FreeSurfer/FreeView to enable the visualisation. 
+
+Open a terminal and `cd` to where you extracted the release zip.
+
+You will need to first activate FreeSurfer
+```bash
+export FREESURFER_HOME=<freesurfer_installation_directory>
+source $FREESURFER_HOME/SetUpFreeSurfer.sh
+```
+Then run the command: 
+```bash
+python scripts/new_patient_pipeline/new_pt_qc_script_stanalone.py -id <subject_id> -meld_data <path_to_meld_data_folder>
+```
+:::
+
+:::{tab-item} Native
+:sync: native
+
+Open a terminal and `cd` to the meld graph folder.
+
+You will need to first activate FreeSurfer
+```bash
+export FREESURFER_HOME=<freesurfer_installation_directory>
+source $FREESURFER_HOME/SetUpFreeSurfer.sh
+```
+
+Then run the command: 
 ```bash
 ./meldgraph.sh new_pt_qc_script.py -id <subject_id>
 ```
+
+:::
+::::
+
+
+This will open FreeView and load the T1 and FLAIR (where available) volumes as well as the classifier predictions on the left and right hemispheres. It will also load the FreeSurfer pial and white surfaces. It should look like that:
+
 ![qc_surface](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/qc_surface.png)
 
-This will open FreeView and load the T1 and FLAIR (where available) volumes as well as the classifier predictions on the left and right hemispheres. It will also load the FreeSurfer pial and white surfaces. It will look like this:
 
 You can scroll through and find the predicted clusters.
+
 ![qc_surface](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/qc_cluster.png)
 
 Example of a predicted cluster (orange) on the right hemisphere. It is overlaid on a T1 image, with the right hemisphere pial and white surfaces visualised. Red arrows point to the cluster. 

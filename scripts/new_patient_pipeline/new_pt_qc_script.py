@@ -9,8 +9,9 @@ import sys
 import argparse
 import subprocess as sub
 import glob
+from meld_graph.tools_pipeline import get_anat_files
 from meld_graph.paths import MELD_DATA_PATH, FS_SUBJECTS_PATH
-
+            
 def return_file(path, file_name):
     files = glob.glob(path)
     if len(files)>1 :
@@ -44,13 +45,10 @@ if __name__ == '__main__':
     if not os.path.isdir(subject_fs_folder):
         print(f'Freesurfer outputs does not exist for this subject. Unable to perform qc')
     else : 
+        subject_dict = get_anat_files(subject)
         #select inputs files T1 and FLAIR
-        T1_file = return_file(os.path.join(subject_dir, 'T1', '*.nii*'), 'T1')
-        if T1_file is None:
-            T1_file = return_file(os.path.join(subject_dir, 'anat', '*T1*.nii*'), 'T1')
-            FLAIR_file = return_file(os.path.join(subject_dir, 'anat', '*FLAIR*.nii*'), 'FLAIR')
-        else:
-            FLAIR_file = return_file(os.path.join(subject_dir, 'FLAIR', '*.nii*'), 'FLAIR')
+        T1_file = subject_dict['T1_path']
+        FLAIR_file = subject_dict['FLAIR_path']
         #select predictions files
         pred_lh_file = return_file(os.path.join(pred_dir, 'predictions', 'lh.prediction.nii*'), 'lh_prediction')
         pred_rh_file = return_file(os.path.join(pred_dir, 'predictions', 'rh.prediction.nii*'), 'rh_prediction')
@@ -77,7 +75,6 @@ if __name__ == '__main__':
         else:
             print('Could not find either T1 volume')
             pass
-    
     
 
     
