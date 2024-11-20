@@ -13,6 +13,8 @@ We recommend that users:
 - Re-review of the T1 /FLAIR at the predicted cluster locations to see if an FCD can now be seen
 - Performing quality control
 
+Here is a video tutorial on how to interpret the MELD Graph results: [Interpretation tutorial](https://youtu.be/dSyd1zOn4F8).
+
 ## Interpreting the MELD PDF report
 
 The MELD pdf report and .png images of the predicted lesions are saved in the folder:
