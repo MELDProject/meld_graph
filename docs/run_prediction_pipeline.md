@@ -2,6 +2,8 @@
 
 The new MELD pipeline offers a unique command line to predict a FCD-like abnormalities from T1w (and FLAIR scan). 
 
+Here is the video tutorial about how to run the MELD graph pipeline: [Tutorial on how to run the MELD pipeline](https://youtu.be/OZg1HSzqKyc). 
+
 If you wish to use the harmonisation feature of the MELD pipeline, you will need to first have computed the harmonisation parameters for the scanner used to acquire the data and used the harmonisation code into the main pipeline command as described bellow. Please refer to our [guidelines to harmonise a new scanner](https://meld-graph.readthedocs.io/en/latest/harmonisation.html). 
 
 ## Running
