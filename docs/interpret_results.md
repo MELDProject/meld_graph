@@ -1,53 +1,32 @@
-# Interpretation of the MELD pipeline results
+# Interpretation of the MELD Graph pipeline results
 
-The precalculated .png images of predicted lesions and their associated saliencies can be used to look at the predicted clusters and why they were detected by the classifier. The MELD pdf report provides a summary of all the prediction for a subject.
+This guideline explains how to interpret the MELD Graph results. 
 
-After viewing these images, we recommend then viewing the predictions superimposed on the T1 volume. This will enable:
+The main outputs of the MELD Graph algorithm are:
+- the MELD Graph PDF report
+- prediction.nii.gz (the cluster predictions for the whole brain)
+- lh.prediction.nii.gz and rh.prediction.nii.gz (the prediction masks for left and right hemispheres)
+
+We recommend that users:
+1. Interpret the MELD Graph PDF report
+2. Visualise the predicted clusters superimposed on the T1 volume. This will enable:
 - Re-review of the T1 /FLAIR at the predicted cluster locations to see if an FCD can now be seen
 - Performing quality control
-- Viewing the .png images of predicted lesions
 
-## Main outputs
+## Interpreting the MELD PDF report
 
-The predictions are saved as NIFTI files in the folder: 
-/output/predictions_reports/<subject_id>/predictions
-- prediction.nii.gz corresponds to the prediction mask for the whole brain
-- lh.prediction.nii.gz and rh.prediction.nii.gz correspond to the predictions masks for left and right hemispheres
-
-*For native installation only*: You can merge the MELD predictions onto the T1 nifti file using the command below. Note that you will need to have [FSL](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation) installed on your machine. 
-```bash
-./meldgraph.sh merge_predictions_t1.py -id <subject_id> -t1 <path_to_t1_nifti> -pred <path_to_meld_prediction_nifti> -output_dir <where_to_save_output>
-```
-The command will create the file predictions_merged_t1.nii.gz which corresponds to the predictions masks merged with T1 in RGB format. It can be viewed on RGB viewer or used to transfert on PACS system.
-
-
-## Viewing the predicted clusters
 The MELD pdf report and .png images of the predicted lesions are saved in the folder:
  /output/predictions_reports/<subject_id>/reports
- 
 
-The first image is called inflatbrain_<subject_id>.png
-
+The first page of the report provides an overview of all the predicted clusters on an inflated surface. E.g.
 ![inflated](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/inflatbrain_sub-00003.png)
 
-This image tells you the number of predicted clusters and shows on the inflated brain where the clusters are located.
+If you want to separately view this image, it is named inflatbrain_<subject_id>.png
 
-The next images are mri_<subject_id>_<hemi>_c*.png
+Each of next pages of the report provides detailed information about 1 predicted cluster. 
 
-E.g. 
-
-![mri](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/mri_sub-00003_right_c1.png)
-
-These images show the cluster on the volumetric T1 image in red and the 20% most salient voxels (i.e. with high confidence) in orange. Each cluster has its own image e.g.  mri_<subject_id>_<hemi>_c1.png for cluster 1 and  mri_<subject_id>_<hemi>_c2.png for cluster 2.
-
-  
-## Saliency
-  
-The next images are called saliency_<subject_id>_<hemi>_c*.png. Each cluster has a saliency image associated with it. E.g.
-  
-![saliency](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/saliency_sub-00003_right_c1.png)
-  
-These detail:
+The following information is provided for each predicted cluster:
+* An image of the cluster on the volumetric T1 image (red) with the 20% most salient voxels (i.e. the voxels most important to the classifier's decision) in orange
 * The hemisphere the cluster is on
 * The surface area of the cluster (across the cortical surface) in cm2
 * The cortical region in which the cluster mass centre is located
@@ -56,7 +35,29 @@ These detail:
 * The z-scores of the patient’s cortical features averaged within the cluster. In this example, the most abnormal features are the intrinsic curvature (folding measure) and the sulcal depth.
 * The saliency of each feature to the network - if a feature is brighter pink, that feature was more important to the network. In this example, the intrinsic curvature is most important to the network’s prediction
 
-On the surfaces plot, the predicted cluster are plotted in red and the 20% most salient vertices of this cluster are plotted in orange. 
+## Viewing predicted clusters
+
+For each predicted cluster, the prediction on the volumetric T1 image (red) with the 20% most salient voxels (i.e. the voxels most important to the classifier's decision) in orange is displayed. Here is an example:
+
+![mri](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/mri_sub-00003_right_c1.png)
+
+Each cluster has its own image e.g.  mri_<subject_id>_<hemi>_c1.png for cluster 1 and  mri_<subject_id>_<hemi>_c2.png for cluster 2.
+
+## Why did the classifier predict this area?
+
+To understand more about the area predicted and why the classifier predicted this area, the report provides the following information:
+* The hemisphere the cluster is on
+* The surface area of the cluster (across the cortical surface) in cm2
+* The cortical region in which the cluster mass centre is located
+* The confidence score of the predicted cluster (in %)
+* The integers values used to labelled this cluster and its salient vertices on the NIfTI prediction file.
+* The z-scores of the patient’s cortical features averaged within the cluster. In this example, the most abnormal features are the intrinsic curvature (folding measure) and the sulcal depth.
+* The saliency of each feature to the network - if a feature is brighter pink, that feature was more important to the network. In this example, the intrinsic curvature is most important to the network’s prediction
+
+**We recommend that you carefully review all this information to underd more about the area predicted and why it was predicted. This will help you to decide whether the area identified is likely to be a FCD**
+
+For example: 
+![saliency](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/saliency_sub-00003_right_c1.png)
 
 The features that are included in the saliency image are:
 * **Grey-white contrast**: indicative of blurring at the grey-white matter boundary, lower z-scores indicate more blurring
@@ -71,9 +72,20 @@ If you only provide a T1 image, the FLAIR features will not be included in the s
 
 The information hereabove mentioned about each cluster are summarised into the csv file info_clusters_<subject_id>.csv
 
-## Viewing the predictions on the T1 and quality control
+## Viewing the predicted clusters on the T1 and quality control
 
-It is important to check that the clusters detected are not due to obvious FreeSurfer reconstruction errors, scan artifacts etc.
+After viewing the MELD PDF report, it is then important to visualise the predicted clusters on the T1 to see if they are likely FCDs or not. 
+
+The predictions are saved as NIFTI files in the folder: 
+/output/predictions_reports/<subject_id>/predictions
+
+*For native installation only*: You can merge the MELD predictions onto the T1 nifti file using the command below. Note that you will need to have [FSL](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation) installed on your machine. 
+```bash
+./meldgraph.sh merge_predictions_t1.py -id <subject_id> -t1 <path_to_t1_nifti> -pred <path_to_meld_prediction_nifti> -output_dir <where_to_save_output>
+```
+The command will create the file predictions_merged_t1.nii.gz which corresponds to the predictions masks merged with T1 in RGB format. It can be viewed on RGB viewer or used to transfert on PACS system.
+
+**It is important to check that the clusters detected are not due to obvious FreeSurfer reconstruction errors, scan artifacts etc.**
 
 ::::{tab-set}
 :::{tab-item} Docker
@@ -90,7 +102,7 @@ source $FREESURFER_HOME/SetUpFreeSurfer.sh
 ```
 Then run the command: 
 ```bash
-python scripts/new_patient_pipeline/new_pt_qc_script_stanalone.py -id <subject_id> -meld_data <path_to_meld_data_folder>
+python scripts/new_patient_pipeline/new_pt_qc_script_standalone.py -id <subject_id> -meld_data <path_to_meld_data_folder>
 ```
 :::
 
