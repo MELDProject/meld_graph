@@ -54,7 +54,7 @@ To understand more about the area predicted and why the classifier predicted thi
 * The z-scores of the patient’s cortical features averaged within the cluster. In this example, the most abnormal features are the intrinsic curvature (folding measure) and the sulcal depth.
 * The saliency of each feature to the network - if a feature is brighter pink, that feature was more important to the network. In this example, the intrinsic curvature is most important to the network’s prediction
 
-**We recommend that you carefully review all this information to understand more about the area predicted and why it was predicted. This will help you to decide whether the area identified is likely to be a FCD**
+**We recommend that you carefully review all this information to underd more about the area predicted and why it was predicted. This will help you to decide whether the area identified is likely to be a FCD**
 
 For example: 
 ![saliency](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/saliency_sub-00003_right_c1.png)
@@ -102,7 +102,7 @@ source $FREESURFER_HOME/SetUpFreeSurfer.sh
 ```
 Then run the command: 
 ```bash
-python scripts/new_patient_pipeline/new_pt_qc_script_stanalone.py -id <subject_id> -meld_data <path_to_meld_data_folder>
+python scripts/new_patient_pipeline/new_pt_qc_script_standalone.py -id <subject_id> -meld_data <path_to_meld_data_folder>
 ```
 :::
 
