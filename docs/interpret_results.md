@@ -79,12 +79,6 @@ After viewing the MELD PDF report, it is then important to visualise the predict
 The predictions are saved as NIFTI files in the folder: 
 /output/predictions_reports/<subject_id>/predictions
 
-*For native installation only*: You can merge the MELD predictions onto the T1 nifti file using the command below. Note that you will need to have [FSL](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation) installed on your machine. 
-```bash
-./meldgraph.sh merge_predictions_t1.py -id <subject_id> -t1 <path_to_t1_nifti> -pred <path_to_meld_prediction_nifti> -output_dir <where_to_save_output>
-```
-The command will create the file predictions_merged_t1.nii.gz which corresponds to the predictions masks merged with T1 in RGB format. It can be viewed on RGB viewer or used to transfert on PACS system.
-
 **It is important to check that the clusters detected are not due to obvious FreeSurfer reconstruction errors, scan artifacts etc.**
 
 ::::{tab-set}
@@ -154,3 +148,11 @@ Note: the classifier is only able to predict areas within the pial and white sur
 * There will be false positive clusters. You will need to look at the predicted clusters with an experienced radiologist to identify the significance of detected areas
 * The classifier has only been trained on FCD lesions and we do not have data on its ability to detect other pathologies e.g. DNET / ganglioglioma / polymicrogyria. As such, the research tool should only be applied to patients with FCD / suspected FCD
 * Performance of the classifier varies according to MRI field strength, data available (e.g. T1 or T1 and FLAIR) and histopathological subtype. For more details of how the classifier performs in different cohorts, see [our paper](https://arxiv.org/abs/2306.01375).
+
+## Other commands
+
+*For native installation only*: You can merge the MELD predictions onto the T1 nifti file using the command below. Note that you will need to have [FSL](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation) installed on your machine. 
+```bash
+./meldgraph.sh merge_predictions_t1.py -id <subject_id> -t1 <path_to_t1_nifti> -pred <path_to_meld_prediction_nifti> -output_dir <where_to_save_output>
+```
+The command will create the file predictions_merged_t1.nii.gz which corresponds to the predictions masks merged with T1 in RGB format. It can be viewed on RGB viewer or used to transfert on PACS system.
