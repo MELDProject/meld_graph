@@ -159,8 +159,8 @@ deploy:
 
 To disable gpus, change it back to `0`.
 
-## FAQs
-Please see our [FAQ](https://meld-graph.readthedocs.io/en/latest/FAQs.html) for common installation problems.
+## FAQs 
+Please see our [FAQ page](https://meld-graph.readthedocs.io/en/latest/FAQs.html) for common installation problems and questions
 
 ## Contact
 

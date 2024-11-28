@@ -276,3 +276,6 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 ## Interpretation of results
 
 Refer to our [guidelines](https://meld-graph.readthedocs.io/en/latest/documentation/Interpret_results.html) for details on how to read and interprete the MELD pipeline results
+
+## FAQs 
+Please see our [FAQ page](https://meld-graph.readthedocs.io/en/latest/FAQs.html) for common questions about the pipeline use

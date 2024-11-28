@@ -71,3 +71,6 @@ Note:
 WARNING: for harmonisation 
 - please make sure you add the appropriate age and sex of the patients. Adding dummy information can lead to suboptimal harmonisation. 
 - please ensure that there is non-zero variance in the age of your subjects. Similar age for all subjects will lead to harmonisation failure. If your patients have the same age, please add randomly +- 0.01 to all age to introduce variance.   
+
+## FAQs 
+Please see our [FAQ page](https://meld-graph.readthedocs.io/en/latest/FAQs.html) for common questions about data preparation

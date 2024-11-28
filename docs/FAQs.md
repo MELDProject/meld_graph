@@ -1,15 +1,33 @@
 # FAQs
 
-## Issues with native installation
-TBC
+## **Issues & questions with installation**
 
-## Issues with Docker installation
-TBC
+### **Issue with Native installation MAC Intel user - Issue when running meldsetup.sh**
 
-## Issues with Singularity/Apptainer installation
+If you are a MAC user with an intel processor you will run into the issue below when running the command ```./meldsetup.sh```:
+```bash
+[...]
+Installing pip dependencies: / Ran pip subprocess with arguments:
+Pip subprocess output:
+ERROR: CONDA_BUILD_SYSROOT or SDKROOT has to be set for cross-compiling
+[...]
+ModuleNotFoundError: No module named '_sysconfigdata_arm64_apple_darwin20_0_0'
+```
 
----
-### Issue of space when with creating the SIF
+The issue happens because the code is trying to force-installing ARM64 specific packages on an Intel processor. 
+An alternative solution is to follow the steps below: 
+1. Remove the meld_graph environment that failed 
+conda remove -n meld_graph --all
+2. Open the `meldsetup.sh` file and replace the line `conda env create -f environment-mac.yml` by `conda env create -f environment.yml`
+3. Save the file and rebuilt the environment by running:
+```bash
+./meldsetup.sh
+```
+
+This might raises new issues about packages that could not be found or installed. Please contact the meld.study@gmail.com with information about the issue and the packages missing. 
+
+
+### **Issue with Singularity - Not enough space when with creating the SIF**
 ```bash
 INFO:    Creating SIF file... 
 FATAL:   While performing build: while creating squashfs: create command failed: exit status 1:  
@@ -29,3 +47,39 @@ Solution:
     export APPTAINER_TMPDIR=<path_folder_with_space>
     ```
 ---
+
+## **Issues & questions with pipeline use**
+
+### **Can I use precomputed FreeSurfer outputs in the pipeline ?**
+
+If prior using this pipeline you already have processed a T1w scan (or T1w and FLAIR scans) into the `recon-all` pipeline from FreeSurfer **V6.0** or **V7.2**, you can use the output FreeSurfer folder for this patient in the pipeline. The pipeline will use those outputs and skip the FreeSurfer segmentation.  
+
+For that you can place the patient folder into the meld_data folder in the `output/fs_outputs` folder. You will need to ensure that the freesurfer subject's folder name matchs the subject ID used in the input data. 
+
+For example, if you have a patient 'sub-002` and you already have FreeSurfer output folder for that patient, you can rename the folder by the subject id and place it as follow:
+```
+output
+└── fs_outputs
+    └── sub-0002
+```
+Typical outputs folder from the `recon-all` command would look like this:
+```
+sub-0002
+    ├── label
+    ├── mri
+    ├── scripts
+    ├── stats
+    ├── surf
+    ├── tmp
+    ├── touch
+    ├── trash
+```
+
+### **Can I use the MELD Graph pipeline on scans that contains previous resection cavities?**
+
+The short answer is no. 
+
+The MELD Graph pipeline has not been trained on scans that contains resection cavities. Such scans will likely induce errors in the brain segmentation which will bias the prediction. 
+
+If the patient already had surgery, we recommand to use the scans that were acquired prior this surgery and use those to run in the pipeline
+### 

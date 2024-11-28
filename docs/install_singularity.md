@@ -71,8 +71,9 @@ singularity exec /home/sejjmr9/Scratch/scripts/meld_graph.sif /bin/bash -c "cd /
 
 You will find `pytest_errors.log` in the folder where you launched the command. 
 
+
 ## FAQs
-Please see our [FAQs](https://raw.githubusercontent.com//MELDProject/meld_graph/dev_docker/docs/FAQs.md) for common installation problems.
+Please see our [FAQ page](https://meld-graph.readthedocs.io/en/latest/FAQs.html) for common installation problems and questions
 
 ## Contact
 

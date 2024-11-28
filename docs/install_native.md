@@ -136,7 +136,7 @@ If you run into errors at this stage and need help, you can re-run the command b
 You will find this pytest_errors.log file in <path_to_meld_graph>. 
 :::
 
-## FAQs
-Please see our [FAQ](https://meld-graph.readthedocs.io/en/latest/FAQs.html) for common installation problems.
+## FAQs 
+Please see our [FAQ page](https://meld-graph.readthedocs.io/en/latest/FAQs.html) for common installation problems and questions
 
 
