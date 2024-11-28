@@ -54,7 +54,25 @@ In order to run the docker, you'll need to configure a couple of files
 1. Download `meld_graph.zip` from the [latest github release](https://github.com/MELDProject/meld_graph/releases/latest) and extract it.
 2. Copy the freesurfer `license.txt` into the extracted folder
 3. Create the meld_data folder, if it doesn't exist already. This folder is where you would like to store MRI data to run the classifier
-4. Edit the compose.yml `volumes` line before the `:` to point to it. For example, if you wanted the folder to be on a mounted drive in Linux it might be:
+4. In the meld_graph folder open and edit the compose.yml to add the path to the meld_data folder. The initial compose.yml file looks like ::
+```
+services:
+  aidhs:
+    image: meldproject/meld_graph:latest
+    platform: "linux/amd64"
+    volumes:
+      - ./docker-data:/data
+    user: $DOCKER_USER
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+              count: 0
+
+```
+Change the line below "`volumes:`" to point to the meld_data folder. Do not delete the "`:/data`" at the end.\
+For example, if you wanted the folder to be on a mounted drive such as "`/mnt/datadrive/meld-data`" you should change the line as showed below:
 ```
     volumes:
       - /mnt/datadrive/meld-data:/data
@@ -70,6 +88,17 @@ On windows, if you're using absolute paths, use forward slashes and quotes:
 ```
 :::
 
+5. **WARNING:** If you do not have GPU on your computer (e.g. Mac laptop) you will need to open the compose.yml file and remove the last 6th lines of the text (everything that includes `deploy` and below).\
+Your file should look like that: 
+```
+services:
+  aidhs:
+    image: meldproject/meld_graph:latest
+    platform: "linux/amd64"
+    volumes:
+      -  ./docker-data:/data
+    user: $DOCKER_USER
+```
 
 ## Set up paths and download model
 Before being able to use the classifier on your data, data paths need to be set up and the pretrained model needs to be downloaded. 
