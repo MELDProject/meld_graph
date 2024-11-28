@@ -42,7 +42,7 @@ The MELD surface-based graph FCD detection algorithm is intended for research pu
 
 ### Installations available 
 You can install and use the MELD FCD prediction pipeline with :
-- [**docker container**](https://meld-graph.readthedocs.io/en/latest/install_docker.html) (STILL IN PROGRESS) recommended for easy installation of the pipeline as all the prerequisite packages are already embeded into the container. Note: Dockers are not working on High Performance Computing (HCP) systems ; Not tested on Windows 
+- [**docker container**](https://meld-graph.readthedocs.io/en/latest/install_docker.html) recommended for easy installation of the pipeline as all the prerequisite packages are already embedded into the container. Note: Dockers are not working on High Performance Computing (HCP) systems ; Not tested on Windows 
 - [**native installation**](https://meld-graph.readthedocs.io/en/latest/install_native.html) recommended for Mac and users that want to modify the code and/or use the code to train/test their own classifier. 
 - [**singularity container (Not tested yet)**](https://meld-graph.readthedocs.io/en/latest/install_singularity.html) enables to run a container on High Performance Computing (HCP) systems. 
 

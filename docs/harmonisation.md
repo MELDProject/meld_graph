@@ -1,9 +1,11 @@
 # Compute the harmonisation parameters for a new scanner
 
 ## Information about the harmonisation
-The MELD pipeline enables the harmonisation of your patient's features before prediction, if you are providing harmonisation parameters.
+Each MRI scanner / sequence  / FreeSurfer version will introduce small non-biological differences in the features that are calculated and used to predict where the FCD is. To help remove these biases, we advise harmonisation of your patient's features. This will make your patient's features "look like" the features we used to train the classifier. 
 
-Harmonisation of your patient data is not mandatory but recommended, to remove any bias induced by the scanner and sequence used. For more details on the MELD FCD predictions performances with and without harmonisation please refers to our (paper)[]
+Harmonisation of your patient data is not mandatory but recommended, to remove any bias induced by the scanner and sequence used. For more details on the MELD FCD predictions performances with and without harmonisation please refer to our (paper)[]
+
+Here is the video tutorial detailing how to compute the harmonisation parameters - [Harmonisation tutorial](https://youtu.be/te_TR6sA5sQ).
 
 ## Compute the harmonisation paramaters 
 
