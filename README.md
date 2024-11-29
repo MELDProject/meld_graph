@@ -53,6 +53,7 @@ Once installed you will be able to use the MELD FCD prediction pipeline on your 
 3. Run the prediction pipeline: [guidelines](https://meld-graph.readthedocs.io/en/latest/run_prediction_pipeline.html)
 4. Interpret the results: [guidelines](https://meld-graph.readthedocs.io/en/latest/interpret_results.html)
 
+Note: If you have a question or if you are running into issues at any stage (installation/use/interpretation), have a look at our [FAQs](https://meld-graph.readthedocs.io/en/latest/FAQs.html) page to see if we have not already answered them. 
 
 **What is the harmonisation process ?**
 

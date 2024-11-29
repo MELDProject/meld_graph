@@ -158,3 +158,6 @@ Note: the classifier is only able to predict areas within the pial and white sur
 ./meldgraph.sh merge_predictions_t1.py -id <subject_id> -t1 <path_to_t1_nifti> -pred <path_to_meld_prediction_nifti> -output_dir <where_to_save_output>
 ```
 The command will create the file predictions_merged_t1.nii.gz which corresponds to the predictions masks merged with T1 in RGB format. It can be viewed on RGB viewer or used to transfert on PACS system.
+
+## FAQs 
+Please see our [FAQ page](https://meld-graph.readthedocs.io/en/latest/FAQs.html) for common questions about the interpretation of outputs

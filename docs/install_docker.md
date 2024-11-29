@@ -51,10 +51,10 @@ You will need to download a Freesurfer license.txt to enable Freesurfer/Fastsurf
 ## Configuration
 In order to run the docker, you'll need to configure a couple of files
 
-1. Download `meld_graph.zip` from the [latest github release](https://github.com/MELDProject/meld_graph/releases/latest) and extract it.
+1. Download `meld_graph_X.X.X.zip` with X.X.X the version from the [latest github release](https://github.com/MELDProject/meld_graph/releases/latest) and extract it.
 2. Copy the freesurfer `license.txt` into the extracted folder
 3. Create the meld_data folder, if it doesn't exist already. This folder is where you would like to store MRI data to run the classifier
-4. In the meld_graph folder open and edit the compose.yml to add the path to the meld_data folder. The initial compose.yml file looks like ::
+4. In the `meld_graph_X.X.X` extracted folder open and edit the compose.yml to add the path to the meld_data folder. The initial compose.yml file looks like ::
 ```
 services:
   aidhs:
@@ -190,8 +190,8 @@ deploy:
 
 To disable gpus, change it back to `0`.
 
-## FAQs
-Please see our [FAQ](https://meld-graph.readthedocs.io/en/latest/FAQs.html) for common installation problems.
+## FAQs 
+Please see our [FAQ page](https://meld-graph.readthedocs.io/en/latest/FAQs.html) for common installation problems and questions
 
 ## Contact
 

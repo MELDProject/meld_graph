@@ -77,3 +77,6 @@ You can tune this command using additional variables and flags as detailed bello
 ## What's next ? 
 Once you have successfully computed the harmonisation parameters, they should be saved in your <meld_data_folder>. The file is called 'MELD_<site_code>_combat_parameters.hdf5' and is stored in 'output/preprocessed_surf_data/MELD_<site_code>/'.
 You can now refer to the guidelines [to predict a new patient](https://meld-graph.readthedocs.io/en/latest/run_prediction_pipeline.html) to predict lesion in patients from that same scanner.
+
+## FAQs 
+Please see our [FAQ page](https://meld-graph.readthedocs.io/en/latest/FAQs.html) for common questions about the harmonisation
