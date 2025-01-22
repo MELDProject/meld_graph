@@ -27,7 +27,6 @@ If you wish to use the harmonisation feature of the MELD pipeline, you will need
 </div>
 
 
-
 ::::{tab-set}
 :::{tab-item} Docker
 :sync: docker
@@ -53,6 +52,17 @@ Then run the command
 ```bash
 ./meldgraph.sh new_pt_pipeline.py -id <subject_id> 
 ```
+
+:::{tab-item} Singularity
+:sync: singularity
+
+If using Singularity or Apptainer, there are some paths that you need to export before running the pipeline. Find the paths to export in the [singularity installation](https://meld-graph.readthedocs.io/en/latest/install_singularity.html). Tip : You can add those paths to your `~/.bashrc` file to ensure they are always activated when opening a new terminal. 
+
+And then run:
+```bash
+singularity exec meld_graph.sif /bin/bash -c "cd /app && source \$FREESURFER_HOME/FreeSurferEnv.sh && python scripts/new_patient_pipeline/new_pt_pipeline.py -id <subject_id>"
+```
+
 :::
 ::::
 
@@ -97,6 +107,13 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 ```bash
 ./meldgraph.sh new_pt_pipeline.py -id sub-001 --fastsurfer
 ```
+
+:::{tab-item} Singularity
+:sync: singularity
+```bash
+singularity exec meld_graph.sif /bin/bash -c "cd /app && source \$FREESURFER_HOME/FreeSurferEnv.sh && python scripts/new_patient_pipeline/new_pt_pipeline.py -id sub-001 --fastsurfer"
+```
+
 :::
 ::::
 
@@ -114,6 +131,13 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 ```bash
 ./meldgraph.sh new_pt_pipeline.py -id sub-001 -harmo_code H1
 ```
+
+:::{tab-item} Singularity
+:sync: singularity
+```bash
+singularity exec meld_graph.sif /bin/bash -c "cd /app && source \$FREESURFER_HOME/FreeSurferEnv.sh && python scripts/new_patient_pipeline/new_pt_pipeline.py -id sub-001 -harmo_code H1"
+```
+
 :::
 ::::
 
@@ -131,6 +155,13 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 ```bash
 ./meldgraph.sh new_pt_pipeline.py -ids list_subjects.txt --parallelise
 ```
+
+:::{tab-item} Singularity
+:sync: singularity
+```bash
+singularity exec meld_graph.sif /bin/bash -c "cd /app && source \$FREESURFER_HOME/FreeSurferEnv.sh && python scripts/new_patient_pipeline/new_pt_pipeline.py -ids list_subjects.txt --parallelise"
+```
+
 :::
 ::::
 
@@ -149,7 +180,7 @@ This script:
     * Moves the features to the template surface
     * Write feature in hdf5
    
-Example to use it on one patient without harmonisation:
+
 ::::{tab-set}
 :::{tab-item} Docker
 :sync: docker
@@ -161,8 +192,20 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 :::{tab-item} Native
 :sync: native
 ```bash
-./meldgraph.sh run_script_preprocessing.py -id run_script_segmentation-001
+./meldgraph.sh run_script_preprocessing.py -id sub-001
 ```
+
+:::{tab-item} Singularity
+:sync: singularity
+First you will need to mount the `meld_data` folder to the `/data` folder of the container by running:
+```bash
+export APPTAINER_BINDPATH=<path_to_meld_data_folder>:/data
+```
+And then run:
+```bash
+singularity exec meld_graph.sif /bin/bash -c "cd /app && source \$FREESURFER_HOME/FreeSurferEnv.sh && python scripts/new_patient_pipeline/run_script_preprocessing.py -id sub-001"
+```
+
 :::
 ::::
 
@@ -180,6 +223,13 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 ```bash
 ./meldgraph.sh run_script_segmentation.py -h
 ```
+
+:::{tab-item} Singularity
+:sync: singularity
+```bash
+singularity exec meld_graph.sif /bin/bash -c "cd /app && source \$FREESURFER_HOME/FreeSurferEnv.sh && python scripts/new_patient_pipeline/run_script_preprocessing.py -h"
+```
+
 :::
 ::::
 
@@ -211,6 +261,18 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 ```bash
 ./meldgraph.sh run_script_preprocessing.py -id sub-001
 ```
+
+:::{tab-item} Singularity
+:sync: singularity
+First you will need to mount the `meld_data` folder to the `/data` folder of the container by running:
+```bash
+export APPTAINER_BINDPATH=<path_to_meld_data_folder>:/data
+```
+And then run:
+```bash
+singularity exec meld_graph.sif /bin/bash -c "cd /app && source \$FREESURFER_HOME/FreeSurferEnv.sh && python scripts/new_patient_pipeline/run_script_preprocessing.py -id sub-001"
+```
+
 :::
 ::::
 
@@ -228,6 +290,13 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 ```bash
 ./meldgraph.sh run_script_preprocessing.py -h
 ```
+
+:::{tab-item} Singularity
+:sync: singularity
+```bash
+singularity exec meld_graph.sif /bin/bash -c "cd /app && source \$FREESURFER_HOME/FreeSurferEnv.sh && python scripts/new_patient_pipeline/run_script_preprocessing.py -h"
+```
+
 :::
 ::::
 
@@ -255,6 +324,18 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 ```bash
 ./meldgraph.sh run_script_prediction.py -id sub-001
 ```
+
+:::{tab-item} Singularity
+:sync: singularity
+First you will need to mount the `meld_data` folder to the `/data` folder of the container by running:
+```bash
+export APPTAINER_BINDPATH=<path_to_meld_data_folder>:/data
+```
+And then run:
+```bash
+singularity exec meld_graph.sif /bin/bash -c "cd /app && source \$FREESURFER_HOME/FreeSurferEnv.sh && python scripts/new_patient_pipeline/run_script_prediction.py -id sub-001"
+```
+
 :::
 ::::
 
@@ -272,6 +353,13 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 ```bash
 ./meldgraph.sh run_script_prediction.py -h
 ```
+
+:::{tab-item} Singularity
+:sync: singularity
+```bash
+singularity exec meld_graph.sif /bin/bash -c "cd /app && source \$FREESURFER_HOME/FreeSurferEnv.sh && python scripts/new_patient_pipeline/run_script_prediction.py -h"
+```
+
 :::
 ::::
 

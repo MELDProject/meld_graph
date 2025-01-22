@@ -49,6 +49,11 @@ export APPTAINER_BINDPATH=/<path_to_meld_data_folder>:/data,<path_to_FS_license>
 export APPTAINERENV_FS_LICENSE=/license.txt
 ```
 
+:::{admonition} Singularity
+:class: tip
+You can add those paths to your `~/.bashrc` file to ensure they are always activated when opening a new terminal. 
+:::
+
 3. Run this command to download the data folder 
 ```bash
 singularity exec meld_graph.sif /bin/bash -c "cd /app && python scripts/new_patient_pipeline/prepare_classifier.py "
@@ -66,7 +71,7 @@ singularity exec meld_graph.sif /bin/bash -c "cd /app && pytest -s"
 If you run into errors at this stage and need help, you can re-run by changing the last line of the command by the command below to save the terminal outputs in a txt file. Please send `pytest_errors.log` to us so we can work with you to solve any problems. [How best to reach us.](#contact)
 
 ```bash
-singularity exec /home/sejjmr9/Scratch/scripts/meld_graph.sif /bin/bash -c "cd /app && pytest -s | tee pytest_errors.log"
+singularity exec meld_graph.sif /bin/bash -c "cd /app && pytest -s | tee pytest_errors.log"
 ```
 
 You will find `pytest_errors.log` in the folder where you launched the command. 
