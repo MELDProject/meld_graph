@@ -10,8 +10,9 @@
 
 install_docker
 install_native
+install_singularity
 
-FAQs
+FAQ
 ```
 
 
