@@ -53,6 +53,7 @@ Then run the command
 ./meldgraph.sh new_pt_pipeline.py -id <subject_id> 
 ```
 
+:::
 :::{tab-item} Singularity
 :sync: singularity
 
@@ -108,6 +109,7 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 ./meldgraph.sh new_pt_pipeline.py -id sub-001 --fastsurfer
 ```
 
+:::
 :::{tab-item} Singularity
 :sync: singularity
 ```bash
@@ -132,6 +134,7 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 ./meldgraph.sh new_pt_pipeline.py -id sub-001 -harmo_code H1
 ```
 
+:::
 :::{tab-item} Singularity
 :sync: singularity
 ```bash
@@ -156,6 +159,7 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 ./meldgraph.sh new_pt_pipeline.py -ids list_subjects.txt --parallelise
 ```
 
+:::
 :::{tab-item} Singularity
 :sync: singularity
 ```bash
@@ -195,6 +199,7 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 ./meldgraph.sh run_script_preprocessing.py -id sub-001
 ```
 
+:::
 :::{tab-item} Singularity
 :sync: singularity
 First you will need to mount the `meld_data` folder to the `/data` folder of the container by running:
@@ -224,6 +229,7 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 ./meldgraph.sh run_script_segmentation.py -h
 ```
 
+:::
 :::{tab-item} Singularity
 :sync: singularity
 ```bash
@@ -262,6 +268,7 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 ./meldgraph.sh run_script_preprocessing.py -id sub-001
 ```
 
+:::
 :::{tab-item} Singularity
 :sync: singularity
 First you will need to mount the `meld_data` folder to the `/data` folder of the container by running:
@@ -291,6 +298,7 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 ./meldgraph.sh run_script_preprocessing.py -h
 ```
 
+:::
 :::{tab-item} Singularity
 :sync: singularity
 ```bash
@@ -325,6 +333,7 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 ./meldgraph.sh run_script_prediction.py -id sub-001
 ```
 
+:::
 :::{tab-item} Singularity
 :sync: singularity
 First you will need to mount the `meld_data` folder to the `/data` folder of the container by running:
@@ -354,6 +363,7 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 ./meldgraph.sh run_script_prediction.py -h
 ```
 
+:::
 :::{tab-item} Singularity
 :sync: singularity
 ```bash
