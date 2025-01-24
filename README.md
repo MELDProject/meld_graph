@@ -44,7 +44,10 @@ The MELD surface-based graph FCD detection algorithm is intended for research pu
 You can install and use the MELD FCD prediction pipeline with :
 - [**docker container**](https://meld-graph.readthedocs.io/en/latest/install_docker.html) recommended for easy installation of the pipeline as all the prerequisite packages are already embedded into the container. Note: Dockers are not working on High Performance Computing (HCP) systems ; Not tested on Windows 
 - [**native installation**](https://meld-graph.readthedocs.io/en/latest/install_native.html) recommended for Mac and users that want to modify the code and/or use the code to train/test their own classifier. 
-- [**singularity container (Not tested yet)**](https://meld-graph.readthedocs.io/en/latest/install_singularity.html) enables to run a container on High Performance Computing (HCP) systems. 
+- [**singularity container (Not tested yet)**](https://meld-graph.readthedocs.io/en/latest/install_singularity.html) enables to run a container on High Performance Computing (HCP) systems.
+
+**YouTube tutorials available for the [docker installation](https://youtu.be/oduOe6NDXLA) and [native installation](https://youtu.be/jUCahJ-AebM)**
+
 
 ### Running the pipeline 
 Once installed you will be able to use the MELD FCD prediction pipeline on your data following the steps:
@@ -52,6 +55,8 @@ Once installed you will be able to use the MELD FCD prediction pipeline on your 
 2. (OPTIONAL) Compute the harmonisation parameters : [guidelines](https://meld-graph.readthedocs.io/en/latest/harmonisation.html)
 3. Run the prediction pipeline: [guidelines](https://meld-graph.readthedocs.io/en/latest/run_prediction_pipeline.html)
 4. Interpret the results: [guidelines](https://meld-graph.readthedocs.io/en/latest/interpret_results.html)
+
+**YouTube tutorials available to run the [harmonisation step](https://youtu.be/te_TR6sA5sQ), to run the [prediction pipeline](https://youtu.be/OZg1HSzqKyc) and to [interpret the pipeline results](https://youtu.be/dSyd1zOn4F8)**
 
 Note: If you have a question or if you are running into issues at any stage (installation/use/interpretation), have a look at our [FAQs](https://meld-graph.readthedocs.io/en/latest/FAQs.html) page to see if we have not already answered them. 
 
