@@ -3,6 +3,7 @@
 # MELD Graph 
 
 **Full documentation: [here](https://meld-graph.readthedocs.io/en/latest/index.html)**
+**Intro to MELD Graph and installation videos: [here](https://youtu.be/PIM1gwYNLns)**
 
 Graph based FCD lesion segmentation for the [MELD project](https://meldproject.github.io/).
 
