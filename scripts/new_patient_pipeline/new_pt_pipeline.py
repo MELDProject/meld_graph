@@ -88,6 +88,14 @@ if __name__ == "__main__":
                         default=False,
                         action="store_true",
                         )
+    parser.add_argument("--withoutflair",
+                        help="do not use FLAIR images for prediction",
+                        required=False,
+                        default=False,
+                        action="store_true",
+                        )
+                        
+    
     
 
      
@@ -153,6 +161,7 @@ if __name__ == "__main__":
                     list_ids=args.list_ids,
                     sub_id=args.id,
                     harmonisation_only = args.harmo_only,
+                    withoutflair = args.withoutflair,
                     )
 
     #---------------------------------------------------------------------------------
