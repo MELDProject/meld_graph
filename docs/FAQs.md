@@ -63,6 +63,15 @@ You are likely having an issue with the `demographics_file.csv` or the `list_sub
 - In the `demographics_file.csv`, check that there is no extra columns and that the columns names match what was provided as an [example](https://meld-graph.readthedocs.io/en/latest/prepare_data.html). Also ensure that the file is saved with comma separators (",") and not semicolon (";") which will prevent the code from properly reading the file. 
 - In the `list_subjects.txt`, ensure that there is no extra empty line at the end of the file.
 
+### **Issue during prediction - The pipeline works and then stop when running the predictions and saliencies**
+
+The error is likely due to a memory issue when the machine-learning model is called to predict.\
+If you are using Docker Desktop, it could be because the memory limit is set very low by default. 
+To remedy, you will need to:
+1) Increase the memory in the Docker Desktop settings (more help in this [post](https://forums.docker.com/t/how-to-increase-memory-size-that-is-available-for-a-docker-container/78483))
+2) Run the MELD Graph command again. 
+
+
 ### **Can I use precomputed FreeSurfer outputs in the pipeline ?**
 
 If prior to using this pipeline you already have processed a T1w scan (or T1w and FLAIR scans) with the `recon-all` pipeline from FreeSurfer **V6.0** or **V7.2**, you can use the output FreeSurfer folder for this patient in the pipeline. The pipeline will use those outputs and skip the FreeSurfer segmentation.  
