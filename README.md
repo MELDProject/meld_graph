@@ -38,6 +38,16 @@ For more information on how the algorithm was developed and expected performance
 
 The MELD surface-based graph FCD detection algorithm is intended for research purposes only and has not been reviewed or approved by the Medicines and Healthcare products Regulatory Agency (MHRA), European Medicine Agency (EMA) or by any other agency. Any clinical application of the software is at the sole risk of the party engaged in such application. There is no warranty of any kind that the software will produce useful results in any way. Use of the software is at the recipient's own risk.
 
+## MELD updates
+
+If you are using MELD Graph, we would very much like to have your feedback on how you are using it at your institute and how you are finding it !
+
+We are a small team but are doing our best to answer users' feedback to improve MELD Graph. 
+
+To **receive news about the MELD project** (e.g. updates on MELD Graph, on other MELD tools like [AID-HS](https://github.com/MELDProject/AID-HS) or ongoing projects) please email us (`meld.study@gmail.com`) with the subject 'Request to be added to the MELD project mailing list'
+
+To **only receive updates on MELD Graph** (e.g bug fix or new functionality on MELD Graph), please email us with the subject 'Request to be added to the MELD Graph mailing list'
+
 ## Installation & Use of the MELD FCD prediction pipeline
 
 ### Installations available 
