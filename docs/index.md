@@ -11,8 +11,6 @@
 install_docker
 install_native
 install_singularity
-
-FAQ
 ```
 
 
@@ -36,6 +34,15 @@ interpret_results
 figure_notebooks
 train_evaluate
 contributing
+
+```
+
+```{toctree}
+:caption: Help
+:hidden:
+:maxdepth: 2
+
+FAQ
 
 ```
 
