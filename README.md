@@ -29,7 +29,7 @@ This package also contains code for training and evaluating graph-based U-net le
 In addition to lesion segmentation, the model also contain auxiliary distance regression and hemisphere classification losses.
 
 For more information on how the algorithm was developed and expected performance - check our papers: 
-- Ripart et al., under revisions at JAMA Neurology -  Detection of epileptogenic focal cortical dysplasia using graph neural networks: a MELD study
+- [Ripart et al.,2025 JAMA Neurology -  Detection of epileptogenic focal cortical dysplasia using graph neural networks: a MELD study](https://jamanetwork.com/journals/jamaneurology/fullarticle/2830410)
 - [Spitzer, Ripart et al., 2022 Brain - the original MELD FCD pipeline and dataset](https://academic.oup.com/brain/advance-article/doi/10.1093/brain/awac224/6659752)
 - [Spitzer et al., 2023 MICCAI - the updated graph-based model architecture](https://arxiv.org/abs/2306.01375)
 
@@ -42,9 +42,11 @@ The MELD surface-based graph FCD detection algorithm is intended for research pu
 
 ### Installations available 
 You can install and use the MELD FCD prediction pipeline with :
-- [**docker container**](https://meld-graph.readthedocs.io/en/latest/install_docker.html) recommended for easy installation of the pipeline as all the prerequisite packages are already embedded into the container. Note: Dockers are not working on High Performance Computing (HCP) systems ; Not tested on Windows 
+- [**docker container**](https://meld-graph.readthedocs.io/en/latest/install_docker.html) recommended for easy installation of the pipeline as all the prerequisite packages are already embedded into the container. Note: Dockers are not working on High Performance Computing (HCP) systems
 - [**native installation**](https://meld-graph.readthedocs.io/en/latest/install_native.html) recommended for Mac and users that want to modify the code and/or use the code to train/test their own classifier. 
-- [**singularity container (Not tested yet)**](https://meld-graph.readthedocs.io/en/latest/install_singularity.html) enables to run a container on High Performance Computing (HCP) systems.
+- [**singularity container**](https://meld-graph.readthedocs.io/en/latest/install_singularity.html) enables to run a container on High Performance Computing (HCP) systems.
+
+**IMPORTANT NOTE**: The installations listed above are not supported on Virtual Machines. Please install MELD Graph on full Linux, Windows or MAC computers
 
 **YouTube tutorials available for the [docker installation](https://youtu.be/oduOe6NDXLA) and [native installation](https://youtu.be/jUCahJ-AebM)**
 
