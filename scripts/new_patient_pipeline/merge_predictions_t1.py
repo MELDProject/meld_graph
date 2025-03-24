@@ -5,7 +5,7 @@ import shutil
 import glob
 import argparse
 from os.path import join as opj
-from meld_classifier.tools_commands_prints import get_m, run_command
+from meld_graph.tools_pipeline import get_m, run_command
 
 def merge_predictions_t1(subject_id, t1_file, prediction_file, output_dir, verbose=False):
     ''' fusion predictions and t1
@@ -20,7 +20,9 @@ def merge_predictions_t1(subject_id, t1_file, prediction_file, output_dir, verbo
 
         #find min max labels
         numlabels = [nb.load(prediction_file).get_fdata().min(), nb.load(prediction_file).get_fdata().max()]
-        print(get_m(f"Number of clusters: {numlabels}", subject_id, "INFO"))
+        if numlabels[1] >= 100:
+            numlabels[1] = numlabels[1]/100
+            print(get_m(f"Number of clusters: {numlabels}", subject_id, "INFO"))
 
         #find intensity threshold T1
         t1_threshold = np.percentile(nb.load(t1_file).get_fdata(), 99)
