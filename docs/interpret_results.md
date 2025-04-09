@@ -149,7 +149,7 @@ Note: the classifier is only able to predict areas within the pial and white sur
 * If there is a reconstruction error due to an FCD, the classifier will only be able to detect areas within the pial and white surfaces and may miss areas of the lesion that are not correctly segmented by FreeSurfer
 * There will be false positive clusters. You will need to look at the predicted clusters with an experienced radiologist to identify the significance of detected areas
 * The classifier has only been trained on FCD lesions and we do not have data on its ability to detect other pathologies e.g. DNET / ganglioglioma / polymicrogyria. As such, the research tool should only be applied to patients with FCD / suspected FCD
-* Performance of the classifier varies according to MRI field strength, data available (e.g. T1 or T1 and FLAIR) and histopathological subtype. For more details of how the classifier performs in different cohorts, see [our paper](https://arxiv.org/abs/2306.01375).
+* Performance of the classifier varies according to MRI field strength, data available (e.g. T1 or T1 and FLAIR) and histopathological subtype. For more details of how the classifier performs in different cohorts, see [our paper](https://jamanetwork.com/journals/jamaneurology/fullarticle/2830410).
 
 ## Other commands
 

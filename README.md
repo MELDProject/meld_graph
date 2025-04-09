@@ -8,6 +8,9 @@ Graph based FCD lesion segmentation for the [MELD project](https://meldproject.g
 
 This package is a pipeline to segment FCD-lesions from MRI scans. 
 
+**<span style="color: red;">PLEASE SIGN UP</span>**:
+If you are using MELD Graph, please send an email to `meld.study@gmail.com` with the subject 'Request to be added to the MELD Graph mailing list' and provide use with your name and institute. This will ensure that we can update you about bug fixs and new releases. 
+
 ![overview](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/Fig1_pipeline.jpg)
 
 *Code Authors : Mathilde Ripart, Hannah Spitzer, Sophie Adler, Konrad Wagstyl*
@@ -37,16 +40,6 @@ For more information on how the algorithm was developed and expected performance
 ## Disclaimer
 
 The MELD surface-based graph FCD detection algorithm is intended for research purposes only and has not been reviewed or approved by the Medicines and Healthcare products Regulatory Agency (MHRA), European Medicine Agency (EMA) or by any other agency. Any clinical application of the software is at the sole risk of the party engaged in such application. There is no warranty of any kind that the software will produce useful results in any way. Use of the software is at the recipient's own risk.
-
-## MELD updates
-
-If you are using MELD Graph, we would very much like to have your feedback on how you are using it at your institute and how you are finding it !
-
-We are a small team but are doing our best to answer users' feedback to improve MELD Graph. 
-
-To **receive news about the MELD project** (e.g. updates on MELD Graph, on other MELD tools like [AID-HS](https://github.com/MELDProject/AID-HS) or ongoing projects) please email us (`meld.study@gmail.com`) with the subject 'Request to be added to the MELD project mailing list'
-
-To **only receive updates on MELD Graph** (e.g bug fix or new functionality on MELD Graph), please email us with the subject 'Request to be added to the MELD Graph mailing list'
 
 ## Installation & Use of the MELD FCD prediction pipeline
 
@@ -97,3 +90,5 @@ We would like to thank [Ulysses Popple](https://github.com/ulyssesdotcodes) for 
 ## Contacts
 
 Contact the MELD team at `meld.study@gmail.com`
+
+*Please note that we are a small team and only have one day a week dedicated to the support of the MELD tools ([MELD Graph](https://github.com/MELDProject/meld_graph) and [AID-HS](https://github.com/MELDProject/AID-HS)). We will ensure to answer your emails as soon as we can !*
