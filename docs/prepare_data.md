@@ -63,7 +63,6 @@ You can copy the *demographics_file.csv* that you can find in your <meld_data_fo
 - Group: 'patient' if the subject is a patient or 'control' if the subject is a control 
 - Age at preoperative: The age of the subject at the time of the preoperative T1 scan (in years)
 - Sex: 'male' if the subject is a male or 'female' if the subject is a female
-- Scanner: the scanner strenght associated with the MRI data ('3T' for 3 Tesla or '15T' for 1.5 Tesla)
 
 ### Warning 
 - please ensure the column names are unchanged and completed with the appropriate values, otherwise the pipeline will fail.

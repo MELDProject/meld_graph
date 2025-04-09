@@ -50,6 +50,17 @@ Solution:
 
 ## **Issues & questions with pipeline use**
 
+### **I have an issue with FLAIR feature that does not exist**
+
+If you are running a subject with only a T1 scan and no FLAIR scan but you receive an issue like :
+```bash
+KeyError: "Unable to open object (object '.on_lh.gm_FLAIR_0.25.sm3.mgh' doesn't exist)"
+exit status 1
+```
+You are likely having this issue because you might have previously ran this same subject ID with a FLAIR scan and the FreeSurfer segmentation has been done using the FLAIR scan. Therefore, even if you remove the FLAIR scan from the input data and run again the command, the intermediate FreeSurfer outputs for that subject still contain FLAIR information, which will make the pipeline looks for for FLAIR feature but fail to find it.
+
+To avoid this in the future, if you want to run a same subject with and without FLAIR, you should create two separate input folders with two different subject's ID such as `sub-0001noflair` and `sub-0001flair`.
+
 ### **I have an issue during the harmonisation**
 
 If your issue looks like :
