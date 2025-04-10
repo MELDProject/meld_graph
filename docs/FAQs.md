@@ -17,15 +17,14 @@ ModuleNotFoundError: No module named '_sysconfigdata_arm64_apple_darwin20_0_0'
 The issue happens because the code is trying to force-installing ARM64 specific packages on an Intel processor. 
 An alternative solution is to follow the steps below: 
 1. Remove the meld_graph environment that failed 
-conda remove -n meld_graph --all
-2. Open the `meldsetup.sh` file and replace the line `conda env create -f environment-mac.yml` by `conda env create -f environment.yml`
-3. Save the file and rebuilt the environment by running:
+`conda remove -n meld_graph --all`
+2. Open the `meldsetup.sh` file and replace the line `conda env create -f environment-mac.yml` with `conda env create -f environment.yml`
+3. Save the file and rebuild the environment by running:
 ```bash
 ./meldsetup.sh
 ```
 
-This might raises new issues about packages that could not be found or installed. Please contact the meld.study@gmail.com with information about the issue and the packages missing. 
-
+If this raises new issues about packages that could not be found or installed, please contact meld.study@gmail.com with information about the issue and the packages missing. 
 
 ### **Issue with Singularity - Not enough space when with creating the SIF**
 ```bash
@@ -57,7 +56,7 @@ If you are running a subject with only a T1 scan and no FLAIR scan but you recei
 KeyError: "Unable to open object (object '.on_lh.gm_FLAIR_0.25.sm3.mgh' doesn't exist)"
 exit status 1
 ```
-You are likely having this issue because you might have previously ran this same subject ID with a FLAIR scan and the FreeSurfer segmentation has been done using the FLAIR scan. Therefore, even if you remove the FLAIR scan from the input data and run again the command, the intermediate FreeSurfer outputs for that subject still contain FLAIR information, which will make the pipeline looks for for FLAIR feature but fail to find it.
+You are likely having this issue because you might have previously ran this same subject ID with a FLAIR scan and the FreeSurfer segmentation has been done using the FLAIR scan. Therefore, even if you remove the FLAIR scan from the input data and run again the command, the intermediate FreeSurfer outputs for that subject still contain FLAIR information, which will make the pipeline looks for for FLAIR features but fail to find them.
 
 To avoid this in the future, if you want to run a same subject with and without FLAIR, you should create two separate input folders with two different subject's ID such as `sub-0001noflair` and `sub-0001flair`.
 
@@ -71,14 +70,14 @@ site_code, c_p, scanner = get_group_site(fs_id, demographic_file)
 TypeError: cannot unpack non-iterable NoneType object
 ```
 You are likely having an issue with the `demographics_file.csv` or the `list_subjects.txt` you provided. 
-- In the `demographics_file.csv`, check that there is no extra columns and that the columns names match what was provided as an [example](https://meld-graph.readthedocs.io/en/latest/prepare_data.html). Also ensure that the file is saved with comma separators (",") and not semicolon (";") which will prevent the code from properly reading the file. 
+- In the `demographics_file.csv`, check that there are no extra columns and that the column names match what was provided as an [example](https://meld-graph.readthedocs.io/en/latest/prepare_data.html). Also, ensure that the file is saved with comma separators (",") and not semicolon (";") which will prevent the code from properly reading the file. 
 - In the `list_subjects.txt`, ensure that there is no extra empty line at the end of the file.
 
 ### **Issue during prediction - The pipeline works and then stop when running the predictions and saliencies**
 
 The error is likely due to a memory issue when the machine-learning model is called to predict.\
 If you are using Docker Desktop, it could be because the memory limit is set very low by default. 
-To remedy, you will need to:
+To fix this, you will need to:
 1) Increase the memory in the Docker Desktop settings (more help in this [post](https://forums.docker.com/t/how-to-increase-memory-size-that-is-available-for-a-docker-container/78483))
 2) Run the MELD Graph command again. 
 
@@ -108,13 +107,13 @@ sub-0002
     ├── trash
 ```
 
-### **Can I use the MELD Graph pipeline on scans that contains previous resection cavities?**
+### **Can I use the MELD Graph pipeline on scans that contain previous resection cavities?**
 
 The short answer is no. 
 
 The MELD Graph pipeline has not been trained on scans that contains resection cavities. Such scans will likely induce errors in the brain segmentation which will bias the prediction. 
 
-If the patient already had surgery, we recommand to use the scans that were acquired prior this surgery and use those to run in the pipeline
+If the patient already had surgery, we recommand to use the scans that were acquired prior to the surgery and use those to run in the pipeline
 
 ###  **Can I use the MELD Graph pipeline on scans with other pathologies as well as FCD e.g. tumours?**
 If the other pathology is hippocampal sclerosis (E.g. this is a FCD IIIA), yes you can use MELD Graph. However, please note it will not detect the HS as it only analyses the cortex.
