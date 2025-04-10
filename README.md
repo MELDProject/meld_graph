@@ -85,9 +85,11 @@ If you'd like to contribute to this code base, have a look at our [contribution 
 
 ## Acknowledgments
 
-We would like to thank the [MELD consortium](https://meldproject.github.io//docs/collaborator_list.pdf) for providing the data to train this classifier and their expertise to build this pipeline.\
-We would like to thank [Lennart Walger](https://github.com/1-w) and [Andrew Chen](https://github.com/andy1764), for their help testing and improving the MELD pipeline to v1.1.0. \
-We would like to thank [Ulysses Popple](https://github.com/ulyssesdotcodes) for his help building the docs and dockers.
+We would like to thank 
+- the [MELD consortium](https://meldproject.github.io//docs/collaborator_list.pdf) for providing the data to train this classifier and their expertise to build this pipeline.\
+- [Lennart Walger](https://github.com/1-w) and [Andrew Chen](https://github.com/andy1764), for their help testing and improving the MELD pipeline to v1.1.0. \
+- [Ulysses Popple](https://github.com/ulyssesdotcodes) for his help building the docs and dockers.
+- [Cornelius Kronlage](https://github.com/ckronlage) highlighting issues in v2.2.1 and suggesting solutions in v2.2.2
 
 ## Contacts
 

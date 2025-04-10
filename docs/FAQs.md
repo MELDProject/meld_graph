@@ -78,7 +78,7 @@ You are likely having an issue with the `demographics_file.csv` or the `list_sub
 The error is likely due to a memory issue when the machine-learning model is called to predict.\
 If you are using Docker Desktop, it could be because the memory limit is set very low by default. 
 To fix this, you will need to:
-1) Increase the memory in the Docker Desktop settings (more help in this [post](https://forums.docker.com/t/how-to-increase-memory-size-that-is-available-for-a-docker-container/78483))
+1) Increase the memory in the Docker Desktop settings (more help in this [post](https://stackoverflow.com/questions/43460770/docker-windows-container-memory-limit)
 2) Run the MELD Graph command again. 
 
 
