@@ -58,7 +58,7 @@ You can install and use the MELD FCD prediction pipeline with :
 ### Running the pipeline 
 Once installed you will be able to use the MELD FCD prediction pipeline on your data following the steps:
 1. Prepare your data : [guidelines](https://meld-graph.readthedocs.io/en/latest/prepare_data.html)
-2. (OPTIONAL) Compute the harmonisation parameters : [guidelines](https://meld-graph.readthedocs.io/en/latest/harmonisation.html)
+2. Compute the harmonisation parameters : [guidelines](https://meld-graph.readthedocs.io/en/latest/harmonisation.html) (OPTIONAL but highly recommended)
 3. Run the prediction pipeline: [guidelines](https://meld-graph.readthedocs.io/en/latest/run_prediction_pipeline.html)
 4. Interpret the results: [guidelines](https://meld-graph.readthedocs.io/en/latest/interpret_results.html)
 
