@@ -8,8 +8,9 @@ Graph based FCD lesion segmentation for the [MELD project](https://meldproject.g
 
 This package is a pipeline to segment FCD-lesions from MRI scans. 
 
-**<span style="color: red;">PLEASE SIGN UP</span>**:
-If you are using MELD Graph, please send an email to `meld.study@gmail.com` with the subject 'Request to be added to the MELD Graph mailing list' and provide use with your name and institute. This will ensure that we can update you about bug fixs and new releases. 
+**<span style="color: red;">SIGN UP TO THE MELD GRAPH MAILING LIST</span>**:
+We request that all MELD Graph users sign up to the mailing list. If you are using MELD Graph, please send an email to `meld.study@gmail.com` with the subject 'Request to be added to the MELD Graph mailing list' and provide use with your name and institute. This will ensure that we can update you about bug fixs and new releases. 
+
 
 ![overview](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/Fig1_pipeline.jpg)
 
@@ -91,4 +92,4 @@ We would like to thank [Ulysses Popple](https://github.com/ulyssesdotcodes) for 
 
 Contact the MELD team at `meld.study@gmail.com`
 
-*Please note that we are a small team and only have one day a week dedicated to the support of the MELD tools ([MELD Graph](https://github.com/MELDProject/meld_graph) and [AID-HS](https://github.com/MELDProject/AID-HS)). We will ensure to answer your emails as soon as we can !*
+*Please note that we are a small team and only have one day a week dedicated to the support of the MELD tools ([MELD Graph](https://github.com/MELDProject/meld_graph) and [AID-HS](https://github.com/MELDProject/AID-HS)). We will answer your emails as soon as we can!*
