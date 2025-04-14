@@ -4,11 +4,13 @@ The MELD pipeline relies on the MRI data to be organised in the MELD or BIDS for
 
 If you are preparing the data for the harmonisation step, you will also need to prepare the demographic information. 
 
-## Prepare the MRI data (Mandatory)
+## **Prepare the MRI data (Mandatory)**
 
 In the 'input' folder where your meld data has/is going to be stored, create a folder for each patient with the ID of the subject. 
 
-### MELD format
+### **MELD format**
+
+Chose a subject ID: Please ensure that the subject ID is not just a number. For example, if your id is `0001`, ensure to add a letter, such as `P0001`
 
 In each subject folder, create a T1 and FLAIR folder.
 
@@ -18,7 +20,7 @@ Place the FLAIR nifti file into the FLAIR folder.
 
 ![example](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/input_structure_meld_format.png)
 
-### BIDS format
+### **BIDS format**
 
 The MELD pipeline now accept BIDS format as input data. For more information about BIDS format, please refers to their [instructions](https://bids.neuroimaging.io/)
 
@@ -50,7 +52,7 @@ Additionally, you will need to have two json files in the `input` folder:
     "BIDSVersion": "1.0.2"}
     ```
 
-## Prepare the demographic information (required only to compute the harmonisation parameters)
+## **Prepare the demographic information (required only to compute the harmonisation parameters)**
 
 To compute the harmonisation parameters, you will need to provide a couple of information about the subjects into a csv file. 
 
@@ -64,10 +66,10 @@ You can copy the *demographics_file.csv* that you can find in your <meld_data_fo
 - Age at preoperative: The age of the subject at the time of the preoperative T1 scan (in years)
 - Sex: 'male' if the subject is a male or 'female' if the subject is a female
 
-### Warning 
+### **Warning**
 - please ensure the column names are unchanged and completed with the appropriate values, otherwise the pipeline will fail.
 - please make sure you add the appropriate age and sex of the patients. Adding dummy information can lead to suboptimal harmonisation. 
 - please ensure that there is non-zero variance in the age of your subjects. Similar age for all subjects will lead to harmonisation failure. If your patients have the same age, please add randomly +- 0.01 to all age to introduce variance.   
 
-## FAQs 
+## **FAQs**
 Please see our [FAQ page](https://meld-graph.readthedocs.io/en/latest/FAQs.html) for common questions about data preparation
