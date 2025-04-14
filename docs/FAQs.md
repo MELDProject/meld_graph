@@ -119,3 +119,82 @@ If the patient already had surgery, we recommand to use the scans that were acqu
 If the other pathology is hippocampal sclerosis (E.g. this is a FCD IIIA), yes you can use MELD Graph. However, please note it will not detect the HS as it only analyses the cortex.
 
 If it is another pathology e.g. a tumour, the pipeline has not been developed / trained on other pathologies and may not detect them. Also, the other pathology may introduce large reconstruction errors in the FreeSurfer pipeline - causing errors. We therefore do not recommend using MELD Graph on patients with other cortical pathologies. 
+
+---
+
+## **Updating MELD Graph to V2.2.2**
+
+The instructions below are for users that already have used MELD Graph v2.2.1 on patients and would like to update to MELD Graph V2.2.2 while keeping the same meld_data folder.
+
+
+### 📥 **Get the updated code**
+
+1) Open a terminal in your meld_graph folder
+2) Pull the latest code from GitHub (it will pull the latest data while keeping your changes made to the code)
+```bash
+git stash
+git pull 
+git stash pop
+```
+**💻 Native Installation Users:** Your code is now up to date. You can go directly to the next step.
+
+**🐳 Docker Users:** You will also need to pull the latest docker image
+```bash
+docker pull MELDproject/meld_graph:latest
+```
+
+**🚀 Singularity Users:** You will also need to pull the latest image
+```bash
+singularity pull docker://MELDproject/meld_graph:latest
+```
+
+### 🗂️ **Update your meld_data_folder with the new test data**
+The command below will only download the test data and it should not overwrite the patients you have already ran.
+
+**WARNING**: It will overwrite the `demographics_file.csv` and `list_subjects.txt`. Please ensure to keep a copy of those files if you have modified them.
+
+**💻 Native Installation Users:** 
+```bash
+./meldgraph.sh prepare_classifier.py --update_test
+```
+
+**🐳 Docker Users:** 
+```bash
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/prepare_classifier.py --update_test
+```
+
+**🚀 Singularity Users:**
+```bash
+singularity exec meld_graph.sif /bin/bash -c "cd /app && python scripts/new_patient_pipeline/prepare_classifier.py --update_test"
+```
+
+### ✔️ **Run pytest again**
+Follow the guidelines **"Verify installation"** to run the test again.
+- 💻[Native Installation Users](https://meld-graph.readthedocs.io/en/latest/install_native.html#verify-installation)
+- 🐳[Docker Users](https://meld-graph.readthedocs.io/en/latest/install_docker.html#verify-installation)
+- 🚀[Singularity Users](https://meld-graph.readthedocs.io/en/latest/install_singularity.html#verify-installation)
+
+
+### 🧠 **Update your predictions with the registration fix**
+If you want to update the predictions with the new registration for patients you have already ran through MELD Graph, please follow the instructions bellow:
+
+1) Create a list of ids of patients you want to rerun: e.g. `list_subjects_rerun_v2.2.2.txt`
+
+2) Then run one of the commands below. It will use the predictions already existing for your patient. 
+
+**WARNING** This will overwrite the prediction registered to T1 and the patient report in `output/predictions_reports`
+
+**💻 Native Installation Users:** 
+```bash
+./meldgraph.sh run_script_prediction.py -ids list_subjects_rerun_v2.2.2.txt --skip_prediction
+```
+
+**🐳 Docker Users:** 
+```bash
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/run_script_prediction.py -ids list_subjects_rerun_v2.2.2.txt --skip_prediction
+```
+
+**🚀 Singularity Users:**
+```bash
+singularity exec meld_graph.sif /bin/bash -c "cd /app && python scripts/new_patient_pipeline/run_script_prediction.py -ids list_subjects_rerun_v2.2.2.txt --skip_prediction"
+```
