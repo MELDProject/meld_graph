@@ -129,6 +129,8 @@ The instructions below are for users that already have used MELD Graph v2.2.1 on
 
 ### 📥 **Get the updated code**
 
+Depending on wether you previously downloaded `V2.2.1` as a zip/tar folder or used Git to download the code, you will need to follow the same route to get the update `v2.2.2` code.
+
 ::::{tab-set}
 
 :::{tab-item} Download
@@ -141,7 +143,7 @@ The instructions below are for users that already have used MELD Graph v2.2.1 on
 :::
 
 :::{tab-item} Git
-1) Open a terminal in your meld_graph folder
+1) Open a terminal in your `meld_graph` folder
 2) Pull the latest code from GitHub (it will pull the latest data while keeping your changes made to the code)
 ```bash
 git stash
@@ -150,6 +152,8 @@ git stash pop
 ```
 :::
 ::::
+
+Then depending on if you have a Native, Docker or Singularity installation of MELD Graph `v2.2.1` you will need to follow the same type of installation to update to `v2.2.2`: 
 
 ::::{tab-set}
 
@@ -171,7 +175,7 @@ pip install -e .
 :::{tab-item} Docker
 :sync: Docker
 
-**🐳 Docker Users:** You will also need to pull the latest docker image
+**🐳 Docker Users:** You will need to pull the latest docker image
 ```bash
 docker pull MELDproject/meld_graph:latest
 ```
@@ -181,7 +185,7 @@ docker pull MELDproject/meld_graph:latest
 :::{tab-item} Singularity
 :sync: Singularity
 
-**🚀 Singularity Users:** You will also need to pull the latest image
+**🚀 Singularity Users:** You will need to pull the latest image
 ```bash
 singularity pull docker://MELDproject/meld_graph:latest
 ```
