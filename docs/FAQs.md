@@ -56,7 +56,7 @@ If you are running a subject with only a T1 scan and no FLAIR scan but you recei
 KeyError: "Unable to open object (object '.on_lh.gm_FLAIR_0.25.sm3.mgh' doesn't exist)"
 exit status 1
 ```
-You are likely having this issue because you might have previously ran this same subject ID with a FLAIR scan and the FreeSurfer segmentation has been done using the FLAIR scan. Therefore, even if you remove the FLAIR scan from the input data and run again the command, the intermediate FreeSurfer outputs for that subject still contain FLAIR information, which will make the pipeline looks for FLAIR features but fail to find them.
+You are likely having this issue because you might have previously ran this same subject ID with a FLAIR scan and the FreeSurfer segmentation has been done using the FLAIR scan. Therefore, even if you remove the FLAIR scan from the input data and run again the command, the intermediate FreeSurfer outputs for that subject still contain FLAIR information, which will make the pipeline looks for for FLAIR features but fail to find them.
 
 To avoid this in the future, if you want to run a same subject with and without FLAIR, you should create two separate input folders with two different subject's ID such as `sub-0001noflair` and `sub-0001flair`.
 
@@ -131,7 +131,7 @@ The instructions below are for users that already have used MELD Graph v2.2.1 on
 
 ::::{tab-set}
 
-:::{tab-item} With download
+:::{tab-item} Download
 1. Go to the [github releases page](https://github.com/MELDProject/meld_graph/releases) and download the latest source zip or tar of version `V2.2.2`.
 2. Extract the folder `meld_graph-2.2.2`
 3. Copy the files below from your old `meld_graph-2.2.1` directory to your new `meld_graph-2.2.2` directory:
@@ -141,7 +141,7 @@ The instructions below are for users that already have used MELD Graph v2.2.1 on
 
 :::
 
-:::{tab-item} With Git
+:::{tab-item} Git
 1) Open a terminal in your meld_graph folder
 2) Pull the latest code from GitHub (it will pull the latest data while keeping your changes made to the code)
 ```bash
@@ -154,10 +154,9 @@ git stash pop
 
 ::::{tab-set}
 
-:::{tab-item} **💻 Native Installation** 
+:::{tab-item} Native
 :sync: Native
-
-Your will need to update your environment with the new code. 
+**💻 Native Installation Users:** Your will need to update your environment with the new code. 
 
 1. Activate your conda environment
 ```
@@ -170,20 +169,20 @@ pip install -e .
 
 :::
 
-:::{tab-item} **🐳 Docker** 
+:::{tab-item} Docker
 :sync: Docker
 
-You will also need to pull the latest docker image
+**🐳 Docker Users:** You will also need to pull the latest docker image
 ```bash
 docker pull MELDproject/meld_graph:latest
 ```
 
 :::
 
-:::{tab-item} **🚀 Singularity** 
+:::{tab-item} Singularity
 :sync: Singularity
 
-You will also need to pull the latest image
+**🚀 Singularity Users:** You will also need to pull the latest image
 ```bash
 singularity pull docker://MELDproject/meld_graph:latest
 ```
@@ -197,25 +196,28 @@ The command below will only download the test data and it should not overwrite t
 
 ::::{tab-set}
 
-:::{tab-item} **💻 Native Installation:** 
+:::{tab-item} Native
 :sync: Native
 
+**💻 Native Installation Users:** 
 ```bash
 ./meldgraph.sh prepare_classifier.py --update_test
 ```
 :::
 
-:::{tab-item} **🐳 Docker** 
+:::{tab-item} Docker
 :sync: Docker
 
+**🐳 Docker Users:** 
 ```bash
 DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/prepare_classifier.py --update_test
 ```
 :::
 
-:::{tab-item} **🚀 Singularity**
+:::{tab-item} Singularity
 :sync: Singularity
 
+**🚀 Singularity Users:**
 ```bash
 singularity exec meld_graph.sif /bin/bash -c "cd /app && python scripts/new_patient_pipeline/prepare_classifier.py --update_test"
 ```
@@ -224,10 +226,9 @@ singularity exec meld_graph.sif /bin/bash -c "cd /app && python scripts/new_pati
 
 ### ✔️ **Run pytest again**
 Follow the guidelines **"Verify installation"** to run the test again.
-
-- 💻[Native Installation](https://meld-graph.readthedocs.io/en/latest/install_native.html#verify-installation)
-- 🐳[Docker](https://meld-graph.readthedocs.io/en/latest/install_docker.html#verify-installation)
-- 🚀[Singularity](https://meld-graph.readthedocs.io/en/latest/install_singularity.html#verify-installation)
+- 💻[Native Installation Users](https://meld-graph.readthedocs.io/en/latest/install_native.html#verify-installation)
+- 🐳[Docker Users](https://meld-graph.readthedocs.io/en/latest/install_docker.html#verify-installation)
+- 🚀[Singularity Users](https://meld-graph.readthedocs.io/en/latest/install_singularity.html#verify-installation)
 
 
 ### 🧠 **Update your predictions with the registration fix**
@@ -241,25 +242,28 @@ If you want to update the predictions with the new registration for patients you
 
 ::::{tab-set}
 
-:::{tab-item} **💻 Native Installation** 
+:::{tab-item} Native
 :sync: Native
 
+**💻 Native Installation Users:** 
 ```bash
 ./meldgraph.sh run_script_prediction.py -ids list_subjects_rerun_v2.2.2.txt --skip_prediction
 ```
 :::
 
-:::{tab-item} **🐳 Docker** 
+:::{tab-item} Docker
 :sync: Docker
 
+**🐳 Docker Users:** 
 ```bash
 DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/run_script_prediction.py -ids list_subjects_rerun_v2.2.2.txt --skip_prediction
 ```
 :::
 
-:::{tab-item} **🚀 Singularity**
+:::{tab-item} Singularity
 :sync: Singularity
 
+**🚀 Singularity Users:**
 ```bash
 singularity exec meld_graph.sif /bin/bash -c "cd /app && python scripts/new_patient_pipeline/run_script_prediction.py -ids list_subjects_rerun_v2.2.2.txt --skip_prediction"
 ```
