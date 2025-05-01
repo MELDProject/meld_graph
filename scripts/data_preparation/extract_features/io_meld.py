@@ -78,9 +78,9 @@ def load_subject_features(fs_id,features,subject_number,medial_wall,subjects_dir
 
 def get_group_site(fs_id, csv_path):
         """
-        Read demographic features from csv file and extract group, sex and scanner 
+        Read demographic features from csv file and extract harmo code and group  
         """
-        features_name=["Harmo code", "Group", "Scanner"]
+        features_name=["Harmo code", "Group"]
         df = pd.read_csv(csv_path, header=0, encoding="latin")
         # get index column
         id_col = None
@@ -124,14 +124,9 @@ def save_subject(fs_id,features,medial_wall,subject_dir, demographic_file,  outp
     failed=False
     n_vert=163842
     #get subject info from id
-    site_code, c_p, scanner = get_group_site(fs_id, demographic_file)
-    if scanner in ("15T" , "1.5T" , "15t" , "1.5t" ):
-        scanner="15T"
-    elif scanner in ("3T" , "3t" ):
-        scanner="3T"
-    else:
-        print('scanner for subject '+ fs_id + ' cannot be identified as either 1.5T or 3T...')
-        scanner='false'
+    site_code, c_p = get_group_site(fs_id, demographic_file)
+    print('scanner for subject '+ fs_id + 'is set as default XT')
+    scanner='XT'
     #skip subject if info not available
     if 'false' in (c_p, scanner, site_code):
         print("Skipping subject " + fs_id)

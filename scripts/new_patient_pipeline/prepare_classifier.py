@@ -69,23 +69,30 @@ def prepare_meld_config():
     config.set("DEFAULT", "meld_data_path", meld_data_path)
     with open(config_fname, "w") as configfile:
         config.write(configfile)
-    print(f"Successfully changed MELD data folder to {meld_data_path}")
-
+    print(f"Successfully changed MELD data folder to {meld_data_path}")   
+    
 if __name__ == '__main__':
     # ensure that all data is downloaded
     parser = argparse.ArgumentParser(description="Setup the classifier: Create meld_config.ini and download test data and pre-trained models")
     parser.add_argument('--skip-config', action="store_true", help="do not create meld_config.ini" )
     parser.add_argument('--skip-download-data', action = "store_true", help="do not attempt to download test data")
     parser.add_argument("--force-download", action="store_true", help="download data even if exists already")
+    parser.add_argument("--update_test", action="store_true", help="only update the test data")
     args = parser.parse_args()
 
+    from meld_graph.download_data import get_test_data, get_model, get_meld_params
+    
+    if args.update_test:
+        get_test_data(force_download=True)
+        print('Test data updated')
+        sys.exit()
+        
     # create and populate meld_config.ini
     if not args.skip_config:
         prepare_meld_config()
 
     # need to do this import here, because above we are setting up the meld_config.ini
     # which is read when using meld_classifier.paths
-    from meld_graph.download_data import get_test_data, get_model, get_meld_params
     if not args.skip_download_data:
         print("Downloading test data")
         get_test_data(args.force_download)

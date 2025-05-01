@@ -107,7 +107,7 @@ def create_demographic_file(subjects_ids, save_file, harmo_code='noHarmo'):
     df['ID']=subjects_ids.astype(str)
     df['Harmo code']=[str(harmo_code) for subject in subjects_ids]
     df['Group']=['patient' for subject in subjects_ids]
-    df['Scanner']=['3T' for subject in subjects_ids]
+    df['Scanner']=['XT' for subject in subjects_ids]
     df.to_csv(save_file)
     
 def create_dataset_file(subjects_ids, save_file):

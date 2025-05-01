@@ -241,7 +241,7 @@ def run_subjects_segmentation_parallel(subject_ids, num_procs=10, harmo_code="no
     os.makedirs(fs_folder, exist_ok=True)
 
     ## create dictionary with T1 and FLAIR paths
-    subjects_dict = [get_anat_files(subject_id) for subject_id in subject_ids]
+    subjects_dict = np.array([get_anat_files(subject_id) for subject_id in subject_ids])
     
     if use_fastsurfer:
         ## first processing stage with fastsurfer: segmentation

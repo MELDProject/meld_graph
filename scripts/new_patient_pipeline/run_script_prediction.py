@@ -89,7 +89,7 @@ def predict_subjects(subject_ids, output_dir, plot_images = False, saliency=Fals
     if saliency:
         eva.calculate_saliency()
 
-def run_script_prediction(list_ids=None, sub_id=None, harmo_code='noHarmo', no_prediction_nifti=False, no_report=False, split=False, verbose=False):
+def run_script_prediction(list_ids=None, sub_id=None, harmo_code='noHarmo', no_prediction_nifti=False, no_report=False, skip_prediction=False, split=False, verbose=False):
     harmo_code = str(harmo_code)
     subject_id=None
     subject_ids=None
@@ -120,16 +120,18 @@ def run_script_prediction(list_ids=None, sub_id=None, harmo_code='noHarmo', no_p
     prediction_file = opj(classifier_output_dir, 'results_best_model', 'predictions.hdf5')
     
     subject_ids_failed=[]
-    print(get_m(f'Run predictions', subject_ids, 'STEP 1'))
     
-    #predict on new subjects 
-    predict_subjects(subject_ids=subject_ids, 
-                    output_dir=classifier_output_dir,  
-                    plot_images=True, 
-                    saliency=True,
-                    experiment_path=experiment_path, 
-                    hdf5_file_root= DEFAULT_HDF5_FILE_ROOT)
-    
+    #predict on new subjects
+    if not skip_prediction:
+        print(get_m(f'Run predictions', subject_ids, 'STEP 1'))
+        predict_subjects(subject_ids=subject_ids, 
+                        output_dir=classifier_output_dir,  
+                        plot_images=True, 
+                        saliency=True,
+                        experiment_path=experiment_path, 
+                        hdf5_file_root= DEFAULT_HDF5_FILE_ROOT)
+    else:
+        print(get_m(f'Skip predictions', subject_ids, 'STEP 1'))
     if not no_prediction_nifti:        
         #Register predictions to native space
         for i, subject_id in enumerate(subject_ids):
@@ -205,6 +207,9 @@ if __name__ == '__main__':
     parser.add_argument('--no_report',
                         action="store_true",
                         help='Predict and map back into native T1. Does not produce report',)
+    parser.add_argument('--skip_prediction',
+                        action="store_true",
+                        help='Skip prediction and go straight to registration and report.',)
     parser.add_argument('--split',
                         action="store_true",
                         help='Split subjects list in chunk to avoid data overload',
@@ -251,7 +256,8 @@ if __name__ == '__main__':
                         sub_id=args.id,
                         no_prediction_nifti = args.no_prediction_nifti,
                         no_report = args.no_report,
-                        split = args.split, 
+                        split = args.split,
+                        skip_prediction=args.skip_prediction,
                         verbose = args.debug_mode
                         )
                 

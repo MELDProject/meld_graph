@@ -3,7 +3,7 @@
 ## Information about the harmonisation
 Each MRI scanner / sequence  / FreeSurfer version will introduce small non-biological differences in the features that are calculated and used to predict where the FCD is. To help remove these biases, we advise harmonisation of your patient's features. This will make your patient's features "look like" the features we used to train the classifier. 
 
-Harmonisation of your patient data is not mandatory but recommended, to remove any bias induced by the scanner and sequence used. For more details on the MELD FCD predictions performances with and without harmonisation please refer to our (paper)[]
+Harmonisation of your patient data is not mandatory but recommended, to remove any bias induced by the scanner and sequence used. For more details on the MELD FCD predictions performances with and without harmonisation please refer to our [paper](https://jamanetwork.com/journals/jamaneurology/fullarticle/2830410)
 
 Here is the video tutorial detailing how to compute the harmonisation parameters - [Harmonisation tutorial](https://youtu.be/te_TR6sA5sQ).
 
@@ -11,7 +11,7 @@ Here is the video tutorial detailing how to compute the harmonisation parameters
 
 The harmonisation parameters are computed using [Distributed Combat](https://doi.org/10.1016/j.neuroimage.2021.118822).
 To get these parameters you will need a cohort of subjects acquired from the same scanner and under the same protocol (sequence, parameters, ...).
-Subjects can be controls and/or patients, but we advise to use ***at least 20 subjects*** to enable an accurate harmonisation (see (paper)[]). 
+Subjects can be controls and/or patients, but we advise to use ***at least 20 subjects*** to enable an accurate harmonisation (see (paper)[https://jamanetwork.com/journals/jamaneurology/fullarticle/2830410]). 
 Try to ensure the data are high quality (i.e no blurring, no artefacts, no cavities in the brain).
 Demographic information (e.g age and sex) will be required for this process. 
 WARNING: zero variance in the demographics information (e.g. having the same age for all subjects) will lead to Combat failures or errors. 

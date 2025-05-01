@@ -1,11 +1,11 @@
 # Docker container
 
-**WARNING: Installation and use not yet tested on Windows. Please do let us know if you are succeeding / failing to use the docker container on Windows**
+**WARNING: Installation and use not supported on Virtual Machine. Please uses a full Linux or Windows computer, or do let us know if you are succeeding to use the docker container on VMs**
 
 The Docker container has all the prerequisites embedded on it which makes it easier to install and compatible with most of the OS systems. 
 
 Notes: 
-- Currently only tested on **Linux** (Not yet tested on Windows, HPC users should use the [Singularity version (not tested yet)](https://meld-graph.readthedocs.io/en/latest/install_singularity.html), Mac M chip computers have to do a [install_native](https://meld-graph.readthedocs.io/en/latest/install_native.html))
+- Currently only tested on **Linux**. HPC users should use the [Singularity version](https://meld-graph.readthedocs.io/en/latest/install_singularity.html). Mac M chip computers have to do a [install_native](https://meld-graph.readthedocs.io/en/latest/install_native.html)
 - You will need **~12GB of space** to install the container
 - The docker image contains Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0+cu111. The whole image is 11.4 GB.
 
@@ -57,11 +57,15 @@ In order to run the docker, you'll need to configure a couple of files
 4. In the `meld_graph_X.X.X` extracted folder open and edit the compose.yml to add the path to the meld_data folder. The initial compose.yml file looks like ::
 ```
 services:
-  aidhs:
+  meld_graph:
     image: meldproject/meld_graph:latest
     platform: "linux/amd64"
     volumes:
       - ./docker-data:/data
+    environment: 
+      - FS_LICENSE=/run/secrets/license.txt
+    secrets:
+      - license.txt
     user: $DOCKER_USER
     deploy:
       resources:
@@ -70,6 +74,9 @@ services:
             - capabilities: [gpu]
               count: 0
 
+secrets:
+  license.txt:
+    file: ./license.txt
 ```
 Change the line below "`volumes:`" to point to the meld_data folder. Do not delete the "`:/data`" at the end.\
 For example, if you wanted the folder to be on a mounted drive such as "`/mnt/datadrive/meld-data`" you should change the line as showed below:
@@ -84,7 +91,7 @@ For example, if you wanted the folder to be on a mounted drive such as "`/mnt/da
 On windows, if you're using absolute paths, use forward slashes and quotes:
 ```
     volumes:
-      - "C:/Users/John/Desktop/meld-data:/data"
+      - "/c//:/Users/John/Desktop/meld-data:/data/"
 ```
 :::
 
@@ -92,13 +99,23 @@ On windows, if you're using absolute paths, use forward slashes and quotes:
 Your file should look like that: 
 ```
 services:
-  aidhs:
+  meld_graph:
     image: meldproject/meld_graph:latest
     platform: "linux/amd64"
     volumes:
-      -  ./docker-data:/data
+      - ./docker-data:/data
+    environment: 
+      - FS_LICENSE=/run/secrets/license.txt
+    secrets:
+      - license.txt
     user: $DOCKER_USER
+
+secrets:
+  license.txt:
+    file: ./license.txt
 ```
+
+6. **WARNING** If you are running docker with Docker Desktop, you will need to ensure that the memory usage allowed by docker is to the maximum, as Docker Desktop halves the memory usage by default. For that you can go in the Docker Desktop settings and change the memory limit (more help in this [post](https://stackoverflow.com/questions/43460770/docker-windows-container-memory-limit)
 
 ## Set up paths and download model
 Before being able to use the classifier on your data, data paths need to be set up and the pretrained model needs to be downloaded. 

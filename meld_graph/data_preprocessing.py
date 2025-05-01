@@ -563,7 +563,6 @@ class Preprocess:
                     
     def load_covars(self, subject_ids=None, demographic_file=DEMOGRAPHIC_FEATURES_FILE):
         # if not os.path.isfile(demographic_file):
-        # demographic_file = os.path.join(self.data_dir,demographic_file)
         if subject_ids is None:
             subject_ids = self.subject_ids
         covars = pd.DataFrame()
@@ -584,7 +583,7 @@ class Preprocess:
             else:
                 print(f'ERROR: There is an issue with the coded sex of subject {subject}')
             group.append(subj.is_patient)
-            sites_scanners.append(subj.site_code + "_" + subj.scanner)
+            sites_scanners.append(subj.site_code) # just site code now
             
         covars["ages"] = ages
         covars["sex"] = sex
@@ -652,7 +651,7 @@ class Preprocess:
     def unshrink_combat_estimates(self, estimates):
         """ unshrink combat estimates to use as input in neuroCombatFromTraining"""
         num_subjects = estimates['num_subjects'][0]
-        mod_mean = np.zeros((len(estimates['stand.mean']),num_subjects ))
+        mod_mean = np.zeros((len(estimates['stand.mean']),num_subjects))
         estimates['mod.mean'] = mod_mean
         estimates['stand.mean'] = np.tile(estimates['stand.mean'], (num_subjects,1)).T
         return estimates
@@ -765,7 +764,7 @@ class Preprocess:
             return
         # load in covariates - age, sex, group, site and scanner unless provided    
         new_site_covars = self.load_covars(subject_ids=np.array(listids)[np.array(combat_subject_include)], demographic_file=demographic_file).copy()
-        #check site_scanner codes are the same for all subjects
+        # check site_scanner codes are the same for all subjects
         if len(new_site_covars['site_scanner'].unique())==1:
             site_scanner = new_site_covars['site_scanner'].unique()[0]
         else:
@@ -854,12 +853,13 @@ class Preprocess:
                 rh = subj.load_feature_values(feature_name, hemi="rh")[self.cohort.cortex_mask]
                 combined_hemis = np.hstack([lh, rh])
                 precombat_features.append(combined_hemis)
-                site_scanner.append(subj.site_code + "_" + subj.scanner)
+                site_scanner.append(subj.site_code) # just site code now
                 subjects_included.append(subject)
         #if matrix empty, pass
         if precombat_features:
             combat_estimates = self.read_norm_combat_parameters(feature_name, combat_params_file)
             combat_estimates = self.unshrink_combat_estimates(combat_estimates)
+            combat_estimates["batches"] = [x.split('_')[0] for x in combat_estimates["batches"]] # remove scanner strenght from the batch code if exist
             precombat_features = np.array(precombat_features)
             site_scanner = np.array(site_scanner)
             dict_combat = neuroCombatFromTraining(dat=precombat_features.T, batch=site_scanner, estimates=combat_estimates)
@@ -1224,7 +1224,7 @@ class Preprocess:
             else:
                 included_subjects[k] = False
                 controls_subjects[k] = False
-        print(f"INFO: exlude subjects {np.array(self.subject_ids)[~included_subjects]}")
+        print(f"INFO: exclude subjects {np.array(self.subject_ids)[~included_subjects]}")
         if vals_array:
             vals_array = np.array(vals_array)
             # remove exclude subjects
@@ -1287,7 +1287,7 @@ class Preprocess:
             else:
                 included_subjects[k] = False
                 controls_subjects[k] = False
-            print(f"INFO: exlude subjects {np.array(self.subject_ids)[~included_subjects]}")
+        print(f"INFO: exclude subjects {np.array(self.subject_ids)[~included_subjects]}")
         if vals_asym_array :
             vals_asym_array = np.array(vals_asym_array)
             # remove exclude subjects

@@ -32,23 +32,7 @@ def register_subject_to_xhemi(subject_id, subjects_dir, output_dir, template = '
         return False
 
     # Moves the right hemi back from fsaverage to native. There are 2 steps
-    #Step1: move left hemi fsaverage to right hemi of fsaverage
-    # --src is the source image i.e. the map you want to move back so change to the name of the cluster map in fsaverage_sym that you want to move back. should be rh....
-    # --trg is the target image i.e. the name of the map on the rh -  i called these rh.{name of file}_on_rh.mgh - these are still in template space (fsaverage)
-    # Step 2: move from rh of fsaverage to native space
-    # --src is the source image i.e. the name of the file you created in step1
-    # --trg is the target image i.e. the name of the map you want to create in the subject's native space
-
-    command = f'SUBJECTS_DIR={subjects_dir} mris_apply_reg --src {subjects_dir}/{subject_id}/xhemi/classifier/rh.prediction.mgh --trg {subjects_dir}/{subject_id}/xhemi/classifier/rh.prediction_on_rh.mgh --streg {subjects_dir}/fsaverage_sym/surf/lh.sphere.reg {subjects_dir}/fsaverage_sym/surf/rh.sphere.left_right --nnf'
-    proc = Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
-    stdout, stderr= proc.communicate()
-    if verbose:
-        print(stdout)
-    if proc.returncode!=0:
-        print(get_m(f'COMMAND failing : {command} with error {stderr}', subject_id, 'ERROR'))
-        return False
-
-    command = f'SUBJECTS_DIR={subjects_dir} mris_apply_reg --src {subjects_dir}/{subject_id}/xhemi/classifier/rh.prediction_on_rh.mgh --trg {subjects_dir}/{subject_id}/surf/rh.prediction.mgh --streg {subjects_dir}/fsaverage_sym/surf/rh.sphere.reg {subjects_dir}/{subject_id}/surf/rh.sphere.reg --nnf'
+    command = f'SUBJECTS_DIR={subjects_dir} mris_apply_reg --src {subjects_dir}/{subject_id}/xhemi/classifier/rh.prediction.mgh --trg {subjects_dir}/{subject_id}/surf/rh.prediction.mgh --streg {subjects_dir}/fsaverage_sym/surf/lh.sphere.reg {subjects_dir}/{subject_id}/xhemi/surf/lh.fsaverage_sym.sphere.reg --nnf'
     proc = Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
     stdout, stderr= proc.communicate()
     if verbose:
