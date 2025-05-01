@@ -129,6 +129,19 @@ The instructions below are for users that already have used MELD Graph v2.2.1 on
 
 ### 📥 **Get the updated code**
 
+::::{tab-set}
+
+:::{tab-item} With download
+1. Go to the [github releases page](https://github.com/MELDProject/meld_graph/releases) and download the latest source zip or tar of version `V2.2.2`.
+2. Extract the folder `meld_graph-2.2.2`
+3. Copy the files below from your old `meld_graph-2.2.1` directory to your new `meld_graph-2.2.2` directory:
+    - the freesurfer `license.txt` 
+    - the `compose.yml`
+    - the `meld_config.ini`
+
+:::
+
+:::{tab-item} With Git
 1) Open a terminal in your meld_graph folder
 2) Pull the latest code from GitHub (it will pull the latest data while keeping your changes made to the code)
 ```bash
@@ -136,43 +149,85 @@ git stash
 git pull 
 git stash pop
 ```
-**💻 Native Installation Users:** Your code is now up to date. You can go directly to the next step.
 
-**🐳 Docker Users:** You will also need to pull the latest docker image
+:::
+
+::::{tab-set}
+
+:::{tab-item} **💻 Native Installation** 
+:sync: Native
+
+Your will need to update your environment with the new code. 
+
+1. Activate your conda environment
+```
+conda activate meld_graph
+```
+2. Update the code package in the environment. Make sure you are in the new `meld_graph-2.2.2` directory and run:
+```
+pip install -e . 
+```
+
+:::
+
+:::{tab-item} **🐳 Docker** 
+:sync: Docker
+
+You will also need to pull the latest docker image
 ```bash
 docker pull MELDproject/meld_graph:latest
 ```
 
-**🚀 Singularity Users:** You will also need to pull the latest image
+:::
+
+:::{tab-item} **🚀 Singularity** 
+:sync: Singularity
+
+You will also need to pull the latest image
 ```bash
 singularity pull docker://MELDproject/meld_graph:latest
 ```
+:::
+::::
 
 ### 🗂️ **Update your meld_data_folder with the new test data**
 The command below will only download the test data and it should not overwrite the patients you have already ran.
 
 **WARNING**: It will overwrite the `demographics_file.csv` and `list_subjects.txt`. Please ensure to keep a copy of those files if you have modified them.
 
-**💻 Native Installation Users:** 
+::::{tab-set}
+
+:::{tab-item} **💻 Native Installation:** 
+:sync: Native
+
 ```bash
 ./meldgraph.sh prepare_classifier.py --update_test
 ```
+:::
 
-**🐳 Docker Users:** 
+:::{tab-item} **🐳 Docker** 
+:sync: Docker
+
 ```bash
 DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/prepare_classifier.py --update_test
 ```
+:::
 
-**🚀 Singularity Users:**
+:::{tab-item} **🚀 Singularity**
+:sync: Singularity
+
 ```bash
 singularity exec meld_graph.sif /bin/bash -c "cd /app && python scripts/new_patient_pipeline/prepare_classifier.py --update_test"
 ```
+:::
+::::
 
 ### ✔️ **Run pytest again**
 Follow the guidelines **"Verify installation"** to run the test again.
-- 💻[Native Installation Users](https://meld-graph.readthedocs.io/en/latest/install_native.html#verify-installation)
-- 🐳[Docker Users](https://meld-graph.readthedocs.io/en/latest/install_docker.html#verify-installation)
-- 🚀[Singularity Users](https://meld-graph.readthedocs.io/en/latest/install_singularity.html#verify-installation)
+
+- 💻[Native Installation](https://meld-graph.readthedocs.io/en/latest/install_native.html#verify-installation)
+- 🐳[Docker](https://meld-graph.readthedocs.io/en/latest/install_docker.html#verify-installation)
+- 🚀[Singularity](https://meld-graph.readthedocs.io/en/latest/install_singularity.html#verify-installation)
 
 
 ### 🧠 **Update your predictions with the registration fix**
@@ -184,17 +239,29 @@ If you want to update the predictions with the new registration for patients you
 
 **WARNING** This will overwrite the prediction registered to T1 and the patient report in `output/predictions_reports`
 
-**💻 Native Installation Users:** 
+::::{tab-set}
+
+:::{tab-item} **💻 Native Installation** 
+:sync: Native
+
 ```bash
 ./meldgraph.sh run_script_prediction.py -ids list_subjects_rerun_v2.2.2.txt --skip_prediction
 ```
+:::
 
-**🐳 Docker Users:** 
+:::{tab-item} **🐳 Docker** 
+:sync: Docker
+
 ```bash
 DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/run_script_prediction.py -ids list_subjects_rerun_v2.2.2.txt --skip_prediction
 ```
+:::
 
-**🚀 Singularity Users:**
+:::{tab-item} **🚀 Singularity**
+:sync: Singularity
+
 ```bash
 singularity exec meld_graph.sif /bin/bash -c "cd /app && python scripts/new_patient_pipeline/run_script_prediction.py -ids list_subjects_rerun_v2.2.2.txt --skip_prediction"
 ```
+:::
+::::
