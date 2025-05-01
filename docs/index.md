@@ -42,7 +42,7 @@ contributing
 :hidden:
 :maxdepth: 2
 
-FAQ
+FAQs
 
 ```
 
