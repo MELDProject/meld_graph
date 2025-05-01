@@ -138,7 +138,6 @@ The instructions below are for users that already have used MELD Graph v2.2.1 on
     - the freesurfer `license.txt` 
     - the `compose.yml`
     - the `meld_config.ini`
-
 :::
 
 :::{tab-item} Git
@@ -149,8 +148,8 @@ git stash
 git pull 
 git stash pop
 ```
-
 :::
+::::
 
 ::::{tab-set}
 
