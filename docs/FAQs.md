@@ -177,7 +177,7 @@ pip install -e .
 
 **🐳 Docker Users:** You will need to pull the latest docker image
 ```bash
-docker pull MELDproject/meld_graph:latest
+docker pull meldproject/meld_graph:latest
 ```
 
 :::
@@ -187,7 +187,7 @@ docker pull MELDproject/meld_graph:latest
 
 **🚀 Singularity Users:** You will need to pull the latest image
 ```bash
-singularity pull docker://MELDproject/meld_graph:latest
+singularity pull docker://meldproject/meld_graph:latest
 ```
 :::
 ::::
