@@ -196,7 +196,7 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 :::{tab-item} Native
 :sync: native
 ```bash
-./meldgraph.sh run_script_preprocessing.py -id sub-001
+./meldgraph.sh run_script_segmentation.py -id sub-001
 ```
 
 :::
@@ -208,7 +208,7 @@ export APPTAINER_BINDPATH=<path_to_meld_data_folder>:/data
 ```
 And then run:
 ```bash
-singularity exec meld_graph.sif /bin/bash -c "cd /app && source \$FREESURFER_HOME/FreeSurferEnv.sh && python scripts/new_patient_pipeline/run_script_preprocessing.py -id sub-001"
+singularity exec meld_graph.sif /bin/bash -c "cd /app && source \$FREESURFER_HOME/FreeSurferEnv.sh && python scripts/new_patient_pipeline/run_script_segmentation.py -id sub-001"
 ```
 
 :::
@@ -233,7 +233,7 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 :::{tab-item} Singularity
 :sync: singularity
 ```bash
-singularity exec meld_graph.sif /bin/bash -c "cd /app && source \$FREESURFER_HOME/FreeSurferEnv.sh && python scripts/new_patient_pipeline/run_script_preprocessing.py -h"
+singularity exec meld_graph.sif /bin/bash -c "cd /app && source \$FREESURFER_HOME/FreeSurferEnv.sh && python scripts/new_patient_pipeline/run_script_segmentation.py -h"
 ```
 
 :::
