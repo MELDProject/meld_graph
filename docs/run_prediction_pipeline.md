@@ -37,6 +37,13 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 ```
 :::
 
+:::{admonition} Windows
+:class: tip
+
+WARNING: 
+- On windows, you do not need the `DOCKER_USER="$(id -u):$(id -g)"` part
+:::
+
 :::{tab-item} Native
 :sync: native
 
