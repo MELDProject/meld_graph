@@ -35,6 +35,7 @@ Open a terminal and `cd` to where you extracted the release zip.
 ```bash
 DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -id <subject_id> 
 ```
+WINDOWS USER: On windows, you do not need the `DOCKER_USER="$(id -u):$(id -g)"` part
 :::
 
 :::{tab-item} Native

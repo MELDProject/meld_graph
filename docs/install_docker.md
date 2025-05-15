@@ -91,7 +91,7 @@ For example, if you wanted the folder to be on a mounted drive such as "`/mnt/da
 On windows, if you're using absolute paths, use forward slashes and quotes:
 ```
     volumes:
-      - "/c//:/Users/John/Desktop/meld-data:/data/"
+      - "c/:/Users/John/Desktop/meld-data:/data"
 ```
 :::
 

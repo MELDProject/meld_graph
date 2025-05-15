@@ -36,7 +36,15 @@ Open a terminal and `cd` to where you extracted the release zip.
 ```bash
 DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -harmo_code <harmo_code> -ids <subjects_list> -demos <demographic_file> --harmo_only
 ```
+WINDOWS USER: 
+- On windows, you do not need the `DOCKER_USER="$(id -u):$(id -g)"` part
+- Make sure that the extensions '.txt' or '.csv' are in the files name even if they do not appear with the extension in your Windows folder 
+For example:\
+```bash
+docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -harmo_code H1 -ids list_subjects.txt -demos demographics_file.csv --harmo_only
+```
 :::
+
 :::{tab-item} Native
 :sync: native
 Open a terminal and `cd` to the meld graph folder.
