@@ -36,6 +36,14 @@ Open a terminal and `cd` to where you extracted the release zip.
 ```bash
 DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -harmo_code <harmo_code> -ids <subjects_list> -demos <demographic_file> --harmo_only
 ```
+WARNING: 
+- On windows, you do not need the `DOCKER_USER="$(id -u):$(id -g)"` part
+- Make sure that the extensions '.txt' or '.csv' are in the files name even if they do not appear with the extension in your Windows folder 
+For example:
+```bash
+docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -harmo_code H1 -ids list_subjects.txt -demos demographics_file.csv --harmo_only
+```
+
 :::
 
 :::{tab-item} Native
@@ -57,18 +65,6 @@ Then run:
 :::
 :::{tab-item} Singularity
 :sync: singularity
-
-:::{admonition} Windows
-:class: tip
-
-WARNING: 
-- On windows, you do not need the `DOCKER_USER="$(id -u):$(id -g)"` part
-- Make sure that the extensions '.txt' or '.csv' are in the files name even if they do not appear with the extension in your Windows folder 
-For example:
-```bash
-docker compose run meld_graph python scripts/new_patient_pipeline/new_pt_pipeline.py -harmo_code H1 -ids list_subjects.txt -demos demographics_file.csv --harmo_only
-```
-:::
 
 If using Singularity or Apptainer, there are some paths that you need to export before running the pipeline. Find the paths to export in the [singularity installation](https://meld-graph.readthedocs.io/en/latest/install_singularity.html). Tip : You can add those paths to your `~/.bashrc` file to ensure they are always activated when opening a new terminal. 
 
