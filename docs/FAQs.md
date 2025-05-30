@@ -129,12 +129,12 @@ The instructions below are for users that already have used MELD Graph v2.2.1 on
 
 ### 📥 **Get the updated code**
 
-Depending on wether you previously downloaded `V2.2.1` as a zip/tar folder or used Git to download the code, you will need to follow the same route to get the update `v2.2.2` code.
+Please follow the Download method below to get the new code
 
 ::::{tab-set}
 
 :::{tab-item} Download
-1. Go to the [github releases page](https://github.com/MELDProject/meld_graph/releases) and download the latest source zip or tar of version `V2.2.2`.
+1. Go to the [github releases page](https://github.com/MELDProject/meld_graph/releases) and download the latest version `V2.2.2`, by clicking on `Source code (zip)` or `Source code (tar.gz)`.
 2. Extract the folder `meld_graph-2.2.2`
 3. Copy the files below from your old `meld_graph-2.2.1` directory to your new `meld_graph-2.2.2` directory:
     - the freesurfer `license.txt` 
