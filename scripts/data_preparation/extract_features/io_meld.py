@@ -92,33 +92,38 @@ def get_group_site(fs_id, csv_path):
             print("No ID column found in file, please check the csv file")
             return None
         df = df.set_index(id_col)
-        # find desired demographic features
-        features = []
-        for desired_name in features_name:
-            matched_name = None
-            for col in df.keys():
-                if desired_name in col:
-                    if matched_name is not None:
-                        # already found another matching col
-                        print(
-                            f"Multiple columns matching {desired_name} found ({matched_name}, {col}), please make search more specific"
-                        )
-                        return None
-                    matched_name = col
-            # ensure that found necessary data
-            if matched_name is None:
-                    print(f"Unable to find column matching {desired_name}, please double check for typos")
-                    return None
 
-            # read feature
-            # if subject does not exists, add None
-            if fs_id in df.index:
-                feature = df.loc[fs_id][matched_name]
-            else:
-                print(f"Unable to find subject matching {fs_id}, please double check this subject exists in {csv_path}")
-                return None
-            features.append(feature)
-        return features
+        # if subject does not exists, add None
+        if not fs_id in df.index:
+            print(f"Unable to find subject matching {fs_id}, please double check this subject exists in {csv_path}")
+            return None
+        else:
+            # find desired demographic features
+            matched_names = []
+            for desired_name in features_name:
+                matched_name = None
+                for col in df.keys():
+                    if desired_name in col:
+                        if matched_name is not None:
+                            # already found another matching col
+                            print(
+                                f"Multiple columns matching {desired_name} found ({matched_name}, {col}), please make search more specific"
+                            )
+                            return None
+                        matched_name = col
+                # ensure that found necessary data
+                if matched_name is None:
+                        print(f"Unable to find column matching {desired_name}, please double check for typos")
+                        return None
+                matched_names.append(matched_name)
+        # read features
+        features = df.loc[fs_id][matched_names].drop_duplicates()
+        # if the DataFrame is longer than 1, then we have multiple values for the same feature
+        if len(features) > 1:
+            print(f"Multiple values found for {fs_id} in {csv_path}, please check the csv file")
+            return None
+        else:
+            return features.values.tolist()[0] # .tolist() should results in a list of lists
 
 def save_subject(fs_id,features,medial_wall,subject_dir, demographic_file,  output_dir=None):
     failed=False
