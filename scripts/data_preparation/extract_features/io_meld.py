@@ -117,13 +117,16 @@ def get_group_site(fs_id, csv_path):
                         return None
                 matched_names.append(matched_name)
         # read features
-        features = df.loc[fs_id][matched_names].drop_duplicates()
-        # if the DataFrame is longer than 1, then we have multiple values for the same feature
-        if len(features) > 1:
-            print(f"Multiple values found for {fs_id} in {csv_path}, please check the csv file")
+        # print(df.loc[fs_id][matched_names])
+        features = df.loc[fs_id][matched_names].drop_duplicates().values.squeeze()
+        # if the resulting array is more the 1D
+        if features.ndim > 1:
+            # if the resulting array is 2D, it means that there are multiple values for
+            print(f"Multiple values found for {fs_id}, please check the demographics file")
             return None
         else:
-            return features.values.tolist()[0] # .tolist() should results in a list of lists
+            return features.tolist()  # return site code and group (control/patient)
+            
 
 def save_subject(fs_id,features,medial_wall,subject_dir, demographic_file,  output_dir=None):
     failed=False

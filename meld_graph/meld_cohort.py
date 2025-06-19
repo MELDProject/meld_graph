@@ -533,12 +533,17 @@ class MeldSubject:
                 if matched_name == "Freesurfer_nul":
                     feature = "5.3"
                 else:
-                    feature = df.loc[self.subject_id][matched_name].drop_duplicates() # tolist() returns a list of list
-                    if len(feature) > 1:
-                        print(f"Multiple {desired_name} values found for {self.subject_id}, please check the csv file")
-                        return None
+                    feature = df.loc[self.subject_id][matched_name]
+                    if isinstance(feature, str):
+                        return feature
                     else:
-                        return feature.values.tolist()[0]  # .tolist() should results in a list of lists
+                        try:
+                            feature = feature.drop_duplicates().values.squeeze()
+                            return feature.item()
+                        except :
+                            print('Duplicates found in demographics, please check the demographics file')
+                            return None
+
                 if normalize:
                     if matched_name == "Age of onset":
                         feature = np.log(feature + 1)
