@@ -95,7 +95,7 @@ def get_group_site(fs_id, csv_path):
 
         # if subject does not exists, add None
         if not fs_id in df.index:
-            print(f"Unable to find subject matching {fs_id}, please double check this subject exists in {csv_path}")
+            print(f"ERROR - {fs_id}: Unable to find subject matching {fs_id}, please double check this subject exists in {csv_path}")
             return None
         else:
             # find desired demographic features
@@ -107,7 +107,7 @@ def get_group_site(fs_id, csv_path):
                         if matched_name is not None:
                             # already found another matching col
                             print(
-                                f"Multiple columns matching {desired_name} found ({matched_name}, {col}), please make search more specific"
+                                f"ERROR - {fs_id}: Multiple columns matching {desired_name} found ({matched_name}, {col}), please make search more specific"
                             )
                             return None
                         matched_name = col
@@ -122,7 +122,7 @@ def get_group_site(fs_id, csv_path):
         # if the resulting array is more the 1D
         if features.ndim > 1:
             # if the resulting array is 2D, it means that there are multiple values for
-            print(f"Multiple values found for {fs_id}, please check the demographics file")
+            print(f"ERROR - {fs_id}: Multiple values found for {fs_id}, please check the demographics file")
             return None
         else:
             return features.tolist()  # return site code and group (control/patient)
@@ -132,12 +132,17 @@ def save_subject(fs_id,features,medial_wall,subject_dir, demographic_file,  outp
     failed=False
     n_vert=163842
     #get subject info from id
-    site_code, c_p = get_group_site(fs_id, demographic_file)
-    print('scanner for subject '+ fs_id + 'is set as default XT')
+    values = get_group_site(fs_id, demographic_file)
+    if values is None: 
+        failed=True
+        return failed
+    site_code, c_p =  values
+    if ('nan' in str(c_p)) or ('nan' in str(site_code)):
+        print(f"ERROR - {fs_id}: Demographics are missing the group (patient or control) or the harmonisation code " + fs_id)
+        failed=True
+        return failed
+    print(f'INFO - {fs_id}: Scanner for subject '+ fs_id + 'is set as default XT')
     scanner='XT'
-    #skip subject if info not available
-    if 'false' in (c_p, scanner, site_code):
-        print("Skipping subject " + fs_id)
     hemis=['lh','rh']
     #save feature in hdf5 file
     if output_dir is None:
