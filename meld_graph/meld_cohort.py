@@ -534,6 +534,16 @@ class MeldSubject:
                     feature = "5.3"
                 else:
                     feature = df.loc[self.subject_id][matched_name]
+                    if isinstance(feature, str):
+                        return feature
+                    else:
+                        try:
+                            feature = feature.drop_duplicates().values.squeeze()
+                            return feature.item()
+                        except :
+                            print('Duplicates found in demographics, please check the demographics file')
+                            return None
+
                 if normalize:
                     if matched_name == "Age of onset":
                         feature = np.log(feature + 1)
