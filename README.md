@@ -26,6 +26,7 @@ We have released MELD Graph V2.2.2 which fixes a couple of issues found by users
 This package is intended to be used as a research tool to segment FCD lesions in patients with focal epilepsy where a FCD is suspected. It can be run on 1.5T or 3T MRI data. A 3D T1 is required and it is optional but advised to include the 3D FLAIR. 
 
 It is not appropriate to use this algorithm on patients with:
+- tuberous sclerosis
 - suspected hippocampal sclerosis
 - hypothalamic hamartoma
 - periventricular nodular heterotopia
