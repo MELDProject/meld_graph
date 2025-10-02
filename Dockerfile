@@ -98,10 +98,11 @@ COPY . .
 
 ENV MAMBA_ROOT_PREFIX="/opt/conda"
 ENV MAMBA_EXE="/bin/micromamba"
-RUN micromamba run -n meld_graph /bin/bash -c "pip install -e ." \
+# The core change: Use a CUDA-enabled PyTorch version and install dependencies in the correct order.
+RUN micromamba run -n meld_graph /bin/bash -c "pip install --no-cache-dir torch==1.10.0+cu113 torchvision==0.11.1+cu113 -f https://download.pytorch.org/whl/torch_stable.html && pip install -e . && pip install torch-scatter -f https://data.pyg.org/whl/torch-1.10.0+cu111.html" \
     && micromamba shell init -s bash \
     && echo "micromamba activate meld_graph" >> $HOME/.bashrc
-
+    
 ENV PATH="/opt/conda/envs/meld_graph/bin:$PATH"
 
 # Add data folder to docker
