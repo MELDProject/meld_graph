@@ -1,9 +1,9 @@
 services:
   meld_graph:
-    image: meld_graph_gpu
+    image: meldproject/meld_graph:latest
     platform: "linux/amd64"
     volumes:
-      - /home/mathilde/Documents/projects/MELD_graph/19092025_meld_graph_test_gpu:/data
+      - ./docker-data:/data
     environment: 
       - FS_LICENSE=/run/secrets/license.txt
     secrets:
@@ -14,8 +14,7 @@ services:
         reservations:
           devices:
             - capabilities: [gpu]
-              count: all
-    runtime: nvidia
+              count: 0
 
 secrets:
   license.txt:
