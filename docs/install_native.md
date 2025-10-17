@@ -2,6 +2,8 @@
 
 The native installation of the MELD graph enables more freedom to change the code and run your the scripts and notebook to train / evaluate your own classifier.
 
+The predictions stage can use over **20GB of RAM**, therefore we recommend using a computer of **at least 24GB of memory**.
+  
 ::::{tab-set}
 :::{tab-item} Mac
 :sync: mac
@@ -19,6 +21,7 @@ Note: Windows native installation has not been tested. The MELD team highly reco
 ::::
 
 Here is the video tutorial demonstrating how to do the native installation - [Native Installation of MELD Graph Tutorial](https://youtu.be/jUCahJ-AebM).
+
 
 ## Prerequisites
 For preprocessing, MELD classifier requires Freesurfer. It is trained on data from versions 6 & v5.3, but compatible with Freesurfer **version up to V7.2**. You must already have a freesurfer `license.txt` that was obtained by [following the instructions on their wiki](https://surfer.nmr.mgh.harvard.edu/fswiki/License).
