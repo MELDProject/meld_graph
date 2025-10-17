@@ -49,6 +49,14 @@ Solution:
 
 ## **Issues & questions with pipeline use**
 
+### **Variability in MELD Graph results when using T1w+FLAIR scans**
+
+We have received feedback regarding inconsistencies in MELD Graph results when using T1w+FLAIR scans compared to T1w scan alone. In some cases, the tool produces different outputs for the same patient scanned at different timepoints when FLAIR is included. Our investigation suggests that FLAIR images are more heterogeneous, even on the same scanner and acquisition. This variability can affect the reliability of the MELD Graph outputs. 
+
+**<span style="color: red;">Recommendation**: We advise users to primarily rely on T1w scans for lesion detection. If additional sensitivity is needed, FLAIR can be added to explore other potential clusters. However, these results will need to be interpreted with extra caution, as FLAIR-based clusters may include more false positives. 
+
+To run a same subject with and without FLAIR, you should create two separate input folders with two different subject's ID such as `sub-0001` (containing only the T1w) and `sub-0001withflair` (containing T1w and FLAIR scans). You will need to run the MELD Graph pipeline twice. 
+
 ### **I have an issue with FLAIR feature that does not exist**
 
 If you are running a subject with only a T1 scan and no FLAIR scan but you receive an issue like :
