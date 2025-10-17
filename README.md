@@ -62,6 +62,10 @@ You can install and use the MELD FCD prediction pipeline with :
 
 
 ### Running the pipeline 
+
+**<span style="color: red;">IMPORTANT update**: We have received feedback regarding inconsistencies in MELD Graph results when using T1w+FLAIR scans compared to T1w scan alone. In some cases, the tool produces different outputs for the same patient scanned at different timepoints when FLAIR is included. Our investigation suggests that FLAIR images are more heterogeneous, even on the same scanner and acquisition. This variability can affect the reliability of the MELD Graph outputs. 
+**<span style="color: red;">Recommendation**: We advise users to primarily rely on T1w scans for lesion detection. If additional sensitivity is needed, FLAIR can be added to explore other potential clusters. However, these results will need to be interpreted with extra caution, as FLAIR-based clusters may include more false positives. For guidance on how to run a second run with FLAIR see our [FAQs](https://meld-graph.readthedocs.io/en/latest/FAQs.html#i-have-an-issue-with-flair-feature-that-does-not-exist).
+
 Once installed you will be able to use the MELD FCD prediction pipeline on your data following the steps:
 1. Prepare your data : [guidelines](https://meld-graph.readthedocs.io/en/latest/prepare_data.html)
 2. Compute the harmonisation parameters : [guidelines](https://meld-graph.readthedocs.io/en/latest/harmonisation.html) (OPTIONAL but highly recommended)
