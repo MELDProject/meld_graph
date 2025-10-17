@@ -14,7 +14,7 @@ This package is a pipeline to segment FCD-lesions from MRI scans.
 We request that all MELD Graph users sign up to the mailing list. If you are using MELD Graph, please send an email to `meld.study@gmail.com` with the subject 'Request to be added to the MELD Graph mailing list' and provide use with your name and institute. This will ensure that we can update you about bug fixs and new releases. 
 
 **<span style="color: red;">EXISTING USERS: PLEASE UPDATE TO VERSION V2.2.2</span>**:
-We have released MELD Graph V2.2.2 which fixes a couple of issues found by users. For more information about the release please see [MELD Graph V2.2.2](https://github.com/MELDProject/meld_graph/releases/tag/v2.2.2). To update your code please follow the guidelines [Updating MELD Graph to V2.2.2](https://meld-graph.readthedocs.io/en/latest/FAQs.html#Updating-MELD-Graph-to-V2.2.2) from our FAQ.
+We have released MELD Graph V2.2.2 which fixes a couple of issues found by users. For more information about the release please see [MELD Graph V2.2.2](https://github.com/MELDProject/meld_graph/releases/tag/v2.2.2). To update your code please follow the guidelines [Updating MELD Graph to V2.2.2](https://meld-graph.readthedocs.io/en/latest/FAQs.html#Updating-MELD-Graph-to-V2.2.2) from our FAQ. 
 
 
 ![overview](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/Fig1_pipeline.jpg)
@@ -62,6 +62,9 @@ You can install and use the MELD FCD prediction pipeline with :
 
 
 ### Running the pipeline 
+
+**<span style="color: red;">IMPORTANT new recommandation**: We have received feedback regarding inconsistencies in MELD Graph results when using T1w+FLAIR scans compared to T1w scan alone. We advise users to primarily rely on T1w scans for lesion detection. If additional sensitivity is needed, FLAIR can be added to explore other potential clusters. However, these results will need to be interpreted with extra caution, as FLAIR-based clusters may include more false positives. For more information and guidance on how to run a second run with FLAIR see our [FAQs](https://meld-graph.readthedocs.io/en/latest/FAQs.html#variability-in-meld-graph-results-when-using-t1wflair-scans).
+
 Once installed you will be able to use the MELD FCD prediction pipeline on your data following the steps:
 1. Prepare your data : [guidelines](https://meld-graph.readthedocs.io/en/latest/prepare_data.html)
 2. Compute the harmonisation parameters : [guidelines](https://meld-graph.readthedocs.io/en/latest/harmonisation.html) (OPTIONAL but highly recommended)
