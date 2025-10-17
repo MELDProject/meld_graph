@@ -7,6 +7,9 @@ Harmonisation of your patient data is not mandatory but recommended, to remove a
 
 Here is the video tutorial detailing how to compute the harmonisation parameters - [Harmonisation tutorial](https://youtu.be/te_TR6sA5sQ).
 
+**<span style="color: red;">IMPORTANT update**: We have received feedback regarding inconsistencies in MELD Graph results when using T1w+FLAIR scans compared to T1w scan alone. In some cases, the tool produces different outputs for the same patient scanned at different timepoints when FLAIR is included. Our investigation suggests that FLAIR images are more heterogeneous, even on the same scanner and acquisition. This variability can affect the reliability of the MELD Graph outputs. 
+**<span style="color: red;">Recommendation**: We advise users to primarily rely on T1w scans for lesion detection. If additional sensitivity is needed, FLAIR can be added to explore other potential clusters. However, these results will need to be interpreted with extra caution, as FLAIR-based clusters may include more false positives. For guidance on how to run a second run with FLAIR see our [FAQs](https://meld-graph.readthedocs.io/en/latest/FAQs.html#i-have-an-issue-with-flair-feature-that-does-not-exist).
+
 ## Compute the harmonisation paramaters 
 
 The harmonisation parameters are computed using [Distributed Combat](https://doi.org/10.1016/j.neuroimage.2021.118822).
