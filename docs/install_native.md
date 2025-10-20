@@ -2,6 +2,9 @@
 
 The native installation of the MELD graph enables more freedom to change the code and run your the scripts and notebook to train / evaluate your own classifier.
 
+Notes:
+- You will need to use a computer that has **at least 22GB** of RAM to run the predictions. 
+
 ::::{tab-set}
 :::{tab-item} Mac
 :sync: mac
