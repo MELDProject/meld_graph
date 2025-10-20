@@ -6,8 +6,8 @@ The Docker container has all the prerequisites embedded on it which makes it eas
 
 Notes: 
 - Currently only tested on **Linux**. HPC users should use the [Singularity version](https://meld-graph.readthedocs.io/en/latest/install_singularity.html). Mac M chip computers have to do a [install_native](https://meld-graph.readthedocs.io/en/latest/install_native.html)
-- You will need **~12GB of space** to install the container
-- The docker image contains Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0+cu111. The whole image is 11.4 GB.
+- You will need **~20GB of space** to install the container
+- The docker image contains Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0+cu113. The whole image is 20 GB.
 - The predictions stage can use over **20GB of RAM**, therefore we recommend using a computer of **at least 24GB of memory**.
 
 Here is the video tutorial detailing how to install the Docker - [Docker Installation](https://youtu.be/oduOe6NDXLA).
