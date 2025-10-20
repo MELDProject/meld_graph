@@ -49,6 +49,14 @@ Solution:
 
 ## **Issues & questions with pipeline use**
 
+### **Variability in MELD Graph results when using T1w+FLAIR scans**
+
+We have received feedback regarding inconsistencies in MELD Graph results when using T1w+FLAIR scans compared to T1w scan alone. In some cases, the tool produces different outputs for the same patient scanned at different timepoints when FLAIR is included. Our investigation suggests that FLAIR images are more heterogeneous, even on the same scanner and acquisition. This variability can affect the reliability of the MELD Graph outputs. 
+
+**<span style="color: red;">Recommendation**: We advise users to primarily rely on T1w scans for lesion detection. If additional sensitivity is needed, FLAIR can be added to explore other potential clusters. However, these results will need to be interpreted with extra caution, as FLAIR-based clusters may include more false positives. 
+
+To run a same subject with and without FLAIR, you should create two separate input folders with two different subject's ID such as `sub-0001` (containing only the T1w) and `sub-0001withflair` (containing T1w and FLAIR scans). You will need to run the MELD Graph pipeline twice. 
+
 ### **I have an issue with FLAIR feature that does not exist**
 
 If you are running a subject with only a T1 scan and no FLAIR scan but you receive an issue like :
@@ -78,7 +86,7 @@ You are likely having an issue with the `demographics_file.csv` or the `list_sub
 The error is likely due to a memory issue when the machine-learning model is called to predict.\
 If you are using Docker Desktop, it could be because the memory limit is set very low by default. 
 To fix this, you will need to:
-1) Increase the memory in the Docker Desktop settings (more help in this [post](https://stackoverflow.com/questions/43460770/docker-windows-container-memory-limit)
+1) Increase the memory in the Docker Desktop settings (more help in this [post](https://stackoverflow.com/questions/43460770/docker-windows-container-memory-limit)). We recommend to set the memory above 22GB.
 2) Run the MELD Graph command again. 
 
 
