@@ -1,5 +1,14 @@
 # Changelog
 
+
+## [v2.2.3] - 2025-10-20
+### Fixed
+- Fixed an issue with using GPU in the docker. Dockerfile and environment.yml modified to allow GPU use in docker and enable native installation of MELD Graph
+- Removed the requirement to specify scanner strength in demographics_file.csv for harmonisation. This resolves errors when scanner strength wasn’t 3T
+- Instructions for computer RAM requirement ; Clarification on FAQ about FLAIR scan usage
+- Minor code cleanup for improved stability and maintainability
+
+
 ## [v2.2.2] - 2025-04-29
 ### Fixed
 - Fixed an issue in the backward registration process (from fsaverage_sym surface to native T1 volume) that caused a slight spatial shift (~a few millimeters) in lesion predictions on the right hemisphere.
