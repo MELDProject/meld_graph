@@ -651,7 +651,7 @@ def generate_prediction_report(
         pdf = PDF(unit="mm")  # unit of measurement
         pdf = PDF(format="A4")  # page format. A4 is the default value of the format, you don't have to specify it.
 
-        logo = os.path.join(SCRIPTS_DIR, "MELD_logo.png")
+        logo = os.path.join(SCRIPTS_DIR, "docs", "images", "MELD_logo.png")
 
         text_info_1 = "Information: \n The MRI data of this patient has been processed through the MELD Graph surface-based FCD detection algorithm. \n Page 1 of this report will show all detected clusters on an inflated view of the brain. \n Subsequent pages characterise individual predicted clusters sorted in descending confidence. \n The last page summarises the software version used to create this report."
         
@@ -663,6 +663,19 @@ def generate_prediction_report(
 
         text_info_3 = get_info_soft(subject.subject_id, harmo_code, exp)
         
+         #### create first page with disclaimer and intended use
+        # add page
+        pdf.add_page()
+        # add line contours
+        pdf.lines()
+        # add header
+        pdf.custom_header(logo, txt1="MELD report", txt2=f"")
+        # add 1st page report image
+        im_1stpage = os.path.join(SCRIPTS_DIR, "docs", "images", f"1st_page_report.jpg")
+        pdf.image(im_1stpage, 10, 40, link='', type='', w=190, h=200)
+        # add footer date
+        pdf.custom_footer(footer_txt)
+
         #### create main page with overview on inflated brain
         # add page
         pdf.add_page()
