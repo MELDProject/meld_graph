@@ -446,6 +446,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
 
+    #---------------------------------------------------------------------------------
+    ### Test meld license exists
+    from meld_graph.test.test_meld_license import test_license
+    test_license()
+    #---------------------------------------------------------------------------------
+
     ### Create demographic file for prediction if not provided
     demographic_file_tmp = DEMOGRAPHIC_FEATURES_FILE
     if args.demographic_file is None:
