@@ -49,13 +49,17 @@ Follow the instructions for [*enabling NVIDIA CUDA on WSL*](https://learn.micros
 ## Freesurfer licence
 You will need to download a Freesurfer license.txt to enable Freesurfer/Fastsurfer to perform the segmentation. Please follow the [guidelines](https://surfer.nmr.mgh.harvard.edu/fswiki/License) to download the file and keep a record of the path where you saved it. 
 
+## MELD license
+In order to run MELD Graph you need to have a `meld_license.txt` in the meld graph folder. To get this file, please fill out the [MELD registration form](https://docs.google.com/forms/d/e/1FAIpQLSdocMWtxbmh9T7Sv8NT4f0Kpev-tmRI-kngDhUeBF9VcZXcfg/viewform?usp=header). Once submitted, your application will be automatically reviewed and the meld_license.txt file will be send to your email. 
+
 ## Configuration
 In order to run the docker, you'll need to configure a couple of files
 
 1. Download `meld_graph_X.X.X.zip` with X.X.X the version from the [latest github release](https://github.com/MELDProject/meld_graph/releases/latest) and extract it.
-2. Copy the freesurfer `license.txt` into the extracted folder
-3. Create the meld_data folder, if it doesn't exist already. This folder is where you would like to store MRI data to run the classifier
-4. In the `meld_graph_X.X.X` extracted folder open and edit the compose.yml to add the path to the meld_data folder. The initial compose.yml file looks like ::
+2. Copy the freesurfer `license.txt` into the extracted folder (see above how to get the Freesurfer license)
+3. Copy the MELD `meld_license.txt` into the extracted folder (see above how to get the MELD license)
+4. Create the meld_data folder, if it doesn't exist already. This folder is where you would like to store MRI data to run the classifier
+5. In the `meld_graph_X.X.X` extracted folder open and edit the compose.yml to add the path to the meld_data folder. The initial compose.yml file looks like ::
 ```
 services:
   meld_graph:

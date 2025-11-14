@@ -115,7 +115,13 @@ pip install -e .
 :::
 ::::
 
+## MELD license
+In order to run MELD Graph you need to have a `meld_license.txt` in the meld graph folder. To get this file, please fill out the [MELD registration form](https://docs.google.com/forms/d/e/1FAIpQLSdocMWtxbmh9T7Sv8NT4f0Kpev-tmRI-kngDhUeBF9VcZXcfg/viewform?usp=header). Once submitted, your application will be automatically reviewed and the meld_license.txt file will be send to your email. 
+
 ## Set up paths and download model
+
+First, you will need to copy the MELD `meld_license.txt` into the meld graph folder (see above how to get the MELD license)
+
 Before being able to use the classifier on your data, some paths need to be set up and the pretrained model needs to be downloaded. For this, run:
 ```bash
 ./meldgraph.sh prepare_classifier.py

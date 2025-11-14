@@ -2,6 +2,39 @@
 
 ## **Issues & questions with installation**
 
+### **Issue with the MELD License**
+
+- If your issue is:
+    ```bash
+    ERROR: Could not find a MELD_LICENSE environment variable. Please ensure you have exported the MELD_LICENSE environment following the MELD Graph installation guidelines
+    ```
+    This means that the MELD_LICENSE variable has not been exported/initialised in the environment (terminal) you are using. The variable should be automatically exported when using compose.yml file for the Docker, or meldgraph.sh for the native installation. You can export manually the environment variable by doing: 
+    ```bash
+    export MELD_LICENSE=<path_to_meld_license_file>
+    ```
+    Please contact the team if the issue continues
+
+- If your issue is: 
+    ```bash
+    ERROR: The file meld_license.txt does not exist.
+    Please ensure you got the meld license file by filling the registration form provided in the MELD Graph installation guidelines and provided the right path to the file
+    ```
+    This means that the meld_license.txt cannot be found in the main meld graph folder (where the code is). This can happen if you did not get the MELD license file or if the file was placed in an incorect folder. To get the proper MELD license ID, please fill in to the [MELD registration form](https://docs.google.com/forms/d/e/1FAIpQLSdocMWtxbmh9T7Sv8NT4f0Kpev-tmRI-kngDhUeBF9VcZXcfg/viewform?usp=header).
+
+- If your issue is:
+    ```bash
+    ERROR: The license ID provided does not seem correct.
+    Please ensure you got the correct meld license file by filling the registration form provided in the MELD Graph installation guidelines and provided the right path to the file
+    ```
+    or 
+    ```bash
+    ERROR: The license file meld_license.txt does not seem correct.
+    Please ensure you got the correct meld license file by filling the registration form provided in the MELD Graph installation guidelines and provided the right path to the file
+
+    ```
+    This means that the MELD license file exists and is at the correct place, but the license ID does not exist or is incorrect. This can happen if you have used the Freesurfer license instead of the MELD license file, or if you have a fake MELD license file. To get the proper MELD license ID, please fill in the [MELD registration form](https://docs.google.com/forms/d/e/1FAIpQLSdocMWtxbmh9T7Sv8NT4f0Kpev-tmRI-kngDhUeBF9VcZXcfg/viewform?usp=header).
+
+
 ### **Issue with Native installation MAC Intel user - Issue when running meldsetup.sh**
 
 If you are a MAC user with an intel processor you will run into the issue below when running the command ```./meldsetup.sh```:
