@@ -96,8 +96,8 @@ def get_meld_params(force_download=False):
         download_meld_params()
     else:
         if force_download:
-            print("Overwriting existing model.")
+            print("Overwriting existing parameters.")
             download_meld_params()
         else:
-            print("Model exists. Specify --force-download to overwrite.")
+            print("Parameters exists. Specify --force-download to overwrite.")
     return MELD_DATA_PATH, 'meld_params'
