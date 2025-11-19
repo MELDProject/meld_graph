@@ -99,7 +99,7 @@ COPY . .
 ENV MAMBA_ROOT_PREFIX="/opt/conda"
 ENV MAMBA_EXE="/bin/micromamba"
 # The core change: Use a CUDA-enabled PyTorch version and install dependencies in the correct order.
-RUN micromamba run -n meld_graph /bin/bash -c "pip install --no-cache-dir torch==1.10.0+cu113 torchvision==0.11.1+cu113 -f https://download.pytorch.org/whl/torch_stable.html && pip install -e . && pip install torch-scatter -f https://data.pyg.org/whl/torch-1.10.0+cu111.html && pip install torch-geometric==2.4.0" \
+RUN micromamba run -n meld_graph /bin/bash -c "pip install --no-cache-dir torch==1.10.0 torchvision==0.11.1 -f https://download.pytorch.org/whl/torch_stable.html && pip install -e . && pip install torch-scatter -f https://data.pyg.org/whl/torch-1.10.0.html && pip install torch-geometric==2.4.0" \
     && micromamba shell init -s bash \
     && echo "micromamba activate meld_graph" >> $HOME/.bashrc
     
