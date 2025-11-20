@@ -163,9 +163,9 @@ If it is another pathology e.g. a tumour, the pipeline has not been developed / 
 
 ---
 
-## **Updating MELD Graph to V2.2.2**
+## **Updating MELD Graph version**
 
-The instructions below are for users that already have used MELD Graph v2.2.1 on patients and would like to update to MELD Graph V2.2.2 while keeping the same meld_data folder.
+The instructions below are for users that already have used a version of MELD Graph (e.g. v2.2.1) on patients and would like to update to the latest version of MELD Graph (e.g. v2.2.4) while keeping the same meld_data folder.
 
 
 ### 📥 **Get the updated code**
@@ -175,9 +175,9 @@ Please follow the Download method below to get the new code
 ::::{tab-set}
 
 :::{tab-item} Download
-1. Go to the [github releases page](https://github.com/MELDProject/meld_graph/releases) and download the latest version `V2.2.2`, by clicking on `Source code (zip)` or `Source code (tar.gz)`.
-2. Extract the folder `meld_graph-2.2.2`
-3. Copy the files below from your old `meld_graph-2.2.1` directory to your new `meld_graph-2.2.2` directory:
+1. Go to the [github releases page](https://github.com/MELDProject/meld_graph/releases) and download the latest version V2.2.X (e.g. `V2.2.4`), by clicking on `Source code (zip)` or `Source code (tar.gz)`.
+2. Extract the folder `meld_graph-2.2.X`
+3. Copy the files below from your old `meld_graph-2.2.X` directory to your new `meld_graph-2.2.X` directory:
     - the freesurfer `license.txt` 
     - the `compose.yml`
     - the `meld_config.ini`
@@ -193,8 +193,9 @@ git stash pop
 ```
 :::
 ::::
+4. If not already done, register to MELD Graph to get your MELD License by filling the [form](https://docs.google.com/forms/d/e/1FAIpQLSdocMWtxbmh9T7Sv8NT4f0Kpev-tmRI-kngDhUeBF9VcZXcfg/viewform?usp=header).
 
-Then depending on if you have a Native, Docker or Singularity installation of MELD Graph `v2.2.1` you will need to follow the same type of installation to update to `v2.2.2`: 
+Then depending on if you have a Native, Docker or Singularity installation of the previous MELD Graph version you will need to follow the same type of installation to update to the latest version: 
 
 ::::{tab-set}
 
@@ -206,7 +207,7 @@ Then depending on if you have a Native, Docker or Singularity installation of ME
 ```
 conda activate meld_graph
 ```
-2. Update the code package in the environment. Make sure you are in the new `meld_graph-2.2.2` directory and run:
+2. Update the code package in the environment. Make sure you are in the new `meld_graph-2.2.X` directory and run:
 ```
 pip install -e . 
 ```
@@ -233,7 +234,10 @@ singularity pull docker://meldproject/meld_graph:latest
 :::
 ::::
 
-### 🗂️ **Update your meld_data_folder with the new test data**
+### 🗂️ **For v2.2.1 users: Update your meld_data_folder with the new test data**
+
+If you are working with v2.2.1 and want to update to a version above, you will need to download the test data again. If you have a version v2.2.2 or above, you can skip this step. 
+
 The command below will only download the test data and it should not overwrite the patients you have already ran.
 
 **WARNING**: It will overwrite the `demographics_file.csv` and `list_subjects.txt`. Please ensure to keep a copy of those files if you have modified them.
@@ -275,10 +279,13 @@ Follow the guidelines **"Verify installation"** to run the test again.
 - 🚀[Singularity Users](https://meld-graph.readthedocs.io/en/latest/install_singularity.html#verify-installation)
 
 
-### 🧠 **Update your predictions with the registration fix**
+### 🧠 **For v2.2.1 only: Update your predictions with the registration fix**
+
+If you are working with v2.2.1 and want to update to a version above, you will need to download the test data again. If you have a version v2.2.2 or above, you can skip this step. 
+
 If you want to update the predictions with the new registration for patients you have already ran through MELD Graph, please follow the instructions bellow:
 
-1) Create a list of ids of patients you want to rerun: e.g. `list_subjects_rerun_v2.2.2.txt`
+1) Create a list of ids of patients you want to rerun: e.g. `list_subjects_rerun_v2.2.X.txt`
 
 2) Then run one of the commands below. It will use the predictions already existing for your patient. 
 
@@ -291,7 +298,7 @@ If you want to update the predictions with the new registration for patients you
 
 **💻 Native Installation Users:** 
 ```bash
-./meldgraph.sh run_script_prediction.py -ids list_subjects_rerun_v2.2.2.txt --skip_prediction
+./meldgraph.sh run_script_prediction.py -ids list_subjects_rerun_v2.2.X.txt --skip_prediction
 ```
 :::
 
@@ -300,7 +307,7 @@ If you want to update the predictions with the new registration for patients you
 
 **🐳 Docker Users:** 
 ```bash
-DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/run_script_prediction.py -ids list_subjects_rerun_v2.2.2.txt --skip_prediction
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/run_script_prediction.py -ids list_subjects_rerun_v2.2.X.txt --skip_prediction
 ```
 :::
 
@@ -309,7 +316,7 @@ DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new
 
 **🚀 Singularity Users:**
 ```bash
-singularity exec meld_graph.sif /bin/bash -c "cd /app && python scripts/new_patient_pipeline/run_script_prediction.py -ids list_subjects_rerun_v2.2.2.txt --skip_prediction"
+singularity exec meld_graph.sif /bin/bash -c "cd /app && python scripts/new_patient_pipeline/run_script_prediction.py -ids list_subjects_rerun_v2.2.X.txt --skip_prediction"
 ```
 :::
 ::::

@@ -12,15 +12,13 @@ This package is a pipeline to segment FCD-lesions from MRI scans.
 
 ## UPDATE
 
-**<span style="color: red;">REGISTER TO MELD GRAPH TO GET THE MELD LICENSE</span>**:
-We request that all MELD Graph users are registered by filling the [MELD form](https://docs.google.com/forms/d/e/1FAIpQLSdocMWtxbmh9T7Sv8NT4f0Kpev-tmRI-kngDhUeBF9VcZXcfg/viewform?usp=header). Following registration you will received a license file. This file will be needed for use of all future MELD Graph versions v2.2.4 and above. Your email adress will be added to the MELD Graph mailing list. This will ensure that we can update you about bug fixs and new releases. 
+**<span style="color: red;">REGISTER TO GET YOUR MELD LICENSE</span>**:
+We request that all MELD graph users fill the [MELD Graph registration form](https://docs.google.com/forms/d/e/1FAIpQLSdocMWtxbmh9T7Sv8NT4f0Kpev-tmRI-kngDhUeBF9VcZXcfg/viewform?usp=header). Following registration you will received a license file. This file will be needed for use of all future MELD Graph versions v2.2.4 and above. Your email address will be added to the MELD Graph mailing list. This will ensure that we can update you about bugs fix and new releases. 
 
 **<span style="color: red;">PLEASE UPDATE TO V2.2.4</span>**: 
-We have released MELD Graph v2.2.4 and v2.2.4_gpu, the new stable versions of MELD Graph with updated licensing and small bug fix.
-If you have GPU ressources with at least 20GB of VRAM and would like to use GPU for Fastsurfer segmentation and accelerated prediction, please install v2.2.4_gpu. 
+We have released MELD Graph v2.2.4 and v2.2.4_gpu, the new stable versions of MELD Graph with increased level of security and documentation. All current users are required to update to v2.2.4. Older versions will be deprecated and not supported.
+If you have GPU ressources with at least 20GB of VRAM and would like to use GPU for Fastsurfer segmentation and accelerated MELD Graph prediction, please install v2.2.4_gpu. To update your code please follow the guidelines [Updating MELD Graph version](https://meld-graph.readthedocs.io/en/latest/FAQs.html#Updating-MELD-Graph-version) from our FAQ.
 
-**<span style="color: red;">IF YOU ARE STILL RUNNING WITH V2.2.1 - PLEASE UPDATE TO THE LATEST VERSION</span>**:
-We have released MELD Graph V2.2.2 and V2.2.4 which fixes a couple of issues found by users. For more information about the release please see [MELD Graph V2.2.2](https://github.com/MELDProject/meld_graph/releases/tag/v2.2.2) and [MELD Graph V2.2.4](https://github.com/MELDProject/meld_graph/releases/tag/v2.2.4). To update your code please follow the guidelines [Updating MELD Graph to V2.2.2 and above](https://meld-graph.readthedocs.io/en/latest/FAQs.html#Updating-MELD-Graph-to-V2.2.2) from our FAQ.
 
 ![overview](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/Fig1_pipeline.jpg)
 
