@@ -6,7 +6,7 @@ The Singularity container has been created to be used on HPC supporting Linux as
 
 Notes: 
 - The Singularity image is built from the Docker container. 
-- You will need **~20GB of space** to install the container
+- You will need **~13GB of space** to install the container
 - The image contains Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0+cu113. The whole image is 20 GB.  
 
 ## Prerequisites

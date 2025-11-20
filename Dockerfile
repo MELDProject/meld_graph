@@ -99,7 +99,7 @@ COPY . .
 ENV MAMBA_ROOT_PREFIX="/opt/conda"
 ENV MAMBA_EXE="/bin/micromamba"
 # The core change: install dependencies in the correct order.
-RUN micromamba run -n meld_graph /bin/bash -c "pip install torch==1.10.0+cpu torchvision==0.11.1+cpu && pip install -e . && pip install torch-scatter -f https://data.pyg.org/whl/torch-1.10.0.html && pip install torch-geometric==2.4.0 && pip install captum==0.6.0" \
+RUN micromamba run -n meld_graph /bin/bash -c "pip install --no-cache-dir torch==1.10.0 torchvision==0.11.1 && pip install -e . && pip install torch-scatter -f https://data.pyg.org/whl/torch-1.10.0.html && pip install torch-geometric==2.4.0 && pip install captum==0.6.0" \
     && micromamba shell init -s bash \
     && echo "micromamba activate meld_graph" >> $HOME/.bashrc
     
