@@ -7,7 +7,7 @@ The Singularity container has been created to be used on HPC supporting Linux as
 Notes: 
 - The Singularity image is built from the Docker container. 
 - You will need **~13GB of space** to install the container
-- The image contains Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0+cu113. The whole image is 20 GB.  
+- The image contains Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0. The whole image is 13 GB.  
 
 ## Prerequisites
 
@@ -29,7 +29,7 @@ In order to run MELD Graph you need to have a `meld_license.txt` in the meld gra
 ## Configuration
 In order to run the singularity image, you'll need to build the singularity image from the meld_graph docker image. This will create a singularity image called meld_graph.sif where you ran the command. 
 
-Make sure you have 20GB of storage space available for the docker
+Make sure you have 13GB of storage space available for the docker
 
 ```bash
 singularity build meld_graph.sif docker://meldproject/meld_graph:latest 

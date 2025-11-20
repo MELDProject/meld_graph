@@ -7,7 +7,7 @@ The Docker container has all the prerequisites embedded on it which makes it eas
 Notes: 
 - Currently only tested on **Linux**. HPC users should use the [Singularity version](https://meld-graph.readthedocs.io/en/latest/install_singularity.html). Mac M chip computers have to do a [install_native](https://meld-graph.readthedocs.io/en/latest/install_native.html)
 - You will need **~13GB of space** to install the container
-- The docker image contains Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0+cu113. The whole image is 20 GB.
+- The docker image contains Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0. The whole image is ~13 GB.
 - The predictions stage can use over **20GB of RAM/VRAM**, therefore we recommend using a computer of **at least 24GB of RAM (for CPU) or VRAM (for GPU)**.
 
 Here is the video tutorial detailing how to install the Docker - [Docker Installation](https://youtu.be/oduOe6NDXLA).
@@ -28,9 +28,9 @@ On windows, Docker should be [using WSL2](https://docs.docker.com/desktop/wsl/).
 :::
 
 
-## Enable GPUs
+## Enable GPUs (compatible with MELD Graph GPU version only )
 
-Enabling your computer's GPUs for running the pipeline accelerates the brain segmentation when using Fastsurfer and the predictions. Follow instructions for your operating system to install.
+Enabling your computer's GPUs for running the pipeline accelerates the brain segmentation when using Fastsurfer and the predictions. Ensure you have installed a MELD Graph version compatible with GPU (see [release versions](https://docs.google.com/forms/d/e/1FAIpQLSdocMWtxbmh9T7Sv8NT4f0Kpev-tmRI-kngDhUeBF9VcZXcfg/viewform?usp=header)). Follow instructions for your operating system to install.
 
 ::::{tab-set}
 
