@@ -6,8 +6,10 @@ services:
       - ./docker-data:/data
     environment: 
       - FS_LICENSE=/run/secrets/license.txt
+      - MELD_LICENSE=/run/secrets/meld_license.txt
     secrets:
       - license.txt
+      - meld_license.txt
     user: $DOCKER_USER
     deploy:
       resources:
@@ -19,3 +21,5 @@ services:
 secrets:
   license.txt:
     file: ./license.txt
+  meld_license.txt:
+    file: ./meld_license.txt

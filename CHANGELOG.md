@@ -1,5 +1,17 @@
 # Changelog
 
+## [v2.2.4_gpu] - 2025-11-20
+### Added security
+- added documentation with a first-page documentation in MELD Patient Report
+- added security layer with a meld license needed to run the tool
+- separate gpu/cpu version of MELD Graph (this is the GPU version)
+
+## [v2.2.4] - 2025-11-20
+### Added security
+- added documentation with a first-page documentation in MELD Patient Report
+- added security layer with a meld license needed to run the tool
+- separate gpu/cpu version of MELD Graph (this is the CPU version)
+
 
 ## [v2.2.3] - 2025-10-20
 ### Fixed

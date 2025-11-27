@@ -6,7 +6,6 @@ import shutil
 import subprocess
 
 
-
 def prepare_meld_config():
     # get scripts dir (parent dir of dir that this file is in)
     SCRIPTS_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -82,6 +81,12 @@ if __name__ == '__main__':
 
     from meld_graph.download_data import get_test_data, get_model, get_meld_params
     
+    #---------------------------------------------------------------------------------
+    ### Test meld license exists
+    from meld_graph.test.test_meld_license import test_license
+    test_license()
+    #---------------------------------------------------------------------------------
+
     if args.update_test:
         get_test_data(force_download=True)
         print('Test data updated')

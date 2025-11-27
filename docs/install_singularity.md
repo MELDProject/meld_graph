@@ -6,8 +6,8 @@ The Singularity container has been created to be used on HPC supporting Linux as
 
 Notes: 
 - The Singularity image is built from the Docker container. 
-- You will need **~20GB of space** to install the container
-- The image contains Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0+cu113. The whole image is 20 GB.  
+- You will need **~13GB of space** to install the container
+- The image contains Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0. The whole image is 13 GB.  
 
 ## Prerequisites
 
@@ -22,10 +22,14 @@ If this command displays the singularity or apptainer version already installed.
 ## Freesurfer licence
 You will need to download a Freesurfer license.txt to enable Freesurfer/Fastsurfer to perform the segmentation. Please follow the [guidelines](https://surfer.nmr.mgh.harvard.edu/fswiki/License) to download the file and keep a record of the path where you saved it. 
 
+## MELD license
+In order to run MELD Graph you need to have a `meld_license.txt` in the meld graph folder. To get this file, please fill out the [MELD registration form](https://docs.google.com/forms/d/e/1FAIpQLSdocMWtxbmh9T7Sv8NT4f0Kpev-tmRI-kngDhUeBF9VcZXcfg/viewform?usp=header). Once submitted, your application will be automatically reviewed and the meld_license.txt file will be send to your email. 
+
+
 ## Configuration
 In order to run the singularity image, you'll need to build the singularity image from the meld_graph docker image. This will create a singularity image called meld_graph.sif where you ran the command. 
 
-Make sure you have 20GB of storage space available for the docker
+Make sure you have 13GB of storage space available for the docker
 
 ```bash
 singularity build meld_graph.sif docker://meldproject/meld_graph:latest 
@@ -35,26 +39,30 @@ singularity build meld_graph.sif docker://meldproject/meld_graph:latest
 Before being able to use the classifier on your data, data paths need to be set up and the pretrained model needs to be downloaded. 
 
 1. Make sure you have 2GB available for the meld data.
-2. Create the **meld_data** folder, if it doesn't exist already. This folder is where where you would like to store MRI data to run the classifier. 
-2. Run this command to set the paths needed:
+2. Create the **meld_data** folder, if it doesn't exist already. This folder is where where you would like to store MRI data to run the classifier.
+3. Run this command to set the paths needed:
 -  <path_to_meld_data_folder> : Add the path to meld_data folder
-- <path_to_FS_license>: path where the license.txt has been saved
+-  <path_to_FS_license>: path where the Freesurfer `license.txt` has been saved
+-  <path_to_MELD_license>: path where the MELD `meld_license.txt` has been saved
+
+
 ```bash
-export SINGULARITY_BINDPATH=/<path_to_meld_data_folder>:/data,<path_to_FS_license>/license.txt:/license.txt:ro
+export SINGULARITY_BINDPATH=/<path_to_meld_data_folder>:/data,<path_to_FS_license>/license.txt:/license.txt:ro,<path_to_MELD_license>/meld_license.txt:/meld_license.txt:ro
 export SINGULARITYENV_FS_LICENSE=/license.txt
+export SINGULARITYENV_MELD_LICENSE=/meld_license.txt
 ```
 OR with Apptainer
 ```bash
-export APPTAINER_BINDPATH=/<path_to_meld_data_folder>:/data,<path_to_FS_license>/license.txt:/license.txt:ro
+export APPTAINER_BINDPATH=/<path_to_meld_data_folder>:/data,<path_to_FS_license>/license.txt:/license.txt:ro,<path_to_MELD_license>/meld_license.txt:/meld_license.txt:ro
 export APPTAINERENV_FS_LICENSE=/license.txt
+export APPTAINERENV_MELD_LICENSE=/meld_license.txt
 ```
 
 :::{admonition} Singularity
 :class: tip
 You can add those paths to your `~/.bashrc` file to ensure they are always activated when opening a new terminal. 
 :::
-
-3. Run this command to download the data folder 
+4. Run this command to download the data folder 
 ```bash
 singularity exec meld_graph.sif /bin/bash -c "cd /app && python scripts/new_patient_pipeline/prepare_classifier.py "
 ```

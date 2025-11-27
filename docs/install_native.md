@@ -107,15 +107,25 @@ Then activate your environment by running the following:
 conda env create -f environment.yml
 # activate the environment
 conda activate meld_graph
-# add the torch packages 
-pip install --no-cache-dir torch==1.10.0+cu113 torchvision==0.11.1+cu113 -f https://download.pytorch.org/whl/torch_stable.html && pip install -e . && pip install torch-scatter -f https://data.pyg.org/whl/torch-1.10.0+cu111.html && pip install torch-geometric==2.4.0
+# add the torch CPU packages (see below for GPU)
+pip install --no-cache-dir torch==1.10.0 torchvision==0.11.1 && pip install -e . && pip install torch-scatter -f https://data.pyg.org/whl/torch-1.10.0.html && pip install torch-geometric==2.4.0 && pip install captum==0.6.0
+# for use of GPU , install the Torch packages below instead
+# pip install --no-cache-dir torch==1.10.0+cu113  torchvision==0.11.1+cu113  && pip install -e . && pip install torch-scatter -f https://data.pyg.org/whl/torch-1.10.0+cu111.html && pip install torch-geometric==2.4.0 && pip install captum==0.6.0
 # install meld_graph with pip (with `-e`, the development mode, to allow changes in the code to be immediately visible in the installation)
 pip install -e .
 ```
 :::
 ::::
 
+
+
+## MELD license
+In order to run MELD Graph you need to have a `meld_license.txt` in the meld graph folder. To get this file, please fill out the [MELD registration form](https://docs.google.com/forms/d/e/1FAIpQLSdocMWtxbmh9T7Sv8NT4f0Kpev-tmRI-kngDhUeBF9VcZXcfg/viewform?usp=header). Once submitted, your application will be automatically reviewed and the meld_license.txt file will be send to your email. 
+
 ## Set up paths and download model
+
+First, you will need to copy the MELD `meld_license.txt` into the meld graph folder (see above how to get the MELD license)
+
 Before being able to use the classifier on your data, some paths need to be set up and the pretrained model needs to be downloaded. For this, run:
 ```bash
 ./meldgraph.sh prepare_classifier.py

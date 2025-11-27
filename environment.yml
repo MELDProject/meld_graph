@@ -1,6 +1,6 @@
 name: meld_graph
 channels:
-  - pytorch
+  # - pytorch
   - defaults
   - conda-forge
 dependencies:
@@ -11,10 +11,10 @@ dependencies:
   - fpdf=1.7.2
   - scikit-image=0.18
   - pip=23.3.1
-  - cpuonly
+  # - cpuonly
   - pip:
     - potpourri3d==0.0.6
-    - captum==0.6.0
+    # - captum==0.6.0
     - pandas==1.4.1
     - matplotlib==3.5.1
     - neuroCombat==0.2.12

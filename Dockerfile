@@ -17,7 +17,7 @@ COPY ./environment.yml ./environment.yml
 
 # Create the meld_graph environment
 RUN micromamba create -y -f environment.yml \
-    && micromamba clean -afy
+    && micromamba clean --all --yes
 
 
 # meld graph stage
@@ -25,10 +25,10 @@ FROM debian:12-slim AS MELDgraph
 RUN mkdir -p /opt/freesurfer-7.2.0
 
 #Update ubuntu.
-RUN apt-get -y update && apt-get install --no-install-recommends -y wget && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN apt-get -y update && apt-get install --no-install-recommends -y wget aria2 ca-certificates && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Download freesurfer
-RUN wget -N -O freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz --no-check-certificate --progress=bar:force https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.2.0/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && \
+RUN aria2c -x 16 -s 16 -k 1M --check-certificate=false -c https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.2.0/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && \
     tar -xzf freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz -C /opt/freesurfer-7.2.0 --owner root --group root --no-same-owner --strip-components 1 --keep-newer-files \
     --exclude='average/mult-comp-cor' \
     --exclude='lib/cuda' \
@@ -98,8 +98,8 @@ COPY . .
 
 ENV MAMBA_ROOT_PREFIX="/opt/conda"
 ENV MAMBA_EXE="/bin/micromamba"
-# The core change: Use a CUDA-enabled PyTorch version and install dependencies in the correct order.
-RUN micromamba run -n meld_graph /bin/bash -c "pip install --no-cache-dir torch==1.10.0+cu113 torchvision==0.11.1+cu113 -f https://download.pytorch.org/whl/torch_stable.html && pip install -e . && pip install torch-scatter -f https://data.pyg.org/whl/torch-1.10.0+cu111.html && pip install torch-geometric==2.4.0" \
+# The core change: install dependencies in the correct order.
+RUN micromamba run -n meld_graph /bin/bash -c "pip install --no-cache-dir torch==1.10.0 torchvision==0.11.1 && pip install -e . && pip install torch-scatter -f https://data.pyg.org/whl/torch-1.10.0.html && pip install torch-geometric==2.4.0 && pip install captum==0.6.0" \
     && micromamba shell init -s bash \
     && echo "micromamba activate meld_graph" >> $HOME/.bashrc
     

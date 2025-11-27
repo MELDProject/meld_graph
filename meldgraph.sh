@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export MELD_LICENSE='meld_license.txt'
+
 eval "$(conda shell.bash hook)"
 conda activate meld_graph
 

@@ -6,8 +6,8 @@ The Docker container has all the prerequisites embedded on it which makes it eas
 
 Notes: 
 - Currently only tested on **Linux**. HPC users should use the [Singularity version](https://meld-graph.readthedocs.io/en/latest/install_singularity.html). Mac M chip computers have to do a [install_native](https://meld-graph.readthedocs.io/en/latest/install_native.html)
-- You will need **~20GB of space** to install the container
-- The docker image contains Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0+cu113. The whole image is 20 GB.
+- You will need **~13GB of space** to install the container
+- The docker image contains Miniconda 3, Freesurfer V7.2, Fastsurfer V1.1.2 and torch 1.10.0. The whole image is ~13 GB.
 - The predictions stage can use over **20GB of RAM/VRAM**, therefore we recommend using a computer of **at least 24GB of RAM (for CPU) or VRAM (for GPU)**.
 
 Here is the video tutorial detailing how to install the Docker - [Docker Installation](https://youtu.be/oduOe6NDXLA).
@@ -28,9 +28,9 @@ On windows, Docker should be [using WSL2](https://docs.docker.com/desktop/wsl/).
 :::
 
 
-## Enable GPUs
+## Enable GPUs (compatible with MELD Graph GPU version only )
 
-Enabling your computer's GPUs for running the pipeline accelerates the brain segmentation when using Fastsurfer and the predictions. Follow instructions for your operating system to install.
+Enabling your computer's GPUs for running the pipeline accelerates the brain segmentation when using Fastsurfer and the predictions. Ensure you have installed a MELD Graph version compatible with GPU (see [release versions](https://docs.google.com/forms/d/e/1FAIpQLSdocMWtxbmh9T7Sv8NT4f0Kpev-tmRI-kngDhUeBF9VcZXcfg/viewform?usp=header)). Follow instructions for your operating system to install.
 
 ::::{tab-set}
 
@@ -49,13 +49,17 @@ Follow the instructions for [*enabling NVIDIA CUDA on WSL*](https://learn.micros
 ## Freesurfer licence
 You will need to download a Freesurfer license.txt to enable Freesurfer/Fastsurfer to perform the segmentation. Please follow the [guidelines](https://surfer.nmr.mgh.harvard.edu/fswiki/License) to download the file and keep a record of the path where you saved it. 
 
+## MELD license
+In order to run MELD Graph you need to have a `meld_license.txt` in the meld graph folder. To get this file, please fill out the [MELD registration form](https://docs.google.com/forms/d/e/1FAIpQLSdocMWtxbmh9T7Sv8NT4f0Kpev-tmRI-kngDhUeBF9VcZXcfg/viewform?usp=header). Once submitted, your application will be automatically reviewed and the meld_license.txt file will be send to your email. 
+
 ## Configuration
 In order to run the docker, you'll need to configure a couple of files
 
 1. Download `meld_graph_X.X.X.zip` with X.X.X the version from the [latest github release](https://github.com/MELDProject/meld_graph/releases/latest) and extract it.
-2. Copy the freesurfer `license.txt` into the extracted folder
-3. Create the meld_data folder, if it doesn't exist already. This folder is where you would like to store MRI data to run the classifier
-4. In the `meld_graph_X.X.X` extracted folder open and edit the compose.yml to add the path to the meld_data folder. The initial compose.yml file looks like ::
+2. Copy the freesurfer `license.txt` into the extracted folder (see above how to get the Freesurfer license)
+3. Copy the MELD `meld_license.txt` into the extracted folder (see above how to get the MELD license)
+4. Create the meld_data folder, if it doesn't exist already. This folder is where you would like to store MRI data to run the classifier
+5. In the `meld_graph_X.X.X` extracted folder open and edit the compose.yml to add the path to the meld_data folder. The initial compose.yml file looks like ::
 ```
 services:
   meld_graph:
