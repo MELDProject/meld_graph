@@ -193,7 +193,7 @@ git stash pop
 ```
 :::
 ::::
-4. If not already done, register to MELD Graph to get your MELD License by filling the [form](https://docs.google.com/forms/d/e/1FAIpQLSdocMWtxbmh9T7Sv8NT4f0Kpev-tmRI-kngDhUeBF9VcZXcfg/viewform?usp=header).
+4. If you have not already obtained a MELD License file, fill in this [form](https://docs.google.com/forms/d/e/1FAIpQLSdocMWtxbmh9T7Sv8NT4f0Kpev-tmRI-kngDhUeBF9VcZXcfg/viewform?usp=header) to obtain your MELD License.
 
 Then depending on if you have a Native, Docker or Singularity installation of the previous MELD Graph version you will need to follow the same type of installation to update to the latest version: 
 
