@@ -110,7 +110,7 @@ conda activate meld_graph
 # add the torch CPU packages (see below for GPU)
 pip install --no-cache-dir torch==1.10.0 torchvision==0.11.1 && pip install -e . && pip install torch-scatter -f https://data.pyg.org/whl/torch-1.10.0.html && pip install torch-geometric==2.4.0 && pip install captum==0.6.0
 # for use of GPU , install the Torch packages below instead
-# pip install --no-cache-dir torch==1.10.0+cu113  torchvision==0.11.1+cu113  && pip install -e . && pip install torch-scatter -f https://data.pyg.org/whl/torch-1.10.0+cu111.html && pip install torch-geometric==2.4.0 && pip install captum==0.6.0
+# pip install --no-cache-dir torch==1.10.0+cu113  torchvision==0.11.1+cu113 -f https://download.pytorch.org/whl/torch_stable.html && pip install -e . && pip install torch-scatter -f https://data.pyg.org/whl/torch-1.10.0+cu111.html && pip install torch-geometric==2.4.0 && pip install captum==0.6.0
 # install meld_graph with pip (with `-e`, the development mode, to allow changes in the code to be immediately visible in the installation)
 pip install -e .
 ```
