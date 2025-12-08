@@ -1,6 +1,6 @@
 services:
   meld_graph:
-    image: meldproject/meld_graph:latest
+    image: meldproject/meld_graph:v2.2.4_gpu
     platform: "linux/amd64"
     volumes:
       - ./docker-data:/data
