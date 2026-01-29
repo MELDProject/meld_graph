@@ -125,6 +125,9 @@ secrets:
 ## Set up paths and download model
 Before being able to use the classifier on your data, data paths need to be set up and the pretrained model needs to be downloaded. 
 
+**<span style="color: red;">IMPORTANT: TEMPORARY ISSUE WITH MELD GRAPH INSTALLATION</span>**:
+We are experiencing issues with Figshare, the platform hosting the MELD Graph model parameters, resulting in failures during the automated downloading of the parameters. We are hoping to solve those issues shortly, in the meantime please follow the workaround proposed in issue [#102](https://github.com/MELDProject/meld_graph/issues/102) to manually download the data. We apologise for the inconvenience. 
+
 1. Make sure you have 12GB of storage space available for the docker, and 2GB available for the meld data.
 
 2. Run this command to download the docker image and the training data
