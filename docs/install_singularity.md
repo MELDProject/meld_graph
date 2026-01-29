@@ -68,6 +68,9 @@ singularity exec meld_graph.sif /bin/bash -c "cd /app && python scripts/new_pati
 ```
 It will download the data in the meld_data folder you set up in step 2. 
 
+**<span style="color: red;">IMPORTANT: TEMPORARY ISSUE WITH MELD GRAPH INSTALLATION</span>**:
+We are experiencing issues with Figshare, the platform hosting the MELD Graph model parameters, resulting in failures during the automated downloading of the parameters. We are hoping to solve those issues shortly, in the meantime please follow the workaround proposed in issue [#102](https://github.com/MELDProject/meld_graph/issues/102) to manually download the data. We apologise for the inconvenience. 
+
 ## Verify installation
 To verify that you have installed all packages, set up paths correctly, and downloaded all data, this verification script will run the pipeline to predict the lesion classifier on a new patient. It takes approximately 15 minutes to run.
 

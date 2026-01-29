@@ -12,6 +12,9 @@ This package is a pipeline to segment FCD-lesions from MRI scans.
 
 ## UPDATE
 
+**<span style="color: red;">IMPORTANT: TEMPORARY ISSUE WITH MELD GRAPH INSTALLATION</span>**:
+We are experiencing issues with Figshare, the platform hosting the MELD Graph model parameters, resulting in failures during the automated downloading of the parameters. We are hoping to solve those issues shortly, in the meantime please follow the workaround proposed in issue [#102](https://github.com/MELDProject/meld_graph/issues/102) to manually download the data. We apologise for the inconvenience. 
+
 **<span style="color: red;">REGISTER TO GET YOUR MELD LICENSE</span>**:
 We request that all MELD graph users fill the [MELD Graph registration form](https://docs.google.com/forms/d/e/1FAIpQLSdocMWtxbmh9T7Sv8NT4f0Kpev-tmRI-kngDhUeBF9VcZXcfg/viewform?usp=header). Following registration you will received a license file. This file will be needed for use of all future MELD Graph versions v2.2.4 and above. Your email address will be added to the MELD Graph mailing list. This will ensure that we can update you about bugs fix and new releases. 
 
