@@ -1,11 +1,22 @@
 import urllib.request
 import os
 import numpy as np
-from meld_graph.paths import MELD_DATA_PATH
+from meld_graph.paths import MELD_DATA_PATH, DEFAULT_HDF5_FILE_ROOT, BASE_PATH
 import sys
 import shutil
 import tempfile
 
+def get_test_data(force_download=False):
+    test_data_dir = os.path.join(BASE_PATH, "MELD_TEST")
+    exists_patient = os.path.exists(os.path.join(test_data_dir, DEFAULT_HDF5_FILE_ROOT.format(site_code='TEST', group='patient')))
+    exists_control = os.path.exists(os.path.join(test_data_dir, DEFAULT_HDF5_FILE_ROOT.format(site_code='TEST', group='control')))
+    test_input_dir = os.path.join(MELD_DATA_PATH, "input")
+    exists_test_input = os.path.exists(os.path.join(test_input_dir,'sub-test001'))
+    if exists_patient and exists_control and exists_test_input:
+        print("Test data exists. Specify --force-download to overwrite.")
+        return test_data_dir
+    else:
+        print("Test data does not exists. Please run the step to prepare the classifier")
 
 def check_data(force_download=False):
     for folder in ['input','output','model','meld_params']:
