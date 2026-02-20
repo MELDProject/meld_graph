@@ -79,7 +79,7 @@ if __name__ == '__main__':
     parser.add_argument("--update_test", action="store_true", help="only update the test data")
     args = parser.parse_args()
 
-    from meld_graph.download_data import get_test_data, get_model, get_meld_params
+    from meld_graph.download_data import download_meld_graph_data, check_data
     
     #---------------------------------------------------------------------------------
     ### Test meld license exists
@@ -87,22 +87,20 @@ if __name__ == '__main__':
     test_license()
     #---------------------------------------------------------------------------------
 
-    if args.update_test:
-        get_test_data(force_download=True)
-        print('Test data updated')
-        sys.exit()
-        
     # create and populate meld_config.ini
     if not args.skip_config:
         prepare_meld_config()
 
     # need to do this import here, because above we are setting up the meld_config.ini
     # which is read when using meld_classifier.paths
+
+
     if not args.skip_download_data:
-        print("Downloading test data")
-        get_test_data(args.force_download)
-    print("Downloading meld parameters input")
-    get_meld_params(args.force_download)
-    print("Downloading model")
-    get_model(args.force_download)
-    print("Done.")
+        # check that data don't already exist
+        check_data(args.force_download)
+        print("Downloading meld graph data")
+        download_meld_graph_data()
+        print("Done.")
+    else:
+        print("Skip downloading meld graph data")
+   
