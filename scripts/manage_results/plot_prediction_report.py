@@ -550,6 +550,7 @@ def generate_prediction_report(
                 info_cl['size'] = size_clust
                 # get location
                 location = get_cluster_location(predictions[hemi] == cluster)
+                info_cl['hemi'] = hemi
                 info_cl['location'] = location
                 # get confidence
                 confidence = round(confidences[f'confidence_{cluster}']* 100,2) 

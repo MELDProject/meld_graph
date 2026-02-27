@@ -84,22 +84,22 @@ Solution:
 
 ### **Variability in MELD Graph results when using T1w+FLAIR scans**
 
-We have received feedback regarding inconsistencies in MELD Graph results when using T1w+FLAIR scans compared to T1w scan alone. In some cases, the tool produces different outputs for the same patient scanned at different timepoints when FLAIR is included. Our investigation suggests that FLAIR images are more heterogeneous, even on the same scanner and acquisition. This variability can affect the reliability of the MELD Graph outputs. 
+We have received feedback regarding inconsistencies in MELD Graph results when using T1w+FLAIR scans compared to T1w scan alone. In some cases, the tool produces different outputs for the same patient scanned at different timepoints when FLAIR is included. \
+Our investigation suggests that FLAIR images are more heterogeneous, even on the same scanner and acquisition. This variability can affect the reliability of the MELD Graph outputs. Addionally we have encountered examples where the FreeSurfer preprocessing on the FLAIR scan has introduced large intensity artefacts, resultings in errors in the cortical surface reconstruction.
 
-**<span style="color: red;">Recommendation**: We advise users to primarily rely on T1w scans for lesion detection. If additional sensitivity is needed, FLAIR can be added to explore other potential clusters. However, these results will need to be interpreted with extra caution, as FLAIR-based clusters may include more false positives. 
+**<span style="color: red;">Recommendation**: 
+1) We advise users to primarily rely on T1w scans for lesion detection. 
+2) If additional sensitivity is needed, FLAIR can be added to explore other potential clusters. However, these results will need to be interpreted with extra caution, as FLAIR-based clusters may include more false positives. 
+
+
+If using FLAIR scan we recommend : 
+- Ensuring that the FLAIR scan is excellent quality (3D, no artefacts)
+- Quality-checking the FLAIR scan preprocessed by FreeSurfer, to ensure that no intensity artefacts have been introduced. This file can be found at `output/fs_outputs/<subject_ID>/mri/FLAIR.mgz`
+- Checking the pial and white surfaces from FreeSurfer
+
+More details can be found in the ['Interpret the results'](https://meld-graph.readthedocs.io/en/latest/interpret_results.html#viewing-the-predicted-clusters-on-the-t1-and-quality-control) guidelines.
 
 To run a same subject with and without FLAIR, you should create two separate input folders with two different subject's ID such as `sub-0001` (containing only the T1w) and `sub-0001withflair` (containing T1w and FLAIR scans). You will need to run the MELD Graph pipeline twice. 
-
-### **I have an issue with FLAIR feature that does not exist**
-
-If you are running a subject with only a T1 scan and no FLAIR scan but you receive an issue like :
-```bash
-KeyError: "Unable to open object (object '.on_lh.gm_FLAIR_0.25.sm3.mgh' doesn't exist)"
-exit status 1
-```
-You are likely having this issue because you might have previously ran this same subject ID with a FLAIR scan and the FreeSurfer segmentation has been done using the FLAIR scan. Therefore, even if you remove the FLAIR scan from the input data and run again the command, the intermediate FreeSurfer outputs for that subject still contain FLAIR information, which will make the pipeline looks for for FLAIR features but fail to find them.
-
-To avoid this in the future, if you want to run a same subject with and without FLAIR, you should create two separate input folders with two different subject's ID such as `sub-0001noflair` and `sub-0001flair`.
 
 ### **I have an issue during the harmonisation**
 

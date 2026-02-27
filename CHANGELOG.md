@@ -1,5 +1,12 @@
 # Changelog
 
+## [v2.2.5] - 2026-02-20
+### Change in data downloading + fix in FreeSurfer segmentation
+- meld_data integrated into GitHub as Figshare platform preventing automated downloading of data
+- added Global Expert options file in $SUBJECT_DIR to fix known bug in Freesurfer pial surface reconstruction when FLAIR is used
+- save hemisphere information in csv during report creation
+- fix issue bidslayout to enable flexible config file
+
 ## [v2.2.4_gpu] - 2025-11-20
 ### Added security
 - added documentation with a first-page documentation in MELD Patient Report
