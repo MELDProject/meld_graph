@@ -3,7 +3,7 @@ import os
 from configparser import ConfigParser, NoOptionError
 import sys
 import shutil
-import subprocess
+import importlib
 
 
 def prepare_meld_config():
@@ -93,13 +93,15 @@ if __name__ == '__main__':
 
     # need to do this import here, because above we are setting up the meld_config.ini
     # which is read when using meld_classifier.paths
-
+    from meld_graph import paths
+    importlib.reload(paths)
+    from meld_graph.paths import MELD_DATA_PATH
 
     if not args.skip_download_data:
         # check that data don't already exist
         check_data(args.force_download)
-        print("Downloading meld graph data")
-        download_meld_graph_data()
+        print(f"Downloading meld graph data into {MELD_DATA_PATH}")
+        download_meld_graph_data(MELD_DATA_PATH)
         print("Done.")
     else:
         print("Skip downloading meld graph data")

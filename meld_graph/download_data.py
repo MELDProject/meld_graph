@@ -40,7 +40,7 @@ def _fetch_url(url, fname):
             sys.stdout.flush()
     return urllib.request.urlretrieve(url, fname, reporthook=dlProgress)
 
-def download_meld_graph_data():
+def download_meld_graph_data(meld_data_path=MELD_DATA_PATH):
     """
     download meld graph data from GitHub release: model, parameters and test data 
     """
@@ -49,5 +49,5 @@ def download_meld_graph_data():
         # download to tmpdir
         _fetch_url(url, os.path.join(tmpdirname, "meld_graph_data.zip"))
         # unpack
-        shutil.unpack_archive(os.path.join(tmpdirname, "meld_graph_data.zip"), MELD_DATA_PATH)
-    print(f"\ndownloaded meld graph data to {MELD_DATA_PATH}")
+        shutil.unpack_archive(os.path.join(tmpdirname, "meld_graph_data.zip"), meld_data_path)
+    print(f"\ndownloaded meld graph data to {meld_data_path}")
