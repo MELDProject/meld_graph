@@ -93,7 +93,7 @@ Our investigation suggests that FLAIR images are more heterogeneous, even on the
 
 
 If using FLAIR scan we recommend : 
-- Ensuring that the FLAIR scan is great quality (3D, no artefacts)
+- Ensuring that the FLAIR scan is excellent quality (3D, no artefacts)
 - Quality-checking the FLAIR scan preprocessed by FreeSurfer, to ensure that no intensity artefacts have been introduced. This file can be found at `output/fs_outputs/<subject_ID>/mri/FLAIR.mgz`
 - Checking the pial and white surfaces from FreeSurfer
 
