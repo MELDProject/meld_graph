@@ -1,6 +1,6 @@
 services:
   meld_graph:
-    image: meldproject/meld_graph:latest
+    image: meldproject/meld_graph:v2.2.5_gpu
     platform: "linux/amd64"
     volumes:
       - ./docker-data:/data
@@ -16,7 +16,7 @@ services:
         reservations:
           devices:
             - capabilities: [gpu]
-              count: 0
+              count: all
 
 secrets:
   license.txt:
