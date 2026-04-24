@@ -1,5 +1,13 @@
 # Changelog
 
+## [v2.2.5_gpu] - 2026-04-24
+### Change in data downloading + fix in FreeSurfer segmentation
+- meld_data integrated into GitHub as Figshare platform preventing automated downloading of data
+- added Global Expert options file in $SUBJECT_DIR to fix known bug in Freesurfer pial surface reconstruction when FLAIR is used
+- save hemisphere information in csv during report creation
+- fix issue bidslayout to enable flexible config file
+- separate gpu/cpu version of MELD Graph (this is the GPU version)
+
 ## [v2.2.5] - 2026-02-20
 ### Change in data downloading + fix in FreeSurfer segmentation
 - meld_data integrated into GitHub as Figshare platform preventing automated downloading of data
