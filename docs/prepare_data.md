@@ -52,6 +52,15 @@ Then run the command
 mri_convert <path_to_first_dcm> <path_to_output_nii>
 ```
 
+with:
+- <path_to_first_dcm> : the path of the first dicom file (.dcm) in the dicoms folder.
+- <path_to_output_nii> : the path of the output nifti file. It will need to finish by '.nii.gz'.
+
+Example: 
+```bash
+mri_convert /home/user/sub001_dcm/Snake_sub001.Seq3.Ser202.Img1.dcm /home/user/sub001_dcm/T1.nii.gz
+```
+
 Note: Ensure that there is no space in the path to your dicom and nifti file or the command will fail
 :::
 
