@@ -2,6 +2,7 @@
 import os
 import pwd
 from configparser import ConfigParser, NoOptionError, NoSectionError
+from pathlib import Path
 
 # get scripts dir (parent dir of dir that this file is in)
 SCRIPTS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -71,6 +72,9 @@ MELD_DATASET = "MELD_dataset_V6.csv"
 NEWSUBJECTS_DATASET = "MELD_dataset_newSubjects.csv"
 # number of vertices per hemi
 NVERT = 163842
+
+# freebrowse path
+FREEBROWSE_HTML    = f"{SCRIPTS_DIR}/meld_graph/freebrowse-2.4.1.html"
 
 def load_config(config_file):
     """load config.py file and return config object"""
