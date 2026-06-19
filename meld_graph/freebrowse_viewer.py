@@ -90,7 +90,7 @@ def _generate_html(volumes: list, meshes: list) -> str:
             "meshShaderIndex": 14, # to make it crosscut
         })
     # general niivue parameters (e.g. radiological convention)
-    opts = {"isRadiologicalConvention": True, "isNearestInterpolation": True}
+    opts = {"isRadiologicalConvention": True, "isNearestInterpolation": True, "sagittalNoseLeft":True}
     # combine all parameters
     scene = {"imageOptionsArray": nvd_volumes, "meshes": nvd_meshes, "opts": opts}
     scene['opts']
