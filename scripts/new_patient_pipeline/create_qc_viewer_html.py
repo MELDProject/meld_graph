@@ -11,6 +11,7 @@ import glob
 from meld_graph.freebrowse_viewer import _generate_html
 import webbrowser
 from pathlib import Path
+from meld_graph.paths import MELD_DATA_PATH
 
             
 def return_file(path, file_name):
@@ -33,17 +34,25 @@ if __name__ == '__main__':
                         required=True,)
     parser.add_argument('-meld_data','--meld_data',
                         help='MELD data folder.',
-                        required=True,)
+                        default=None)
     parser.add_argument("-output",   
-                        default='viewer.html',  
-                        help=f"Output HTML file (default: viewer.html)")
+                        default=None,  
+                        help=f"Output HTML file")
     args = parser.parse_args()
     subject=str(args.id_subj)
-    meld_data_path=args.meld_data
+
+    if args.meld_data is None:
+        meld_data_path = MELD_DATA_PATH
+    else:
+        meld_data_path=args.meld_data
     
     # get subject fs folder 
     pred_dir = os.path.join(meld_data_path,'output', 'predictions_reports', subject)
     subject_fs_folder = os.path.join(meld_data_path, 'output', 'fs_outputs', subject)
+    if args.output is None:
+        output = os.path.join(meld_data_path,'output', 'predictions_reports', subject, 'reports', f'qc_viewer_{subject}.html')
+    else:
+        output = args.output
     
     # Find T1 and FLAIR FS outputs if exists
     if not os.path.isdir(subject_fs_folder):
@@ -97,13 +106,13 @@ if __name__ == '__main__':
     ]
 
     # call freebrowse viewer
-    output = Path(args.output)
+    output = Path(output)
     print(f"Generating {output}…")
     html = _generate_html(volumes, meshes)
     output.write_text(html, encoding="utf-8")
     size_mb = output.stat().st_size / 1024 / 1024
     print(f"Done — {output}  ({size_mb:.1f} MB)")
-    webbrowser.open(output.resolve().as_uri())
+    # webbrowser.open(output.resolve().as_uri())
 
     
     
