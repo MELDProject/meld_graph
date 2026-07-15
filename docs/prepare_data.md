@@ -7,6 +7,64 @@ If you are preparing the data for the harmonisation step, you will also need to 
 ## **Prepare the MRI data (Mandatory)**
 
 In the 'input' folder where your meld data has/is going to be stored, create a folder for each patient with the ID of the subject. 
+### Convert DICOMs to NIfTI
+The input data needs to be in 'NIfTI' format ('.nii.gz'). If you have DICOMS file you will need to convert them in NIfTI. If you already have the data in NIfTI, you can skip this. 
+
+To convert DICOMs to NIfTI, you can use the 'mri_convert' function from FreeSurfer.
+
+::::{tab-set}
+:::{tab-item} Docker
+:sync: docker
+Open a terminal and `cd` to the meld graph folder.
+
+```bash
+DOCKER_USER="$(id -u):$(id -g)" docker compose run -v "<path_to_dcm>:/data_dcm" meld_graph mri_convert /data_dcm/<name_of_first_dcm> /data_dcm/<name_of_output_nii>
+```
+with:
+- <path_to_dcm> : the path where the dicom folder is saved. 
+- <name_of_first_dcm> : the name of the first dicom file (.dcm) in the dicoms folder.
+- <name_of_output_nii> : the name of the output nifti file. It will need to finish by '.nii.gz'.
+
+Example: 
+```bash
+DOCKER_USER="$(id -u):$(id -g)" docker compose run -v "/home/user/sub001_dcm:/data_dcm" meld_graph mri_convert /data_dcm/Snake_sub001.Seq3.Ser202.Img1.dcm /data_dcm/T1.nii.gz
+```
+Note: Ensure that there is no space in the path to your dicom and nifti file or the command will fail
+
+WINDOWS USER: On windows, you do not need the `DOCKER_USER="$(id -u):$(id -g)"` part
+:::
+
+
+:::{tab-item} Native
+:sync: native
+
+Open a terminal and `cd` to the meld graph folder.
+
+You will need to first activate FreeSurfer
+```bash
+export FREESURFER_HOME=<freesurfer_installation_directory>
+source $FREESURFER_HOME/SetUpFreeSurfer.sh
+```
+
+Then run the command
+```bash
+mri_convert <path_to_first_dcm> <path_to_output_nii>
+```
+
+with:
+- <path_to_first_dcm> : the path of the first dicom file (.dcm) in the dicoms folder.
+- <path_to_output_nii> : the path of the output nifti file. It will need to finish by '.nii.gz'.
+
+Example: 
+```bash
+mri_convert /home/user/sub001_dcm/Snake_sub001.Seq3.Ser202.Img1.dcm /home/user/sub001_dcm/T1.nii.gz
+```
+
+Note: Ensure that there is no space in the path to your dicom and nifti file or the command will fail
+:::
+
+:::
+::::
 
 ### **MELD format**
 
