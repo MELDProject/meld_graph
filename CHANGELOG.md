@@ -1,5 +1,10 @@
 # Changelog
 
+## [v2.2.6] - 2026-07-14
+### Update report with info MELD + create HTML report
+- add link to github and MELD project wedbpage on MELD report
+- add a function to generate a HTML viewer to display predicted clusters on top of T1 and FLAIR scan + pial and white surfaces
+
 ## [v2.2.5] - 2026-02-20
 ### Change in data downloading + fix in FreeSurfer segmentation
 - meld_data integrated into GitHub as Figshare platform preventing automated downloading of data
