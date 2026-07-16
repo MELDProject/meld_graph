@@ -6,6 +6,7 @@ The main outputs of the MELD Graph algorithm are:
 - the MELD Graph PDF report
 - prediction.nii.gz (the cluster predictions for the whole brain)
 - lh.prediction.nii.gz and rh.prediction.nii.gz (the prediction masks for left and right hemispheres)
+- optional: A HTML viewer displaying the predicted lesion alongside the cortical surfaces overlaid on the T1w and FLAIR scan. We recommend this for quality control of the results, in particular the Freesurfer cortical surfaces. 
 
 We recommend that users:
 1. Interpret the MELD Graph PDF report
@@ -74,6 +75,38 @@ If you only provide a T1 image, the FLAIR features will not be included in the s
 
 The information hereabove mentioned about each cluster are summarised into the csv file info_clusters_<subject_id>.csv
 
+## Export the results in an HTML viewer
+
+The results of the MELD Graph pipeline can be displayed in a viewer and saved as a HTML file. This enables visualisation of the predicted clusters and the pial and white surfaces on top of the T1w and FLAIR scans. This HTML file can be shared with colleagues alongside the PDF report. You do not need MELD installed to view the HTML file.
+
+**WARNING** : The MRI scans are embedded into the HTML file. Be careful when sending this HTML, as if the scans are not completely anonymised the HTML will contain patients identifiers.
+
+An example of the HTML viewer is provided [here](https://raw.githack.com/MELDProject/meld_graph/v2.2.6/docs/images/qc_viewer_sub-00138.html). It has been created using the results of MELD Graph ran on patient `sub-00138` from the open source FCDs dataset [doi:10.18112/openneuro.ds004199.v1.0.6](https://openneuro.org/datasets/ds004199/versions/1.0.6).
+
+
+To create this HTML viewer for your subject run the command below. The HTML viewer will be saved in `/output/predictions_reports/<subject_id>/reports`
+
+::::{tab-set}
+:::{tab-item} Docker
+:sync: docker
+
+```bash
+DOCKER_USER="$(id -u):$(id -g)" docker compose run meld_graph python scripts/new_patient_pipeline/create_qc_viewer_html.py -id <subject_id>
+```
+:::
+
+:::{tab-item} Native
+:sync: native
+
+Open a terminal and `cd` to the meld graph folder.
+
+```bash
+./meldgraph.sh create_qc_viewer_html.py -id <subject_id>
+```
+
+:::
+::::
+
 ## Viewing the predicted clusters on the T1 and quality control
 
 After viewing the MELD PDF report, it is then important to visualise the predicted clusters on the T1 to see if they are likely FCDs or not. 
@@ -83,27 +116,28 @@ The predictions are saved as NIFTI files in the folder:
 
 **It is important to check that the clusters detected are not due to obvious FreeSurfer reconstruction errors, scan artifacts etc.**
 
+To quality control the predicted lesion and the surfaces, you can use the HTML viewer mentioned above or use Freeview (you will need a standalone version of freeview)
+
+Note: For Docker users the easiest option is to use the HTML viewer as Docker does not allow Freeview GUI interface.
+
 ::::{tab-set}
-:::{tab-item} Docker
-:sync: docker
+:::{tab-item} With the HTML viewer 
+:sync: HTML 
 
-Note: Docker does not allow GUI interface, therefore to run the QC you will need to have a stand alone installation of FreeSurfer/FreeView to enable the visualisation. 
+The HTML viewer will open Freebrowse and load the T1 and FLAIR (where available) volumes as well as the classifier predictions on the left and right hemispheres. It will also load the FreeSurfer pial and white surfaces. It should look like this:
 
-Open a terminal and `cd` to where you extracted the release zip.
+![qc_surface](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/freebrowse_viewer_1.png)
 
-You will need to first activate FreeSurfer
-```bash
-export FREESURFER_HOME=<freesurfer_installation_directory>
-source $FREESURFER_HOME/SetUpFreeSurfer.sh
-```
-Then run the command: 
-```bash
-python scripts/new_patient_pipeline/new_pt_qc_script_standalone.py -id <subject_id> -meld_data <path_to_meld_data_folder>
-```
+You can scroll through and find the predicted clusters. You can also access the surfaces on another panel.  
+
+![qc_surface](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/freebrowse_viewer_2.png)
+
+Example of a predicted cluster (here red) on the right hemisphere. It is overlaid on a T1 image, with the right hemisphere pial and white surfaces visualised.
+
 :::
 
-:::{tab-item} Native
-:sync: native
+:::{tab-item} Freeview
+:sync: Freeview
 
 Open a terminal and `cd` to the meld graph folder.
 
@@ -118,10 +152,6 @@ Then run the command:
 ./meldgraph.sh new_pt_qc_script.py -id <subject_id>
 ```
 
-:::
-::::
-
-
 This will open FreeView and load the T1 and FLAIR (where available) volumes as well as the classifier predictions on the left and right hemispheres. It will also load the FreeSurfer pial and white surfaces. It should look like that:
 
 ![qc_surface](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/qc_surface.png)
@@ -132,6 +162,9 @@ You can scroll through and find the predicted clusters.
 ![qc_surface](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/qc_cluster.png)
 
 Example of a predicted cluster (orange) on the right hemisphere. It is overlaid on a T1 image, with the right hemisphere pial and white surfaces visualised. Red arrows point to the cluster. 
+
+:::
+::::
 
 **Things to check for each predicted cluster:**
 

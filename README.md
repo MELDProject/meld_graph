@@ -15,10 +15,8 @@ This package is a pipeline to segment FCD-lesions from MRI scans.
 **<span style="color: red;">REGISTER TO GET YOUR MELD LICENSE</span>**:
 We request that all MELD graph users fill the [MELD Graph registration form](https://docs.google.com/forms/d/e/1FAIpQLSdocMWtxbmh9T7Sv8NT4f0Kpev-tmRI-kngDhUeBF9VcZXcfg/viewform?usp=header). Following registration you will received a license file. This file will be needed for use of all future MELD Graph versions v2.2.4 and above. Your email address will be added to the MELD Graph mailing list. This will ensure that we can update you about bugs fix and new releases. 
 
-**<span style="color: red;">PLEASE UPDATE TO V2.2.4</span>**: 
-We have released MELD Graph v2.2.4 and v2.2.4_gpu, the new stable versions of MELD Graph with increased level of security and documentation. All current users are required to update to v2.2.4. Older versions will be deprecated and not supported.
-If you have GPU ressources with at least 20GB of VRAM and would like to use GPU for Fastsurfer segmentation and accelerated MELD Graph prediction, please install v2.2.4_gpu. To update your code please follow the guidelines [Updating MELD Graph version](https://meld-graph.readthedocs.io/en/latest/FAQs.html#Updating-MELD-Graph-version) from our FAQ.
-
+**<span style="color: red;">PLEASE UPDATE TO V2.2.4 OR ABOVE</span>**: 
+If you are working with version v2.2.3 or below please update to the [latest version of MELD Graph](https://github.com/MELDProject/meld_graph/releases). Older versions will be deprecated and not supported. To update your code please follow the guidelines [Updating MELD Graph version](https://meld-graph.readthedocs.io/en/latest/FAQs.html#Updating-MELD-Graph-version) from our FAQ.
 
 ![overview](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/Fig1_pipeline.jpg)
 
@@ -98,8 +96,8 @@ If you'd like to contribute to this code base, have a look at our [contribution 
 ## Acknowledgments
 
 We would like to thank 
-- the [MELD consortium](https://meldproject.github.io//docs/collaborator_list.pdf) for providing the data to train this classifier and their expertise to build this pipeline.\
-- [Lennart Walger](https://github.com/1-w) and [Andrew Chen](https://github.com/andy1764), for their help testing and improving the MELD pipeline to v1.1.0. \
+- The [MELD consortium](https://meldproject.github.io//docs/collaborator_list.pdf) for providing the data to train this classifier and their expertise to build this pipeline.
+- [Lennart Walger](https://github.com/1-w) and [Andrew Chen](https://github.com/andy1764), for their help testing and improving the MELD pipeline to v1.1.0.
 - [Ulysses Popple](https://github.com/ulyssesdotcodes) for his help building the docs and dockers.
 - [Cornelius Kronlage](https://github.com/ckronlage) highlighting issues in v2.2.1 and suggesting solutions in v2.2.2
 
