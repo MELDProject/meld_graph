@@ -8,7 +8,7 @@ If you are preparing the data for the harmonisation step, you will also need to 
 
 In the 'input' folder where your meld data has/is going to be stored, create a folder for each patient with the ID of the subject. 
 ### Convert DICOMs to NIfTI
-The input data needs to be in 'NIfTI' format ('.nii.gz'). If you have DICOMS file you will need to convert them in NIfTI. If you already have the data in NIfTI, you can skip this. 
+The input data needs to be in 'NIfTI' format ('.nii.gz'). If you have DICOM files you will need to convert them in NIfTI. If you already have the data in NIfTI, you can skip this. 
 
 To convert DICOMs to NIfTI, you can use the 'mri_convert' function from FreeSurfer.
 
