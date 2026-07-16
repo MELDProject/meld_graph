@@ -6,7 +6,7 @@ The main outputs of the MELD Graph algorithm are:
 - the MELD Graph PDF report
 - prediction.nii.gz (the cluster predictions for the whole brain)
 - lh.prediction.nii.gz and rh.prediction.nii.gz (the prediction masks for left and right hemispheres)
-- Optional: A HTML viewer displaying the predicted lesion alongside the cortical surfaces overlaid on the T1w and FLAIR scan
+- optional: A HTML viewer displaying the predicted lesion alongside the cortical surfaces overlaid on the T1w and FLAIR scan. We recommend this for quality control of the results, in particular the Freesurfer cortical surfaces. 
 
 We recommend that users:
 1. Interpret the MELD Graph PDF report
@@ -77,14 +77,14 @@ The information hereabove mentioned about each cluster are summarised into the c
 
 ## Export the results in an HTML viewer
 
-The results of the MELD Graph pipeline can be displayed in a viewer and saved as a HTML file. This enable to visualise the predicted clusters and pial and white surfaces on top of the T1w and FLAIR scans, and share the results alongside the PDF report. The HTML file will enable anyone to click on it and view the results, even if they do not have MELD installed. 
+The results of the MELD Graph pipeline can be displayed in a viewer and saved as a HTML file. This enables visualisation of the predicted clusters and the pial and white surfaces on top of the T1w and FLAIR scans. This HTML file can be shared with colleagues alongside the PDF report. You do not need MELD installed to view the HTML file.
 
-**WARNING** : The MRI scans are embedded into the HTML file. Be careful when sending this HTML to someone, as if the scans are not completely anonymised, the HTML may contains patients identifiers.
+**WARNING** : The MRI scans are embedded into the HTML file. Be careful when sending this HTML, as if the scans are not completely anonymised the HTML will contain patients identifiers.
 
-An example of HTML viewer is provided [here](https://raw.githack.com/MELDProject/meld_graph/v2.2.6/docs/images/qc_viewer_sub-00138.html). It has been created using the results of MELD Graph ran on patient `sub-00138` from an open source FCDs dataset [doi:10.18112/openneuro.ds004199.v1.0.6](https://openneuro.org/datasets/ds004199/versions/1.0.6) 
+An example of the HTML viewer is provided [here](https://raw.githack.com/MELDProject/meld_graph/v2.2.6/docs/images/qc_viewer_sub-00138.html). It has been created using the results of MELD Graph ran on patient `sub-00138` from the open source FCDs dataset [doi:10.18112/openneuro.ds004199.v1.0.6](https://openneuro.org/datasets/ds004199/versions/1.0.6).
 
 
-To create this HTML viewer for your subject run the command below. The HTML viewer will be saved in /output/predictions_reports/<subject_id>/reports
+To create this HTML viewer for your subject run the command below. The HTML viewer will be saved in `/output/predictions_reports/<subject_id>/reports`
 
 ::::{tab-set}
 :::{tab-item} Docker
@@ -124,11 +124,11 @@ Note: For Docker users the easiest option is to use the HTML viewer as Docker do
 :::{tab-item} With the HTML viewer 
 :sync: HTML 
 
-The HTML viewer will open Freebrowse and load the T1 and FLAIR (where available) volumes as well as the classifier predictions on the left and right hemispheres. It will also load the FreeSurfer pial and white surfaces. It should look like that:
+The HTML viewer will open Freebrowse and load the T1 and FLAIR (where available) volumes as well as the classifier predictions on the left and right hemispheres. It will also load the FreeSurfer pial and white surfaces. It should look like this:
 
 ![qc_surface](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/freebrowse_viewer_1.png)
 
-You can scroll through and find the predicted clusters. You can also access the surfaces on another pannel.  
+You can scroll through and find the predicted clusters. You can also access the surfaces on another panel.  
 
 ![qc_surface](https://raw.githubusercontent.com//MELDProject/meld_graph/main/docs/images/freebrowse_viewer_2.png)
 
