@@ -4,6 +4,25 @@ The MELD pipeline relies on the MRI data to be organised in the MELD or BIDS for
 
 If you are preparing the data for the harmonisation step, you will also need to prepare the demographic information. 
 
+## MRI data
+MELD graph requires a 3D T1 (WITHOUT gadolinium agent) and it is optional but advised to include the 3D FLAIR. 
+MELD Graph has been trained on scans acquired 1.5T and 3T. 
+
+It has not been evaluated on: 
+- other MRI scans contrast than T1 and FLAIR
+- MRI scans with gadolinium 
+- 2D MRI scans
+- scans acquired <1.5T and >3T
+
+It is not appropriate to use this algorithm on patients with:
+- tuberous sclerosis
+- suspected hippocampal sclerosis
+- hypothalamic hamartoma
+- periventricular nodular heterotopia
+- other focal epilepsy pathologies
+- previous resection cavities
+
+
 ## **Prepare the MRI data (Mandatory)**
 
 In the 'input' folder where your meld data has/is going to be stored, create a folder for each patient with the ID of the subject. 
