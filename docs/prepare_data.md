@@ -81,8 +81,6 @@ mri_convert /home/user/sub001_dcm/Snake_sub001.Seq3.Ser202.Img1.dcm /home/user/s
 
 Note: Ensure that there is no space in the path to your dicom and nifti file or the command will fail
 :::
-
-:::
 ::::
 
 ### **MELD format**
