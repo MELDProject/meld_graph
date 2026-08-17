@@ -1,5 +1,6 @@
 import logging
 import os
+import tempfile
 import torch
 import torch_geometric.data
 from meld_graph.dataset import GraphDataset
@@ -1155,22 +1156,23 @@ def create_surface_plots(coords, faces, overlay, flat_map=True, limits=None):
     else:
         vmin = limits[0]
         vmax = limits[1]
-    tmp_file = os.path.join(MELD_DATA_PATH,'tmp.png')
-    msp.plot_surf(
-        coords,
-        faces,
-        overlay,
-        flat_map=flat_map,
-        rotate=[90, 270],
-        filename=tmp_file,
-        vmin=vmin,
-        vmax=vmax,
-    )
-    im = Image.open(tmp_file)
-    im = trim(im)
-    im = im.convert("RGBA")
-    im1 = np.array(im)
-    os.remove(tmp_file)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_file = os.path.join(tmpdir,'tmp.png')
+        msp.plot_surf(
+            coords,
+            faces,
+            overlay,
+            flat_map=flat_map,
+            rotate=[90, 270],
+            filename=tmp_file,
+            vmin=vmin,
+            vmax=vmax,
+        )
+        im = Image.open(tmp_file)
+        im = trim(im)
+        im = im.convert("RGBA")
+        im1 = np.array(im)
+        os.remove(tmp_file)
     return im1
 
 

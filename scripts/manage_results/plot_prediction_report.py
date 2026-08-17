@@ -14,6 +14,7 @@ from meld_graph.paths import (
     SCRIPTS_DIR,
 )
 import os
+import tempfile
 import json
 import glob
 import h5py
@@ -139,31 +140,32 @@ def load_prediction(subject,hdf5):
 def create_surface_plots(surf,prediction,c, base_size=20):
     """plot and reload surface images"""
     cmap, colors =  load_cmap()
-    tmp_file = os.path.join(MELD_DATA_PATH,'tmp.png')
-    msp.plot_surf(surf['coords'],
-              surf['faces'],prediction,
-              rotate=[90],
-              mask=prediction==0,pvals=np.ones_like(c.cortex_mask),
-              colorbar=False,vmin=1,vmax=len(colors) ,cmap=cmap,
-              base_size=base_size,
-              filename=tmp_file)
-    im = Image.open(tmp_file)
-    im = trim(im)
-    im = im.convert("RGBA")
-    im1 = np.array(im)
-    msp.plot_surf(surf['coords'],
-            surf['faces'],prediction,
-              rotate=[270],
-              mask=prediction==0,pvals=np.ones_like(c.cortex_mask),
-              colorbar=False,vmin=1,vmax=len(colors),cmap=cmap,
-              base_size=base_size,
-              filename=tmp_file)
-    im = Image.open(tmp_file)
-    im = trim(im)
-    im = im.convert("RGBA")
-    im2 = np.array(im)
-    plt.close('all')
-    os.remove(tmp_file)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_file = os.path.join(tmpdir,'tmp.png')
+        msp.plot_surf(surf['coords'],
+                surf['faces'],prediction,
+                rotate=[90],
+                mask=prediction==0,pvals=np.ones_like(c.cortex_mask),
+                colorbar=False,vmin=1,vmax=len(colors) ,cmap=cmap,
+                base_size=base_size,
+                filename=tmp_file)
+        im = Image.open(tmp_file)
+        im = trim(im)
+        im = im.convert("RGBA")
+        im1 = np.array(im)
+        msp.plot_surf(surf['coords'],
+                surf['faces'],prediction,
+                rotate=[270],
+                mask=prediction==0,pvals=np.ones_like(c.cortex_mask),
+                colorbar=False,vmin=1,vmax=len(colors),cmap=cmap,
+                base_size=base_size,
+                filename=tmp_file)
+        im = Image.open(tmp_file)
+        im = trim(im)
+        im = im.convert("RGBA")
+        im2 = np.array(im)
+        plt.close('all')
+        os.remove(tmp_file)
     return im1,im2
 
 def load_cluster(file, subject):
@@ -205,10 +207,11 @@ def get_cluster_location(cluster_array):
 
 def save_mgh(filename, array, demo):
     """save mgh file using nibabel and imported demo mgh file"""
-    mmap = np.memmap("/tmp/tmp", dtype="float32", mode="w+", shape=demo.get_data().shape)
-    mmap[:, 0, 0] = array[:]
-    output = nb.MGHImage(mmap, demo.affine, demo.header)
-    nb.save(output, filename)
+    with tempfile.NamedTemporaryFile() as mmap_file:
+        mmap = np.memmap(mmap_file.name, dtype="float32", mode="w+", shape=demo.get_data().shape)
+        mmap[:, 0, 0] = array[:]
+        output = nb.MGHImage(mmap, demo.affine, demo.header)
+        nb.save(output, filename)
 
 def load_cmap():
     """ create the colors dictionarry for the clusters"""

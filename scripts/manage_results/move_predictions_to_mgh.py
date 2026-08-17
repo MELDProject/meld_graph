@@ -1,4 +1,5 @@
 import os
+import tempfile
 import numpy as np
 import h5py
 from meld_graph.meld_cohort import MeldCohort
@@ -17,10 +18,11 @@ def load_prediction(subject, hdf5, prediction_name="prediction_clustered"):
 
 def save_mgh(filename, array, demo):
     """save mgh file using nibabel and imported demo mgh file"""
-    mmap = np.memmap("/tmp/tmp", dtype="float32", mode="w+", shape=demo.get_data().shape)
-    mmap[:, 0, 0] = array[:]
-    output = nb.MGHImage(mmap, demo.affine, demo.header)
-    nb.save(output, filename)
+    with tempfile.NamedTemporaryFile() as mmap_file:
+        mmap = np.memmap(mmap_file.name, dtype="float32", mode="w+", shape=demo.get_data().shape)
+        mmap[:, 0, 0] = array[:]
+        output = nb.MGHImage(mmap, demo.affine, demo.header)
+        nb.save(output, filename)
 
 def move_predictions_to_mgh(subject_id, subjects_dir, prediction_file, verbose=False):
     ''' move meld predictions from hdf to mgh freesurfer volume. Outputs are saved into freesurfer subject directory 

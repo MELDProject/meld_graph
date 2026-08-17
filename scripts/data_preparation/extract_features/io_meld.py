@@ -1,3 +1,4 @@
+import tempfile
 import numpy as np
 import nibabel as nb
 import pandas as pd
@@ -19,12 +20,13 @@ def import_mgh(filename):
     array_data=np.ndarray.flatten(mmap_data)
     return array_data;
 
-def save_mgh(filename,array, demo):
-    """ save mgh file using nibabel and imported demo mgh file"""
-    mmap=np.memmap('/tmp/tmp', dtype='float32', mode='w+', shape=demo.get_data().shape)
-    mmap[:,0,0]=array[:]
-    output=nb.MGHImage(mmap, demo.affine, demo.header)
-    nb.save(output, filename)
+def save_mgh(filename, array, demo):
+    """save mgh file using nibabel and imported demo mgh file"""
+    with tempfile.NamedTemporaryFile() as mmap_file:
+        mmap = np.memmap(mmap_file.name, dtype="float32", mode="w+", shape=demo.get_data().shape)
+        mmap[:, 0, 0] = array[:]
+        output = nb.MGHImage(mmap, demo.affine, demo.header)
+        nb.save(output, filename)
 
 
 #function to load subject features
