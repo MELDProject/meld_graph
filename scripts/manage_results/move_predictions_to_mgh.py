@@ -25,7 +25,7 @@ def save_mgh(filename, array, demo):
         output = nb.MGHImage(mmap, demo.affine, demo.header)
         nb.save(output, filename)
 
-def move_predictions_to_mgh(subject_id, subjects_dir, prediction_file, verbose=False):
+def move_predictions_to_mgh(subject_id, subjects_dir, prediction_file, output_dir, verbose=False):
     ''' move meld predictions from hdf to mgh freesurfer volume. Outputs are saved into freesurfer subject directory 
     inputs:
         subject_ids : subjects ID in an array
@@ -33,10 +33,6 @@ def move_predictions_to_mgh(subject_id, subjects_dir, prediction_file, verbose=F
         prediction_file : hdf5 file containing the MELD predictions
     '''
     c = MeldCohort()
-    # create classifier directory if not exist
-    classifier_dir = os.path.join(subjects_dir, subject_id, "xhemi", "classifier")
-    if not os.path.isdir(classifier_dir):
-        os.mkdir(classifier_dir)
     predictions = load_prediction(subject_id, prediction_file, prediction_name="cluster_thresholded_salient")
     for hemi in ["lh", "rh"]:
         prediction_h = predictions[hemi]
@@ -47,7 +43,9 @@ def move_predictions_to_mgh(subject_id, subjects_dir, prediction_file, verbose=F
         except:
             print(get_m(f'Could not load {os.path.join(subjects_dir, subject_id, "xhemi", "surf_meld", f"{hemi}.on_lh.thickness.mgh")} ', subject_id, 'ERROR')) 
             return False   
-        filename = os.path.join(subjects_dir, subject_id, "xhemi", "classifier", f"{hemi}.prediction.mgh")
+        save_dir=os.path.join(output_dir, subject_id, 'predictions')
+        filename = os.path.join(save_dir, 'fsaverage_sym', f"{hemi}.prediction.mgh")
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         save_mgh(filename, overlay, demo)
         
 
@@ -69,6 +67,7 @@ if __name__ == "__main__":
         "--subjects_dir", default="", help="folder containing freesurfer outputs. It will store predictions there"
     )
     parser.add_argument("--list_ids", default=None, help="texte file containing list of ids to process")
+    parser.add_argument("--output_dir", default="", help="folder to save predictions in mgh format")
 
     args = parser.parse_args()
 
@@ -90,4 +89,4 @@ if __name__ == "__main__":
     
     if os.path.isfile(prediction_file):
         for subject_id in subjids:
-            move_predictions_to_mgh(subject_id, subjects_dir, prediction_file)
+            move_predictions_to_mgh(subject_id, subjects_dir, prediction_file, args.output_dir)
