@@ -52,6 +52,23 @@ def check_xhemi_outputs():
     #TODO
     pass
 
+# workaround for the FLAIR pial reconstruction bug in freesurfer
+PLACE_MM_PIAL_SURF_OPTS = "PlaceMMPialSurf --mm_min_inside 50 --mm_max_inside 200 --mm_min_outside 10 --mm_max_outside 50"
+
+def write_expert_opts(subject_id, lines):
+    """write a per-subject recon-all expert options file and return its path
+
+    A per-subject file is used rather than a global-expert-options.txt in the
+    SUBJECTS_DIR, because the latter is shared by every subject: parallel runs
+    would race on it, and it would silently apply to subjects processed later
+    that do not need it.
+    """
+    expert_opts_path = opj(MELD_DATA_PATH, 'output', 'fs_outputs', 'expertopts', f'{subject_id}.opts')
+    os.makedirs(os.path.dirname(expert_opts_path), exist_ok=True)
+    with open(expert_opts_path, 'w') as f:
+        f.write('\n'.join(lines) + '\n')
+    return expert_opts_path
+
 def fastsurfer_subject(subject, fs_folder, verbose=False):
     # run fastsurfer segmentation on 1 subject
     subject_id = subject['id']
@@ -151,9 +168,13 @@ def freesurfer_subject(subject, fs_folder, threads=1, freesurfer_args=None, verb
     # setup cortical segmentation command
     if subject_flair_path != None:
         print(get_m('Segmentation using T1 and FLAIR with Freesurfer', subject_id, 'STEP 1'))
+
+        # apply the "PlaceMMPialSurf" bugfix, needed for the FLAIRpial step
+        expert_opts_path = write_expert_opts(subject_id, [PLACE_MM_PIAL_SURF_OPTS])
+
         command = format(
-            "$FREESURFER_HOME/bin/recon-all -sd {} -s {} -i {} -FLAIR {} -FLAIRpial -all -threads {}".format(
-                fs_folder, subject_id, subject_t1_path, subject_flair_path, threads
+            "$FREESURFER_HOME/bin/recon-all -sd {} -s {} -i {} -FLAIR {} -FLAIRpial -all -threads {} -expert {}".format(
+                fs_folder, subject_id, subject_t1_path, subject_flair_path, threads, expert_opts_path
             )
         )
     else:
