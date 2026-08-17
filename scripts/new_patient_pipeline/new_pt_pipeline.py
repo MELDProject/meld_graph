@@ -73,6 +73,14 @@ if __name__ == "__main__":
                         action="store_true",
                         help='Skip the segmentation and extraction of the MELD features',
                         )
+    parser.add_argument('--skip_prediction',
+                        action="store_true",
+                        help='Skip the prediction step. This is different from --harmo_only (which skips some feature extraction steps necessary for predictions).',
+                        )
+    parser.add_argument('--skip_feature_plotting',
+                        action="store_true",
+                        help='Skip the plotting of the features for QC during preprocessing (because this can take a long time)',
+                        )
     parser.add_argument('--no_nifti',
                         action="store_true",
                         default=False,
@@ -159,11 +167,12 @@ if __name__ == "__main__":
                     list_ids=args.list_ids,
                     sub_id=args.id,
                     harmonisation_only = args.harmo_only,
+                    skip_feature_plotting=args.skip_feature_plotting
                     )
 
     #---------------------------------------------------------------------------------
     ### PREDICTION ###
-    if not args.harmo_only:
+    if not args.harmo_only and not args.skip_prediction:
         print(get_m(f'Call script prediction', None, 'SCRIPT 3'))
         result = run_script_prediction(
                             harmo_code = args.harmo_code,
