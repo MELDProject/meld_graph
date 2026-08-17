@@ -462,6 +462,10 @@ def generate_prediction_report(
             "anat": nb.load(t1_file),
             "pred": nb.load(prediction_file),
         }
+        if len(imgs["anat"].shape) > 3:
+            # if the input image has a 4th (time/frame) dimension of length 1,
+            # remove it (otherwise resampling and possibly other steps will fail)
+            imgs["anat"] = nb.funcs.squeeze_image(imgs["anat"])
         # # Resample and move to same shape and affine than t1
         imgs["pred"] = image.resample_img(
             imgs["pred"],
