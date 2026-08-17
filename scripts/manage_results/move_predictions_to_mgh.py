@@ -7,11 +7,12 @@ from meld_graph.paths import MELD_DATA_PATH
 import nibabel as nb
 import argparse
 from meld_graph.tools_pipeline import get_m
+from meld_graph.hdf5_utils import open_hdf5_file
 
 
 def load_prediction(subject, hdf5, prediction_name="prediction_clustered"):
     results = {}
-    with h5py.File(hdf5, "r") as f:
+    with open_hdf5_file(hdf5, mode="r") as f:
         for hemi in ["lh", "rh"]:
             results[hemi] = f[subject][hemi][prediction_name][:]
     return results

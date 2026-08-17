@@ -4,6 +4,7 @@ import nibabel as nb
 import pandas as pd
 import os
 import h5py
+from meld_graph.hdf5_utils import open_hdf5_file
 
 def load_mgh(filename):
     """ import mgh file using nibabel. returns flattened data array"""
@@ -152,9 +153,9 @@ def save_subject(fs_id,features,medial_wall,subject_dir, demographic_file,  outp
     hdf5_file = os.path.join(output_dir,site_code+"_"+c_p+"_featurematrix.hdf5")
     if hdf5_file is not None:
         if not os.path.isfile(hdf5_file):
-            f = h5py.File(hdf5_file, "a")
+            f = open_hdf5_file(hdf5_file, mode="a", create_parent=True)
         else:
-            f = h5py.File(hdf5_file, "r+")
+            f = open_hdf5_file(hdf5_file, mode="r+")
     for h in hemis:
         group=f.require_group(os.path.join(site_code,scanner,c_p,fs_id,h))
         for f_name in features:

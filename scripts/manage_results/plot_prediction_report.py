@@ -37,6 +37,7 @@ import meld_graph.mesh_tools as mt
 from datetime import date
 from fpdf import FPDF
 from meld_graph.tools_pipeline import get_m, get_anat_files
+from meld_graph.hdf5_utils import open_hdf5_file
 
 class PDF(FPDF):    
     def lines(self):
@@ -132,7 +133,7 @@ class PDF(FPDF):
         
 def load_prediction(subject,hdf5):
     results={}
-    with h5py.File(hdf5, "r") as f:
+    with open_hdf5_file(hdf5, mode="r") as f:
         for hemi in ['lh','rh']:
             results[hemi] = f[subject][hemi]['prediction'][:]
     return results
