@@ -52,10 +52,21 @@ if __name__ == "__main__":
                         action="store_true",
                         )
     parser.add_argument("--parallelise", 
-                        help="parallelise segmentation", 
+                        help="run the freesurfer segmentation of several subjects at the same time, "
+                             "as one single-threaded recon-all process per subject. "
+                             "--threads is ignored in this mode.", 
                         required=False,
                         default=False,
                         action="store_true",
+                        )
+    parser.add_argument("--threads",
+                        help="number of threads (openmp) to use within a single freesurfer segmentation. "
+                             "This runs one recon-all call at a time and speeds up that one call; "
+                             "it does not process several subjects at once (see --parallelise), "
+                             "and it is ignored when --parallelise is given.",
+                        required=False,
+                        default=1,
+                        type=int,
                         )
     parser.add_argument('-demos', '--demographic_file', 
                         type=str, 
@@ -151,6 +162,7 @@ if __name__ == "__main__":
                             sub_id=args.id, 
                             use_parallel=args.parallelise, 
                             use_fastsurfer=args.fastsurfer,
+                            threads=args.threads,
                             verbose = args.debug_mode
                             )
         if result == False:

@@ -128,7 +128,7 @@ def fastsurfer_flair(subject, fs_folder, verbose=False):
         print(get_m(f'COMMAND failing : {command} with error {stderr}', None, 'ERROR'))
         return False
 
-def freesurfer_subject(subject, fs_folder, verbose=False):
+def freesurfer_subject(subject, fs_folder, threads=1, freesurfer_args=None, verbose=False):
     #run freesurfer recon-all segmentation on 1 subject
 
     subject_id = subject['id']
@@ -152,15 +152,19 @@ def freesurfer_subject(subject, fs_folder, verbose=False):
     if subject_flair_path != None:
         print(get_m('Segmentation using T1 and FLAIR with Freesurfer', subject_id, 'STEP 1'))
         command = format(
-            "$FREESURFER_HOME/bin/recon-all -sd {} -s {} -i {} -FLAIR {} -FLAIRpial -all".format(
-                fs_folder, subject_id, subject_t1_path, subject_flair_path
+            "$FREESURFER_HOME/bin/recon-all -sd {} -s {} -i {} -FLAIR {} -FLAIRpial -all -threads {}".format(
+                fs_folder, subject_id, subject_t1_path, subject_flair_path, threads
             )
         )
     else:
         print(get_m('Segmentation using T1 only with Freesurfer', subject_id, 'STEP 1'))
         command = format(
-            "$FREESURFER_HOME/bin/recon-all -sd {} -s {} -i {} -all".format(fs_folder, subject_id, subject_t1_path)
+            "$FREESURFER_HOME/bin/recon-all -sd {} -s {} -i {} -all -threads {}".format(fs_folder, subject_id, subject_t1_path, threads)
         )
+
+    if freesurfer_args is not None:
+        command += ' ' + ' '.join(freesurfer_args)
+        print(get_m(f'Additional freesurfer arguments added: {freesurfer_args}', subject_id, 'INFO'))
 
     # call Freesurfer
     print(get_m('Start cortical parcellation (up to 6h). Please wait', subject_id, 'INFO'))
@@ -225,7 +229,7 @@ def extract_features(subject_id, fs_folder, output_dir, verbose=False):
     if result == False:
         return False
  
-def run_subjects_segmentation_parallel(subject_ids, num_procs=10, harmo_code="noHarmo", use_fastsurfer=False, verbose=False):
+def run_subjects_segmentation_parallel(subject_ids, num_procs=10, harmo_code="noHarmo", use_fastsurfer=False, freesurfer_args=None, verbose=False):
     # parallel version of the pipeline, finish each stage for all subjects first
 
     ### SEGMENTATION ###
@@ -278,7 +282,7 @@ def run_subjects_segmentation_parallel(subject_ids, num_procs=10, harmo_code="no
         ## processing with freesurfer: segmentation
         pool = multiprocessing.Pool(processes=num_procs, initializer=init, initargs=[multiprocessing.Lock()])
         subject_ids_failed=[]
-        for i,result in enumerate(pool.imap(partial(freesurfer_subject, fs_folder=fs_folder, verbose=verbose), subjects_dict)):
+        for i,result in enumerate(pool.imap(partial(freesurfer_subject, fs_folder=fs_folder, freesurfer_args=freesurfer_args, verbose=verbose), subjects_dict)):
             if result==False:
                 print(get_m(f'Subject removed from futur process because a step in the pipeline failed', subject_ids[i], 'ERROR'))
                 subject_ids_failed.append(subject_ids[i])
@@ -307,7 +311,7 @@ def run_subjects_segmentation_parallel(subject_ids, num_procs=10, harmo_code="no
 
     return subject_ids
 
-def run_subject_segmentation(subject_id, harmo_code="noHarmo", use_fastsurfer=False, verbose=False):
+def run_subject_segmentation(subject_id, harmo_code="noHarmo", use_fastsurfer=False, threads=1, freesurfer_args=None, verbose=False):
     # pipeline to segment the brain, exract surface-based features for 1 subject
         
     ### SEGMENTATION ###
@@ -341,7 +345,7 @@ def run_subject_segmentation(subject_id, harmo_code="noHarmo", use_fastsurfer=Fa
     else:
         ## processing with freesurfer: segmentation
         init(multiprocessing.Lock())
-        result = freesurfer_subject(subject_dict,fs_folder, verbose=verbose)
+        result = freesurfer_subject(subject_dict, fs_folder, threads=threads, freesurfer_args=freesurfer_args, verbose=verbose)
         if result == False:
             return False
     
@@ -352,7 +356,7 @@ def run_subject_segmentation(subject_id, harmo_code="noHarmo", use_fastsurfer=Fa
             return False
 
 
-def run_script_segmentation(list_ids=None, sub_id=None, harmo_code='noHarmo', use_parallel=False, use_fastsurfer=False, verbose=False ):
+def run_script_segmentation(list_ids=None, sub_id=None, harmo_code='noHarmo', use_parallel=False, use_fastsurfer=False, threads=1, freesurfer_args=None, verbose=False ):
     harmo_code = str(harmo_code)
     subject_id=None
     subject_ids=None
@@ -375,7 +379,7 @@ def run_script_segmentation(list_ids=None, sub_id=None, harmo_code='noHarmo', us
     
     if subject_id != None:
         #launch segmentation and feature extraction for 1 subject
-        result = run_subject_segmentation(subject_id,  harmo_code = harmo_code, use_fastsurfer = use_fastsurfer, verbose=verbose)
+        result = run_subject_segmentation(subject_id,  harmo_code = harmo_code, use_fastsurfer = use_fastsurfer, threads=threads, freesurfer_args=freesurfer_args, verbose=verbose)
         if result == False:
             print(get_m(f'One step of the pipeline has failed. Process has been aborted for this subject', subject_id, 'ERROR'))
             return False
@@ -383,7 +387,7 @@ def run_script_segmentation(list_ids=None, sub_id=None, harmo_code='noHarmo', us
         if use_parallel:
             #launch segmentation and feature extraction in parallel
             print(get_m(f'Run subjects in parallel', None, 'INFO'))
-            subject_ids_succeed = run_subjects_segmentation_parallel(subject_ids, harmo_code = harmo_code, use_fastsurfer = use_fastsurfer, verbose=verbose)
+            subject_ids_succeed = run_subjects_segmentation_parallel(subject_ids, harmo_code = harmo_code, use_fastsurfer = use_fastsurfer, freesurfer_args=freesurfer_args, verbose=verbose)
             subject_ids_failed= list(set(subject_ids).difference(subject_ids_succeed))
             if len(subject_ids_failed):
                 print(get_m(f'One step of the pipeline has failed. Process has been aborted for subjects {subject_ids_failed}', None, 'ERROR'))
@@ -393,7 +397,7 @@ def run_script_segmentation(list_ids=None, sub_id=None, harmo_code='noHarmo', us
             print(get_m(f'Run subjects one after another', None, 'INFO'))
             subject_ids_failed=[]
             for subj in subject_ids:
-                result = run_subject_segmentation(subj,  harmo_code = harmo_code, use_fastsurfer = use_fastsurfer, verbose=verbose)
+                result = run_subject_segmentation(subj,  harmo_code = harmo_code, use_fastsurfer = use_fastsurfer, threads=threads, freesurfer_args=freesurfer_args, verbose=verbose)
                 if result == False:
                     print(get_m(f'One step of the pipeline has failed. Process has been aborted for this subject', subj, 'ERROR'))
                     subject_ids_failed.append(subj)
@@ -432,11 +436,30 @@ if __name__ == "__main__":
                         action="store_true",
                         )
     parser.add_argument("--parallelise", 
-                        help="parallelise segmentation", 
+                        help="run the freesurfer segmentation of several subjects at the same time, "
+                             "as one single-threaded recon-all process per subject. "
+                             "--threads is ignored in this mode.", 
                         required=False,
                         default=False,
                         action="store_true",
                         )
+    parser.add_argument("--threads",
+                        help="number of threads (openmp) to use within a single freesurfer segmentation. "
+                             "This runs one recon-all call at a time and speeds up that one call; "
+                             "it does not process several subjects at once (see --parallelise), "
+                             "and it is ignored when --parallelise is given.",
+                        required=False,
+                        default=1,
+                        type=int,
+                        )
+    parser.add_argument("--freesurfer_args",
+                        help="additional arguments to pass to freesurfer recon-all. "
+                             "Quote each one so it is not parsed as an option of this script, "
+                             "e.g. --freesurfer_args '-cw256' '-notal-check'",
+                        required=False,
+                        default=None,
+                        type=str,
+                        nargs="*")
     parser.add_argument("--debug_mode", 
                         help="mode to debug error", 
                         required=False,
@@ -483,8 +506,10 @@ if __name__ == "__main__":
                         harmo_code = args.harmo_code,
                         list_ids=args.list_ids,
                         sub_id=args.id, 
-                        use_parallel=args.parallelise, 
+                        use_parallel=args.parallelise,
                         use_fastsurfer=args.fastsurfer,
+                        threads=args.threads,
+                        freesurfer_args=args.freesurfer_args,
                         verbose = args.debug_mode
                         )
     
