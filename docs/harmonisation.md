@@ -90,6 +90,7 @@ You can tune this command using additional variables and flags as detailed bello
 |```-demos <demographic_file>```| The name of the csv file containing the demographic information as detailled in the [guidelines](https://meld-graph.readthedocs.io/en/latest/prepare_data.html#prepare-the-demographic-information-required-only-to-compute-the-harmonisation-parameters). An example 'demographics_file.csv' is provided in the <meld_data_folder>.|
 | **Optional variables** |
 |```--parallelise``` | use this flag to speed up the segmentation by running Freesurfer/FastSurfer on multiple subjects in parallel. |
+|```--threads <number_of_threads>``` | use this variable to speed up the segmentation of a single subject by running Freesurfer with several threads (OpenMP). Contrary to ```--parallelise```, the subjects are still processed one after another. Only applies to Freesurfer, and is ignored when ```--parallelise``` is used. |
 |```--fastsurfer``` | use this flag to use FastSurfer instead of Freesurfer. Requires FastSurfer installed. |
 |```--harmo_only``` | Use this flag to do all the processes up to the harmonisation. Usefull if you want to harmonise on some subjects but do not wish to predict on them |
 
