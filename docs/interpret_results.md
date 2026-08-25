@@ -114,6 +114,8 @@ After viewing the MELD PDF report, it is then important to visualise the predict
 The predictions are saved as NIFTI files in the folder: 
 /output/predictions_reports/<subject_id>/predictions
 
+The file to open is `prediction.nii.gz` (both hemispheres combined). The subfolders of that directory contain the intermediate files created while registering the prediction back into the native volume, see [the description of script 3](https://meld-graph.readthedocs.io/en/latest/run_prediction_pipeline.html#script-3-lesions-prediction-meld-reports).
+
 **It is important to check that the clusters detected are not due to obvious FreeSurfer reconstruction errors, scan artifacts etc.**
 
 To quality control the predicted lesion and the surfaces, you can use the HTML viewer mentioned above or use Freeview (you will need a standalone version of freeview)

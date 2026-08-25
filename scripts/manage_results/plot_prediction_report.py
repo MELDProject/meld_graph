@@ -14,6 +14,7 @@ from meld_graph.paths import (
     SCRIPTS_DIR,
 )
 import os
+import tempfile
 import json
 import glob
 import h5py
@@ -36,6 +37,7 @@ import meld_graph.mesh_tools as mt
 from datetime import date
 from fpdf import FPDF
 from meld_graph.tools_pipeline import get_m, get_anat_files
+from meld_graph.hdf5_utils import open_hdf5_file
 
 class PDF(FPDF):    
     def lines(self):
@@ -131,7 +133,7 @@ class PDF(FPDF):
         
 def load_prediction(subject,hdf5):
     results={}
-    with h5py.File(hdf5, "r") as f:
+    with open_hdf5_file(hdf5, mode="r") as f:
         for hemi in ['lh','rh']:
             results[hemi] = f[subject][hemi]['prediction'][:]
     return results
@@ -139,31 +141,32 @@ def load_prediction(subject,hdf5):
 def create_surface_plots(surf,prediction,c, base_size=20):
     """plot and reload surface images"""
     cmap, colors =  load_cmap()
-    tmp_file = os.path.join(MELD_DATA_PATH,'tmp.png')
-    msp.plot_surf(surf['coords'],
-              surf['faces'],prediction,
-              rotate=[90],
-              mask=prediction==0,pvals=np.ones_like(c.cortex_mask),
-              colorbar=False,vmin=1,vmax=len(colors) ,cmap=cmap,
-              base_size=base_size,
-              filename=tmp_file)
-    im = Image.open(tmp_file)
-    im = trim(im)
-    im = im.convert("RGBA")
-    im1 = np.array(im)
-    msp.plot_surf(surf['coords'],
-            surf['faces'],prediction,
-              rotate=[270],
-              mask=prediction==0,pvals=np.ones_like(c.cortex_mask),
-              colorbar=False,vmin=1,vmax=len(colors),cmap=cmap,
-              base_size=base_size,
-              filename=tmp_file)
-    im = Image.open(tmp_file)
-    im = trim(im)
-    im = im.convert("RGBA")
-    im2 = np.array(im)
-    plt.close('all')
-    os.remove(tmp_file)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_file = os.path.join(tmpdir,'tmp.png')
+        msp.plot_surf(surf['coords'],
+                surf['faces'],prediction,
+                rotate=[90],
+                mask=prediction==0,pvals=np.ones_like(c.cortex_mask),
+                colorbar=False,vmin=1,vmax=len(colors) ,cmap=cmap,
+                base_size=base_size,
+                filename=tmp_file)
+        im = Image.open(tmp_file)
+        im = trim(im)
+        im = im.convert("RGBA")
+        im1 = np.array(im)
+        msp.plot_surf(surf['coords'],
+                surf['faces'],prediction,
+                rotate=[270],
+                mask=prediction==0,pvals=np.ones_like(c.cortex_mask),
+                colorbar=False,vmin=1,vmax=len(colors),cmap=cmap,
+                base_size=base_size,
+                filename=tmp_file)
+        im = Image.open(tmp_file)
+        im = trim(im)
+        im = im.convert("RGBA")
+        im2 = np.array(im)
+        plt.close('all')
+        os.remove(tmp_file)
     return im1,im2
 
 def load_cluster(file, subject):
@@ -205,10 +208,11 @@ def get_cluster_location(cluster_array):
 
 def save_mgh(filename, array, demo):
     """save mgh file using nibabel and imported demo mgh file"""
-    mmap = np.memmap("/tmp/tmp", dtype="float32", mode="w+", shape=demo.get_data().shape)
-    mmap[:, 0, 0] = array[:]
-    output = nb.MGHImage(mmap, demo.affine, demo.header)
-    nb.save(output, filename)
+    with tempfile.NamedTemporaryFile() as mmap_file:
+        mmap = np.memmap(mmap_file.name, dtype="float32", mode="w+", shape=demo.get_data().shape)
+        mmap[:, 0, 0] = array[:]
+        output = nb.MGHImage(mmap, demo.affine, demo.header)
+        nb.save(output, filename)
 
 def load_cmap():
     """ create the colors dictionarry for the clusters"""
@@ -458,6 +462,10 @@ def generate_prediction_report(
             "anat": nb.load(t1_file),
             "pred": nb.load(prediction_file),
         }
+        if len(imgs["anat"].shape) > 3:
+            # if the input image has a 4th (time/frame) dimension of length 1,
+            # remove it (otherwise resampling and possibly other steps will fail)
+            imgs["anat"] = nb.funcs.squeeze_image(imgs["anat"])
         # # Resample and move to same shape and affine than t1
         imgs["pred"] = image.resample_img(
             imgs["pred"],

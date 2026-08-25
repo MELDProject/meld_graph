@@ -139,6 +139,7 @@ def run_script_prediction(list_ids=None, sub_id=None, harmo_code='noHarmo', no_p
             result = move_predictions_to_mgh(subject_id=subject_id, 
                                 subjects_dir=subjects_dir, 
                                 prediction_file=prediction_file,
+                                output_dir=predictions_output_dir,
                                 verbose=verbose)
             if result == False:
                 print(get_m(f'One step of the pipeline has failed. Process has been aborted for this subject', subject_id, 'ERROR'))

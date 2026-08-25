@@ -13,6 +13,7 @@ from meld_graph.dataset import GraphDataset
 from meld_classifier.meld_cohort import MeldCohort
 
 from meld_graph.evaluation import Evaluator
+from meld_graph.hdf5_utils import open_hdf5_file
 import json
 import os
 import h5py
@@ -94,6 +95,6 @@ if __name__ == "__main__":
 
     # save dropout parameters in hdf5
     filename = os.path.join(eva.save_dir, "results", f"predictions{suffix}{eva.dropout_suffix}.hdf5")
-    with h5py.File(filename, mode='r+') as f:
+    with open_hdf5_file(filename, mode="r+") as f:
         f.attrs['dropout_p'] = args.p
         f.attrs['dropout_n'] = args.n

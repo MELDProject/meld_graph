@@ -1,5 +1,6 @@
 import logging
 import os
+import tempfile
 import torch
 import torch_geometric.data
 from meld_graph.dataset import GraphDataset
@@ -18,6 +19,7 @@ import sklearn.metrics as metrics
 import itertools
 import seaborn as sns
 from meld_graph.paths import MELD_DATA_PATH
+from meld_graph.hdf5_utils import open_hdf5_file
 
 # for saliency - do not force people to have this
 try:
@@ -906,27 +908,17 @@ class Evaluator:
             dtype = prediction.dtype
 
         filename = os.path.join(self.results_dir, f"predictions{suffix}.hdf5")
-        if not os.path.isfile(filename):
-            mode = "a"
-        else:
-            mode = "r+"
-        done = False
-        while not done:
-            try:
-                with h5py.File(filename, mode=mode) as f:
-                    self.log.info(f"saving {dataset_str} for {subject}")
-                    for i, hemi in enumerate(["lh", "rh"]):
-                        shape = tuple([nvert_hemi] + list(prediction.shape[1:]))
-                        # create dataset
-                        dset = f.require_dataset(f"{subject}/{hemi}/{dataset_str}", shape=shape, dtype=dtype)
-                        # save prediction in dataset
-                        dset[:] = prediction[i * nvert_hemi : (i + 1) * nvert_hemi]
-                        # if dataset_str == "prediction":
-                        # save threshold as attribute in dataset
-                        # dset.attrs["threshold"] = self.threshold
-                    done = True
-            except OSError:
-                done = False
+        with open_hdf5_file(filename, mode="a", create_parent=True) as f:
+            self.log.info(f"saving {dataset_str} for {subject}")
+            for i, hemi in enumerate(["lh", "rh"]):
+                shape = tuple([nvert_hemi] + list(prediction.shape[1:]))
+                # create dataset
+                dset = f.require_dataset(f"{subject}/{hemi}/{dataset_str}", shape=shape, dtype=dtype)
+                # save prediction in dataset
+                dset[:] = prediction[i * nvert_hemi : (i + 1) * nvert_hemi]
+                # if dataset_str == "prediction":
+                # save threshold as attribute in dataset
+                # dset.attrs["threshold"] = self.threshold
 
     def load_prediction(self, subject, dataset_str="prediction", suffix=""):
         """
@@ -937,7 +929,7 @@ class Evaluator:
             # cannot load data
             self.log.debug(f'file {filename} does not exist')
             return None
-        with h5py.File(filename, mode='r') as f:
+        with open_hdf5_file(filename, mode="r") as f:
             prediction = []
             try:
                 for i, hemi in enumerate(["lh", "rh"]):
@@ -1155,22 +1147,23 @@ def create_surface_plots(coords, faces, overlay, flat_map=True, limits=None):
     else:
         vmin = limits[0]
         vmax = limits[1]
-    tmp_file = os.path.join(MELD_DATA_PATH,'tmp.png')
-    msp.plot_surf(
-        coords,
-        faces,
-        overlay,
-        flat_map=flat_map,
-        rotate=[90, 270],
-        filename=tmp_file,
-        vmin=vmin,
-        vmax=vmax,
-    )
-    im = Image.open(tmp_file)
-    im = trim(im)
-    im = im.convert("RGBA")
-    im1 = np.array(im)
-    os.remove(tmp_file)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_file = os.path.join(tmpdir,'tmp.png')
+        msp.plot_surf(
+            coords,
+            faces,
+            overlay,
+            flat_map=flat_map,
+            rotate=[90, 270],
+            filename=tmp_file,
+            vmin=vmin,
+            vmax=vmax,
+        )
+        im = Image.open(tmp_file)
+        im = trim(im)
+        im = im.convert("RGBA")
+        im1 = np.array(im)
+        os.remove(tmp_file)
     return im1
 
 
@@ -1195,7 +1188,7 @@ def plot_roc_multiple(roc_dictionary, roc_curves_thresholds):
 def load_prediction(subject, hdf5, dset="prediction"):
     """load network predictions"""
     results = {}
-    with h5py.File(hdf5, "r") as f:
+    with open_hdf5_file(hdf5, mode="r") as f:
         for hemi in ["lh", "rh"]:
             results[hemi] = f[subject][hemi][dset][:]
     return results
