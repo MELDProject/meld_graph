@@ -81,7 +81,7 @@ The results of the MELD Graph pipeline can be displayed in a viewer and saved as
 
 **WARNING** : The MRI scans are embedded into the HTML file. Be careful when sending this HTML, as if the scans are not completely anonymised the HTML will contain patients identifiers.
 
-An example of the HTML viewer is provided [here](https://raw.githack.com/MELDProject/meld_graph/v2.2.6/docs/images/qc_viewer_sub-00138.html). It has been created using the results of MELD Graph ran on patient `sub-00138` from the open source FCDs dataset [doi:10.18112/openneuro.ds004199.v1.0.6](https://openneuro.org/datasets/ds004199/versions/1.0.6).
+An example of the HTML viewer is provided [here](https://raw.githack.com/MELDProject/meld_graph/v2.2.7/docs/images/qc_viewer_sub-00138.html). It has been created using the results of MELD Graph ran on patient `sub-00138` from the open source FCDs dataset [doi:10.18112/openneuro.ds004199.v1.0.6](https://openneuro.org/datasets/ds004199/versions/1.0.6).
 
 
 To create this HTML viewer for your subject run the command below. The HTML viewer will be saved in `/output/predictions_reports/<subject_id>/reports`
