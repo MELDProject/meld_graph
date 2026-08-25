@@ -9,7 +9,6 @@ import sys
 import argparse
 import subprocess as sub
 import glob
-from meld_graph.tools_pipeline import get_anat_files
 from meld_graph.paths import MELD_DATA_PATH, FS_SUBJECTS_PATH
             
 def return_file(path, file_name):
@@ -45,10 +44,10 @@ if __name__ == '__main__':
     if not os.path.isdir(subject_fs_folder):
         print(f'Freesurfer outputs does not exist for this subject. Unable to perform qc')
     else : 
-        subject_dict = get_anat_files(subject)
-        #select inputs files T1 and FLAIR
-        T1_file = subject_dict['T1_path']
-        FLAIR_file = subject_dict['FLAIR_path']
+        #select T1 and FLAIR fs outputs before normalisation
+        T1_file = return_file(os.path.join(subject_fs_folder,'mri','orig.mgz'), 'orig.mgz')
+        FLAIR_file = return_file(os.path.join(subject_fs_folder,'mri','FLAIR.prenorm.mgz'), 'FLAIR.prenorm.mgz')
+
         #select predictions files
         pred_lh_file = return_file(os.path.join(pred_dir, 'predictions', 'lh.prediction.nii*'), 'lh_prediction')
         pred_rh_file = return_file(os.path.join(pred_dir, 'predictions', 'rh.prediction.nii*'), 'rh_prediction')
