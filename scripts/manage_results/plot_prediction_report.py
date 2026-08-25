@@ -514,7 +514,10 @@ def generate_prediction_report(
                     "#8E0152",
                 ],
             )
-            labels = ["Harmonised", "Normalised", "Asymmetry"]
+            if harmo_code is 'noHarmo':
+                labels = ["Smoothed", "Normalised", "Asymmetry"]
+            else: 
+                labels = ["Harmonised", "Normalised", "Asymmetry"]
             hatching = ["\\\\", "//", "--"]
             # loop over clusters
             for cluster in list_clust[hemi]:
