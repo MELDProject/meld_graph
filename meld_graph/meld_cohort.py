@@ -21,6 +21,7 @@ import glob
 import logging
 import meld_graph.mesh_tools as mt
 import scipy
+from meld_graph.hdf5_utils import open_hdf5_file
 
 
 class MeldCohort:
@@ -191,13 +192,13 @@ class MeldCohort:
             hdf5_file_root = self.hdf5_file_root
 
         p = os.path.join(self.data_dir, f"MELD_{site_code}", hdf5_file_root.format(site_code=site_code, group=group))
-        # open existing file or create new one
+
         if os.path.isfile(p) and not write:
-            f = h5py.File(p, "r")
+            f = open_hdf5_file(p, mode="r")
         elif os.path.isfile(p) and write:
-            f = h5py.File(p, "r+")
+            f = open_hdf5_file(p, mode="r+")
         elif not os.path.isfile(p) and write:
-            f = h5py.File(p, "a")
+            f = open_hdf5_file(p, mode="a", create_parent=True)
         else:
             f = None
         try:
@@ -648,10 +649,7 @@ class MeldSubject:
         n_vert_cortex = sum(self.cohort.cortex_mask)
         # open hdf5 file
         if hdf5_file is not None:
-            if not os.path.isfile(hdf5_file):
-                hdf5_file_context = h5py.File(hdf5_file, "a")
-            else:
-                hdf5_file_context = h5py.File(hdf5_file, "r+")
+            hdf5_file_context = open_hdf5_file(hdf5_file, mode="a", create_parent=True)
         else:
             hdf5_file_context = self.cohort._site_hdf5(
                 self.site_code, self.group, write=True, hdf5_file_root=hdf5_file_root

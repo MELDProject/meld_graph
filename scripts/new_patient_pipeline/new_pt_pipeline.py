@@ -52,10 +52,21 @@ if __name__ == "__main__":
                         action="store_true",
                         )
     parser.add_argument("--parallelise", 
-                        help="parallelise segmentation", 
+                        help="run the freesurfer segmentation of several subjects at the same time, "
+                             "as one single-threaded recon-all process per subject. "
+                             "--threads is ignored in this mode.", 
                         required=False,
                         default=False,
                         action="store_true",
+                        )
+    parser.add_argument("--threads",
+                        help="number of threads (openmp) to use within a single freesurfer segmentation. "
+                             "This runs one recon-all call at a time and speeds up that one call; "
+                             "it does not process several subjects at once (see --parallelise), "
+                             "and it is ignored when --parallelise is given.",
+                        required=False,
+                        default=1,
+                        type=int,
                         )
     parser.add_argument('-demos', '--demographic_file', 
                         type=str, 
@@ -72,6 +83,14 @@ if __name__ == "__main__":
     parser.add_argument('--skip_feature_extraction',
                         action="store_true",
                         help='Skip the segmentation and extraction of the MELD features',
+                        )
+    parser.add_argument('--skip_prediction',
+                        action="store_true",
+                        help='Skip the prediction step. This is different from --harmo_only (which skips some feature extraction steps necessary for predictions).',
+                        )
+    parser.add_argument('--skip_feature_plotting',
+                        action="store_true",
+                        help='Skip the plotting of the features for QC during preprocessing (because this can take a long time)',
                         )
     parser.add_argument('--no_nifti',
                         action="store_true",
@@ -143,6 +162,7 @@ if __name__ == "__main__":
                             sub_id=args.id, 
                             use_parallel=args.parallelise, 
                             use_fastsurfer=args.fastsurfer,
+                            threads=args.threads,
                             verbose = args.debug_mode
                             )
         if result == False:
@@ -159,11 +179,12 @@ if __name__ == "__main__":
                     list_ids=args.list_ids,
                     sub_id=args.id,
                     harmonisation_only = args.harmo_only,
+                    skip_feature_plotting=args.skip_feature_plotting
                     )
 
     #---------------------------------------------------------------------------------
     ### PREDICTION ###
-    if not args.harmo_only:
+    if not args.harmo_only and not args.skip_prediction:
         print(get_m(f'Call script prediction', None, 'SCRIPT 3'))
         result = run_script_prediction(
                             harmo_code = args.harmo_code,

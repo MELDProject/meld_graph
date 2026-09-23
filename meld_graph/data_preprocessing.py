@@ -23,6 +23,7 @@ from neuroCombat import neuroCombat, neuroCombatFromTraining
 import meld_graph.distributedCombat as dc
 import meld_graph.mesh_tools as mt
 import meld_graph.meld_plotting as mpt
+from meld_graph.hdf5_utils import open_hdf5_file
 
 class Preprocess:
     """
@@ -599,9 +600,9 @@ class Preprocess:
     def save_norm_combat_parameters(self, feature, estimates, hdf5_file):
         """Save estimates from combat and normalisation parameters on hdf5"""
         if not os.path.isfile(hdf5_file):
-            hdf5_file_context = h5py.File(hdf5_file, "a")
+            hdf5_file_context = open_hdf5_file(hdf5_file, mode="a", create_parent=True)
         else:
-            hdf5_file_context = h5py.File(hdf5_file, "r+")
+            hdf5_file_context = open_hdf5_file(hdf5_file, mode="r+")
 
         with hdf5_file_context as f:
             list_params = list(set(estimates))
@@ -625,7 +626,7 @@ class Preprocess:
     
     def read_norm_combat_parameters(self, feature, hdf5_file):
         """reconstruct estimates dictionnary from the combat parameters hdf5 file"""
-        hdf5_file_context = h5py.File(hdf5_file, "r")
+        hdf5_file_context = open_hdf5_file(hdf5_file, mode="r")
         estimates = {}
         with hdf5_file_context as f:
             feat_dir = f[feature]

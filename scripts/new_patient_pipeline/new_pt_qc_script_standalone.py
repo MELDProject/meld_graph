@@ -1,85 +1,14 @@
 ## This script open freeview with MRI images, MELD predictions and surfaces for quality check of segmentation
 
 
-## To run : python new_pt_qc_script.py -id <sub_id>
+## To run : python new_pt_qc_script_standalone.py -id <sub_id>
 
 
 import os
-import sys
 import argparse
 import subprocess as sub
-import bids.layout
-import json
 import glob
 
-def return_meld_T1_FLAIR(meld_dir, subject_id):
-    subject_data={}
-    subject_data['id'] = subject_id
-    for modality in ['T1', 'FLAIR']:
-        files = glob.glob(os.path.join(meld_dir, subject_id, modality, "*.nii*"))
-        if len(files)==1:
-            subject_data[f"{modality}_path"] = files[0]
-        elif len(files)>1:
-            print((f'Find too much volumes for {modality}. Check and remove the additional volumes with same key name', subject_id, 'WARNING'))
-            return None
-        else:
-            subject_data[f"{modality}_path"] = None
-    return subject_data
-
-def return_bids_T1_FLAIR(bids_dir, subject_id):
-    subject_data={}
-    subject_data['id'] = subject_id
-    if 'sub-' in subject_id:
-        subject_id = subject_id.split('sub-')[-1]
-    print(subject_id)
-    # get bids structure
-    layout = bids.layout.BIDSLayout(bids_dir)
-    print(layout)
-    # find parameters to extract bids file
-    config_file = os.path.join(bids_dir, 'meld_bids_config.json')
-    with open(config_file, "r") as json_file:
-        dict = json.load(json_file)
-    # Create query
-    for modality in ['T1', 'FLAIR']:
-        query = dict[modality]
-        query['subject'] = subject_id
-        # Get a list of matching files
-        files = layout.get(return_type='file', extension=['nii.gz'], **query)
-        if len(files)==1:
-            subject_data[f"{modality}_path"] = files[0]
-        elif len(files)>1:
-            print(f'Find too much volumes for {modality}. Check and remove the additional volumes with same key name', subject_id, 'WARNING')
-            return None
-        else:
-            subject_data[f"{modality}_path"] = None
-    return subject_data
-
-def get_anat_files(subject_id, meld_data_path):
-    ''' 
-    return path of T1 and FLAIR if BIDs format or MELD format
-    '''
-    input_dir = os.path.join(meld_data_path, "input")
-    subject_data_meld = return_meld_T1_FLAIR(input_dir, subject_id)
-    if subject_data_meld is None:
-        return None
-    if subject_data_meld['T1_path'] is None:
-        subject_data_bids = return_bids_T1_FLAIR(input_dir, subject_id)
-        if subject_data_bids is None:
-            return None
-        if subject_data_bids['T1_path'] is None:
-            print(f'ERROR: Could not find any T1w nifti file. Please ensure your data are in MELD or BIDS format')
-            return None
-        else:
-            subject_data = subject_data_bids
-    else:
-        subject_data = subject_data_meld
-    print(f'INFO: T1 file used : {subject_data[f"T1_path"]} ')
-    if subject_data['FLAIR_path'] is None:
-        print(f'INFO: No FLAIR found')
-    else:
-        print(f'ERROR: FLAIR file used : {subject_data[f"FLAIR_path"]}')
-    
-    return subject_data
             
 def return_file(path, file_name):
     files = glob.glob(path)
@@ -118,10 +47,9 @@ if __name__ == '__main__':
     if not os.path.isdir(subject_fs_folder):
         print(f'Freesurfer outputs does not exist for this subject. Unable to perform qc')
     else : 
-        subject_dict = get_anat_files(subject, meld_data_path)
-        #select inputs files T1 and FLAIR
-        T1_file = subject_dict['T1_path']
-        FLAIR_file = subject_dict['FLAIR_path']
+        #select T1 and FLAIR fs outputs before normalisation
+        T1_file = return_file(os.path.join(subject_fs_folder,'mri','orig.mgz'), 'orig.mgz')
+        FLAIR_file = return_file(os.path.join(subject_fs_folder,'mri','FLAIR.prenorm.mgz'), 'FLAIR.prenorm.mgz')
         #select predictions files
         pred_lh_file = return_file(os.path.join(pred_dir, 'predictions', 'lh.prediction.nii*'), 'lh_prediction')
         pred_rh_file = return_file(os.path.join(pred_dir, 'predictions', 'rh.prediction.nii*'), 'rh_prediction')

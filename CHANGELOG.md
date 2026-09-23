@@ -1,6 +1,11 @@
 # Changelog
 
-## [v2.2.6] - 2026-07-14
+## [v2.2.7] - 2026-08-25
+### Fix issues + more robust parallelisation
+- merge with fix from Cornelius Kronlage https://github.com/ckronlage/meld_graph/tree/fixes_v2.2.7
+- add check .nii.gz, update FLAIR in qc plot, change harmonised name in saliency plot
+
+## [v2.2.7] - 2026-07-14
 ### Update report with info MELD + create HTML report
 - add link to github and MELD project wedbpage on MELD report
 - add a function to generate a HTML viewer to display predicted clusters on top of T1 and FLAIR scan + pial and white surfaces

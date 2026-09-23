@@ -84,8 +84,11 @@ You can tune the MELD pipeline command using additional variables and flags as d
 | **Optional variables** |
 | ```-harmo_code <harmo_code>```  | provide the harmonisation code if you want to harmonise your data before prediction. This requires to have [computed the harmonisation parameters](https://meld-graph.readthedocs.io/en/latest/harmonisation.html) beforehand. The harmonisation code should start with H, e.g. H1. | 
 |```--parallelise``` | use this flag to speed up the segmentation by running Freesurfer/FastSurfer on multiple subjects in parallel. |
+|```--threads <number_of_threads>``` | use this variable to speed up the segmentation of a single subject by running Freesurfer with several threads (OpenMP). Contrary to ```--parallelise```, the subjects are still processed one after another. Only applies to Freesurfer, and is ignored when ```--parallelise``` is used. |
 |```--fastsurfer``` | use this flag to use FastSurfer instead of Freesurfer. (Requires FastSurfer installed for native installation). |
 |```--skip_feature_extraction``` | use this flag to skips the segmentation and features extraction (processes from script1). Usefull if you already have these outputs and you just want to run the preprocessing and the predictions (e.g: after harmonisation) |
+|```--skip_prediction``` | use this flag to skip the predictions (processes from script3). The segmentation and the preprocessing are still run. This is different from ```--harmo_only```, which also skips the feature extraction steps that are only needed for the predictions. |
+|```--skip_feature_plotting``` | use this flag to skip the plotting of the features for QC during the preprocessing (processes from script2), as this can take a long time. |
 |**More advanced variables** | 
 |```--no_nifti```| use this flag to run to all the processes up saving the predictions as surface vectors in the hdf5 file. Does not produce produce nifti and pdf outputs.|
 |```--no_report``` | use this flag to do all the processes up to creating the prediction as a nifti file. Does not produce the pdf reports. |
@@ -171,6 +174,30 @@ singularity exec meld_graph.sif /bin/bash -c "cd /app && source \$FREESURFER_HOM
 
 :::
 ::::
+
+To run a large number of subjects in parallel, e.g. on a multi-core machine or on a cluster, you can call the 3 scripts of the pipeline (see [below](#additional-information-about-the-pipeline)) yourself and parallelise the two steps that work on one subject at a time. Compared to ```--parallelise```, this lets you give several threads to each Freesurfer reconstruction and lets your job scheduler handle the queueing.
+
+**Step 1 - segmentation of each subject, one job per subject.** Each job uses ```--threads``` cores, so keep (number of jobs) x (number of threads) below the number of cores available:
+
+```bash
+python scripts/new_patient_pipeline/run_script_segmentation.py -id <subject_id> --threads <number_of_threads>
+```
+
+**Step 2 - feature extraction and harmonisation, once for all the subjects.** The harmonisation parameters are computed from all the subjects of a scanner/site together, so this step cannot be split per subject:
+
+```bash
+python scripts/new_patient_pipeline/new_pt_pipeline.py -ids input/subjects_list.txt -harmo_code <harmo_code> -demos input/demographics_file.csv --skip_prediction --skip_feature_plotting
+```
+
+The Freesurfer reconstructions of step 1 are detected and skipped, the features of each subject are extracted into the feature matrix of the scanner, and the predictions and the QC feature plots are left out.
+
+**Step 3 - predictions and reports, one job per subject**, parallelised in the same way as step 1:
+
+```bash
+python scripts/new_patient_pipeline/run_script_prediction.py -id <subject_id> -harmo_code <harmo_code> -demos input/demographics_file.csv
+```
+
+Adapt this for containerization (usually apptainer/singularity for HPC) and your job scheduler (e.g., SLURM) as appropriate for your system.
 
 ## Additional information about the pipeline
 
@@ -316,9 +343,33 @@ singularity exec meld_graph.sif /bin/bash -c "cd /app && source \$FREESURFER_HOM
 This script : 
 1. Run the MELD classifier and predict lesion on new subject
 2. Register the prediction back into the native nifti MRI. Results are stored in output/predictions_reports/<subjec_id>/predictions.
-3. Create MELD reports with predicted lesion location on inflated brain, on native MRI and associated saliencies. Reports are stored in output/predictions_reports/<subjec_id>/predictions/reports.
+3. Create MELD reports with predicted lesion location on inflated brain, on native MRI and associated saliencies. Reports are stored in output/predictions_reports/<subjec_id>/reports.
+
+The predictions folder contains the final prediction in a nifti volume (aligned with the input T1w) as well as intermediate files (prediction on the template fsaverage_sym surface space, the subjects native surface space, etc.):
+
+```
+output/predictions_reports/<subject_id>/
+├── predictions/
+│   ├── prediction.nii.gz         <- final prediction (both hemispheres), in the native T1w space
+│   ├── lh.prediction.nii.gz      <- left hemisphere only
+│   ├── rh.prediction.nii.gz      <- right hemisphere only
+│   ├── fsaverage_sym/            <- intermediate: prediction on the template surface
+│   │   ├── lh.prediction.mgh
+│   │   └── rh.prediction.mgh
+│   ├── surf_native/              <- intermediate: prediction on the native surface
+│   │   ├── lh.prediction.mgh
+│   │   └── rh.prediction.mgh
+│   ├── vol_freesurfer/           <- intermediate: prediction in the Freesurfer conformed volume
+│   │   ├── lh.prediction.mgz
+│   │   └── rh.prediction.mgz
+│   └── vol_native/               <- intermediate: prediction in the native T1 volume, mgz format
+│       ├── lh.prediction.mgz
+│       └── rh.prediction.mgz
+└── reports/                      <- MELD PDF report and the figures it is built from
+```
 
 Notes: 
+- The in previous versions, these intermediate files were stored in the Freesurfer subject directory, so there was a risk of multiple predictions using the same Freesurfer outputs (e.g. with different harmonisation parameters) overwriting each other.
 - Features need to have been processed using script 2 and Freesurfer outputs need to be available for each subject
 
 Example to use it on one patient without harmonisation:

@@ -58,7 +58,14 @@ def check_demographic_file(demographic_file, subject_ids):
     if len(np.unique(ages))<=1:
         sys.exit(get_m(f'There is no variance in the ages provided. Harmonisation will fail', None, 'ERROR'))
     
-def run_data_processing_new_subjects(subject_ids, harmo_code, compute_harmonisation = False, harmonisation_only = False, demographic_file=None,  output_dir=BASE_PATH, withoutflair=False):
+def run_data_processing_new_subjects(subject_ids,
+                                     harmo_code, 
+                                     compute_harmonisation = False, 
+                                     harmonisation_only = False, 
+                                     demographic_file=None, 
+                                     output_dir=BASE_PATH, 
+                                     withoutflair=False,
+                                     skip_feature_plotting=False):
 
     # Set features and smoothed values
     if withoutflair:
@@ -204,19 +211,28 @@ def run_data_processing_new_subjects(subject_ids, harmo_code, compute_harmonisat
 
         ### PLOT FEATURES FOR QC
         #-----------------------------------------------------------------
-        features_to_plot = [ ".inter_z.asym.intra_z" + feature for feature in features_combat] 
-        c_norm = MeldCohort(hdf5_file_root="{site_code}_{group}_featurematrix_combat.hdf5", dataset=tmp.name, data_dir=BASE_PATH)
-        plot = Preprocess(c_norm, 
-                        site_codes=[harmo_code],
-                        write_output_file=None, 
-                        data_dir=output_dir)
-                
-        print(get_m(f'Plot features to QC', None, 'STEP'))
-        plot.plot_subject_features(features_to_plot)
+        if not skip_feature_plotting:
+            features_to_plot = [ ".inter_z.asym.intra_z" + feature for feature in features_combat] 
+            c_norm = MeldCohort(hdf5_file_root="{site_code}_{group}_featurematrix_combat.hdf5", dataset=tmp.name, data_dir=BASE_PATH)
+            plot = Preprocess(c_norm, 
+                            site_codes=[harmo_code],
+                            write_output_file=None, 
+                            data_dir=output_dir)
+                    
+            print(get_m(f'Plot features to QC', None, 'STEP'))
+            plot.plot_subject_features(features_to_plot)
         
         tmp.close()
 
-def run_script_preprocessing(list_ids=None, sub_id=None, harmo_code='noHarmo', output_dir=BASE_PATH, demographic_file=None, harmonisation_only=False, withoutflair=False, verbose=False):
+def run_script_preprocessing(list_ids=None, 
+                             sub_id=None, 
+                             harmo_code='noHarmo', 
+                             output_dir=BASE_PATH, 
+                             demographic_file=None, 
+                             harmonisation_only=False, 
+                             withoutflair=False,
+                             skip_feature_plotting=False, 
+                             verbose=False):
     harmo_code = str(harmo_code)
     subject_id=None
     subject_ids=None
@@ -268,7 +284,8 @@ def run_script_preprocessing(list_ids=None, sub_id=None, harmo_code='noHarmo', o
                                         demographic_file=demographic_file,
                                         harmonisation_only = harmonisation_only,
                                         output_dir=output_dir, 
-                                        withoutflair=withoutflair)
+                                        withoutflair=withoutflair,
+                                        skip_feature_plotting=skip_feature_plotting)
         
 
 if __name__ == '__main__':
@@ -307,6 +324,11 @@ if __name__ == '__main__':
                         action="store_true",
                         default=False,
                         help="do not use flair information",
+                        )
+    parser.add_argument("--skip_feature_plotting",
+                        action="store_true",
+                        default=False,
+                        help="skip the plotting of the features for QC during preprocessing",
                         )
     parser.add_argument("--debug_mode", 
                         help="mode to debug error", 
@@ -359,5 +381,6 @@ if __name__ == '__main__':
                     demographic_file=args.demographic_file,
                     harmonisation_only = args.harmo_only,
                     withoutflair=args.withoutflair,
+                    skip_feature_plotting=args.skip_feature_plotting,
                     verbose = args.debug_mode,
                     )
