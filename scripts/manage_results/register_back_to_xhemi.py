@@ -55,8 +55,10 @@ def register_subject_to_xhemi(subject_id, subjects_dir, output_dir, template = '
     #correct from interpolation error
     for hemi in ['lh','rh']:
 
-        #map from surface back to vol
-        command = f'SUBJECTS_DIR={subjects_dir} mri_surf2vol --identity {subject_id} --template {subjects_dir}/{subject_id}/mri/T1.mgz --o {vol_freesurfer_dir}/{hemi}.prediction.mgz --hemi {hemi} --surfval {surf_native_dir}/{hemi}.prediction.mgh --fillribbon'
+        #map from surface back to vol, using mri_surf2vol method 1
+        #(method 2, i.e. projecting from vertices to individual voxels as used 
+        # before left patchy predictions with holes in the volumes)
+        command = f'SUBJECTS_DIR={subjects_dir} mri_surf2vol --subject {subject_id} --o {vol_freesurfer_dir}/{hemi}.prediction.mgz --so {subjects_dir}/{subject_id}/surf/{hemi}.white {surf_native_dir}/{hemi}.prediction.mgh'
         proc = Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
         stdout, stderr= proc.communicate()
         if verbose:
