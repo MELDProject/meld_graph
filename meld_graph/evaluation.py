@@ -45,6 +45,7 @@ class Evaluator:
         thresh_and_clust=True,
         threshold="slope_threshold",
         min_area_threshold=100,
+        gate_dist=None,
         dataset=None,
         cohort=None,
         subject_ids=None,
@@ -64,6 +65,7 @@ class Evaluator:
         self.mode = mode
         self.make_images = make_images
         self.thresh_and_clust = thresh_and_clust
+        self.gate_dist = gate_dist
         self.saliency = saliency
         self.data_dictionary = None
         self._roc_dictionary = None
@@ -205,7 +207,7 @@ class Evaluator:
             self.load_predict_data()
         #threshold and cluster
         if self.thresh_and_clust:
-            self.threshold_and_cluster()
+            self.threshold_and_cluster(gate_dist=self.gate_dist)
         # calculate stats
         self.stat_subjects()
         # make images if asked for
@@ -399,8 +401,10 @@ class Evaluator:
             }
         return self._roc_dictionary
     
-    def threshold_and_cluster(self, data_dictionary=None, save_prediction=True, save_prediction_suffix=""):
+    def threshold_and_cluster(self, data_dictionary=None, save_prediction=True,  save_prediction_suffix=""):
         # helper fn getting the clustered and thresholded data for a given threshold
+        # threshold clusters based on the distance within
+        
         def get_cluster_thresholded(predictions, threshold_subj):
             island_count = 0
             result_hemis_clustered = {}
@@ -489,6 +493,21 @@ class Evaluator:
                     data["threshold"] = threshold_subj[0]   
             else:
                 data["cluster_thresholded"] = get_cluster_thresholded(predictions, threshold_subj)
+            
+            if not self.gate_dist is None:
+                prediction_clustered = data['cluster_thresholded']
+                prediction_dist =  data['distance_map']
+                clusters = set(prediction_clustered)
+                clusters = [cl for cl in clusters if cl!=0]
+
+                for cl in clusters:
+                    dist_cl = prediction_dist[prediction_clustered==cl]
+                    dist_cl_median = np.median(dist_cl)
+                    print(dist_cl_median)
+                    if dist_cl_median >= self.gate_dist:
+                        prediction_clustered[prediction_clustered==cl] = 0
+                data["cluster_thresholded"] = prediction_clustered
+                    
             if save_prediction:
                 # save clustered predictions
                 self.save_prediction(
@@ -501,7 +520,7 @@ class Evaluator:
             return data_dictionary
         else:
             self.data_dictionary = data_dictionary
-
+            
     def load_data_from_file(self, subj_id, keys=['cluster_thresholded','distance_map'], split_hemis=False, save_prediction_suffix=""):
         save_prediction_suffix = f"{save_prediction_suffix}{self.dropout_suffix}"
         # try to load predictions
@@ -966,7 +985,7 @@ class Evaluator:
                 island_mask[mask] = include_vec
                 islands[island_mask] = island_count
         return islands
-
+        
     def save_confidence_csv(self, suffix="" ):
         ''' Get confidence per cluster per subject and save as csv
             Require to have compute salient vertices'''
