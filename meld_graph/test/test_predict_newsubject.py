@@ -17,6 +17,7 @@ import pandas as pd
 from meld_graph.test.utils import create_test_demos
 from meld_graph.paths import MELD_DATA_PATH
 from meld_graph.download_data import get_test_data
+from meld_graph.hdf5_utils import open_hdf5_file
 
 def get_data_parameters():
     data_parameters = {
@@ -33,7 +34,7 @@ def get_data_parameters():
 
 def load_prediction(subject,hdf5):
     results={}
-    with h5py.File(hdf5, "r") as f:
+    with open_hdf5_file(hdf5, mode="r") as f:
         for hemi in ['lh','rh']:
             results[hemi] = f[subject][hemi]['prediction_clustered'][:]
     return results

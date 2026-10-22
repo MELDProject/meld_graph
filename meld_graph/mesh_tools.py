@@ -1,5 +1,6 @@
 #Tools for mesh-based operations
 #Smoothing, 
+import tempfile
 import nibabel as nb
 import numpy as np
 import subprocess
@@ -99,36 +100,34 @@ def smooth_array(input_array, neighbours, n_iter=70, cortex_mask=None):
 
 def save_mgh(filename, array, demo):
     """save mgh file using nibabel and imported demo mgh file"""
-    rand_int = np.random.randint(100)
-    mmap = np.memmap("/tmp/tmp" + str(rand_int), dtype="float32", mode="w+", shape=demo.get_data().shape)
-    mmap[:, 0, 0] = array[:]
-    output = nb.MGHImage(mmap, demo.affine, demo.header)
-    nb.save(output, filename)
+    with tempfile.NamedTemporaryFile() as mmap_file:
+        mmap = np.memmap(mmap_file.name, dtype="float32", mode="w+", shape=demo.get_data().shape)
+        mmap[:, 0, 0] = array[:]
+        output = nb.MGHImage(mmap, demo.affine, demo.header)
+        nb.save(output, filename)
 
 
 def smoothing_fs(overlay, fwhm, subject="fsaverage_sym", hemi="lh", subjects_dir=MELD_PARAMS_PATH):
     os.environ["SUBJECTS_DIR"] = subjects_dir
 
     """smooth surface overlay on fsaverage_sym"""
-    tmpdir = "/tmp/" + str(np.random.randint(1000000))
-    os.mkdir(tmpdir)
-    dum = nb.load(os.path.join(subjects_dir, subject, "surf", hemi + ".white.avg.area.mgh"))
-    save_mgh(os.path.join(tmpdir, hemi + ".tmp.mgh"), overlay, dum)
-    subprocess.call(
-        "mris_fwhm --s "
-        + subject
-        + " --hemi "
-        + hemi
-        + " --cortex --smooth-only --fwhm "
-        + str(fwhm)
-        + " --i "
-        + os.path.join(tmpdir, hemi + ".tmp.mgh")
-        + " --o "
-        + os.path.join(tmpdir, hemi + ".sm_tmp.mgh"),
-        shell=True,
-    )
-    overlay_smoothed = load_mgh(os.path.join(tmpdir, hemi + ".sm_tmp.mgh"))
-    subprocess.call("rm -r " + tmpdir, shell=True)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        dum = nb.load(os.path.join(subjects_dir, subject, "surf", hemi + ".white.avg.area.mgh"))
+        save_mgh(os.path.join(tmpdir, hemi + ".tmp.mgh"), overlay, dum)
+        subprocess.call(
+            "mris_fwhm --s "
+            + subject
+            + " --hemi "
+            + hemi
+            + " --cortex --smooth-only --fwhm "
+            + str(fwhm)
+            + " --i "
+            + os.path.join(tmpdir, hemi + ".tmp.mgh")
+            + " --o "
+            + os.path.join(tmpdir, hemi + ".sm_tmp.mgh"),
+            shell=True,
+        )
+        overlay_smoothed = load_mgh(os.path.join(tmpdir, hemi + ".sm_tmp.mgh"))
     return overlay_smoothed
 
 

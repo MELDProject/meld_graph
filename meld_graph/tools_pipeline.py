@@ -3,6 +3,9 @@ import subprocess
 import glob
 import json
 import os
+import subprocess as sub
+import sys
+import gzip
 import bids.layout
 import pandas as pd
 from subprocess import Popen
@@ -17,12 +20,41 @@ def get_m(message, subject=None, type_message='INFO'):
         subject = None
         return f'{type_message}: {message}'
 
+def check_gzip(file):
+    # ensure file are gzip, or gzip
+    if '.nii.gz' in file:
+        try:
+            with gzip.open(file, 'rb') as f:
+                data = f.read(10)  # Read the first 10 bytes (adjust as needed)
+        except OSError as e:
+            if "Not a gzipped file" in str(e):
+                print(f"ERROR: The file '{file}' has the suffix '.nii.gz. but is not genuinely compressed using gzip. Check that you have the right format and rerun")
+            elif "No such file" in str(e):
+                print(f"ERROR: The file '{file}' was not found.")
+            else:
+                print(f"ERROR: An error occurred: {e}")
+            sys.exit()
+    else:
+        try:
+            with gzip.open(file, 'rb') as f:
+                data = f.read(10)  # Read the first 10 bytes (adjust as needed)
+            print(f"ERROR: The file '{file}' is compressed using gzip but does not have the right suffix '.nii.gz' ")
+            sys.exit()
+        except OSError as e:
+            if "Not a gzipped file" in str(e):
+                command = format(f'gzip {file}')
+                sub.check_call(command, shell=True)
+                file = file+'.gz'
+    return file
+
 def return_meld_T1_FLAIR(meld_dir, subject_id):
     subject_data={}
     subject_data['id'] = subject_id
     for modality in ['T1', 'FLAIR']:
         files = glob.glob(os.path.join(meld_dir, subject_id, modality, "*.nii*"))
         if len(files)==1:
+            #check gzip
+            check_gzip(files[0])
             subject_data[f"{modality}_path"] = files[0]
         elif len(files)>1:
             print(get_m(f'Find too much volumes for {modality}. Check and remove the additional volumes with same key name', subject_id, 'WARNING'))
@@ -51,6 +83,8 @@ def return_bids_T1_FLAIR(bids_dir, subject_id):
         # Get a list of matching files
         files = layout.get(return_type='file', extension=['nii.gz'], **query)
         if len(files)==1:
+            #check gzip
+            check_gzip(files[0])
             subject_data[f"{modality}_path"] = files[0]
         elif len(files)>1:
             print(get_m(f'Find too much volumes for {modality}. Check and remove the additional volumes with same key name', subject_id, 'WARNING'))

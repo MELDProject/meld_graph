@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from meld_classifier.meld_cohort import MeldCohort,MeldSubject
 import sklearn.metrics as metrics
 from meld_graph.evaluation import load_prediction, sens_spec_curves, roc_curves, plot_roc_multiple
+from meld_graph.hdf5_utils import open_hdf5_file
 import pandas as pd
 import itertools
 import seaborn as sns
@@ -31,7 +32,7 @@ def calculate_roc(model_path, pred_fname,cohort,thresholds):
     #
     save_dir = os.path.join(model_path, 'results_best_model')
     # get list of subjects
-    with h5py.File(os.path.join(save_dir, pred_fname), "r") as f:
+    with open_hdf5_file(os.path.join(save_dir, pred_fname), mode="r") as f:
         subjects = list(f.keys())
     # load individual subject predictions over folds
     for subj in subjects:
