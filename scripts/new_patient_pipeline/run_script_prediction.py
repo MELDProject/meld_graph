@@ -69,7 +69,7 @@ def predict_subjects(subject_ids, output_dir, plot_images = False, saliency=Fals
         model_name="best_model",
         threshold='slope_threshold',
         thresh_and_clust=True,
-        gate_dist = 0.48,
+        # gate_dist = 0.48,
         saliency=saliency,
         make_images=plot_images,
         
@@ -90,7 +90,7 @@ def predict_subjects(subject_ids, output_dir, plot_images = False, saliency=Fals
     if saliency:
         eva.calculate_saliency()
 
-def run_script_prediction(list_ids=None, sub_id=None, harmo_code='noHarmo', no_prediction_nifti=False, no_report=False, skip_prediction=False, split=False, verbose=False):
+def run_script_prediction(list_ids=None, sub_id=None, harmo_code='noHarmo', suffix_output="", no_prediction_nifti=False, no_report=False, skip_prediction=False, split=False, verbose=False):
     harmo_code = str(harmo_code)
     subject_id=None
     subject_ids=None
@@ -115,9 +115,9 @@ def run_script_prediction(list_ids=None, sub_id=None, harmo_code='noHarmo', no_p
     model_name = MODEL_PATH
     experiment_path = os.path.join(EXPERIMENT_PATH, model_name)
     subjects_dir = FS_SUBJECTS_PATH
-    classifier_output_dir = opj(MELD_DATA_PATH,'output','classifier_outputs', model_name)
+    classifier_output_dir = opj(MELD_DATA_PATH,'output',f'classifier_outputs{suffix_output}', model_name)
     data_dir = opj(MELD_DATA_PATH,'input')
-    predictions_output_dir = opj(MELD_DATA_PATH,'output','predictions_reports')
+    predictions_output_dir = opj(MELD_DATA_PATH,'output',f'predictions_reports{suffix_output}')
     prediction_file = opj(classifier_output_dir, 'results_best_model', 'predictions.hdf5')
     
     subject_ids_failed=[]
@@ -216,6 +216,12 @@ if __name__ == '__main__':
                         action="store_true",
                         help='Split subjects list in chunk to avoid data overload',
                         )
+    parser.add_argument('-suffix_output', '--suffix_output', 
+                        type=str, 
+                        help='provide a suffix to store outputs',
+                        required=False,
+                        default="",
+                        )
     parser.add_argument("--debug_mode", 
                         help="mode to debug error", 
                         required=False,
@@ -267,6 +273,7 @@ if __name__ == '__main__':
                         no_report = args.no_report,
                         split = args.split,
                         skip_prediction=args.skip_prediction,
+                        suffix_output=args.suffix_output,
                         verbose = args.debug_mode
                         )
                 

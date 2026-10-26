@@ -505,7 +505,7 @@ class Evaluator:
                 for cl in clusters:
                     dist_cl = prediction_dist[prediction_clustered==cl]
                     dist_cl_median = np.median(dist_cl)
-                    print(dist_cl_median)
+                    # print(dist_cl_median)
                     if dist_cl_median >= self.gate_dist:
                         prediction_clustered[prediction_clustered==cl] = 0
                 data["cluster_thresholded"] = prediction_clustered
