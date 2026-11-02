@@ -108,9 +108,9 @@ conda env create -f environment.yml
 # activate the environment
 conda activate meld_graph
 # add the torch CPU packages (see below for GPU)
-pip install --no-cache-dir torch==1.10.0 torchvision==0.11.1 && pip install -e . && pip install torch-scatter -f https://data.pyg.org/whl/torch-1.10.0.html && pip install torch-geometric==2.4.0 && pip install captum==0.6.0
-# for use of GPU , install the Torch packages below instead
-# pip install --no-cache-dir torch==1.10.0+cu113  torchvision==0.11.1+cu113  && pip install -e . && pip install torch-scatter -f https://data.pyg.org/whl/torch-1.10.0+cu111.html && pip install torch-geometric==2.4.0 && pip install captum==0.6.0
+pip install --no-cache-dir torch==2.7.1 torchvision==0.22.1 --index-url https://download.pytorch.org/whl/cpu && pip install -e . && pip install torch-scatter -f https://data.pyg.org/whl/torch-2.7.1+cpu.html && pip install torch-geometric==2.6.1 && pip install captum==0.8.0
+# for use of GPU (CUDA 12.8, NVIDIA driver >= 570, supports GPUs up to Blackwell), install the Torch packages below instead
+# pip install --no-cache-dir torch==2.7.1 torchvision==0.22.1 --index-url https://download.pytorch.org/whl/cu128 && pip install -e . && pip install torch-scatter -f https://data.pyg.org/whl/torch-2.7.1+cu128.html && pip install torch-geometric==2.6.1 && pip install captum==0.8.0
 # install meld_graph with pip (with `-e`, the development mode, to allow changes in the code to be immediately visible in the installation)
 pip install -e .
 ```

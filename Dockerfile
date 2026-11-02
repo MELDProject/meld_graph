@@ -98,8 +98,10 @@ COPY . .
 
 ENV MAMBA_ROOT_PREFIX="/opt/conda"
 ENV MAMBA_EXE="/bin/micromamba"
+# Torch wheel variant: cu128 (CUDA 12.8, supports GPUs up to Blackwell sm_120 and falls back to CPU) or cpu (smaller image)
+ARG TORCH_VARIANT=cu128
 # The core change: install dependencies in the correct order.
-RUN micromamba run -n meld_graph /bin/bash -c "pip install --no-cache-dir torch==1.10.0 torchvision==0.11.1 && pip install -e . && pip install torch-scatter -f https://data.pyg.org/whl/torch-1.10.0.html && pip install torch-geometric==2.4.0 && pip install captum==0.6.0" \
+RUN micromamba run -n meld_graph /bin/bash -c "pip install --no-cache-dir torch==2.7.1 torchvision==0.22.1 --index-url https://download.pytorch.org/whl/${TORCH_VARIANT} && pip install -e . && pip install --no-cache-dir torch-scatter -f https://data.pyg.org/whl/torch-2.7.1+${TORCH_VARIANT}.html && pip install torch-geometric==2.6.1 && pip install captum==0.8.0" \
     && micromamba shell init -s bash \
     && echo "micromamba activate meld_graph" >> $HOME/.bashrc
     

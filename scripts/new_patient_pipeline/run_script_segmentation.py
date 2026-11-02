@@ -94,8 +94,9 @@ def fastsurfer_subject(subject, fs_folder, verbose=False):
     print(get_m(f'Segmentation using T1 only with FastSurfer', subject_id, 'INFO'))
     python_version = 'python'+'.'.join(sys.version.split('.')[0:2])
     print(python_version)
+    # FastSurfer v1.1.2 checkpoints may not load with the torch>=2.6 default torch.load(weights_only=True)
     command = format(
-        "$FASTSURFER_HOME/run_fastsurfer.sh --sd {} --sid {} --t1 {} --parallel --batch 1 --fsaparc --py {}".format(fs_folder, subject_id, subject_t1_path, python_version)
+        "TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1 $FASTSURFER_HOME/run_fastsurfer.sh --sd {} --sid {} --t1 {} --parallel --batch 1 --fsaparc --py {}".format(fs_folder, subject_id, subject_t1_path, python_version)
     )
 
     # call fastsurfer
