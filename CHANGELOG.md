@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+### Upgrade PyTorch to support recent GPUs
+- upgrade torch 1.10.0 -> 2.7.1 (CUDA 12.8 wheels), torchvision 0.11.1 -> 0.22.1, torch-geometric 2.4.0 -> 2.6.1, captum 0.6.0 -> 0.8.0, adds support for Blackwell GPUs (sm_120)
+- Dockerfile: new build arg `TORCH_VARIANT` (`cu128` by default, `cpu` for a smaller CPU-only image)
+- run FastSurfer v1.1.2 with `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1` since torch>=2.6 defaults to `torch.load(weights_only=True)`
+
 ## [v2.2.7] - 2026-08-25
 ### Fix issues + more robust parallelisation
 - merge with fix from Cornelius Kronlage https://github.com/ckronlage/meld_graph/tree/fixes_v2.2.7
