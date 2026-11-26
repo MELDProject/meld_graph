@@ -633,7 +633,7 @@ class Preprocess:
             parameters = feat_dir.keys()
             for param in parameters:
                 if feat_dir[param].dtype == "S10":
-                    estimates[param] = feat_dir[param].attrs["values"].astype(np.str)
+                    estimates[param] = feat_dir[param].attrs["values"].astype(str)
                 else:
                     estimates[param] = feat_dir[param][:]
         return estimates
@@ -821,9 +821,9 @@ class Preprocess:
             if key == 'batches':
                 estimates[key]=np.array([estimates[key][0]]).astype('object')
             if key=='var.pooled':
-                estimates[key]=estimates[key][:,np.newaxis]
+                estimates[key]=np.array(estimates[key])[:,np.newaxis]
             if key in ['gamma.star', 'delta.star']:
-                estimates[key]=estimates[key][np.newaxis,:]
+                estimates[key]=np.array(estimates[key])[np.newaxis,:]
             estimates[key] = np.array(estimates[key])      
         #shrink estimates
         shrink_estimates = self.shrink_combat_estimates(estimates)

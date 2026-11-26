@@ -209,7 +209,7 @@ def get_cluster_location(cluster_array):
 def save_mgh(filename, array, demo):
     """save mgh file using nibabel and imported demo mgh file"""
     with tempfile.NamedTemporaryFile() as mmap_file:
-        mmap = np.memmap(mmap_file.name, dtype="float32", mode="w+", shape=demo.get_data().shape)
+        mmap = np.memmap(mmap_file.name, dtype="float32", mode="w+", shape=demo.get_fdata().shape)
         mmap[:, 0, 0] = array[:]
         output = nb.MGHImage(mmap, demo.affine, demo.header)
         nb.save(output, filename)
