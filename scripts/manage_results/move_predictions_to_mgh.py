@@ -17,7 +17,7 @@ def load_prediction(subject, hdf5, prediction_name="prediction_clustered"):
 
 def save_mgh(filename, array, demo):
     """save mgh file using nibabel and imported demo mgh file"""
-    mmap = np.memmap("/tmp/tmp", dtype="float32", mode="w+", shape=demo.get_data().shape)
+    mmap = np.memmap("/tmp/tmp", dtype="float32", mode="w+", shape=demo.get_fdata().shape)
     mmap[:, 0, 0] = array[:]
     output = nb.MGHImage(mmap, demo.affine, demo.header)
     nb.save(output, filename)

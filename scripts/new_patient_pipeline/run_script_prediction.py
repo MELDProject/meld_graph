@@ -41,13 +41,16 @@ def predict_subjects(subject_ids, output_dir, plot_images = False, saliency=Fals
     ''' function to predict on new subject using trained MELD classifier'''
     
     # create dataset csv
+    print("Creating dataset file...")
     tmp = tempfile.NamedTemporaryFile(mode="w")
     create_dataset_file(subject_ids, tmp.name)
 
     # load models
+    print("Loading experiment...")
     exp = Experiment.from_folder(experiment_path)
 
     #update experiment 
+    print("Updating experiment...")
     exp.cohort = MeldCohort(hdf5_file_root=hdf5_file_root, dataset=tmp.name)
     exp.data_parameters["hdf5_file_root"] = hdf5_file_root
     exp.data_parameters["dataset"] = tmp.name
@@ -55,10 +58,12 @@ def predict_subjects(subject_ids, output_dir, plot_images = False, saliency=Fals
     exp.experiment_path = experiment_path
     
     # launch evaluation
+    print("Creating cohort...")
     cohort = MeldCohort(
                 hdf5_file_root=exp.data_parameters["hdf5_file_root"],
                 dataset=exp.data_parameters["dataset"],
             )
+    print("Initializing evaluator...")
     eva = Evaluator(
         experiment=exp,
         checkpoint_path=experiment_path,
@@ -70,24 +75,30 @@ def predict_subjects(subject_ids, output_dir, plot_images = False, saliency=Fals
         threshold='slope_threshold',
         thresh_and_clust=True,
         saliency=saliency,
-        make_images=plot_images,
-        
+        make_images=plot_images, 
     )
     #predict for the dataset
+    print("Loading and predicting...")
     eva.load_predict_data(
         save_prediction=True,
         roc_curves_thresholds=None,
         )
     #threshold predictions
+    print("Thresholding and clustering...")
     eva.threshold_and_cluster()
     #write results in csv
+    print("Computing stats...")
     eva.stat_subjects()
     #plot images 
     if plot_images: 
+        print("Plotting predictions...")
         eva.plot_subjects_prediction()
     #compute saliency:
     if saliency:
+        print("Calculating saliency...")
         eva.calculate_saliency()
+
+    print("Done!")
 
 def run_script_prediction(list_ids=None, sub_id=None, harmo_code='noHarmo', no_prediction_nifti=False, no_report=False, skip_prediction=False, split=False, verbose=False):
     harmo_code = str(harmo_code)

@@ -14,9 +14,9 @@ dependencies:
   - scikit-image=0.18
   - pip=23.3.1
   - libopenblas=0.3.15
-  - clang_osx-arm64 
-  - clangxx_osx-arm64 
-  - gfortran_osx-arm64
+  - clang #_osx-arm64 
+  - clangxx #_osx-arm64 
+  - gfortran #_osx-arm64
   - libtiff
   - pip:
     - potpourri3d==0.0.6

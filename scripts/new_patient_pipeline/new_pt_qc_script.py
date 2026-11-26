@@ -1,8 +1,5 @@
 ## This script open freeview with MRI images, MELD predictions and surfaces for quality check of segmentation
-
-
 ## To run : python new_pt_qc_script.py -id <sub_id>
-
 
 import os
 import sys

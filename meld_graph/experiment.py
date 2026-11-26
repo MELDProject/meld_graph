@@ -3,6 +3,8 @@ import json
 import logging
 import os
 import torch
+torch.set_num_threads(1) #added, can try 1-8
+torch.set_num_interop_threads(1) #added, can try 1-2
 import meld_graph.models
 from meld_graph.meld_cohort import MeldCohort
 from meld_graph.ensemble import Ensemble
@@ -244,8 +246,6 @@ class Experiment:
                 object_detection_head=self.network_parameters['training_parameters']['loss_dictionary']
                 .get('object_detection', {})
                 .get('apply_to_bottleneck', False),
-
-
             )
         else:
             raise (NotImplementedError, network_type)
@@ -257,7 +257,7 @@ class Experiment:
             self.model.load_state_dict(torch.load(checkpoint_path, map_location=device), strict=False)
             self.model.eval()
         elif checkpoint_path is not None:
-            self.log.warn(f"Model checkpoing {checkpoint_path} does not exist!!!")
+            self.log.warn(f"Model checkpoint {checkpoint_path} does not exist!!!")
         self.model.to(device)
 
     def load_ensemble_model(self, checkpoint_path=None, force=False):

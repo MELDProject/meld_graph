@@ -78,11 +78,13 @@ class Evaluator:
             os.makedirs(self.results_dir, exist_ok=True)
 
         # if checkpoint load model
+        print("Loading model checkpoint...")
         if checkpoint_path:
             self.experiment.load_model(
                 checkpoint_path=self._find_checkpoint(checkpoint_path),
                 force=True,
             )
+        print("Checkpoint loaded!")
 
         # update dataset, cohort and subjects if provided or take from experiment
         if cohort != None:

@@ -5,6 +5,7 @@ import time
 import shutil
 import pandas as pd
 import numpy as np
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))) #added
 from scripts.new_patient_pipeline.run_script_segmentation import run_script_segmentation
 from scripts.new_patient_pipeline.run_script_preprocessing import run_script_preprocessing
 from scripts.new_patient_pipeline.run_script_prediction import run_script_prediction

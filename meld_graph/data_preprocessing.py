@@ -572,7 +572,14 @@ class Preprocess:
         sites_scanners = []
         for subject in subject_ids:
             subj = MeldSubject(subject, cohort=self.cohort)
-            a, s = subj.get_demographic_features(["Age at preop", "Sex"], csv_file = demographic_file)
+            
+            # added
+            a = subj.get_demographic_features("Age at preop", csv_file=demographic_file)
+            s = subj.get_demographic_features("Sex", csv_file=demographic_file)
+            # print(a, s)
+
+            # a, s = subj.get_demographic_features(["Age at preop", "Sex"], csv_file = demographic_file)
+            
             ages.append(a)
             if s=='male':
                 sex.append(1)
@@ -585,15 +592,19 @@ class Preprocess:
             group.append(subj.is_patient)
             sites_scanners.append(subj.site_code) # just site code now
             
-        covars["ages"] = ages
+        covars["ages"] = pd.to_numeric(ages, errors="coerce") 
         covars["sex"] = sex
         covars["group"] = group
         covars["site_scanner"] = sites_scanners
         covars["ID"] = subject_ids
+ 
+        #clean missing values in demographics - to debug
+        # covars["ages"] = covars.groupby("site_scanner").transform(lambda x: x.fillna(x.mean()))["ages"]
+        # covars["sex"] = covars.groupby("site_scanner").transform(lambda x: x.fillna(random.choice([0, 1])))["sex"]
 
-        #clean missing values in demographics
-        covars["ages"] = covars.groupby("site_scanner").transform(lambda x: x.fillna(x.mean()))["ages"]
-        covars["sex"] = covars.groupby("site_scanner").transform(lambda x: x.fillna(random.choice([0, 1])))["sex"]
+        # Print after cleaning
+        # print("Covars:\n", covars)
+        
         return covars
 
     def save_norm_combat_parameters(self, feature, estimates, hdf5_file):
@@ -632,7 +643,7 @@ class Preprocess:
             parameters = feat_dir.keys()
             for param in parameters:
                 if feat_dir[param].dtype == "S10":
-                    estimates[param] = feat_dir[param].attrs["values"].astype(np.str)
+                    estimates[param] = feat_dir[param].attrs["values"].astype(str) # modified from np.str
                 else:
                     estimates[param] = feat_dir[param][:]
         return estimates
@@ -762,7 +773,7 @@ class Preprocess:
         if len(np.array(listids)[np.array(combat_subject_include)])==0:
             print(f'WARNING: Cannot compute harmonisation for {feature} because no subject found with this feature')
             return
-        # load in covariates - age, sex, group, site and scanner unless provided    
+        # load in covariates - age, sex, group, site and scanner unless provided
         new_site_covars = self.load_covars(subject_ids=np.array(listids)[np.array(combat_subject_include)], demographic_file=demographic_file).copy()
         # check site_scanner codes are the same for all subjects
         if len(new_site_covars['site_scanner'].unique())==1:
@@ -820,9 +831,11 @@ class Preprocess:
             if key == 'batches':
                 estimates[key]=np.array([estimates[key][0]]).astype('object')
             if key=='var.pooled':
-                estimates[key]=estimates[key][:,np.newaxis]
+                # estimates[key]=estimates[key][:,np.newaxis] # modified
+                estimates[key]=np.array(estimates[key])[:,np.newaxis] # added
             if key in ['gamma.star', 'delta.star']:
-                estimates[key]=estimates[key][np.newaxis,:]
+                # estimates[key]=estimates[key][np.newaxis,:] # modified
+                estimates[key]=np.array(estimates[key])[np.newaxis,:] # added
             estimates[key] = np.array(estimates[key])      
         #shrink estimates
         shrink_estimates = self.shrink_combat_estimates(estimates)

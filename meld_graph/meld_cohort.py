@@ -536,6 +536,10 @@ class MeldSubject:
                     feature = df.loc[self.subject_id][matched_name]
                     if isinstance(feature, str):
                         return feature
+                    # Case 2 — numeric values (float, int, numpy scalar) # added
+                    elif isinstance(feature, (int, float, np.number)):
+                        return feature
+                    # end of addition
                     else:
                         try:
                             feature = feature.drop_duplicates().values.squeeze()
